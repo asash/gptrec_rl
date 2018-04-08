@@ -1,6 +1,9 @@
 import sys
 import importlib.util
 import json
+import copy 
+
+from multiprocessing import Pool
 
 from split_actions import split_actions
 from evaluate_recommender import evaluate_recommender
@@ -14,21 +17,37 @@ def config():
     spec.loader.exec_module(config)
     return config
 
-def run_experiment(config):
-    actions = list(config.DATASET) 
-    result = []
-    for fraction in config.FRACTIONS_TO_SPLIT:
-        result.append({"train_fraction": fraction, "recommenders": {}})
-        train, test = split_actions(actions, (fraction, 1 - fraction))
-        test = n_actions_for_user(test, config.TEST_ACTION_PER_USER)
-        for recommender_name in config.RECOMMENDERS:
-            recommender = config.RECOMMENDERS[recommender_name]()
+class RecommendersEvaluator(object):
+    def __init__(self, actions, recommenders, metrics, actions_per_user):
+        self.actions = actions
+        self.metrics = metrics
+        self.recommenders = recommenders
+        self.actions_per_user = actions_per_user
+
+    def __call__(self, split_fraction):
+        result = {"train_fraction": split_fraction, "recommenders": {}}
+        train, test = split_actions(self.actions, (split_fraction, 1 - split_fraction))
+        test = n_actions_for_user(test, self.actions_per_user)
+        for recommender_name in self.recommenders:
+            recommender = self.recommenders[recommender_name]()
             for action in train:
                 recommender.add_action(action)
             recommender.rebuild_model()
-            evaluation_result = evaluate_recommender(recommender, test, config.METRICS)
-            result[-1]['recommenders'][recommender_name] = evaluation_result
-    return result
+            evaluation_result = evaluate_recommender(recommender, test, self.metrics)
+            result['recommenders'][recommender_name] = evaluation_result
+        return result
+
+def run_experiment(config):
+    print("read data...")
+    actions = list(config.DATASET) 
+    recommender_evaluator = RecommendersEvaluator(actions,
+                                 config.RECOMMENDERS, 
+                                 config.METRICS, config.TEST_ACTION_PER_USER)
+    result = []
+    for fraction in config.FRACTIONS_TO_SPLIT:
+        print("evaluating for split fraction {:.3f}".format(fraction))
+        result.append(recommender_evaluator(fraction))
+    return list(result)
 
 if __name__ == "__main__":
     config = config()

@@ -6,11 +6,12 @@ from aprec.evaluation.metrics.recall import Recall
 from aprec.evaluation.metrics.ndcg import NDCG
 
 
-DATASET = generator_limit(get_movielens_actions(min_rating=4.0), 1000000)
+DATASET = generator_limit(get_movielens_actions(min_rating=4.0), 1000_000)
 RECOMMENDERS = {
-    "top_recommender": lambda: TopRecommender()    
+    "top_recommender": TopRecommender    
 }
 
 FRACTIONS_TO_SPLIT = (0.2, 0.4, 0.6, 0.8)
 TEST_ACTION_PER_USER = 1
 METRICS = [Precision(5), NDCG(50)]
+
