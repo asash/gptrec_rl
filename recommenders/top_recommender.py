@@ -17,3 +17,5 @@ class TopRecommender(Recommender):
     def get_similar_items(self, item_id, limit):
         return self.items_counter.most_common(limit)
 
+    def name(self):
+        return "TopItemsRecommender"

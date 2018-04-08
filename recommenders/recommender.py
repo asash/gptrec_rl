@@ -1,4 +1,7 @@
 class Recommender():
+    def name(self):
+        raise NotImplementedError
+
     def add_action(self, action):
         raise(NotImplementedError)
 
