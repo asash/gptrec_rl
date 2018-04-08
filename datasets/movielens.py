@@ -4,6 +4,9 @@ import logging
 
 from aprec.utils import mkdir_p_local, get_dir, console_logging, shell
 from aprec.api.action import Action
+from aprec.api.item import Item
+from aprec.api.catalog import Catalog
+
 
 MOVIELENS_URL = "http://files.grouplens.org/datasets/movielens/ml-20m.zip"
 MOVIELENS_DIR = "data/movielens"
@@ -12,6 +15,7 @@ DATASET_NAME = 'ml-20m'
 MOVIELENS_FILE_ABSPATH = os.path.join(get_dir(), MOVIELENS_DIR, MOVIELENS_FILE)
 MOVIELENS_DIR_ABSPATH = os.path.join(get_dir(), MOVIELENS_DIR)
 RATINGS_FILE = os.path.join(MOVIELENS_DIR_ABSPATH, 'ratings.csv')
+MOVIES_FILE = os.path.join(MOVIELENS_DIR_ABSPATH, 'movies.csv')
 
 
 def download_movielens_dataset():
@@ -35,9 +39,12 @@ def extract_movielens_dataset():
         shell("mv {} {}".format(os.path.join(dataset_dir, filename), MOVIELENS_DIR_ABSPATH))
     shell("rm -rf {}".format(dataset_dir))
 
-def get_movielens_actions(min_rating=4.0):
+def prepare_data():
     download_movielens_dataset()
     extract_movielens_dataset()
+ 
+def get_movielens_actions(min_rating=4.0):
+    prepare_data()
     with open(RATINGS_FILE, 'r') as data_file:
         header = True
         for line in data_file :
@@ -50,7 +57,24 @@ def get_movielens_actions(min_rating=4.0):
                 if rating >= min_rating:
                     yield Action(user_id, movie_id, timestamp, {"rating": rating})
 
+def get_movies_catalog():
+    prepare_data()
+    catalog = Catalog()
+    with open(MOVIES_FILE, 'r') as data_file:
+        header = True
+        for line in data_file :
+            if header:
+                header = False
+            else:
+                splits = line.strip().split(",")
+                movie_id = splits[0]
+                genres = splits[-1].split("|")
+                title = ",".join(splits[1:-1]).strip('"')
+                item = Item(movie_id).with_title(title).with_tags(genres)
+                catalog.add_item(item) 
+    return catalog
+
+ 
 if __name__ == "__main__":
     console_logging()    
-    download_movielens_dataset()
-    extract_movielens_dataset()
+    prepare_data()

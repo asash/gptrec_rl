@@ -1,6 +1,6 @@
 import unittest
 
-from aprec.datasets.movielens import get_movielens_actions
+from aprec.datasets.movielens import get_movielens_actions, get_movies_catalog
 from aprec.utils import generator_limit
 
 
@@ -23,6 +23,12 @@ class TestMovielensActions(unittest.TestCase):
         for action in generator_limit(get_movielens_actions(), 10):
             lines += action.to_str() + "\n" 
         self.assertEqual(lines, REFERENCE_LINES)
+
+    def test_get_catalog(self):
+        catalog = get_movies_catalog()
+        movie = catalog.get_item("2571")
+        self.assertEqual(movie.title, "Matrix, The (1999)")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -11,5 +11,8 @@ class Recommender():
     def get_similar_items(item_id, limit):
         raise(NotImplementedError)
 
+    def to_str(self):
+        raise(NotImplementedError)
 
-
+    def from_str(self):
+        raise(NotImplementedError)
