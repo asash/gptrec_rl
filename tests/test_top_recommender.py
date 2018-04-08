@@ -3,8 +3,6 @@ from aprec.recommenders.top_recommender import TopRecommender
 from aprec.utils import generator_limit
 
 import unittest
-
-
 class TestTopRecommender(unittest.TestCase):
     def test_top_recommender(self):
         recommender = TopRecommender()
