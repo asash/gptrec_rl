@@ -18,16 +18,14 @@ def config():
     return config
 
 class RecommendersEvaluator(object):
-    def __init__(self, actions, recommenders, metrics, actions_per_user):
+    def __init__(self, actions, recommenders, metrics):
         self.actions = actions
         self.metrics = metrics
         self.recommenders = recommenders
-        self.actions_per_user = actions_per_user
 
     def __call__(self, split_fraction):
         result = {"train_fraction": split_fraction, "recommenders": {}}
         train, test = split_actions(self.actions, (split_fraction, 1 - split_fraction))
-        test = n_actions_for_user(test, self.actions_per_user)
         for recommender_name in self.recommenders:
             recommender = self.recommenders[recommender_name]()
             for action in train:
@@ -42,7 +40,7 @@ def run_experiment(config):
     actions = list(config.DATASET) 
     recommender_evaluator = RecommendersEvaluator(actions,
                                  config.RECOMMENDERS, 
-                                 config.METRICS, config.TEST_ACTION_PER_USER)
+                                 config.METRICS)
     result = []
     for fraction in config.FRACTIONS_TO_SPLIT:
         print("evaluating for split fraction {:.3f}".format(fraction))
