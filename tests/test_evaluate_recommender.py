@@ -1,6 +1,6 @@
 from aprec.datasets.movielens import get_movielens_actions, get_movies_catalog
 from aprec.recommenders.top_recommender import TopRecommender
-from aprec.utils import generator_limit
+from aprec.utils.generator_limit import generator_limit
 from aprec.evaluation.split_actions import split_actions
 from aprec.evaluation.n_actions_for_user import n_actions_for_user
 from aprec.evaluation.evaluate_recommender import evaluate_recommender

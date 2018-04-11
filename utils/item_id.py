@@ -12,6 +12,9 @@ class ItemId(object):
     def has_id(self, id):
         return id in self.reverse
 
+    def has_item(self, item_id):
+        return item_id in self.straight
+
     def reverse_id(self, id):
         return self.reverse[id] 
 

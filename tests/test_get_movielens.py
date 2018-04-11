@@ -1,7 +1,7 @@
 import unittest
 
 from aprec.datasets.movielens import get_movielens_actions, get_movies_catalog
-from aprec.utils import generator_limit
+from aprec.utils.generator_limit import generator_limit
 
 
 REFERENCE_LINES =\

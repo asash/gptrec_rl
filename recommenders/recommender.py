@@ -8,10 +8,10 @@ class Recommender():
     def rebuild_model(self):
         raise(NotImplementedError)
 
-    def get_next_items(user_id, limit):
+    def get_next_items(self, user_id, limit):
         raise(NotImplementedError)
 
-    def get_similar_items(item_id, limit):
+    def get_similar_items(self, item_id, limit):
         raise(NotImplementedError)
 
     def to_str(self):

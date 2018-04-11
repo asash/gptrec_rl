@@ -4,7 +4,9 @@ import shlex
 import logging
 
 def get_dir():
-    return (os.path.dirname(os.path.abspath(__file__)))
+    utils_dirname = os.path.dirname(os.path.abspath(__file__))  
+    lib_dirname = os.path.abspath(os.path.join(utils_dirname, ".."))
+    return lib_dirname
 
 def shell(cmd):
     logging.info("running shell command: \n {}".format(cmd))
@@ -21,12 +23,3 @@ def mkdir_p_local(relative_dir_path):
 
 def console_logging():
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
-
-def generator_limit(generator, n):
-    limit = 0
-    for item in generator:
-        if limit >= n:
-            break
-        yield item
-        limit += 1
-        

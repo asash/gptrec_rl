@@ -14,6 +14,8 @@ class TestItemId(unittest.TestCase):
         self.assertEqual(items_dict.reverse_id(2), "ccc")
         self.assertTrue(items_dict.has_id(2))
         self.assertFalse(items_dict.has_id(4))
+        self.assertTrue(items_dict.has_item("aaa"))
+        self.assertFalse(items_dict.has_item("fff"))
         self.assertRaises(KeyError, items_dict.reverse_id, 4)
         
 

@@ -12,3 +12,6 @@ class Item(object):
     def with_title(self, title):
         self.title = title
         return self
+
+    def __str__(self):
+        return "item id={} title={} tags={}".format(self.item_id, self.title, self.tags)

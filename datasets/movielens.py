@@ -2,7 +2,7 @@ import os
 import requests
 import logging
 
-from aprec.utils import mkdir_p_local, get_dir, console_logging, shell
+from aprec.utils.os import mkdir_p_local, get_dir, console_logging, shell
 from aprec.api.action import Action
 from aprec.api.item import Item
 from aprec.api.catalog import Catalog

@@ -1,6 +1,6 @@
 from aprec.datasets.movielens import get_movielens_actions, get_movies_catalog
 from aprec.recommenders.top_recommender import TopRecommender
-from aprec.utils import generator_limit
+from aprec.utils.generator_limit import generator_limit
 
 import unittest
 class TestTopRecommender(unittest.TestCase):
