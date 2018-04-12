@@ -2,6 +2,7 @@ from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.datasets.movielens import get_movielens_actions, get_movies_catalog
 from aprec.utils.generator_limit import generator_limit
+from aprec.api.action import Action
 import unittest
 
 REFERENCE_COLD_START = [('318', 0.37689138044151266), ('296', 0.3574406246772646), ('356', 0.3358529670797735), ('593', 0.2984884710306045), ('47', 0.29273482768981324), ('50', 0.2862750184955636), ('527', 0.2651443463750701), ('589', 0.2517902108569122), ('110', 0.2431276658452398), ('2858', 0.23858577202574255)]
@@ -21,6 +22,19 @@ class TestSvdRecommender(unittest.TestCase):
         self.assertEqual(recommender.get_next_items(12341324, 10), REFERENCE_COLD_START)
         recs = recommender.get_next_items(USER_ID, 10)
         self.assertEqual(recs, REFERENCE_USER_RECOMMENDATIONS)
+
+        actions =  [Action('1', 1, 1), 
+                    Action('1', 2, 2),
+                    Action('2', 2, 1),
+                    Action('2', 3, 1)]
+        recommender = SvdRecommender(2, random_seed=31337)
+        for action in actions:
+            recommender.add_action(action)
+        recommender.rebuild_model()
+
+
+
+
 
 
 if __name__ == "__main__":

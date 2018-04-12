@@ -8,10 +8,10 @@ from aprec.api.item import Item
 from aprec.api.catalog import Catalog
 
 
-MOVIELENS_URL = "http://files.grouplens.org/datasets/movielens/ml-20m.zip"
+DATASET_NAME = 'ml-20m'
+MOVIELENS_URL = "http://files.grouplens.org/datasets/movielens/{}.zip".format(DATASET_NAME)
 MOVIELENS_DIR = "data/movielens"
 MOVIELENS_FILE = "movielens.zip"
-DATASET_NAME = 'ml-20m'
 MOVIELENS_FILE_ABSPATH = os.path.join(get_dir(), MOVIELENS_DIR, MOVIELENS_FILE)
 MOVIELENS_DIR_ABSPATH = os.path.join(get_dir(), MOVIELENS_DIR)
 RATINGS_FILE = os.path.join(MOVIELENS_DIR_ABSPATH, 'ratings.csv')

@@ -2,7 +2,7 @@ import sys
 import importlib.util
 import json
 import copy 
-
+import mmh3
 from multiprocessing import Pool
 
 from split_actions import split_actions
@@ -36,8 +36,13 @@ class RecommendersEvaluator(object):
         return result
 
 def run_experiment(config):
+    every_user = int (1/config.USERS_FRACTION)
     print("read data...")
-    actions = list(config.DATASET) 
+    print("use every {} user".format(every_user))
+    actions = list(filter( lambda action: mmh3.hash(action.user_id) % every_user == 0, 
+                     config.DATASET))
+    print(len(actions))
+    print("evaluating...")
     recommender_evaluator = RecommendersEvaluator(actions,
                                  config.RECOMMENDERS, 
                                  config.METRICS)

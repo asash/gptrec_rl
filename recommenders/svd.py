@@ -36,6 +36,7 @@ class SvdRecommender():
         user_vec = self.mean_user
         if self.users.has_item(user_id):
             user_vec = self.user_vectors[self.users.get_id(user_id)]
+            print(user_vec) 
         restored = self.model.inverse_transform([user_vec])[0]
         with_index = list(zip(restored, range(len(restored))))
         score_idx = sorted(with_index, reverse=True)[:limit]
