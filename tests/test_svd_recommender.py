@@ -12,6 +12,12 @@ USER_ID = '120'
 REFERENCE_USER_RECOMMENDATIONS = [('457', 0.4555895355528814), ('380', 0.41878479189637907), ('110', 0.41371092094949746), ('292', 0.3658763722681398), ('296', 0.32779277385356653), ('595', 0.3135156842689451), ('588', 0.31243386441607296), ('592', 0.2930348223906822), ('440', 0.28664327616275026), ('357', 0.28605665125871604), ('434', 0.2804929031598042), ('593', 0.28042317307652453), ('733', 0.276061859488453), ('553', 0.257852190928236), ('253', 0.2559445694032447)]
 
 class TestSvdRecommender(unittest.TestCase):
+    def compare_recommendations(self, rec1, rec2):
+        self.assertEqual(len(rec1), len(rec2))
+        for i in range(len(rec1)):
+            self.assertEqual(rec1[i][0], rec2[i][0])
+            self.assertAlmostEqual(rec1[i][1], rec2[i][1])
+         
     def test_svd_recommender(self):
         svd_recommender = SvdRecommender(10, random_seed=31337)
         recommender = FilterSeenRecommender(svd_recommender)
@@ -19,9 +25,9 @@ class TestSvdRecommender(unittest.TestCase):
         for action in generator_limit(get_movielens_actions(), 10000):
             recommender.add_action(action)
         recommender.rebuild_model()
-        self.assertEqual(recommender.get_next_items(12341324, 10), REFERENCE_COLD_START)
+        self.compare_recommendations(recommender.get_next_items(12341324, 10), REFERENCE_COLD_START)
         recs = recommender.get_next_items(USER_ID, 10)
-        self.assertEqual(recs, REFERENCE_USER_RECOMMENDATIONS)
+        self.compare_recommendations(recs, REFERENCE_USER_RECOMMENDATIONS)
 
         actions =  [Action('1', 1, 1), 
                     Action('1', 2, 2),
