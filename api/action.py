@@ -7,12 +7,18 @@ class Action(object):
         self.timestamp = timestamp
 
     def to_str(self):
-        return "user_id={}, item_id={}, timestamp={}, data={}".format(
+       result = "Action(uid={}, item={}, ts={}".format(
                     self.user_id, 
                     self.item_id, 
-                    self.timestamp, 
-                    json.dumps(self.data))
+                    self.timestamp)
+       if self.data != {}:
+           result += ", data={}".format(json.dumps(self.data))
+       result += ")"
+       return result
 
     def __str__(self):
+        return self.to_str()
+        
+    def __repr__(self):
         return self.to_str()
         

@@ -3,21 +3,21 @@ from aprec.tests.generate_actions import generate_actions
 from aprec.evaluation.n_actions_for_user import n_actions_for_user
 
 REFERENCE_1_ACTION =\
-"""user_id=0, item_id=0, timestamp=2, data={}
-user_id=1, item_id=3, timestamp=0, data={}
-user_id=2, item_id=0, timestamp=0, data={}
-user_id=3, item_id=2, timestamp=3, data={}"""
+"""Action(uid=0, item=0, ts=2)
+Action(uid=1, item=3, ts=0)
+Action(uid=2, item=0, ts=0)
+Action(uid=3, item=2, ts=3)"""
 
 
 REFERENCE_2_ACTION =\
-"""user_id=0, item_id=0, timestamp=2, data={}
-user_id=0, item_id=2, timestamp=4, data={}
-user_id=1, item_id=0, timestamp=0, data={}
-user_id=1, item_id=3, timestamp=0, data={}
-user_id=2, item_id=0, timestamp=0, data={}
-user_id=2, item_id=2, timestamp=2, data={}
-user_id=3, item_id=0, timestamp=4, data={}
-user_id=3, item_id=2, timestamp=3, data={}"""
+"""Action(uid=0, item=0, ts=2)
+Action(uid=0, item=2, ts=4)
+Action(uid=1, item=0, ts=0)
+Action(uid=1, item=3, ts=0)
+Action(uid=2, item=0, ts=0)
+Action(uid=2, item=2, ts=2)
+Action(uid=3, item=0, ts=4)
+Action(uid=3, item=2, ts=3)"""
 
 def sorted_actions_str(actions):
     return "\n".join(sorted([str(action) for action in actions]))

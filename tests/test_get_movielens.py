@@ -5,16 +5,16 @@ from aprec.utils.generator_limit import generator_limit
 
 
 REFERENCE_LINES =\
-"""user_id=1, item_id=151, timestamp=1094785734, data={"rating": 4.0}
-user_id=1, item_id=223, timestamp=1112485573, data={"rating": 4.0}
-user_id=1, item_id=253, timestamp=1112484940, data={"rating": 4.0}
-user_id=1, item_id=260, timestamp=1112484826, data={"rating": 4.0}
-user_id=1, item_id=293, timestamp=1112484703, data={"rating": 4.0}
-user_id=1, item_id=296, timestamp=1112484767, data={"rating": 4.0}
-user_id=1, item_id=318, timestamp=1112484798, data={"rating": 4.0}
-user_id=1, item_id=541, timestamp=1112484603, data={"rating": 4.0}
-user_id=1, item_id=1036, timestamp=1112485480, data={"rating": 4.0}
-user_id=1, item_id=1079, timestamp=1094785665, data={"rating": 4.0}
+"""Action(uid=1, item=151, ts=1094785734, data={"rating": 4.0})
+Action(uid=1, item=223, ts=1112485573, data={"rating": 4.0})
+Action(uid=1, item=253, ts=1112484940, data={"rating": 4.0})
+Action(uid=1, item=260, ts=1112484826, data={"rating": 4.0})
+Action(uid=1, item=293, ts=1112484703, data={"rating": 4.0})
+Action(uid=1, item=296, ts=1112484767, data={"rating": 4.0})
+Action(uid=1, item=318, ts=1112484798, data={"rating": 4.0})
+Action(uid=1, item=541, ts=1112484603, data={"rating": 4.0})
+Action(uid=1, item=1036, ts=1112485480, data={"rating": 4.0})
+Action(uid=1, item=1079, ts=1094785665, data={"rating": 4.0})
 """
 
 class TestMovielensActions(unittest.TestCase):
