@@ -8,6 +8,7 @@ from multiprocessing import Pool
 from split_actions import split_actions
 from evaluate_recommender import evaluate_recommender
 from n_actions_for_user import n_actions_for_user
+from filter_cold_start import filter_cold_start
 
 def config():
     """ from https://stackoverflow.com/questions/67631/how-to-import-a-module-given-the-full-path"""
@@ -26,6 +27,7 @@ class RecommendersEvaluator(object):
     def __call__(self, split_fraction):
         result = {"train_fraction": split_fraction, "recommenders": {}}
         train, test = split_actions(self.actions, (split_fraction, 1 - split_fraction))
+        test = filter_cold_start(train, test)
         for recommender_name in self.recommenders:
             recommender = self.recommenders[recommender_name]()
             for action in train:

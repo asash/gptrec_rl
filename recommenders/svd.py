@@ -15,6 +15,7 @@ class SvdRecommender():
         self.user_vectors = None
         self.mean_user = None
         self.random_seed = random_seed
+        self.biases = None
         
     def name(self):
         return "Svd@{}".format(self.latent_components)
@@ -27,7 +28,13 @@ class SvdRecommender():
         self.vals.append(1.0)
 
     def rebuild_model(self):
-        matrix = csr_matrix((self.vals, (self.rows, self.cols)))
+        matrix_original = csr_matrix((self.vals, (self.rows, self.cols)))
+        self.biases = np.asarray(np.mean(matrix_original, axis=0))[0]
+        print("biases", self.biases, self.biases.shape)
+        vals_unbiased = []
+        for i in range(len(self.vals)):
+            vals_unbiased.append(1.0  - self.biases[self.cols[i]])
+        matrix = csr_matrix((vals_unbiased, (self.rows, self.cols)))
         self.model = TruncatedSVD(n_components=self.latent_components, random_state=self.random_seed)
         self.user_vectors = self.model.fit_transform(matrix)
         self.mean_user = np.mean(self.user_vectors, axis=0)
@@ -36,11 +43,9 @@ class SvdRecommender():
         user_vec = self.mean_user
         if self.users.has_item(user_id):
             user_vec = self.user_vectors[self.users.get_id(user_id)]
-            print(user_vec) 
-        restored = self.model.inverse_transform([user_vec])[0]
-        with_index = list(zip(restored, range(len(restored))))
-        score_idx = sorted(with_index, reverse=True)[:limit]
-        result = [(self.items.reverse_id(id), score) for (score, id) in score_idx]
+        scores = self.model.inverse_transform([user_vec])[0] + self.biases
+        best_ids = np.argsort(scores)[::-1][:limit]
+        result = [(self.items.reverse_id(id), scores[id]) for id in best_ids]
         return result
 
     def get_similar_items(self, item_id, limit):

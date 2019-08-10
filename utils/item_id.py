@@ -3,6 +3,9 @@ class ItemId(object):
         self.straight = {}
         self.reverse = {}
 
+    def size(self):
+        return len(self.straight)
+
     def get_id(self, item_id):
         if item_id not in self.straight:
             self.straight[item_id] = len(self.straight)
