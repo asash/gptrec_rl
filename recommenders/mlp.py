@@ -9,8 +9,10 @@ import keras
 from keras.optimizers import Adam
 
 import numpy as np
+from aprec.recommenders.recommender import Recommender
 
-class GreedyMLP():
+
+class GreedyMLP(Recommender):
     def __init__(self, sequence_length=100):
         self.sequence_length = sequence_length 
         self.users = ItemId()

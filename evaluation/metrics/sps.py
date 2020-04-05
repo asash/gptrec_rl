@@ -10,6 +10,8 @@ class SPS(Metric):
         self.k = k
         
     def __call__(self, recommendations, actual_actions):
+        if(len(recommendations) == 0):
+            return 0
         action_to_check = actual_actions[0] 
         for action in actual_actions[1:]:
             if action.timestamp < action_to_check.timestamp:

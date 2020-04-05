@@ -7,6 +7,8 @@ class NDCG(Metric):
         self.k = k
         
     def __call__(self, recommendations, actual_actions):
+        if(len(recommendations) == 0):
+            return 0
         actual_set = set([action.item_id for action in actual_actions])
         recommended = [recommendation[0] for recommendation in recommendations[:self.k]]
         cool = set(recommended).intersection(actual_set)

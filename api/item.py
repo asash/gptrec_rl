@@ -15,3 +15,6 @@ class Item(object):
 
     def __str__(self):
         return "item id={} title={} tags={}".format(self.item_id, self.title, self.tags)
+
+    def __repr__(self):
+        return self.__str__()

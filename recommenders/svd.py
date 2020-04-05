@@ -1,9 +1,10 @@
 from aprec.utils.item_id import ItemId
+from aprec.recommenders.recommender import Recommender
 from scipy.sparse import csr_matrix
 from sklearn.decomposition import TruncatedSVD
 import numpy as np
 
-class SvdRecommender():
+class SvdRecommender(Recommender):
     def __init__ (self, num_latent_components, random_seed=None):
         self.latent_components = num_latent_components
         self.users = ItemId()
@@ -30,7 +31,6 @@ class SvdRecommender():
     def rebuild_model(self):
         matrix_original = csr_matrix((self.vals, (self.rows, self.cols)))
         self.biases = np.asarray(np.mean(matrix_original, axis=0))[0]
-        print("biases", self.biases, self.biases.shape)
         vals_unbiased = []
         for i in range(len(self.vals)):
             vals_unbiased.append(1.0  - self.biases[self.cols[i]])

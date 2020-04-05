@@ -1,6 +1,8 @@
+keras
 requests
 pandas
 scipy
+tornado
 numpy 
 scikit-learn
 mmh3 

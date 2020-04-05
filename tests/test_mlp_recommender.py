@@ -11,7 +11,6 @@ class TestMLPRecommender(unittest.TestCase):
     def test_mlp_recommender(self):
         mlp_recommender = GreedyMLP()
         recommender = FilterSeenRecommender(mlp_recommender)
-        catalog = get_movies_catalog()
         for action in generator_limit(get_movielens_actions(), 10000):
             recommender.add_action(action)
         recommender.rebuild_model()

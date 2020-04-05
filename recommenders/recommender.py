@@ -11,6 +11,9 @@ class Recommender():
     def get_next_items(self, user_id, limit):
         raise(NotImplementedError)
 
+    def recommend_by_items(self, items_list, limit):
+        raise(NotImplementedError)
+
     def get_similar_items(self, item_id, limit):
         raise(NotImplementedError)
 
