@@ -9,16 +9,20 @@ from aprec.evaluation.metrics.precision import Precision
 from aprec.evaluation.metrics.recall import Recall
 from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.evaluation.metrics.sps import SPS
+from aprec.recommenders.svd import SvdRecommender
 
 
 DATASET = get_movielens_actions(min_rating=0.0)
-USERS_FRACTION = .05
+USERS_FRACTION = 1.0
 
 def top_recommender():
     return FilterSeenRecommender(TopRecommender())
 
 def mlp():
     return FilterSeenRecommender(GreedyMLP())
+
+def svd_recommender(k):
+    return FilterSeenRecommender(SvdRecommender(k))
 
 def constant_recommender():
     return ConstantRecommender([('457', 0.45),
@@ -40,7 +44,8 @@ def constant_recommender():
 RECOMMENDERS = {
     "top_recommender": top_recommender, 
     "constant_recommender": constant_recommender,
-    "GreedyMLP": mlp
+    "GreedyMLP": mlp,
+    "svd_recommender_30": lambda: svd_recommender(30), 
 
 }
 

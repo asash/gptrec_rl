@@ -36,7 +36,7 @@ def make_app():
     return tornado.web.Application([
         (r"/search", SearchHandler),
         (r"/recommend", RecommenderHandler),
-        (r"/(.*)", tornado.web.StaticFileHandler, {"path": static_dir})
+        (r"/(.*)", tornado.web.StaticFileHandler, {"path": static_dir, "default_filename": "index.html"})
     ])
 
 

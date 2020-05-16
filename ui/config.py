@@ -2,6 +2,7 @@ from tqdm import tqdm
 from aprec.datasets.movielens import get_movies_catalog, get_movielens_actions
 from aprec.recommenders.item_item import ItemItemRecommender
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
+import sys
 
 CATALOG = get_movies_catalog()
 
@@ -11,9 +12,11 @@ cnt = 0
 for action in tqdm(actions):
     recommender.add_action(action)
     cnt += 1
-    if cnt >= 1000000:
-        break
+
+sys.stderr.write("building model...")
 
 recommender.rebuild_model()
+
+sys.stderr.write("ready.")
 
 RECOMMENDER = recommender
