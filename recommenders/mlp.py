@@ -10,7 +10,7 @@ import math
 
 
 class GreedyMLP(Recommender):
-    def __init__(self,  random_seed=None):
+    def __init__(self,  bottleneck_size=32, train_epochs=300):
         self.users = ItemId()
         self.items = ItemId()
         self.rows = []
@@ -20,7 +20,8 @@ class GreedyMLP(Recommender):
         self.user_vectors = None
         self.matrix = None
         self.mean_user = None
-        self.random_seed = random_seed
+        self.bottleneck_size = bottleneck_size
+        self.train_epochs = train_epochs
 
     def name(self):
         return "GreedyMLP"
@@ -38,16 +39,17 @@ class GreedyMLP(Recommender):
         train_data, val_data = train_test_split(self.matrix)
         generator = BatchGenerator(train_data)
         val_generator = BatchGenerator(val_data)
-        self.model.fit(generator, epochs=300, validation_data=val_generator)
+        self.model.fit(generator, epochs=self.train_epochs, 
+                            validation_data=val_generator)
 
-    @staticmethod
-    def get_model(n_movies):
+    def get_model(self, n_movies):
         model = Sequential(name='MLP')
         model.add(layers.Input(shape=(n_movies), name="input"))
         model.add(layers.Dropout(0.5, name="input_drouput"))
         model.add(layers.Dense(256, name="dense1", activation="relu"))
         model.add(layers.Dense(128, name="dense2", activation="relu"))
-        model.add(layers.Dense(32, name="bottleneck", activation="relu"))
+        model.add(layers.Dense(self.bottleneck_size,
+                name="bottleneck", activation="relu"))
         model.add(layers.Dense(128, name="dense3", activation="relu"))
         model.add(layers.Dense(256, name="dense4", activation="relu"))
         model.add(layers.Dropout(0.5, name="dropout"))

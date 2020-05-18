@@ -9,7 +9,7 @@ USER_ID = '120'
 
 class TestMLPRecommender(unittest.TestCase):
     def test_mlp_recommender(self):
-        mlp_recommender = GreedyMLP()
+        mlp_recommender = GreedyMLP(train_epochs=10)
         recommender = FilterSeenRecommender(mlp_recommender)
         for action in generator_limit(get_movielens_actions(), 10000):
             recommender.add_action(action)

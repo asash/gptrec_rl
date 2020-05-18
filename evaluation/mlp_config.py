@@ -13,13 +13,13 @@ from aprec.recommenders.svd import SvdRecommender
 
 
 DATASET = get_movielens_actions(min_rating=0.0)
-USERS_FRACTION = 1.0
+USERS_FRACTION = 0.1
 
 def top_recommender():
     return FilterSeenRecommender(TopRecommender())
 
 def mlp():
-    return FilterSeenRecommender(GreedyMLP())
+    return FilterSeenRecommender(GreedyMLP(train_epochs=300))
 
 def svd_recommender(k):
     return FilterSeenRecommender(SvdRecommender(k))
