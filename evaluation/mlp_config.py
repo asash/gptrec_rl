@@ -1,10 +1,9 @@
 from aprec.datasets.movielens import get_movielens_actions
 from aprec.recommenders.top_recommender import TopRecommender
-from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.mlp import GreedyMLP
+from aprec.recommenders.mlp_historical import GreedyMLPHistorical
 from aprec.recommenders.constant_recommender import ConstantRecommender
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
-from aprec.utils.generator_limit import generator_limit
 from aprec.evaluation.metrics.precision import Precision
 from aprec.evaluation.metrics.recall import Recall
 from aprec.evaluation.metrics.ndcg import NDCG
@@ -20,6 +19,9 @@ def top_recommender():
 
 def mlp():
     return FilterSeenRecommender(GreedyMLP(train_epochs=300))
+
+def mlp_historical():
+    return FilterSeenRecommender(GreedyMLPHistorical(train_epochs=300))
 
 def svd_recommender(k):
     return FilterSeenRecommender(SvdRecommender(k))
@@ -44,8 +46,9 @@ def constant_recommender():
 RECOMMENDERS = {
     "top_recommender": top_recommender, 
     "constant_recommender": constant_recommender,
+    "GreedyMLPHistorical": mlp_historical,
     "GreedyMLP": mlp,
-    "svd_recommender_30": lambda: svd_recommender(30), 
+    "svd_recommender_30": lambda: svd_recommender(30),
 
 }
 
