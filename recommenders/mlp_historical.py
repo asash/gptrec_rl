@@ -80,10 +80,22 @@ class GreedyMLPHistorical(Recommender):
             actions = self.user_actions[self.users.get_id(user_id)]
             for action in actions:
                 vector[action[1]] = 1
+        return self.get_model_predictions(vector, limit)
+
+    def get_model_predictions(self, vector, limit):
         scores = self.model.predict(vector.reshape(1, self.items.size()))[0]
         best_ids = np.argsort(scores)[::-1][:limit]
         result = [(self.items.reverse_id(id), scores[id]) for id in best_ids]
         return result
+
+    def recommend_by_items(self, items_list, limit):
+        vector = np.zeros(self.items.size())
+        for item in items_list:
+            item_id = self.items.get_id(item)
+            vector[item_id] = 1
+        return self.get_model_predictions(vector, limit)
+
+
 
     def get_similar_items(self, item_id, limit):
         raise (NotImplementedError)
@@ -130,7 +142,6 @@ class BatchGenerator(Sequence):
     def split_user(user):
         history_fraction = random.random()
         n_history_actions = int(len(user) * history_fraction)
-
         target_actions = user[n_history_actions:]
         return user[:n_history_actions], target_actions
 
