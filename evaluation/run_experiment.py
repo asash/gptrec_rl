@@ -35,6 +35,7 @@ class RecommendersEvaluator(object):
             recommender.rebuild_model()
             evaluation_result = evaluate_recommender(recommender, test, self.metrics)
             result['recommenders'][recommender_name] = evaluation_result
+            del(recommender)
         return result
 
 def run_experiment(config):

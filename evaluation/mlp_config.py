@@ -2,6 +2,7 @@ from aprec.datasets.movielens import get_movielens_actions
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.mlp import GreedyMLP
 from aprec.recommenders.mlp_historical import GreedyMLPHistorical
+from aprec.recommenders.mlp_historical_embedding import GreedyMLPHistoricalEmbedding
 from aprec.recommenders.constant_recommender import ConstantRecommender
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.evaluation.metrics.precision import Precision
@@ -20,8 +21,11 @@ def top_recommender():
 def mlp():
     return FilterSeenRecommender(GreedyMLP(train_epochs=300))
 
+def mlp_historical_embedding():
+    return FilterSeenRecommender(GreedyMLPHistoricalEmbedding(train_epochs=250))
+
 def mlp_historical():
-    return FilterSeenRecommender(GreedyMLPHistorical(train_epochs=300))
+    return FilterSeenRecommender(GreedyMLPHistorical(train_epochs=250))
 
 def svd_recommender(k):
     return FilterSeenRecommender(SvdRecommender(k))
@@ -44,11 +48,12 @@ def constant_recommender():
                                ('253', 0.257)])
 
 RECOMMENDERS = {
-    "top_recommender": top_recommender, 
-    "constant_recommender": constant_recommender,
+#    "top_recommender": top_recommender, 
+#   "constant_recommender": constant_recommender,
+    "GreedyMLPHistoricalEmbedding": mlp_historical_embedding,
     "GreedyMLPHistorical": mlp_historical,
-    "GreedyMLP": mlp,
-    "svd_recommender_30": lambda: svd_recommender(30),
+#    "GreedyMLP": mlp,
+#    "svd_recommender_30": lambda: svd_recommender(30),
 
 }
 
