@@ -4,21 +4,19 @@ from collections import defaultdict
 from aprec.utils.item_id import ItemId
 from aprec.recommenders.recommender import Recommender
 from aprec.recommenders.history_batch_generator import HistoryBatchGenerator
-from aprec\
-    .recommenders.history_batch_generator import actions_to_vector
 from tensorflow.keras.models import Sequential
+import tensorflow.keras.optimizers as optimizers
 import tensorflow.keras.layers as layers
 import numpy as np
 
 
-class GreedyMLPHistoricalEmbedding(Recommender):
-    def __init__(self, bottleneck_size=32, train_epochs=300, n_val_users=1000, max_history_len=1000):
+class GRURecommender(Recommender):
+    def __init__(self, bottleneck_size=32, train_epochs=300, n_val_users=1000, max_history_len=500):
         self.users = ItemId()
         self.items = ItemId()
         self.user_actions = defaultdict(lambda: [])
         self.model = None
         self.user_vectors = None
-        self.matrix = None
         self.mean_user = None
         self.bottleneck_size = bottleneck_size
         self.train_epochs = train_epochs
@@ -26,7 +24,7 @@ class GreedyMLPHistoricalEmbedding(Recommender):
         self.max_history_length = max_history_len
 
     def name(self):
-        return "GreedyMLPHistoricalEmbedding"
+        return "GRURecommender"
 
     def add_action(self, action):
         user_id_internal = self.users.get_id(action.user_id)
@@ -63,16 +61,13 @@ class GreedyMLPHistoricalEmbedding(Recommender):
     def get_model(self, n_movies):
         model = Sequential(name='MLP')
         model.add(layers.Embedding(n_movies + 1, 32, input_length=self.max_history_length))
-        model.add(layers.Flatten())
-        model.add(layers.Dense(256, name="dense1", activation="relu"))
-        model.add(layers.Dense(128, name="dense2", activation="relu"))
-        model.add(layers.Dense(self.bottleneck_size,
-                               name="bottleneck", activation="relu"))
-        model.add(layers.Dense(128, name="dense3", activation="relu"))
-        model.add(layers.Dense(256, name="dense4", activation="relu"))
+        model.add(layers.GRU(32, activation='relu', return_sequences=True))
+        model.add(layers.GRU(32, activation='relu'))
+        model.add(layers.Dense(256, activation='relu'))
         model.add(layers.Dropout(0.5, name="dropout"))
         model.add(layers.Dense(n_movies, name="output", activation="sigmoid"))
-        model.compile(optimizer='adam', loss='binary_crossentropy')
+        optimizer = optimizers.Adam()
+        model.compile(optimizer=optimizer, loss='binary_crossentropy')
         return model
 
     def get_next_items(self, user_id, limit):
@@ -103,5 +98,14 @@ class GreedyMLPHistoricalEmbedding(Recommender):
 
     def from_str(self):
         raise (NotImplementedError)
+
+
+def actions_to_vector(user_actions, vector_size, special_value):
+    if len(user_actions) >= vector_size:
+        return np.array([action[1] for action in user_actions[-vector_size:]])
+    else:
+        n_special = vector_size - len(user_actions)
+        result_list = [special_value] * n_special + [action[1] for action in user_actions]
+        return np.array(result_list)
 
 
