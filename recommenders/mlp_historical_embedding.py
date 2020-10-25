@@ -1,5 +1,5 @@
 import random
-from collections import defaultdict
+from collections import defaultdict, Counter
 
 from aprec.utils.item_id import ItemId
 from aprec.recommenders.recommender import Recommender
@@ -53,12 +53,25 @@ class GreedyMLPHistoricalEmbedding(Recommender):
     def rebuild_model(self):
         self.sort_actions()
         train_users, val_users = self.split_users()
+        val_biases = self.get_biases(val_users)
         val_generator = HistoryBatchGenerator(val_users, self.max_history_length, self.items.size())
         self.model = self.get_model(self.items.size())
         for epoch in range(self.train_epochs):
             print(f"epoch: {epoch}")
+            train_biases = self.get_biases(train_users)
             generator = HistoryBatchGenerator(train_users, self.max_history_length, self.items.size())
             self.model.fit(generator, validation_data=val_generator)
+
+    def get_biases(self, user_actions):
+        item_cnt = Counter()
+        for i in range(len(user_actions)):
+            for action in user_actions[i]:
+                item_cnt[action[1]] += 1
+        result = {}
+        for key, value in item_cnt.most_common():
+            result[key] = value / len(user_actions)
+        return result
+
 
     def get_model(self, n_movies):
         model = Sequential(name='MLP')

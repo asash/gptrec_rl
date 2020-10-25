@@ -7,11 +7,13 @@ from aprec.utils.generator_limit import generator_limit
 from aprec.evaluation.metrics.precision import Precision
 from aprec.evaluation.metrics.recall import Recall
 from aprec.evaluation.metrics.ndcg import NDCG
+from aprec.evaluation.metrics.average_popularity_rank import AveragePopularityRank
 from aprec.evaluation.metrics.sps import SPS
 
 
 DATASET = get_movielens_actions(min_rating=1.0)
-USERS_FRACTION = 0.05 
+
+USERS_FRACTION = 0.1 
 
 def top_recommender():
     return FilterSeenRecommender(TopRecommender())
@@ -38,13 +40,15 @@ def constant_recommender():
 
 RECOMMENDERS = {
     "top_recommender": top_recommender, 
-    "svd_recommender_10": lambda: svd_recommender(10), 
-    "svd_recommender_20": lambda: svd_recommender(20), 
+#    "svd_recommender_10": lambda: svd_recommender(10), 
+#    "svd_recommender_20": lambda: svd_recommender(20), 
     "svd_recommender_30": lambda: svd_recommender(30), 
     "constant_recommender": constant_recommender,
 }
 
 FRACTIONS_TO_SPLIT = (0.85, )
-METRICS = [Precision(5), NDCG(40), Recall(5), SPS(10)]
+
+dataset_for_metric = get_movielens_actions(min_rating=1.0)
+METRICS = [Precision(5), NDCG(40), Recall(5), SPS(10), AveragePopularityRank(5, dataset_for_metric)]
 
 
