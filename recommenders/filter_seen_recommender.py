@@ -35,3 +35,8 @@ class FilterSeenRecommender(Recommender):
 
     def from_str(self):
         raise(NotImplementedError)
+
+    def get_metadata(self):
+        metadata = self.recommender.get_metadata()
+        metadata['proxy_model'] = 'filter_seen_recommender'
+        return metadata

@@ -22,3 +22,6 @@ class Recommender():
 
     def from_str(self):
         raise(NotImplementedError)
+
+    def get_metadata(self):
+        return {}

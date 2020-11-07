@@ -1,18 +1,26 @@
+import gc
+import tensorflow.keras.backend as K
 import random
 from collections import defaultdict, Counter
 
 from aprec.utils.item_id import ItemId
+from aprec.recommenders.metrics.ndcg import KerasNDCG
 from aprec.recommenders.recommender import Recommender
 from aprec.recommenders.history_batch_generator import HistoryBatchGenerator
 from aprec\
     .recommenders.history_batch_generator import actions_to_vector
 from tensorflow.keras.models import Sequential
+from tensorflow.keras.optimizers import Adam, RMSprop, SGD
 import tensorflow.keras.layers as layers
 import numpy as np
 
 
 class GreedyMLPHistoricalEmbedding(Recommender):
-    def __init__(self, bottleneck_size=32, train_epochs=300, n_val_users=1000, max_history_len=1000):
+    def __init__(self, bottleneck_size=32, train_epochs=300, n_val_users=1000,
+                 max_history_len=1000, 
+                 loss = 'binary_crossentropy', optimizer = 'adam', 
+                 early_stop_epochs = 100
+                 ):
         self.users = ItemId()
         self.items = ItemId()
         self.user_actions = defaultdict(lambda: [])
@@ -24,6 +32,13 @@ class GreedyMLPHistoricalEmbedding(Recommender):
         self.train_epochs = train_epochs
         self.n_val_users = n_val_users
         self.max_history_length = max_history_len
+        self.loss = loss
+        self.early_stop_epochs = early_stop_epochs
+        self.optimizer = optimizer
+        self.metadata = {}
+
+    def get_metadata(self):
+        return self.metadata
 
     def name(self):
         return "GreedyMLPHistoricalEmbedding"
@@ -53,25 +68,35 @@ class GreedyMLPHistoricalEmbedding(Recommender):
     def rebuild_model(self):
         self.sort_actions()
         train_users, val_users = self.split_users()
-        val_biases = self.get_biases(val_users)
         val_generator = HistoryBatchGenerator(val_users, self.max_history_length, self.items.size())
         self.model = self.get_model(self.items.size())
+        best_ndcg = 0
+        steps_since_improved = 0
+        best_epoch = -1 
+        best_weights = self.model.get_weights()
+        val_ndcg_history = []
         for epoch in range(self.train_epochs):
-            print(f"epoch: {epoch}")
-            train_biases = self.get_biases(train_users)
             generator = HistoryBatchGenerator(train_users, self.max_history_length, self.items.size())
-            self.model.fit(generator, validation_data=val_generator)
-
-    def get_biases(self, user_actions):
-        item_cnt = Counter()
-        for i in range(len(user_actions)):
-            for action in user_actions[i]:
-                item_cnt[action[1]] += 1
-        result = {}
-        for key, value in item_cnt.most_common():
-            result[key] = value / len(user_actions)
-        return result
-
+            print(f"epoch: {epoch}")
+            train_history = self.model.fit(generator, validation_data=val_generator)
+            val_ndcg = train_history.history['val_ndcg_at_40'][-1]
+            val_ndcg_history.append(val_ndcg)
+            steps_since_improved += 1
+            if val_ndcg > best_ndcg:
+                steps_since_improved = 0
+                best_ndcg = val_ndcg
+                best_epoch =  epoch
+                best_weights = self.model.get_weights()
+            print(f"best_ndcg: {best_ndcg}, steps_since_improved: {steps_since_improved}")
+            if steps_since_improved >= self.early_stop_epochs:
+                print(f"early stopped at epoch {epoch}")
+                break
+            K.clear_session()
+            gc.collect()
+        self.model.set_weights(best_weights)
+        self.metadata = {"epochs_trained": best_epoch + 1, "best_val_ndcg": best_ndcg, "val_ndcg_history": val_ndcg_history}
+        print(self.get_metadata())
+        print(f"taken best model from epoch{best_epoch}. best_val_ndcg: {best_ndcg}")
 
     def get_model(self, n_movies):
         model = Sequential(name='MLP')
@@ -85,7 +110,9 @@ class GreedyMLPHistoricalEmbedding(Recommender):
         model.add(layers.Dense(256, name="dense4", activation="relu"))
         model.add(layers.Dropout(0.5, name="dropout"))
         model.add(layers.Dense(n_movies, name="output", activation="sigmoid"))
-        model.compile(optimizer='adam', loss='binary_crossentropy')
+        #model.add(LambdaRankLayer())
+        ndcg_metric = KerasNDCG(40)
+        model.compile(optimizer=self.optimizer, loss=self.loss, metrics=[ndcg_metric])
         return model
 
     def get_next_items(self, user_id, limit):

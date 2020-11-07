@@ -7,14 +7,23 @@ from tensorflow.python.keras.utils.data_utils import Sequence
 
 
 class HistoryBatchGenerator(Sequence):
-    def __init__(self, user_actions, history_size, n_items, batch_size=1000, item_bias={}):
-        history, target = HistoryBatchGenerator.split_actions(user_actions)
-        self.item_bias = item_bias
-        self.features_matrix = self.matrix_for_embedding(history, history_size, n_items)
-        self.target_matrix = self.one_hot_encoded_matrix(target, n_items)
+    def __init__(self, user_actions, history_size, n_items, batch_size=1000):
+        self.user_actions = user_actions
+        self.history_size= history_size
+        self.n_items = n_items
         self.batch_size = batch_size
+        self.features_matrix = None
+        self.target_matrix = None
+        self.reset()
+
+
+    def reset(self):
+        history, target = HistoryBatchGenerator.split_actions(self.user_actions)
+        self.features_matrix = self.matrix_for_embedding(history, self.history_size, self.n_items)
+        self.target_matrix = self.one_hot_encoded_matrix(target, self.n_items)
         self.current_position = 0
         self.max = self.__len__()
+
 
     @staticmethod
     def matrix_for_embedding(user_actions, history_size, n_items):
@@ -32,9 +41,10 @@ class HistoryBatchGenerator(Sequence):
                 action = user_actions[i][action_num]
                 rows.append(i)
                 cols.append(action[1])
-                #vals.append(1.0)
-                vals.append(1.0 - self.item_bias.get(action[1], 0.0))
-        return csr_matrix((vals, (rows, cols)), shape=(len(user_actions), n_items))
+                vals.append(1.0)
+        result =  csr_matrix((vals, (rows, cols)), shape=(len(user_actions), n_items))
+        return result
+
 
     @staticmethod
     def split_actions(user_actions):
