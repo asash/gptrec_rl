@@ -1,5 +1,5 @@
 from aprec.recommenders.losses.lambdarank import LambdaRankLoss, get_pairwise_diff_batch, need_swap_batch, \
-    need_swap_vector
+    need_swap_vector, get_lambdas_func
 from tensorflow.keras.losses import binary_crossentropy
 import tensorflow.keras.backend as K
 import numpy as np
@@ -31,6 +31,20 @@ class TestLambdarankLoss(unittest.TestCase):
         x = K.constant([1, 0, 0.5, 1])
         z = need_swap_vector(x)
         K.print_tensor(z)
+
+    def test_get_lambdas(self):
+        y_true = K.constant([1, 0.5, 0, 1.0005])
+        y_pred = K.constant([1, -1, 1, -1])
+        lambdas_func = get_lambdas_func(4)
+        current = y_pred
+        lr = 0.1
+        for i in range(200):
+            lambdas = lambdas_func(y_true, current)
+            current =  current -lr * lambdas
+            print(f"iter: {i}")
+            K.print_tensor(current)
+            K.print_tensor(lambdas)
+
 
 
 if __name__ == "__main__":
