@@ -3,11 +3,9 @@ import importlib.util
 import json
 import copy 
 import mmh3
-from multiprocessing import Pool
 
 from split_actions import split_actions
 from evaluate_recommender import evaluate_recommender
-from n_actions_for_user import n_actions_for_user
 from filter_cold_start import filter_cold_start
 import time
 
@@ -56,9 +54,11 @@ def run_experiment(config):
     every_user = int (1/config.USERS_FRACTION)
     print("read data...")
     print("use every {} user".format(every_user))
-    actions = list(filter( lambda action: mmh3.hash(action.user_id) % every_user == 0, 
+    actions = list(filter( lambda action: mmh3.hash(action.user_id) % every_user == 0,
                      config.DATASET))
-    print(len(actions))
+    print("actions in dataset: {}".format(len(actions)))
+    item_id_set = set([action.item_id for action in actions])
+    print("number of items in dataset: {}".format(len(item_id_set)))
     print("evaluating...")
     recommender_evaluator = RecommendersEvaluator(actions,
                                  config.RECOMMENDERS, 

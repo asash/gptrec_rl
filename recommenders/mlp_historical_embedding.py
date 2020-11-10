@@ -1,16 +1,16 @@
 import gc
 import tensorflow.keras.backend as K
 import random
-from collections import defaultdict, Counter
+from collections import defaultdict
 
 from aprec.utils.item_id import ItemId
 from aprec.recommenders.metrics.ndcg import KerasNDCG
+from aprec.recommenders.losses.lambdarank import PairwiseLoss
 from aprec.recommenders.recommender import Recommender
 from aprec.recommenders.history_batch_generator import HistoryBatchGenerator
 from aprec\
     .recommenders.history_batch_generator import actions_to_vector
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.optimizers import Adam, RMSprop, SGD
 import tensorflow.keras.layers as layers
 import numpy as np
 
@@ -18,7 +18,8 @@ import numpy as np
 class GreedyMLPHistoricalEmbedding(Recommender):
     def __init__(self, bottleneck_size=32, train_epochs=300, n_val_users=1000,
                  max_history_len=1000, 
-                 loss = 'binary_crossentropy', optimizer = 'adam', 
+                 loss = 'binary_crossentropy', optimizer = 'adam',
+                 batch_size = 1000,
                  early_stop_epochs = 100
                  ):
         self.users = ItemId()
@@ -36,9 +37,13 @@ class GreedyMLPHistoricalEmbedding(Recommender):
         self.early_stop_epochs = early_stop_epochs
         self.optimizer = optimizer
         self.metadata = {}
+        self.batch_size = batch_size
 
     def get_metadata(self):
         return self.metadata
+
+    def set_loss(self, loss):
+        self.loss = loss
 
     def name(self):
         return "GreedyMLPHistoricalEmbedding"
@@ -68,7 +73,8 @@ class GreedyMLPHistoricalEmbedding(Recommender):
     def rebuild_model(self):
         self.sort_actions()
         train_users, val_users = self.split_users()
-        val_generator = HistoryBatchGenerator(val_users, self.max_history_length, self.items.size())
+        val_generator = HistoryBatchGenerator(val_users, self.max_history_length, self.items.size(),
+                                              batch_size=self.batch_size)
         self.model = self.get_model(self.items.size())
         best_ndcg = 0
         steps_since_improved = 0
@@ -76,7 +82,8 @@ class GreedyMLPHistoricalEmbedding(Recommender):
         best_weights = self.model.get_weights()
         val_ndcg_history = []
         for epoch in range(self.train_epochs):
-            generator = HistoryBatchGenerator(train_users, self.max_history_length, self.items.size())
+            generator = HistoryBatchGenerator(train_users, self.max_history_length, self.items.size(),
+                                              batch_size=self.batch_size)
             print(f"epoch: {epoch}")
             train_history = self.model.fit(generator, validation_data=val_generator)
             val_ndcg = train_history.history['val_ndcg_at_40'][-1]
@@ -112,8 +119,14 @@ class GreedyMLPHistoricalEmbedding(Recommender):
         model.add(layers.Dense(n_movies, name="output", activation="sigmoid"))
         #model.add(LambdaRankLayer())
         ndcg_metric = KerasNDCG(40)
-        model.compile(optimizer=self.optimizer, loss=self.loss, metrics=[ndcg_metric])
+        loss = self.loss
+        if loss == 'lambdarank':
+            loss = self.get_lambdarank_loss()
+        model.compile(optimizer=self.optimizer, loss=loss, metrics=[ndcg_metric])
         return model
+
+    def get_lambdarank_loss(self):
+        return PairwiseLoss(self.items.size(), self.batch_size)
 
     def get_next_items(self, user_id, limit):
         actions = self.user_actions[self.users.get_id(user_id)]

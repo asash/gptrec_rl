@@ -64,7 +64,7 @@ class HistoryBatchGenerator(Sequence):
         return user[:n_history_actions], target_actions
 
     def __len__(self):
-        return math.ceil(self.features_matrix.shape[0] / self.batch_size)
+        return math.floor(self.features_matrix.shape[0] / self.batch_size)
 
     def __getitem__(self, idx):
         history = self.features_matrix[idx * self.batch_size:(idx + 1) * self.batch_size]

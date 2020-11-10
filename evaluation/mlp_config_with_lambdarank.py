@@ -1,4 +1,4 @@
-from aprec.datasets.movielens import get_movielens_actions
+from aprec.datasets.movielens import get_movielens_actions, filter_popular_items
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.mlp import GreedyMLP
 from aprec.recommenders.mlp_historical import GreedyMLPHistorical
@@ -11,11 +11,10 @@ from aprec.evaluation.metrics.recall import Recall
 from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.evaluation.metrics.sps import SPS
 from aprec.evaluation.metrics.average_popularity_rank import AveragePopularityRank
-from aprec.recommenders.losses.lambdarank import LambdaRankLoss
 from aprec.recommenders.svd import SvdRecommender
 from tensorflow.keras.optimizers import Adam
 
-DATASET = get_movielens_actions(min_rating=0.0)
+DATASET = filter_popular_items(get_movielens_actions(min_rating=0.0), 1000)
 USERS_FRACTION = .1 
 
 def top_recommender():
@@ -25,12 +24,15 @@ def mlp():
     return FilterSeenRecommender(GreedyMLP(train_epochs=300))
 
 def mlp_historical_embedding_lr():
-    loss = LambdaRankLoss(12000)
-    return FilterSeenRecommender(GreedyMLPHistoricalEmbedding(train_epochs=250, loss=loss, optimizer=Adam(lr=0.0015)))
+    loss = 'lambdarank' 
+    return FilterSeenRecommender(GreedyMLPHistoricalEmbedding(train_epochs=50000, loss=loss,
+                                                              optimizer=Adam(), early_stop_epochs=100, batch_size=100))
 
 def mlp_historical_embedding():
     loss = 'binary_crossentropy' 
-    return FilterSeenRecommender(GreedyMLPHistoricalEmbedding(train_epochs=250, loss=loss, optimizer=Adam(lr=0.0015)))
+    return FilterSeenRecommender(GreedyMLPHistoricalEmbedding(train_epochs=50000, early_stop_epochs=100,
+                                                              loss=loss, optimizer=Adam(),
+                                                              batch_size=100))
 
 
 def mlp_historical():
@@ -62,7 +64,7 @@ def constant_recommender():
 RECOMMENDERS = {
     "top_recommender": top_recommender, 
 #   "constant_recommender": constant_recommender,
-#    "GreedyMLPHistoricalEmbedding": mlp_historical_embedding,
+    "GreedyMLPHistoricalEmbedding": mlp_historical_embedding,
     "GreedyMLPHistoricalEmbeddingLR": mlp_historical_embedding_lr,
 #    "LSTM": lstm,
 #    "GreedyMLPHistorical": mlp_historical,
