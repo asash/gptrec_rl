@@ -37,12 +37,12 @@ class TestLambdarankLoss(unittest.TestCase):
         K.print_tensor(z)
 
     def test_get_lambdas(self):
-        y_true = K.constant([[1, 0.5, 0, 0]])
-        y_pred = K.constant([[0, 0.1, 0.2, 0.3]])
-        loss = PairwiseLoss(4, 1, 0.5)
+        y_true = K.constant([[0, 0, 1, 0]])
+        y_pred = K.constant([[1, 0, 1, 0]])
+        loss = PairwiseLoss(len(y_true[0]), len(y_true), 1)
         current = y_pred
         lr = 0.1
-        for i in range(200):
+        for i in range(1):
             lambdas = loss.get_lambdas(y_true, current)
             current =  current - lr * lambdas
             print(f"iter: {i}")
@@ -74,15 +74,12 @@ class TestLambdarankLoss(unittest.TestCase):
         model.add(Dense(2, activation='sigmoid'))
         model.add(Dense(2, activation='sigmoid'))
         model.add(Dense(2, activation='sigmoid'))
-        loss = PairwiseLoss(2, 4)
+        loss = PairwiseLoss(2, 2, sigma=1)
         model.compile(optimizer='adam', loss=loss)
 
-        X = K.constant([
-            [0, 0], [0, 1], [1, 0], [1, 1]
-        ])
-
-        Y = K.constant([[1, 0.9], [1, 0], [0, 1], [0.1, 0.0]])
-        model.fit(X, Y, epochs=10000)
+        X = K.constant([[0, 0], [1, 0]])
+        Y = K.constant([[1, 0],  [0, 1]])
+        model.fit(X, Y, epochs=1000)
         result = model.predict(X)
         K.print_tensor(result)
 

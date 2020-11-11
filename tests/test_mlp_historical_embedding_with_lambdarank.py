@@ -18,7 +18,7 @@ class TestMLPRecommenderWithLambdarank(unittest.TestCase):
         batch_size = mlp_recommender.batch_size
         n_items = mlp_recommender.items.size()
         n_users = mlp_recommender.users.size()
-        loss = PairwiseLoss(n_items, min(batch_size, n_users-val_users))
+        loss = PairwiseLoss(n_items, min(batch_size, n_users-val_users), 10)
         mlp_recommender.set_loss(loss)
         recommender.rebuild_model()
         recs = recommender.get_next_items(USER_ID, 10)

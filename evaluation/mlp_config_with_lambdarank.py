@@ -14,8 +14,8 @@ from aprec.evaluation.metrics.average_popularity_rank import AveragePopularityRa
 from aprec.recommenders.svd import SvdRecommender
 from tensorflow.keras.optimizers import Adam
 
-DATASET = filter_popular_items(get_movielens_actions(min_rating=0.0), 1000)
-USERS_FRACTION = .1 
+DATASET = filter_popular_items(get_movielens_actions(min_rating=0.0), 2500)
+USERS_FRACTION = .25 
 
 def top_recommender():
     return FilterSeenRecommender(TopRecommender())
@@ -25,14 +25,14 @@ def mlp():
 
 def mlp_historical_embedding_lr():
     loss = 'lambdarank' 
-    return FilterSeenRecommender(GreedyMLPHistoricalEmbedding(train_epochs=50000, loss=loss,
-                                                              optimizer=Adam(), early_stop_epochs=100, batch_size=100))
+    return FilterSeenRecommender(GreedyMLPHistoricalEmbedding(train_epochs=10000, loss=loss,
+                                                              optimizer=Adam(), early_stop_epochs=100, batch_size=20, sigma=1.0))
 
 def mlp_historical_embedding():
     loss = 'binary_crossentropy' 
-    return FilterSeenRecommender(GreedyMLPHistoricalEmbedding(train_epochs=50000, early_stop_epochs=100,
+    return FilterSeenRecommender(GreedyMLPHistoricalEmbedding(train_epochs=10000, early_stop_epochs=100,
                                                               loss=loss, optimizer=Adam(),
-                                                              batch_size=100))
+                                                              batch_size=20))
 
 
 def mlp_historical():
@@ -64,8 +64,8 @@ def constant_recommender():
 RECOMMENDERS = {
     "top_recommender": top_recommender, 
 #   "constant_recommender": constant_recommender,
-    "GreedyMLPHistoricalEmbedding": mlp_historical_embedding,
     "GreedyMLPHistoricalEmbeddingLR": mlp_historical_embedding_lr,
+    "GreedyMLPHistoricalEmbedding": mlp_historical_embedding,
 #    "LSTM": lstm,
 #    "GreedyMLPHistorical": mlp_historical,
 #    "GreedyMLP": mlp,

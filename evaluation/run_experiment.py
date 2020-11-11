@@ -33,6 +33,7 @@ class RecommendersEvaluator(object):
         train, test = split_actions(self.actions, (split_fraction, 1 - split_fraction))
         test = filter_cold_start(train, test)
         for recommender_name in self.recommenders:
+            print("evaluating {}".format(recommender_name))
             recommender = self.recommenders[recommender_name]()
             for action in train:
                 recommender.add_action(action)

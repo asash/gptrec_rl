@@ -20,7 +20,8 @@ class GreedyMLPHistoricalEmbedding(Recommender):
                  max_history_len=1000, 
                  loss = 'binary_crossentropy', optimizer = 'adam',
                  batch_size = 1000,
-                 early_stop_epochs = 100
+                 early_stop_epochs = 100,
+                 sigma = 1
                  ):
         self.users = ItemId()
         self.items = ItemId()
@@ -38,6 +39,7 @@ class GreedyMLPHistoricalEmbedding(Recommender):
         self.optimizer = optimizer
         self.metadata = {}
         self.batch_size = batch_size
+        self.sigma = sigma
 
     def get_metadata(self):
         return self.metadata
@@ -126,7 +128,7 @@ class GreedyMLPHistoricalEmbedding(Recommender):
         return model
 
     def get_lambdarank_loss(self):
-        return PairwiseLoss(self.items.size(), self.batch_size)
+        return PairwiseLoss(self.items.size(), self.batch_size, self.sigma)
 
     def get_next_items(self, user_id, limit):
         actions = self.user_actions[self.users.get_id(user_id)]
