@@ -2,7 +2,7 @@ from aprec.recommenders.mlp_historical_embedding import GreedyMLPHistoricalEmbed
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.datasets.movielens import get_movielens_actions
 from aprec.utils.generator_limit import generator_limit
-from aprec.recommenders.losses.lambdarank import PairwiseLoss
+from aprec.recommenders.losses.lambdarank import LambdaRankLoss
 import unittest
 
 USER_ID = '120'
@@ -18,7 +18,7 @@ class TestMLPRecommenderWithLambdarank(unittest.TestCase):
         batch_size = mlp_recommender.batch_size
         n_items = mlp_recommender.items.size()
         n_users = mlp_recommender.users.size()
-        loss = PairwiseLoss(n_items, min(batch_size, n_users-val_users), 10)
+        loss = LambdaRankLoss(n_items, min(batch_size, n_users - val_users), 10)
         mlp_recommender.set_loss(loss)
         recommender.rebuild_model()
         recs = recommender.get_next_items(USER_ID, 10)

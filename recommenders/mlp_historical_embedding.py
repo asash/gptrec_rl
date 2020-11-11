@@ -5,7 +5,7 @@ from collections import defaultdict
 
 from aprec.utils.item_id import ItemId
 from aprec.recommenders.metrics.ndcg import KerasNDCG
-from aprec.recommenders.losses.lambdarank import PairwiseLoss
+from aprec.recommenders.losses.lambdarank import LambdaRankLoss
 from aprec.recommenders.recommender import Recommender
 from aprec.recommenders.history_batch_generator import HistoryBatchGenerator
 from aprec\
@@ -128,7 +128,7 @@ class GreedyMLPHistoricalEmbedding(Recommender):
         return model
 
     def get_lambdarank_loss(self):
-        return PairwiseLoss(self.items.size(), self.batch_size, self.sigma)
+        return LambdaRankLoss(self.items.size(), self.batch_size, self.sigma)
 
     def get_next_items(self, user_id, limit):
         actions = self.user_actions[self.users.get_id(user_id)]

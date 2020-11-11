@@ -5,7 +5,7 @@ def print_tensor(name, tensor):
     print(name)
     K.print_tensor(tensor)
 
-class PairwiseLoss(object):
+class LambdaRankLoss(object):
     def get_pairwise_diff_vector(self, x):
         a, b = tf.meshgrid(x, tf.transpose(x))
         return tf.subtract(b, a)
@@ -20,8 +20,8 @@ class PairwiseLoss(object):
     def need_swap_batch(self, x):
         return tf.map_fn(self.need_swap_vector, x)
 
-    def __init__(self, k, batch_size, sigma=0.5):
-        self.__name__ = 'pairwise_loss'
+    def __init__(self, k, batch_size, sigma=1.0):
+        self.__name__ = 'lambdarank'
         self.batch_size = batch_size
         self.sigma = sigma
         self.k = k

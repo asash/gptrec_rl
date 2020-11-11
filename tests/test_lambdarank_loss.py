@@ -1,4 +1,4 @@
-from aprec.recommenders.losses.lambdarank import  PairwiseLoss
+from aprec.recommenders.losses.lambdarank import  LambdaRankLoss
 import tensorflow.keras.backend as K
 from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Dense
@@ -6,11 +6,11 @@ import tensorflow as tf
 import unittest
 
 class TestLambdarankLoss(unittest.TestCase):
-    def test_lambdas_sample(self, y, s, lambdas):
+    def lambdas_sample_test(self, y, s, lambdas):
         y_true = K.constant(y)
         y_pred = K.constant(s)
         expected_lambdas = lambdas
-        loss = PairwiseLoss(len(y_true[0]), len(y_true), 1)
+        loss = LambdaRankLoss(len(y_true[0]), len(y_true), 1)
         lambdas = loss.get_lambdas(y_true, y_pred)
         K.print_tensor(lambdas)
         eps = 1e-4
@@ -18,15 +18,15 @@ class TestLambdarankLoss(unittest.TestCase):
         assert (res < eps)
 
     def test_get_lambdas(self):
-        self.test_lambdas_sample([[0, 0, 1, 0], [0, 0, 1, 0]],
+        self.lambdas_sample_test([[0, 0, 1, 0], [0, 0, 1, 0]],
                                  [[0.1, 0.3, 1, 0], [0.5, 0, 0.5, 0]],
                                  [[0.160353, 0.174145, -0.487562, 0.153063], [2.59696, 0.0136405, -2.63147, 0.0208627]])
-        self.test_lambdas_sample([[0, 0, 1, 0]], [[0.1, 0.3, 1, 0]], [[0.160353, 0.174145, -0.487562, 0.153063]])
-        self.test_lambdas_sample([[0, 0, 1, 0]],[[0.5, 0, 0.5, 0]], [[2.59696, 0.0136405, -2.63147, 0.0208627]])
+        self.lambdas_sample_test([[0, 0, 1, 0]], [[0.1, 0.3, 1, 0]], [[0.160353, 0.174145, -0.487562, 0.153063]])
+        self.lambdas_sample_test([[0, 0, 1, 0]], [[0.5, 0, 0.5, 0]], [[2.59696, 0.0136405, -2.63147, 0.0208627]])
 
 
     def test_dcg(self):
-        loss = PairwiseLoss(4, 2)
+        loss = LambdaRankLoss(4, 2)
         res = loss.inverse_idcg(K.constant([0, 0, 0, 1]))
         assert res == 1
 
@@ -35,7 +35,7 @@ class TestLambdarankLoss(unittest.TestCase):
         model.add(Dense(2, activation='sigmoid'))
         model.add(Dense(2, activation='sigmoid'))
         model.add(Dense(2, activation='sigmoid'))
-        loss = PairwiseLoss(2, 2, sigma=1)
+        loss = LambdaRankLoss(2, 2, sigma=1)
         model.compile(optimizer='adam', loss=loss)
         X = K.constant([[0, 0], [1, 0]])
         Y = K.constant([[1, 0],  [0, 1]])

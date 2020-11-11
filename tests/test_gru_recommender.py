@@ -9,7 +9,7 @@ USER_ID = '120'
 
 class TestMLPRecommender(unittest.TestCase):
     def test_mlp_recommender(self):
-        mlp_recommender = GRURecommender(train_epochs=10, n_val_users=10)
+        mlp_recommender = GRURecommender(train_epochs=1, n_val_users=10, batch_size=10)
         recommender = FilterSeenRecommender(mlp_recommender)
         for action in generator_limit(get_movielens_actions(), 10000):
             recommender.add_action(action)

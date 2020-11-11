@@ -11,7 +11,7 @@ import numpy as np
 
 
 class GRURecommender(Recommender):
-    def __init__(self, bottleneck_size=32, train_epochs=300, n_val_users=1000, max_history_len=500):
+    def __init__(self, bottleneck_size=32, train_epochs=300, n_val_users=1000, max_history_len=500, batch_size=100):
         self.users = ItemId()
         self.items = ItemId()
         self.user_actions = defaultdict(lambda: [])
@@ -22,6 +22,7 @@ class GRURecommender(Recommender):
         self.train_epochs = train_epochs
         self.n_val_users = n_val_users
         self.max_history_length = max_history_len
+        self.batch_size = batch_size
 
     def name(self):
         return "GRURecommender"
@@ -51,11 +52,13 @@ class GRURecommender(Recommender):
     def rebuild_model(self):
         self.sort_actions()
         train_users, val_users = self.split_users()
-        val_generator = HistoryBatchGenerator(val_users, self.max_history_length, self.items.size())
+        val_generator = HistoryBatchGenerator(val_users, self.max_history_length, self.items.size(),
+                                              batch_size=self.batch_size)
         self.model = self.get_model(self.items.size())
         for epoch in range(self.train_epochs):
             print(f"epoch: {epoch}")
-            generator = HistoryBatchGenerator(train_users, self.max_history_length, self.items.size())
+            generator = HistoryBatchGenerator(train_users, self.max_history_length, self.items.size(),
+                                              batch_size=self.batch_size)
             self.model.fit(generator, validation_data=val_generator)
 
     def get_model(self, n_movies):
