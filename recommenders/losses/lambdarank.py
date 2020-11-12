@@ -7,7 +7,7 @@ def print_tensor(name, tensor):
 
 class LambdaRankLoss(object):
     def get_pairwise_diff_vector(self, x):
-        a, b = tf.meshgrid(x, tf.transpose(x))
+        a, b = tf.meshgrid(x[:self.ndcg_at], tf.transpose(x))
         return tf.subtract(b, a)
 
     def get_pairwise_diff_batch(self, x):
@@ -20,19 +20,20 @@ class LambdaRankLoss(object):
     def need_swap_batch(self, x):
         return tf.map_fn(self.need_swap_vector, x)
 
-    def __init__(self, k, batch_size, sigma=1.0):
+    def __init__(self, k, batch_size, sigma=1.0, ndcg_at = 30):
         self.__name__ = 'lambdarank'
         self.batch_size = batch_size
         self.sigma = sigma
         self.k = k
+        self.ndcg_at = min(ndcg_at, k)
         self.dcg_position_discounts = tf.math.log(2.0) / tf.math.log(tf.cast(tf.range(k) + 2, tf.float32))
         self.swap_importance = tf.abs(self.get_pairwise_diff_vector(self.dcg_position_discounts))
 
     def dcg(self, x):
-        return tf.reduce_sum((2 ** x - 1) * self.dcg_position_discounts)
+        return tf.reduce_sum((2 ** x - 1) * self.dcg_position_discounts[:x.shape[0]])
 
     def inverse_idcg(self, x):
-        top_k = tf.nn.top_k(x, self.k)
+        top_k = tf.nn.top_k(x, self.ndcg_at)
         return tf.math.divide_no_nan(1., self.dcg(top_k.values))
 
 
@@ -61,19 +62,31 @@ class LambdaRankLoss(object):
         abs_delta_ndcg = tf.abs(true_gains_diff * self.swap_importance) * inverse_idcg
         pairwise_diffs = self.get_pairwise_diff_batch(pred_ordered) * S
 
+        #normalize dcg gaps - inspired by lightbm
         norms = (1 - range_is_zero) * (tf.abs(pairwise_diffs) + 0.01) + (range_is_zero)
         abs_delta_ndcg = abs_delta_ndcg / norms
+
+
         sigmoid = 1.0 / (1 + tf.exp(self.sigma * (pairwise_diffs)))
 
         #ranknet lambdas
         #lambda_matrix = self.sigma * (0.5 * (1 - S) -sigmoid)
         lambda_matrix = -self.sigma * abs_delta_ndcg * sigmoid * S
-        all_lambdas_sum = tf.reshape(tf.reduce_sum(tf.abs(lambda_matrix), axis=(1,2)), (self.batch_size, 1))
 
+
+        #calculate sum of lambdas by rows. For top items - calculate as sum by columns.
+        lambda_sum_raw = tf.reduce_sum(lambda_matrix, axis=2)
+        zeros = tf.zeros((self.batch_size, self.k - self.ndcg_at, 1))
+        top_lambda_sum = tf.pad(-tf.reduce_sum(lambda_matrix, axis=1), [[0, 0], [0, self.k - self.ndcg_at]])
+        mask = tf.reshape(1 - tf.pad(tf.ones(self.ndcg_at), [[0, self.k - self.ndcg_at]]), (1, self.k))
+        lambda_sum_raw_top_masked = lambda_sum_raw * mask
+        lambda_sum_result = lambda_sum_raw_top_masked + top_lambda_sum
+
+        #normalize results - inspired by lightbm
+        all_lambdas_sum = tf.reshape(tf.reduce_sum(tf.abs(lambda_sum_result), axis=(1)), (self.batch_size, 1))
         norm_factor = tf.math.log(all_lambdas_sum + 1) / (all_lambdas_sum * tf.math.log(2.0))
-        lambda_sum = tf.reduce_sum(lambda_matrix, axis=2) * norm_factor
+        lambda_sum = lambda_sum_result * norm_factor
 
-        #K.print_tensor(lambda_sum)
         batch_indices = tf.reshape(tf.repeat(tf.range(self.batch_size), self.k), (self.batch_size, self.k))
         indices = tf.reshape(tf.stack([batch_indices, col_indices], axis=2), (self.k*self.batch_size, 2))
         result_lambdas = tf.scatter_nd(indices, tf.reshape(lambda_sum,[self.k*self.batch_size]),

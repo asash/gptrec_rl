@@ -21,7 +21,8 @@ class GreedyMLPHistoricalEmbedding(Recommender):
                  loss = 'binary_crossentropy', optimizer = 'adam',
                  batch_size = 1000,
                  early_stop_epochs = 100,
-                 sigma = 1
+                 sigma = 1,
+                 ndcg_at = 30
                  ):
         self.users = ItemId()
         self.items = ItemId()
@@ -40,6 +41,7 @@ class GreedyMLPHistoricalEmbedding(Recommender):
         self.metadata = {}
         self.batch_size = batch_size
         self.sigma = sigma
+        self.ndcg_at = ndcg_at
 
     def get_metadata(self):
         return self.metadata
@@ -88,7 +90,7 @@ class GreedyMLPHistoricalEmbedding(Recommender):
                                               batch_size=self.batch_size)
             print(f"epoch: {epoch}")
             train_history = self.model.fit(generator, validation_data=val_generator)
-            val_ndcg = train_history.history['val_ndcg_at_40'][-1]
+            val_ndcg = train_history.history[f"val_ndcg_at_{self.ndcg_at}"][-1]
             val_ndcg_history.append(val_ndcg)
             steps_since_improved += 1
             if val_ndcg > best_ndcg:
@@ -120,7 +122,7 @@ class GreedyMLPHistoricalEmbedding(Recommender):
         model.add(layers.Dropout(0.5, name="dropout"))
         model.add(layers.Dense(n_movies, name="output", activation="sigmoid"))
         #model.add(LambdaRankLayer())
-        ndcg_metric = KerasNDCG(40)
+        ndcg_metric = KerasNDCG(self.ndcg_at)
         loss = self.loss
         if loss == 'lambdarank':
             loss = self.get_lambdarank_loss()
@@ -128,7 +130,7 @@ class GreedyMLPHistoricalEmbedding(Recommender):
         return model
 
     def get_lambdarank_loss(self):
-        return LambdaRankLoss(self.items.size(), self.batch_size, self.sigma)
+        return LambdaRankLoss(self.items.size(), self.batch_size, self.sigma, ndcg_at=self.ndcg_at)
 
     def get_next_items(self, user_id, limit):
         actions = self.user_actions[self.users.get_id(user_id)]

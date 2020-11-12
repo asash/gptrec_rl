@@ -26,13 +26,13 @@ def mlp():
 def mlp_historical_embedding_lr():
     loss = 'lambdarank' 
     return FilterSeenRecommender(GreedyMLPHistoricalEmbedding(train_epochs=10000, loss=loss,
-                                                              optimizer=Adam(), early_stop_epochs=100, batch_size=20, sigma=1.0))
+                                                              optimizer=Adam(), early_stop_epochs=100, batch_size=100, sigma=1.0))
 
 def mlp_historical_embedding():
     loss = 'binary_crossentropy' 
     return FilterSeenRecommender(GreedyMLPHistoricalEmbedding(train_epochs=10000, early_stop_epochs=100,
                                                               loss=loss, optimizer=Adam(),
-                                                              batch_size=20))
+                                                              batch_size=100))
 
 
 def mlp_historical():
