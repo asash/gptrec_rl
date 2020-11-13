@@ -14,8 +14,8 @@ from aprec.evaluation.metrics.average_popularity_rank import AveragePopularityRa
 from aprec.recommenders.svd import SvdRecommender
 from tensorflow.keras.optimizers import Adam
 
-DATASET = filter_popular_items(get_movielens_actions(min_rating=0.0), 2500)
-USERS_FRACTION = .25 
+DATASET = get_movielens_actions(min_rating=0.0)
+USERS_FRACTION = 1 
 
 def top_recommender():
     return FilterSeenRecommender(TopRecommender())
@@ -26,7 +26,9 @@ def mlp():
 def mlp_historical_embedding_lr():
     loss = 'lambdarank' 
     return FilterSeenRecommender(GreedyMLPHistoricalEmbedding(train_epochs=10000, loss=loss,
-                                                              optimizer=Adam(), early_stop_epochs=100, batch_size=100, sigma=1.0))
+                                                              optimizer=Adam(), early_stop_epochs=100,
+                                                              batch_size=100, sigma=1.0, ndcg_at=40,
+                                                              output_layer_activation='linear'))
 
 def mlp_historical_embedding():
     loss = 'binary_crossentropy' 

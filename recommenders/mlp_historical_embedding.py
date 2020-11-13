@@ -18,11 +18,13 @@ import numpy as np
 class GreedyMLPHistoricalEmbedding(Recommender):
     def __init__(self, bottleneck_size=32, train_epochs=300, n_val_users=1000,
                  max_history_len=1000, 
-                 loss = 'binary_crossentropy', optimizer = 'adam',
+                 loss = 'binary_crossentropy',
+                 output_layer_activation = 'sigmoid',
+                 optimizer = 'adam',
                  batch_size = 1000,
                  early_stop_epochs = 100,
                  sigma = 1,
-                 ndcg_at = 30
+                 ndcg_at = 30,
                  ):
         self.users = ItemId()
         self.items = ItemId()
@@ -42,6 +44,7 @@ class GreedyMLPHistoricalEmbedding(Recommender):
         self.batch_size = batch_size
         self.sigma = sigma
         self.ndcg_at = ndcg_at
+        self.output_layer_activation = output_layer_activation
 
     def get_metadata(self):
         return self.metadata
@@ -120,7 +123,7 @@ class GreedyMLPHistoricalEmbedding(Recommender):
         model.add(layers.Dense(128, name="dense3", activation="relu"))
         model.add(layers.Dense(256, name="dense4", activation="relu"))
         model.add(layers.Dropout(0.5, name="dropout"))
-        model.add(layers.Dense(n_movies, name="output", activation="sigmoid"))
+        model.add(layers.Dense(n_movies, name="output", activation=self.output_layer_activation))
         #model.add(LambdaRankLayer())
         ndcg_metric = KerasNDCG(self.ndcg_at)
         loss = self.loss
