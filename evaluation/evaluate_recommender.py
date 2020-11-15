@@ -1,13 +1,17 @@
 from collections import defaultdict
 
-def group_by_user(actions):
+def group_by_user(actions, max_actions_per_user):
     result = defaultdict(lambda: [])
     for action in actions:
-        result[action.user_id].append(action)
+        if len(result[action.user_id]) < max_actions_per_user:
+            result[action.user_id].append(action)
+        else:
+            if action.timestamp  < max([a.timestamp for a in result[action.user_id]]):
+                raise Exception("actions were not sorted in chronological order")
     return result
 
-def evaluate_recommender(recommender, actions, metrics, recommendations_limit=50):
-    by_user = group_by_user(actions)
+def evaluate_recommender(recommender, actions, metrics, max_test_actions_per_user, recommendations_limit=50):
+    by_user = group_by_user(actions, max_test_actions_per_user)
     metric_sum = defaultdict(lambda: 0.0)
     for user_id in by_user:
         for metric in metrics:

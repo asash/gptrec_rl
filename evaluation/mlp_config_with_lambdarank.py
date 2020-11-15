@@ -4,7 +4,6 @@ from aprec.recommenders.mlp import GreedyMLP
 from aprec.recommenders.mlp_historical import GreedyMLPHistorical
 from aprec.recommenders.gru_recommender import GRURecommender
 from aprec.recommenders.mlp_historical_embedding import GreedyMLPHistoricalEmbedding
-from aprec.recommenders.constant_recommender import ConstantRecommender
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.evaluation.metrics.precision import Precision
 from aprec.evaluation.metrics.recall import Recall
@@ -12,10 +11,12 @@ from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.evaluation.metrics.sps import SPS
 from aprec.evaluation.metrics.average_popularity_rank import AveragePopularityRank
 from aprec.recommenders.svd import SvdRecommender
+from aprec.recommenders.lightfm import LightFMRecommender
 from tensorflow.keras.optimizers import Adam
 
-DATASET = get_movielens_actions(min_rating=0.0)
-USERS_FRACTION = 1 
+DATASET = filter_popular_items(get_movielens_actions(min_rating=0.0), 5000)
+USERS_FRACTION = .25 
+MAX_TEST_ACTIONS_PER_USER = 5000
 
 def top_recommender():
     return FilterSeenRecommender(TopRecommender())
@@ -27,15 +28,14 @@ def mlp_historical_embedding_lr():
     loss = 'lambdarank' 
     return FilterSeenRecommender(GreedyMLPHistoricalEmbedding(train_epochs=10000, loss=loss,
                                                               optimizer=Adam(), early_stop_epochs=100,
-                                                              batch_size=100, sigma=1.0, ndcg_at=40,
+                                                              batch_size=300, sigma=1.0, ndcg_at=40, test_actions_per_user=5000,
                                                               output_layer_activation='linear'))
 
 def mlp_historical_embedding():
     loss = 'binary_crossentropy' 
-    return FilterSeenRecommender(GreedyMLPHistoricalEmbedding(train_epochs=10000, early_stop_epochs=100,
-                                                              loss=loss, optimizer=Adam(),
-                                                              batch_size=100))
-
+    return FilterSeenRecommender(GreedyMLPHistoricalEmbedding(train_epochs=10000, early_stop_epochs=300,
+                                                              test_actions_per_user=5,
+                                                              loss=loss, optimizer=Adam()))
 
 def mlp_historical():
     return FilterSeenRecommender(GreedyMLPHistorical(train_epochs=250))
@@ -46,33 +46,15 @@ def lstm():
 def svd_recommender(k):
     return FilterSeenRecommender(SvdRecommender(k))
 
-def constant_recommender():
-    return ConstantRecommender([('457', 0.45),
-                               ('380', 0.414),
-                               ('110', 0.413),
-                               ('292', 0.365),
-                               ('296', 0.323),
-                               ('595', 0.313), 
-                               ('588', 0.312), 
-                               ('592', 0.293),
-                               ('440', 0.286),
-                               ('357', 0.286),
-                               ('434', 0.280),
-                               ('593', 0.280),
-                               ('733', 0.276),
-                               ('553', 0.257),
-                               ('253', 0.257)])
+def lightfm_recommender(k, loss):
+    return FilterSeenRecommender(LightFMRecommender(k, loss))
 
 RECOMMENDERS = {
-    "top_recommender": top_recommender, 
-#   "constant_recommender": constant_recommender,
+    "top_recommender": top_recommender,
+    "lambdarank_recommender": lambda: lightfm_recommender(30, 'warp'),
     "GreedyMLPHistoricalEmbeddingLR": mlp_historical_embedding_lr,
     "GreedyMLPHistoricalEmbedding": mlp_historical_embedding,
-#    "LSTM": lstm,
-#    "GreedyMLPHistorical": mlp_historical,
-#    "GreedyMLP": mlp,
     "svd_recommender_30": lambda: svd_recommender(30),
-
 }
 
 FRACTIONS_TO_SPLIT = (0.85, )

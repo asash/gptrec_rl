@@ -1,6 +1,7 @@
 tensorflow-gpu
 requests
 pandas
+lightfm
 scipy
 tornado
 numpy 

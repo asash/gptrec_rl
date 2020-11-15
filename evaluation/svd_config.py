@@ -1,9 +1,9 @@
 from aprec.datasets.movielens import get_movielens_actions
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.svd import SvdRecommender
+from aprec.recommenders.lightfm import LightFMRecommender
 from aprec.recommenders.constant_recommender import ConstantRecommender
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
-from aprec.utils.generator_limit import generator_limit
 from aprec.evaluation.metrics.precision import Precision
 from aprec.evaluation.metrics.recall import Recall
 from aprec.evaluation.metrics.ndcg import NDCG
@@ -12,14 +12,18 @@ from aprec.evaluation.metrics.sps import SPS
 
 
 DATASET = get_movielens_actions(min_rating=1.0)
+MAX_TEST_ACTIONS_PER_USER=5
 
-USERS_FRACTION = 0.1 
+USERS_FRACTION = .1
 
 def top_recommender():
     return FilterSeenRecommender(TopRecommender())
 
 def svd_recommender(k):
     return FilterSeenRecommender(SvdRecommender(k))
+
+def lightfm_recommender(k, loss):
+    return FilterSeenRecommender(LightFMRecommender(k, loss))
 
 def constant_recommender():
     return ConstantRecommender([('457', 0.45),
@@ -42,7 +46,13 @@ RECOMMENDERS = {
     "top_recommender": top_recommender, 
 #    "svd_recommender_10": lambda: svd_recommender(10), 
 #    "svd_recommender_20": lambda: svd_recommender(20), 
-    "svd_recommender_30": lambda: svd_recommender(30), 
+    "svd_recommender_30": lambda: svd_recommender(30),
+    "lightfm_recommender_30_bpr": lambda: lightfm_recommender(30, 'bpr'),
+    "lightfm_recommender_30_warp": lambda: lightfm_recommender(30, 'warp'),
+    "lightfm_recommender_30_warp_kos": lambda: lightfm_recommender(30, 'warp-kos'),
+    "lightfm_recommender_100_bpr": lambda: lightfm_recommender(100, 'bpr'),
+    "lightfm_recommender_100_warp": lambda: lightfm_recommender(100, 'warp'),
+    "lightfm_recommender_100_warp_kos": lambda: lightfm_recommender(100, 'warp-kos'),
     "constant_recommender": constant_recommender,
 }
 

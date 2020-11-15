@@ -23,6 +23,7 @@ class GreedyMLPHistoricalEmbedding(Recommender):
                  optimizer = 'adam',
                  batch_size = 1000,
                  early_stop_epochs = 100,
+                 test_actions_per_user=5,
                  sigma = 1,
                  ndcg_at = 30,
                  ):
@@ -44,6 +45,7 @@ class GreedyMLPHistoricalEmbedding(Recommender):
         self.batch_size = batch_size
         self.sigma = sigma
         self.ndcg_at = ndcg_at
+        self.test_actions_per_user = test_actions_per_user
         self.output_layer_activation = output_layer_activation
 
     def get_metadata(self):
@@ -80,8 +82,9 @@ class GreedyMLPHistoricalEmbedding(Recommender):
     def rebuild_model(self):
         self.sort_actions()
         train_users, val_users = self.split_users()
+        print("train_users: {}, val_users:{}, items:{}".format(len(train_users), len(val_users), self.items.size()))
         val_generator = HistoryBatchGenerator(val_users, self.max_history_length, self.items.size(),
-                                              batch_size=self.batch_size)
+                                              batch_size=self.batch_size, n_target_actions=self.test_actions_per_user)
         self.model = self.get_model(self.items.size())
         best_ndcg = 0
         steps_since_improved = 0
@@ -90,7 +93,7 @@ class GreedyMLPHistoricalEmbedding(Recommender):
         val_ndcg_history = []
         for epoch in range(self.train_epochs):
             generator = HistoryBatchGenerator(train_users, self.max_history_length, self.items.size(),
-                                              batch_size=self.batch_size)
+                                              batch_size=self.batch_size, n_target_actions=self.test_actions_per_user)
             print(f"epoch: {epoch}")
             train_history = self.model.fit(generator, validation_data=val_generator)
             val_ndcg = train_history.history[f"val_ndcg_at_{self.ndcg_at}"][-1]
