@@ -9,7 +9,7 @@ class TestKerasNDCG(unittest.TestCase):
         y_pred = K.constant(np.array([[0.1, 0.2, 0.3], [0.6, 0.5, 0.4]]))
         keras_ndcg = KerasNDCG(2)
         res = keras_ndcg(y_true, y_pred)
-        K.print_tensor(res)
+        assert (res == K.constant(0.815464854))
 
 if __name__ == "__main__":
     unittest.main()
