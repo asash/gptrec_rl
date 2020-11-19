@@ -18,7 +18,7 @@ class TestEvaluateRecommender(unittest.TestCase):
             recommender.add_action(action)
         recommender.rebuild_model()
         metrics = [Precision(1), Recall(1), Precision(5), Recall(5), Precision(10), Recall(10)]
-        result = evaluate_recommender(recommender, test, metrics)
+        result = evaluate_recommender(recommender, test, metrics, max_test_actions_per_user=1000000)
         reference_result = {'precision@1': 0.0, 'recall@1': 0.0,
                             'precision@5': 0.00425531914893617, 'recall@5': 0.02127659574468085,
                             'precision@10': 0.002127659574468085, 'recall@10': 0.02127659574468085}
