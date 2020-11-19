@@ -14,8 +14,8 @@ from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.lightfm import LightFMRecommender
 from tensorflow.keras.optimizers import Adam
 
-DATASET = filter_popular_items(get_movielens_actions(min_rating=0.0), 5000)
-USERS_FRACTION = .25 
+DATASET = get_movielens_actions(min_rating=0.0)
+USERS_FRACTION = 1.0 
 MAX_TEST_ACTIONS_PER_USER = 5000
 
 def top_recommender():
@@ -28,13 +28,15 @@ def mlp_historical_embedding_lr():
     loss = 'lambdarank' 
     return FilterSeenRecommender(GreedyMLPHistoricalEmbedding(train_epochs=10000, loss=loss,
                                                               optimizer=Adam(), early_stop_epochs=100,
-                                                              batch_size=300, sigma=1.0, ndcg_at=40, test_actions_per_user=5000,
+                                                              batch_size=1000, sigma=1.0, ndcg_at=40, test_actions_per_user=5000,
                                                               output_layer_activation='linear'))
 
 def mlp_historical_embedding():
     loss = 'binary_crossentropy' 
-    return FilterSeenRecommender(GreedyMLPHistoricalEmbedding(train_epochs=10000, early_stop_epochs=300,
+    return FilterSeenRecommender(GreedyMLPHistoricalEmbedding(train_epochs=10000, early_stop_epochs=100,
                                                               test_actions_per_user=5,
+                                                              ndcg_at=40, 
+                                                              batch_size=1000,
                                                               loss=loss, optimizer=Adam()))
 
 def mlp_historical():
@@ -51,10 +53,11 @@ def lightfm_recommender(k, loss):
 
 RECOMMENDERS = {
     "top_recommender": top_recommender,
-    "lambdarank_recommender": lambda: lightfm_recommender(30, 'warp'),
-    "GreedyMLPHistoricalEmbeddingLR": mlp_historical_embedding_lr,
-    "GreedyMLPHistoricalEmbedding": mlp_historical_embedding,
+    "lightfm_30_WARP": lambda: lightfm_recommender(30, 'warp'),
+    "lightfm_30_BPR": lambda: lightfm_recommender(30, 'bpr'),
     "svd_recommender_30": lambda: svd_recommender(30),
+    "GreedyMLPHistoricalEmbeddingLambdarank": mlp_historical_embedding_lr,
+    "GreedyMLPHistoricalEmbedding": mlp_historical_embedding,
 }
 
 FRACTIONS_TO_SPLIT = (0.85, )
