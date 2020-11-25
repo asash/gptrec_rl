@@ -6,7 +6,7 @@ import numpy as np
 
 
 class LightFMRecommender(Recommender):
-    def __init__(self, num_latent_components, random_seed=None, loss='bpr'):
+    def __init__(self, num_latent_components, random_seed=None, loss='bpr', n_epochs=20):
         self.latent_components = num_latent_components
         self.users = ItemId()
         self.items = ItemId()
@@ -15,6 +15,7 @@ class LightFMRecommender(Recommender):
         self.vals = []
         self.model = None
         self.loss=loss
+        self.n_epochs = n_epochs
 
     def name(self):
         return "Lightfm_{}@{}".format(self.loss, self.latent_components)
@@ -29,7 +30,7 @@ class LightFMRecommender(Recommender):
     def rebuild_model(self):
         matrix_original = csr_matrix((self.vals, (self.rows, self.cols)))
         self.model = LightFM(no_components=self.latent_components, loss=self.loss)
-        self.model.fit_partial(matrix_original, epochs=5, verbose=True)
+        self.model.fit_partial(matrix_original, epochs=self.n_epochs, verbose=True)
 
     def get_next_items(self, user_id_external, limit):
         if not(self.users.has_item(user_id_external)):
