@@ -23,11 +23,10 @@ def config():
     return config
 
 class RecommendersEvaluator(object):
-    def __init__(self, actions, recommenders, metrics, max_test_actions_per_user):
+    def __init__(self, actions, recommenders, metrics):
         self.actions = actions
         self.metrics = metrics
         self.recommenders = recommenders
-        self.max_test_actions_per_user = max_test_actions_per_user
 
     def __call__(self, split_fraction):
         result = {"train_fraction": split_fraction, "recommenders": {}}
@@ -43,7 +42,7 @@ class RecommendersEvaluator(object):
             build_time_end = time.time()
 
             evaluate_time_start = time.time()
-            evaluation_result = evaluate_recommender(recommender, test, self.metrics, self.max_test_actions_per_user)
+            evaluation_result = evaluate_recommender(recommender, test, self.metrics)
             evaluate_time_end = time.time()
             evaluation_result['model_build_time'] =  build_time_end - build_time_start
             evaluation_result['model_inference_time'] =  evaluate_time_end - evaluate_time_start
@@ -65,9 +64,7 @@ def run_experiment(config):
     print("evaluating...")
     recommender_evaluator = RecommendersEvaluator(actions,
                                  config.RECOMMENDERS, 
-                                 config.METRICS,
-                                 config.MAX_TEST_ACTIONS_PER_USER
-                                 )
+                                 config.METRICS)
     result = []
     for fraction in config.FRACTIONS_TO_SPLIT:
         print("evaluating for split fraction {:.3f}".format(fraction))
