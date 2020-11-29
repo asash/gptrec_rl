@@ -52,30 +52,52 @@ class RecommendersEvaluator(object):
             del(recommender)
         return result
 
+
+def real_hash(obj):
+    str_val = str(obj)
+    result = (mmh3.hash(str_val) + (1 << 31)) * 1.0 / ((1 << 32) - 1)
+    return result
+
 def run_experiment(config):
-    every_user = int (1/config.USERS_FRACTION)
-    print("read data...")
-    print("use one out of every {} users ({}% fraction)".format(every_user, config.USERS_FRACTION*100))
-    actions = list(filter( lambda action: mmh3.hash(action.user_id) % every_user == 0,
-                     config.DATASET))
-    print("actions in dataset: {}".format(len(actions)))
-    item_id_set = set([action.item_id for action in actions])
-    print("number of items in dataset: {}".format(len(item_id_set)))
-    print("evaluating...")
-    recommender_evaluator = RecommendersEvaluator(actions,
-                                 config.RECOMMENDERS, 
-                                 config.METRICS)
     result = []
-    for fraction in config.FRACTIONS_TO_SPLIT:
-        print("evaluating for split fraction {:.3f}".format(fraction))
-        result_for_fraction = recommender_evaluator(fraction)
+    all_actions = list(config.DATASET)
+    for users_fraction in config.USERS_FRACTIONS:
+        every_user = 1/users_fraction
+        print("read data...")
+        print("use one out of every {} users ({}% fraction)".format(every_user, users_fraction*100))
+        actions = list(filter( lambda action: real_hash(action.user_id)  < users_fraction,
+                         all_actions))
+        print("actions in dataset: {}".format(len(actions)))
+        item_id_set = set([action.item_id for action in actions])
+        user_id_set = set([action.user_id for action in actions])
+        print("number of items in the dataset: {}".format(len(item_id_set)))
+        print("number of users in the dataset: {}".format(len(user_id_set)))
+        print("evaluating...")
+        recommender_evaluator = RecommendersEvaluator(actions,
+                                     config.RECOMMENDERS,
+                                     config.METRICS)
+        split_fraction = config.FRACTION_TO_SPLIT
+        print("evaluating for split fraction {:.3f}".format(split_fraction))
+        result_for_fraction = recommender_evaluator(split_fraction)
+        result_for_fraction['users_fraction'] = users_fraction
+        result_for_fraction['split_fraction'] = split_fraction
+        result_for_fraction['num_items'] = len(item_id_set)
+        result_for_fraction['num_users'] = len(user_id_set)
         result.append(result_for_fraction)
-    return list(result)
+        write_result(config, result)
+
+
+def write_result(config, result):
+    if config.out_file != sys.stdout:
+        config.out_file.seek(0)
+    config.out_file.write(json.dumps(result, indent=4))
+    if config.out_file != sys.stdout:
+        config.out_file.truncate()
+        config.out_file.flush()
+
 
 if __name__ == "__main__":
     config = config()
-    result = run_experiment(config)
-    config.out_file.write(json.dumps(result, indent=4))
-    config.out_file.close()
-            
+    run_experiment(config)
+
 

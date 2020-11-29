@@ -58,7 +58,8 @@ class HistoryBatchGenerator(Sequence):
     def split_user(self, user):
         history_fraction = random.random()
         n_history_actions = int(len(user) * history_fraction)
-        target_actions = user[n_history_actions:]
+        n_target_actions = len(user) - n_history_actions
+        target_actions = user[-n_target_actions:]
         return user[:n_history_actions], target_actions
 
     def __len__(self):

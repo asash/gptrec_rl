@@ -8,13 +8,13 @@ from aprec.evaluation.metrics.precision import Precision
 from aprec.evaluation.metrics.recall import Recall
 from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.evaluation.metrics.average_popularity_rank import AveragePopularityRank
+from aprec.evaluation.metrics.pairwise_cos_sim import PairwiseCosSim
 from aprec.evaluation.metrics.sps import SPS
 
 
 DATASET = get_movielens_actions(min_rating=1.0)
-MAX_TEST_ACTIONS_PER_USER=5
 
-USERS_FRACTION = .1
+USERS_FRACTIONS = [.1]
 
 def top_recommender():
     return FilterSeenRecommender(TopRecommender())
@@ -56,9 +56,11 @@ RECOMMENDERS = {
     "constant_recommender": constant_recommender,
 }
 
-FRACTIONS_TO_SPLIT = (0.85, )
+FRACTION_TO_SPLIT = 0.85
 
-dataset_for_metric = get_movielens_actions(min_rating=1.0)
-METRICS = [Precision(5), NDCG(40), Recall(5), SPS(10), AveragePopularityRank(5, dataset_for_metric)]
+dataset_for_metric = [action for action in get_movielens_actions(min_rating=1.0)]
+METRICS = [Precision(5), NDCG(40), Recall(5), SPS(10), AveragePopularityRank(5, dataset_for_metric),
+           PairwiseCosSim(dataset_for_metric, 10)]
+del(dataset_for_metric)
 
 

@@ -121,9 +121,9 @@ class GreedyMLPHistoricalEmbedding(Recommender):
         model.add(layers.Dense(128, name="dense2", activation="relu"))
         model.add(layers.Dense(self.bottleneck_size,
                                name="bottleneck", activation="relu"))
+        model.add(layers.Dropout(0.5, name="dropout"))
         model.add(layers.Dense(128, name="dense3", activation="relu"))
         model.add(layers.Dense(256, name="dense4", activation="relu"))
-        model.add(layers.Dropout(0.5, name="dropout"))
         model.add(layers.Dense(n_movies, name="output", activation=self.output_layer_activation))
         ndcg_metric = KerasNDCG(self.ndcg_at)
         loss = self.loss
