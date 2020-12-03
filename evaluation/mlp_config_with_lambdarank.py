@@ -13,18 +13,20 @@ from aprec.recommenders.lightfm import LightFMRecommender
 from tensorflow.keras.optimizers import Adam
 
 DATASET = [action for action in get_movielens_actions(min_rating=0.0)]
-USERS_FRACTIONS = [0.15]
+USERS_FRACTIONS = [0.0078125, 0.015625, 0.03125, 0.0625, 0.125, 0.25, 0.5, 1.0]
 
 
 def top_recommender():
     return FilterSeenRecommender(TopRecommender())
 
-def mlp_historical_embedding(loss):
+def mlp_historical_embedding(loss, activation_override=None):
     activation = 'linear' if loss == 'lambdarank' else 'sigmoid'
+    if activation_override is not None:
+        activation = activation_override
     return FilterSeenRecommender(GreedyMLPHistoricalEmbedding(train_epochs=10000, loss=loss,
                                                               optimizer=Adam(), early_stop_epochs=100,
-                                                              batch_size=200, sigma=1.0, ndcg_at=40,
-                                                              n_val_users=200,
+                                                              batch_size=150, sigma=1.0, ndcg_at=40,
+                                                              n_val_users=600,
                                                               bottleneck_size=64,
                                                               output_layer_activation=activation))
 def lightfm_recommender(k, loss):
@@ -38,6 +40,8 @@ RECOMMENDERS = {
     "lightfm_30_WARP": lambda: lightfm_recommender(30, 'warp'),
     "lightfm_30_BPR": lambda: lightfm_recommender(30, 'bpr'),
     "svd_recommender_30": lambda: svd_recommender(30),
+    "APREC-GMLPHE-XENDCG-linear": lambda: mlp_historical_embedding('xendcg', 'linear'),
+    "APREC-GMLPHE-XENDCG-sigmoid": lambda: mlp_historical_embedding('xendcg', 'sigmoid'),
     "APREC-GMLPHE-Lambdarank": lambda: mlp_historical_embedding('lambdarank'),
     "APREC-GMLPHE-BCE": lambda: mlp_historical_embedding('binary_crossentropy'),
 }

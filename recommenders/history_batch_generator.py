@@ -7,13 +7,14 @@ from tensorflow.python.keras.utils.data_utils import Sequence
 
 
 class HistoryBatchGenerator(Sequence):
-    def __init__(self, user_actions, history_size, n_items, batch_size=1000):
+    def __init__(self, user_actions, history_size, n_items, batch_size=1000, validation=False):
         self.user_actions = user_actions
         self.history_size= history_size
         self.n_items = n_items
         self.batch_size = batch_size
         self.features_matrix = None
         self.target_matrix = None
+        self.validation = validation
         self.reset()
 
 
@@ -56,11 +57,15 @@ class HistoryBatchGenerator(Sequence):
         return history, target
 
     def split_user(self, user):
-        history_fraction = random.random()
-        n_history_actions = int(len(user) * history_fraction)
+        if not self.validation:
+            history_fraction = random.random()
+            n_history_actions = int(len(user) * history_fraction)
+        else:
+            n_history_actions = len(user) - 1
         n_target_actions = len(user) - n_history_actions
+        history_actions =user [:n_history_actions]
         target_actions = user[-n_target_actions:]
-        return user[:n_history_actions], target_actions
+        return history_actions, target_actions
 
     def __len__(self):
         return math.floor(self.features_matrix.shape[0] / self.batch_size)

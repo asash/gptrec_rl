@@ -3,6 +3,8 @@ import json
 from copy import deepcopy
 import pandas as pd
 
+pd.set_option("display.max_rows", None, "display.max_columns", None)
+
 data = json.load(open(sys.argv[1]))
 i = 0
 for split_fraction in data:

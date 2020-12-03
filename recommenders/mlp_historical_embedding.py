@@ -6,6 +6,7 @@ from collections import defaultdict
 from aprec.utils.item_id import ItemId
 from aprec.recommenders.metrics.ndcg import KerasNDCG
 from aprec.recommenders.losses.lambdarank import LambdaRankLoss
+from aprec.recommenders.losses.xendcg import XENDCGLoss
 from aprec.recommenders.recommender import Recommender
 from aprec.recommenders.history_batch_generator import HistoryBatchGenerator
 from aprec\
@@ -82,7 +83,7 @@ class GreedyMLPHistoricalEmbedding(Recommender):
         train_users, val_users = self.split_users()
         print("train_users: {}, val_users:{}, items:{}".format(len(train_users), len(val_users), self.items.size()))
         val_generator = HistoryBatchGenerator(val_users, self.max_history_length, self.items.size(),
-                                              batch_size=self.batch_size)
+                                              batch_size=self.batch_size, validation=True)
         self.model = self.get_model(self.items.size())
         best_ndcg = 0
         steps_since_improved = 0
@@ -129,11 +130,18 @@ class GreedyMLPHistoricalEmbedding(Recommender):
         loss = self.loss
         if loss == 'lambdarank':
             loss = self.get_lambdarank_loss()
+
+        if loss == 'xendcg':
+            loss = self.get_xendcg_loss()
+
         model.compile(optimizer=self.optimizer, loss=loss, metrics=[ndcg_metric])
         return model
 
     def get_lambdarank_loss(self):
         return LambdaRankLoss(self.items.size(), self.batch_size, self.sigma, ndcg_at=self.ndcg_at)
+
+    def get_xendcg_loss(self):
+        return XENDCGLoss(self.items.size(), self.batch_size)
 
     def get_next_items(self, user_id, limit):
         actions = self.user_actions[self.users.get_id(user_id)]

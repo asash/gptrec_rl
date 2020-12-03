@@ -20,13 +20,13 @@ class LambdaRankLoss(object):
     def need_swap_batch(self, x):
         return tf.map_fn(self.need_swap_vector, x)
 
-    def __init__(self, k, batch_size, sigma=1.0, ndcg_at = 30):
+    def __init__(self, n_items, batch_size, sigma=1.0, ndcg_at = 30):
         self.__name__ = 'lambdarank'
         self.batch_size = batch_size
         self.sigma = sigma
-        self.k = k
-        self.ndcg_at = min(ndcg_at, k)
-        self.dcg_position_discounts = tf.math.log(2.0) / tf.math.log(tf.cast(tf.range(k) + 2, tf.float32))
+        self.n_items = n_items
+        self.ndcg_at = min(ndcg_at, n_items)
+        self.dcg_position_discounts = tf.math.log(2.0) / tf.math.log(tf.cast(tf.range(n_items) + 2, tf.float32))
         self.swap_importance = tf.abs(self.get_pairwise_diff_vector(self.dcg_position_discounts))
 
     def dcg(self, x):
@@ -46,7 +46,7 @@ class LambdaRankLoss(object):
         return result, grad
 
     def get_lambdas(self, y_true, y_pred):
-        top_k = tf.nn.top_k(y_pred, self.k)
+        top_k = tf.nn.top_k(y_pred, self.n_items)
         col_indices = top_k.indices
         pred_ordered = top_k.values
         best_score = pred_ordered[:, 0]
@@ -76,9 +76,9 @@ class LambdaRankLoss(object):
 
         #calculate sum of lambdas by rows. For top items - calculate as sum by columns.
         lambda_sum_raw = tf.reduce_sum(lambda_matrix, axis=2)
-        zeros = tf.zeros((self.batch_size, self.k - self.ndcg_at, 1))
-        top_lambda_sum = tf.pad(-tf.reduce_sum(lambda_matrix, axis=1), [[0, 0], [0, self.k - self.ndcg_at]])
-        mask = tf.reshape(1 - tf.pad(tf.ones(self.ndcg_at), [[0, self.k - self.ndcg_at]]), (1, self.k))
+        zeros = tf.zeros((self.batch_size, self.n_items - self.ndcg_at, 1))
+        top_lambda_sum = tf.pad(-tf.reduce_sum(lambda_matrix, axis=1), [[0, 0], [0, self.n_items - self.ndcg_at]])
+        mask = tf.reshape(1 - tf.pad(tf.ones(self.ndcg_at), [[0, self.n_items - self.ndcg_at]]), (1, self.n_items))
         lambda_sum_raw_top_masked = lambda_sum_raw * mask
         lambda_sum_result = lambda_sum_raw_top_masked + top_lambda_sum
 
@@ -87,8 +87,8 @@ class LambdaRankLoss(object):
         norm_factor = tf.math.log(all_lambdas_sum + 1) / (all_lambdas_sum * tf.math.log(2.0))
         lambda_sum = lambda_sum_result * norm_factor
 
-        batch_indices = tf.reshape(tf.repeat(tf.range(self.batch_size), self.k), (self.batch_size, self.k))
-        indices = tf.reshape(tf.stack([batch_indices, col_indices], axis=2), (self.k*self.batch_size, 2))
-        result_lambdas = tf.scatter_nd(indices, tf.reshape(lambda_sum,[self.k*self.batch_size]),
-                                       tf.constant([self.batch_size, self.k]))
+        batch_indices = tf.reshape(tf.repeat(tf.range(self.batch_size), self.n_items), (self.batch_size, self.n_items))
+        indices = tf.reshape(tf.stack([batch_indices, col_indices], axis=2), (self.n_items * self.batch_size, 2))
+        result_lambdas = tf.scatter_nd(indices, tf.reshape(lambda_sum, [self.n_items * self.batch_size]),
+                                       tf.constant([self.batch_size, self.n_items]))
         return result_lambdas
