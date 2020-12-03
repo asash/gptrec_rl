@@ -7,6 +7,8 @@ from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.evaluation.metrics.precision import Precision
 from aprec.evaluation.metrics.recall import Recall
 from aprec.evaluation.metrics.ndcg import NDCG
+from aprec.evaluation.metrics.mrr import MRR
+from aprec.evaluation.metrics.map import MAP
 from aprec.evaluation.metrics.average_popularity_rank import AveragePopularityRank
 from aprec.evaluation.metrics.pairwise_cos_sim import PairwiseCosSim
 from aprec.evaluation.metrics.sps import SPS
@@ -59,7 +61,7 @@ RECOMMENDERS = {
 FRACTION_TO_SPLIT = 0.85
 
 dataset_for_metric = [action for action in get_movielens_actions(min_rating=1.0)]
-METRICS = [Precision(5), NDCG(40), Recall(5), SPS(10), AveragePopularityRank(5, dataset_for_metric),
+METRICS = [Precision(5), NDCG(40), Recall(5), SPS(10), MRR(), MAP(10), AveragePopularityRank(5, dataset_for_metric),
            PairwiseCosSim(dataset_for_metric, 10)]
 del(dataset_for_metric)
 
