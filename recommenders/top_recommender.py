@@ -9,13 +9,13 @@ class TopRecommender(Recommender):
         self.items_counter[action.item_id] += 1
 
     def rebuild_model(self):
-        pass
+        self.most_common = self.items_counter.most_common()
 
     def get_next_items(self, user_id, limit):
-        return self.items_counter.most_common(limit)
+        return self.most_common[:limit]
 
     def get_similar_items(self, item_id, limit):
-        return self.items_counter.most_common(limit)
+        return self.most_common[:limit]
 
     def name(self):
         return "TopItemsRecommender"

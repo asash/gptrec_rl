@@ -4,7 +4,7 @@ from collections import defaultdict
 class FilterSeenRecommender(Recommender):
     def __init__(self, recommender):
         self.recommender = recommender
-        self.user_seen = defaultdict(lambda: set()) 
+        self.user_seen = defaultdict(set)
 
     def name(self):
         return self.recommender.name() + "FilterSeen"

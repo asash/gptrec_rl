@@ -1,4 +1,5 @@
 from aprec.datasets.movielens import get_movielens_actions, get_movies_catalog
+from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.utils.generator_limit import generator_limit
 from aprec.evaluation.split_actions import split_actions
@@ -10,7 +11,7 @@ from aprec.evaluation.metrics.recall import Recall
 import unittest
 class TestEvaluateRecommender(unittest.TestCase):
     def test_evaluate(self):
-        recommender = TopRecommender()
+        recommender = FilterSeenRecommender(TopRecommender())
         actions = generator_limit(get_movielens_actions(), 10000)
         train, test = split_actions(actions, (70, 30))
         test = n_actions_for_user(test, 1)

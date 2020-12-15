@@ -7,6 +7,7 @@ import mmh3
 from split_actions import split_actions
 from evaluate_recommender import evaluate_recommender
 from filter_cold_start import filter_cold_start
+from tqdm import tqdm
 import time
 
 def config():
@@ -35,18 +36,24 @@ class RecommendersEvaluator(object):
         for recommender_name in self.recommenders:
             print("evaluating {}".format(recommender_name))
             recommender = self.recommenders[recommender_name]()
-            for action in train:
+            print("adding train actions...")
+            for action in tqdm(train):
                 recommender.add_action(action)
+            print("rebuilding model...")
             build_time_start = time.time()
             recommender.rebuild_model()
             build_time_end = time.time()
+            print("done")
 
+            print("calculating metrics...")
             evaluate_time_start = time.time()
             evaluation_result = evaluate_recommender(recommender, test, self.metrics)
             evaluate_time_end = time.time()
+            print("calculating metrics...")
             evaluation_result['model_build_time'] =  build_time_end - build_time_start
             evaluation_result['model_inference_time'] =  evaluate_time_end - evaluate_time_start
             evaluation_result['model_metadata'] = copy.deepcopy(recommender.get_metadata())
+            print("done")
             print(json.dumps(evaluation_result))
             result['recommenders'][recommender_name] = evaluation_result
             del(recommender)

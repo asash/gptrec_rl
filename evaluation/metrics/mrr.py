@@ -13,5 +13,3 @@ class MRR(Metric):
             if recommendations[i][0] in actual_set:
                 return 1/(i + 1)
         return 0
-
-
