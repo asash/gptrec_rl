@@ -11,7 +11,8 @@ class TestMLPRecommenderWithLambdarank(unittest.TestCase):
     def test_mlp_recommender_with_lambdarank(self):
         val_users = 10
         batch_size = 10
-        mlp_recommender = GreedyMLPHistoricalEmbedding(train_epochs=10, n_val_users=val_users, batch_size=batch_size)
+        mlp_recommender = GreedyMLPHistoricalEmbedding(train_epochs=10, n_val_users=val_users, batch_size=batch_size,
+                                                       output_layer_activation='linear')
         recommender = FilterSeenRecommender(mlp_recommender)
         for action in generator_limit(get_movielens_actions(), 10000):
             recommender.add_action(action)

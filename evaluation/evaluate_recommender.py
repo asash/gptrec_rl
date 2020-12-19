@@ -22,10 +22,8 @@ def evaluate_recommender(recommender, actions, metrics, recommendations_limit=50
     get_predictions = GetPredictions(recommender, recommendations_limit)
     all_user_ids = list(by_user.keys())
 
-    pool = Pool(8)
     print("generating predictions...")
     all_predictions = list(tqdm(map(get_predictions, all_user_ids), total=len(all_user_ids)))
-    pool.close()
 
     print('calculating metrics...')
     for i in tqdm(range(len(all_user_ids))):

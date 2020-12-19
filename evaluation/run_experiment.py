@@ -4,7 +4,7 @@ import json
 import copy 
 import mmh3
 
-from split_actions import split_actions
+from split_actions import split_actions, leave_one_out
 from evaluate_recommender import evaluate_recommender
 from filter_cold_start import filter_cold_start
 from tqdm import tqdm
@@ -24,14 +24,15 @@ def config():
     return config
 
 class RecommendersEvaluator(object):
-    def __init__(self, actions, recommenders, metrics):
+    def __init__(self, actions, recommenders, metrics, data_splitter):
         self.actions = actions
         self.metrics = metrics
         self.recommenders = recommenders
+        self.data_splitter = data_splitter
 
-    def __call__(self, split_fraction):
-        result = {"train_fraction": split_fraction, "recommenders": {}}
-        train, test = split_actions(self.actions, (split_fraction, 1 - split_fraction))
+    def __call__(self):
+        result = {"recommenders": {}}
+        train, test = self.data_splitter(self.actions)
         test = filter_cold_start(train, test)
         for recommender_name in self.recommenders:
             print("evaluating {}".format(recommender_name))
@@ -80,19 +81,25 @@ def run_experiment(config):
         print("number of items in the dataset: {}".format(len(item_id_set)))
         print("number of users in the dataset: {}".format(len(user_id_set)))
         print("evaluating...")
+
+        data_splitter = get_data_splitter(config)
         recommender_evaluator = RecommendersEvaluator(actions,
                                      config.RECOMMENDERS,
-                                     config.METRICS)
-        split_fraction = config.FRACTION_TO_SPLIT
-        print("evaluating for split fraction {:.3f}".format(split_fraction))
-        result_for_fraction = recommender_evaluator(split_fraction)
+                                     config.METRICS,
+                                     data_splitter)
+        result_for_fraction = recommender_evaluator()
         result_for_fraction['users_fraction'] = users_fraction
-        result_for_fraction['split_fraction'] = split_fraction
         result_for_fraction['num_items'] = len(item_id_set)
         result_for_fraction['num_users'] = len(user_id_set)
         result.append(result_for_fraction)
         write_result(config, result)
 
+def get_data_splitter(config):
+    if config.SPLIT_STRATEGY == "TEMPORAL_GLOBAL":
+        split_fraction = config.FRACTION_TO_SPLIT
+        return lambda actions: split_actions(actions, (split_fraction, 1 - split_fraction))
+    elif config.SPLIT_STRATEGY == "LEAVE_ONE_OUT":
+        return leave_one_out
 
 def write_result(config, result):
     if config.out_file != sys.stdout:

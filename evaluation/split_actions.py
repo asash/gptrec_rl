@@ -1,3 +1,6 @@
+from collections import defaultdict
+import numpy as np
+
 def split_actions(actions, fractions):
     """split actions into n lists by timestamp in chronological order"""
 
@@ -18,3 +21,20 @@ def split_actions(actions, fractions):
     right_border = int(num_actions)
     result.append(actions_list[left_border:right_border])
     return result
+
+def leave_one_out(actions, max_test_users=1000):
+    sorted_actions = sorted(actions, key=lambda x: x.timestamp)
+    users = defaultdict(list)
+    for action in sorted_actions:
+        users[action.user_id].append(action)
+    train = []
+    test = []
+    test_user_ids = set(np.random.choice(list(users.keys()), max_test_users, replace=False))
+    for user_id in users:
+        if user_id in test_user_ids:
+            train += users[user_id][:-1]
+            test.append(users[user_id][-1])
+        else:
+            train += users[user_id]
+    return sorted(train, key=lambda x: x.timestamp), sorted(test, key=lambda x: x.timestamp)
+
