@@ -8,15 +8,16 @@ from aprec.recommenders.metrics.ndcg import KerasNDCG
 from aprec.recommenders.losses.lambdarank import LambdaRankLoss
 from aprec.recommenders.losses.xendcg import XENDCGLoss
 from aprec.recommenders.recommender import Recommender
-from aprec.recommenders.history_batch_generator import HistoryBatchGenerator
-from aprec\
-    .recommenders.history_batch_generator import actions_to_vector
-from tensorflow.keras.models import Sequential
+from aprec.recommenders.booking_recommender.booking_history_batch_generator import BookingHistoryBatchGenerator,\
+    ACTION_FEATURES
+from aprec.recommenders.booking_recommender.booking_history_batch_generator import history_to_vector,\
+    encode_additional_features, id_vector
+from tensorflow.keras.models import Model
 import tensorflow.keras.layers as layers
 import numpy as np
 
 
-class GreedyMLPHistoricalEmbedding(Recommender):
+class BookingRecommender(Recommender):
     def __init__(self, bottleneck_size=32, train_epochs=300, n_val_users=1000,
                  max_history_len=1000, 
                  loss = 'binary_crossentropy',
@@ -29,6 +30,8 @@ class GreedyMLPHistoricalEmbedding(Recommender):
                  ):
         self.users = ItemId()
         self.items = ItemId()
+        self.countries = ItemId()
+        self.affiliates = ItemId()
         self.user_actions = defaultdict(lambda: [])
         self.model = None
         self.user_vectors = None
@@ -54,12 +57,15 @@ class GreedyMLPHistoricalEmbedding(Recommender):
         self.loss = loss
 
     def name(self):
-        return "GreedyMLPHistoricalEmbedding"
+        return "BookingRecommender"
 
     def add_action(self, action):
         user_id_internal = self.users.get_id(action.user_id)
-        action_id_internal = self.items.get_id(action.item_id)
-        self.user_actions[user_id_internal].append((action.timestamp, action_id_internal))
+        item_id_internal = self.items.get_id(action.item_id)
+        user_country_id_internal = self.countries.get_id(action.data['booker_country'])
+        hotel_country_id_internal = self.countries.get_id(action.data['hotel_country'])
+        affiliate_id_internal = self.affiliates.get_id(action.data['affiliate_id'])
+        self.user_actions[user_id_internal].append((item_id_internal, action))
 
     def user_actions_by_id_list(self, id_list):
         result = []
@@ -76,23 +82,26 @@ class GreedyMLPHistoricalEmbedding(Recommender):
 
     def sort_actions(self):
         for user_id in self.user_actions:
-            self.user_actions[user_id].sort()
+            self.user_actions[user_id].sort(key=lambda x: x[1].timestamp)
 
     def rebuild_model(self):
         self.sort_actions()
         train_users, val_users = self.split_users()
         print("train_users: {}, val_users:{}, items:{}".format(len(train_users), len(val_users), self.items.size()))
-        val_generator = HistoryBatchGenerator(val_users, self.max_history_length, self.items.size(),
-                                              batch_size=self.batch_size, validation=True)
-        self.model = self.get_model(self.items.size())
+        val_generator = BookingHistoryBatchGenerator(val_users, self.max_history_length, self.items.size(),
+                                              batch_size=self.batch_size, country_dict = self.countries,
+                                                affiliates_dict = self.affiliates,
+                                                     validation=True)
+        self.model = self.get_model()
         best_ndcg = 0
         steps_since_improved = 0
         best_epoch = -1 
         best_weights = self.model.get_weights()
         val_ndcg_history = []
         for epoch in range(self.train_epochs):
-            generator = HistoryBatchGenerator(train_users, self.max_history_length, self.items.size(),
-                                              batch_size=self.batch_size)
+            generator = BookingHistoryBatchGenerator(train_users, self.max_history_length, self.items.size(),
+                                              batch_size=self.batch_size, country_dict = self.countries,
+                                                     affiliates_dict = self.affiliates)
             print(f"epoch: {epoch}")
             train_history = self.model.fit(generator, validation_data=val_generator)
             val_ndcg = train_history.history[f"val_ndcg_at_{self.ndcg_at}"][-1]
@@ -114,19 +123,37 @@ class GreedyMLPHistoricalEmbedding(Recommender):
         print(self.get_metadata())
         print(f"taken best model from epoch{best_epoch}. best_val_ndcg: {best_ndcg}")
 
-    def get_model(self, n_movies):
-        model = Sequential(name='MLP')
-        model.add(layers.Embedding(n_movies + 1, 32, input_length=self.max_history_length))
-        model.add(layers.Flatten())
-        model.add(layers.Dense(256, name="dense1", activation="relu"))
-        model.add(layers.Dense(128, name="dense2", activation="relu"))
-        model.add(layers.Dense(self.bottleneck_size,
-                               name="bottleneck", activation="relu"))
-        model.add(layers.Dropout(0.5, name="dropout"))
-        model.add(layers.Dense(128, name="dense3", activation="relu"))
-        model.add(layers.Dense(256, name="dense4", activation="relu"))
-        model.add(layers.Dense(n_movies, name="output", activation=self.output_layer_activation))
+    def get_model(self):
+        country_embedding = layers.Embedding(self.countries.size() + 1, 10)
+
+        history_input = layers.Input(shape=(self.max_history_length))
+        features_input = layers.Input(shape=(self.max_history_length, len(ACTION_FEATURES)))
+
+        user_country_input = layers.Input(shape=(self.max_history_length))
+        hotel_country_input = layers.Input(shape=(self.max_history_length))
+        affiliate_id_input = layers.Input(shape=(self.max_history_length))
+
+        history_embedding = layers.Embedding(self.items.size() + 1, 32)(history_input)
+
+        user_country_embedding = country_embedding(user_country_input)
+        hotel_country_embedding = country_embedding(hotel_country_input)
+        affiliate_id_embedding = layers.Embedding(self.affiliates.size() + 1, 5)(affiliate_id_input)
+        concatenated = layers.Concatenate()([history_embedding, features_input,
+                                             user_country_embedding, hotel_country_embedding, affiliate_id_embedding])
+        x = layers.Flatten()(concatenated)
+        x = layers.BatchNormalization()(x)
+        x = layers.Dense(256, name="dense1", activation="swish")(x)
+        x = layers.Dense(128, name="dense2", activation="swish")(x)
+        x = layers.Dense(self.bottleneck_size,
+                               name="bottleneck", activation="swish")(x)
+        x = layers.Dropout(0.5, name="dropout")(x)
+        x = layers.Dense(128, name="dense3", activation="swish")(x)
+        x = layers.Dense(256, name="dense4", activation="swish")(x)
+        output = layers.Dense(self.items.size(), name="output", activation=self.output_layer_activation)(x)
+        model = Model(inputs=[history_input, features_input, user_country_input,
+                              hotel_country_input, affiliate_id_input], outputs=output)
         ndcg_metric = KerasNDCG(self.ndcg_at)
+
         loss = self.loss
         if loss == 'lambdarank':
             loss = self.get_lambdarank_loss()
@@ -149,9 +176,20 @@ class GreedyMLPHistoricalEmbedding(Recommender):
         return self.get_model_predictions(items, limit)
 
     def get_model_predictions(self, items_list, limit):
-        actions = [(0, action) for action in items_list]
-        vector = actions_to_vector(actions, self.max_history_length, self.items.size())
-        scores = self.model.predict(vector.reshape(1, self.max_history_length))[0]
+        actions = [(self.items.get_id(action.item_id), action) for action in items_list]
+        history_vector = history_to_vector(actions, self.max_history_length, self.items.size())\
+            .reshape(1, self.max_history_length)
+        additional_features = encode_additional_features(actions, self.max_history_length)\
+            .reshape(1, self.max_history_length, len(ACTION_FEATURES))
+
+        user_countries = id_vector(actions, self.max_history_length, self.countries, 'booker_country') \
+            .reshape(1, self.max_history_length)
+        hotel_countries = id_vector(actions, self.max_history_length, self.countries, 'hotel_country') \
+            .reshape(1, self.max_history_length)
+        affiliate_ids = id_vector(actions, self.max_history_length, self.affiliates, 'affiliate_id') \
+            .reshape(1, self.max_history_length)
+        scores = self.model.predict([history_vector, additional_features, user_countries,
+                                     hotel_countries, affiliate_ids])[0]
         best_ids = np.argsort(scores)[::-1][:limit]
         result = [(self.items.reverse_id(id), scores[id]) for id in best_ids]
         return result

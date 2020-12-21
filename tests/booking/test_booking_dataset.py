@@ -14,5 +14,5 @@ class TestBookingDataset(unittest.TestCase):
             recommender.rebuild_model()
 
         recommendations = recommender.get_next_items('1010293', 5)
-        assert(recommendations[0][0] == '23921')
+        assert(recommendations[0][0] == '36063')
 
