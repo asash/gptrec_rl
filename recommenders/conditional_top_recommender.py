@@ -3,6 +3,10 @@ from aprec.recommenders.recommender import Recommender
 
 
 class ConditionalTopRecommender(Recommender):
+    """
+    This recommender calculates top items based on some condition. For example, we want to recommend
+    the most popular hotel in the city, not globally (for global top we can use @TopRecommender). 
+    """
     def __init__(self, conditional_field: str):
         self.conditional_field: str = conditional_field
         self.items_counts: dict = dict()
