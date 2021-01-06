@@ -5,11 +5,12 @@ from aprec.recommenders.recommender import Recommender
 class ConditionalTopRecommender(Recommender):
     """
     This recommender calculates top items based on some condition. For example, we want to recommend
-    the most popular hotel in the city, not globally (for global top we can use @TopRecommender). 
+    the most popular hotel in the city, not globally (for global top we can use @TopRecommender).
     """
     def __init__(self, conditional_field: str):
         self.conditional_field: str = conditional_field
         self.items_counts: dict = dict()
+        self.precalculated_top_items: dict = dict()
         self.user_field_values: dict = dict()
 
     def add_action(self, action):
@@ -25,12 +26,15 @@ class ConditionalTopRecommender(Recommender):
             self.items_counts[field_value][action.item_id] += 1
 
     def rebuild_model(self):
-        pass
+        self.precalculated_top_items = {
+            field_value: counter.most_common() for field_value, counter in self.items_counts.items()
+        }
 
     def get_next_items(self, user_id, limit):
         if user_id not in self.user_field_values:
             raise Exception("New user without field value")
-        return self.items_counts[self.user_field_values[user_id]].most_common()[:limit]
+        # return self.items_counts[self.user_field_values[user_id]].most_common()[:limit]
+        return self.precalculated_top_items[self.user_field_values[user_id]][:limit]
 
     def get_similar_items(self, item_id, limit):
         raise NotImplementedError
