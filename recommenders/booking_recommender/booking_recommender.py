@@ -13,7 +13,6 @@ from aprec.recommenders.booking_recommender.booking_history_batch_generator impo
     ACTION_FEATURES
 from aprec.recommenders.booking_recommender.booking_history_batch_generator import history_to_vector,\
     encode_additional_features, id_vector
-from aprec.recommenders.booking_recommender.booking_loss import BookingLoss
 from tensorflow.keras.models import Model
 import tensorflow.keras.layers as layers
 import numpy as np
@@ -125,7 +124,8 @@ class BookingRecommender(Recommender):
             K.clear_session()
             gc.collect()
         self.model.set_weights(best_weights)
-        self.metadata = {"epochs_trained": best_epoch + 1, "best_val_ndcg": best_success, "val_ndcg_history": val_ndcg_history}
+        self.metadata = {"epochs_trained": best_epoch + 1, "best_val_ndcg": best_success, "val_ndcg_history":
+            val_ndcg_history, "val_success_history": val_success_history}
         print(self.get_metadata())
         print(f"taken best model from epoch{best_epoch}. best_val_ndcg: {best_success}")
 
@@ -165,9 +165,6 @@ class BookingRecommender(Recommender):
         if loss == 'lambdarank':
             loss = self.get_lambdarank_loss()
 
-        if loss == 'booking_loss':
-            loss = self.get_booking_loss()
-
         if loss == 'xendcg':
             loss = self.get_xendcg_loss()
 
@@ -176,10 +173,6 @@ class BookingRecommender(Recommender):
 
     def get_lambdarank_loss(self):
         return LambdaRankLoss(self.items.size(), self.batch_size, self.sigma, ndcg_at=self.ndcg_at)
-
-    def get_booking_loss(self):
-        return BookingLoss(self.items.size(), self.batch_size, self.sigma, ndcg_at=self.ndcg_at)
-
 
     def get_xendcg_loss(self):
         return XENDCGLoss(self.items.size(), self.batch_size)
