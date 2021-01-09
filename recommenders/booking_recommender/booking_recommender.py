@@ -28,7 +28,6 @@ class BookingRecommender(Recommender):
                  early_stop_epochs = 100,
                  sigma = 1,
                  ndcg_at = 30,
-                 batch_normalization = True,
                  ):
         self.users = ItemId()
         self.items = ItemId()
@@ -51,7 +50,6 @@ class BookingRecommender(Recommender):
         self.sigma = sigma
         self.ndcg_at = ndcg_at
         self.output_layer_activation = output_layer_activation
-        self.batch_normalization = batch_normalization
 
     def get_metadata(self):
         return self.metadata
@@ -147,16 +145,20 @@ class BookingRecommender(Recommender):
         affiliate_id_embedding = layers.Embedding(self.affiliates.size() + 1, 5)(affiliate_id_input)
         concatenated = layers.Concatenate()([history_embedding, features_input,
                                              user_country_embedding, hotel_country_embedding, affiliate_id_embedding])
-        if self.batch_normalization:
-            concatenated = layers.BatchNormalization()(concatenated)
-        x = layers.Conv1D(32, 5, activation='swish')(concatenated)
+        x = layers.BatchNormalization()(concatenated)
         x = layers.Conv1D(32, 5, activation='swish')(x)
+        x = layers.BatchNormalization()(x)
         x = layers.Conv1D(32, 5, activation='swish')(x)
+        x = layers.BatchNormalization()(x)
+        x = layers.Conv1D(32, 5, activation='swish')(x)
+        x = layers.BatchNormalization()(x)
         x = layers.Flatten()(x)
         x = layers.Dense(self.bottleneck_size,
                                name="bottleneck", activation="swish")(x)
+        x = layers.BatchNormalization()(x)
         x = layers.Dropout(0.5, name="dropout")(x)
         x = layers.Dense(256, name="dense4", activation="swish")(x)
+        x = layers.BatchNormalization()(x)
         output = layers.Dense(self.items.size(), name="output", activation=self.output_layer_activation)(x)
         model = Model(inputs=[history_input, features_input, user_country_input,
                               hotel_country_input, affiliate_id_input], outputs=output)
