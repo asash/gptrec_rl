@@ -11,7 +11,7 @@ class TestBookingRecommender(unittest.TestCase):
         booking_file = os.path.join(current_dir, "booking_train_dataset.csv")
         dataset = get_booking_dataset(booking_file)
         recommender = BookingRecommender(train_epochs=10, n_val_users=73, batch_size=2, max_history_len=15,
-                                         loss='lambdarank', output_layer_activation='linear')
+                                         loss='booking_loss', output_layer_activation='linear')
         for action in dataset:
             recommender.add_action(action)
         recommender.rebuild_model()

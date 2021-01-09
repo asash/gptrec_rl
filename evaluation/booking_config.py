@@ -40,6 +40,7 @@ RECOMMENDERS = {
     "top_recommender": top_recommender,
     "conditional_top_recommender": conditional_top_recommender,
     "svd_recommender": lambda: svd_recommender(30),
+    "APREC-GMLPHE-BookingLoss": lambda: mlp_historical_embedding('booking_loss', 'linear'),
     "APREC-GMLPHE-Lambdarank": lambda: mlp_historical_embedding('lambdarank', 'linear'),
 
 }
