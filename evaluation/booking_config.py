@@ -38,7 +38,7 @@ def mlp_historical_embedding(loss, activation_override=None):
 
 RECOMMENDERS = {
     "top_recommender": top_recommender,
-    "conditional_top_recommender": conditional_top_recommender(),
+    "conditional_top_recommender": conditional_top_recommender,
     "conditional_top_filter_visited": lambda: filter_seen_recommender(conditional_top_recommender()),
     "svd_recommender": lambda: svd_recommender(30),
     "svd_filter_visited": lambda: filter_seen_recommender(svd_recommender(30)),
