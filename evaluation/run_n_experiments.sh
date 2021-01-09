@@ -16,6 +16,7 @@ experiment_id="${config_id}_${date}"
 root_dir=./results/$experiment_id
 experiment_stdout=$root_dir/stdout
 experiment_stderr=$root_dir/stderr
+experiment_commit=$root_dir/commit
 
 mkdir $root_dir
 
@@ -29,5 +30,7 @@ do
     echo "experiment_stdout: ${experiment_stdout}"
     echo "experiment_stderr: ${experiment_stderr}"
     echo "experiment_result: ${experiment_result}"
+    echo "experiment_commit: ${experiment_commit}"
+    git log -1 > $experiment_commit
 	unbuffer python3 run_experiment.py $config $experiment_result > $experiment_stdout 2> $experiment_stderr;
 done;
