@@ -28,7 +28,7 @@ def split_csv_string(string):
 def get_booking_dataset(filename):
     actions = []
     with open(filename) as input_file:
-        first_line = input_file.readline()
+        input_file.readline()
         next_line = input_file.readline()
         while(len(next_line) != 0):
             parts = split_csv_string(next_line)
@@ -41,7 +41,7 @@ def get_booking_dataset(filename):
             date_format = "%Y-%m-%d"
             checkin = datetime.strptime(checkin_str, date_format)
             checkout = datetime.strptime(checkout_str, date_format)
-            action = Action(user_id = user_id, item_id = city_id, timestamp=checkin, data = {'trip_id': utrip_id,
+            action = Action(user_id = utrip_id, item_id = city_id, timestamp=checkin, data = {'user_id': user_id,
                                                                           'device_class': device_class,
                                                                           'affiliate_id': affiliate_id,
                                                                           'hotel_country': hotel_country,

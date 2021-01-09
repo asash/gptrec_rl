@@ -1,4 +1,5 @@
 from aprec.recommenders.top_recommender import TopRecommender
+from aprec.recommenders.conditional_top_recommender import ConditionalTopRecommender
 from aprec.recommenders.svd import SvdRecommender
 from aprec.evaluation.metrics.precision import Precision
 from aprec.evaluation.metrics.recall import Recall
@@ -18,6 +19,9 @@ DATASET = get_booking_dataset('./booking_data/booking_train_set.csv')
 def top_recommender():
     return TopRecommender()
 
+def conditional_top_recommender():
+    return ConditionalTopRecommender()
+
 def svd_recommender(k):
     return SvdRecommender(k)
 
@@ -30,23 +34,21 @@ def mlp_historical_embedding(loss, activation_override=None):
                                         batch_size=250, sigma=1.0, ndcg_at=40,
                                         n_val_users=2000,
                                         bottleneck_size=64,
-                                        max_history_len=180,
+                                        max_history_len=50,
                                         output_layer_activation=activation)
 
 RECOMMENDERS = {
     "top_recommender": top_recommender,
+    "conditional_top_recommender": conditional_top_recommender(),
     "svd_recommender": lambda: svd_recommender(30),
     "APREC-GMLPHE-Lambdarank": lambda: mlp_historical_embedding('lambdarank', 'linear'),
 
 }
-
-
 
 SPLIT_STRATEGY = "LEAVE_ONE_OUT"
 
 USERS_FRACTIONS = [1.0]
 
 dataset_for_metric = [action for action in get_booking_dataset('./booking_data/booking_train_set.csv')]
-METRICS = [Precision(4), NDCG(4), NDCG(40), Recall(5), SPS(10), MRR(), MAP(10), AveragePopularityRank(5, dataset_for_metric),
-           PairwiseCosSim(dataset_for_metric, 10)]
+METRICS = [Precision(4), SPS(4), NDCG(4), NDCG(40)]
 del(dataset_for_metric)

@@ -28,7 +28,7 @@ def over_weekend(start_date, end_date):
 
 class BookingHistoryBatchGenerator(Sequence):
     def __init__(self, user_actions, history_size, n_items, affiliates_dict,
-                 country_dict,batch_size=1000, validation=False, target_decay=0.8,
+                 country_dict,batch_size=1000, validation=False, target_decay=0.7,
                 min_target_val=0.1):
         self.user_actions = user_actions
         self.history_size= history_size
