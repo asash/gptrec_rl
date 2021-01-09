@@ -1,13 +1,9 @@
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.conditional_top_recommender import ConditionalTopRecommender
+from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.recommenders.svd import SvdRecommender
 from aprec.evaluation.metrics.precision import Precision
-from aprec.evaluation.metrics.recall import Recall
 from aprec.evaluation.metrics.ndcg import NDCG
-from aprec.evaluation.metrics.mrr import MRR
-from aprec.evaluation.metrics.map import MAP
-from aprec.evaluation.metrics.average_popularity_rank import AveragePopularityRank
-from aprec.evaluation.metrics.pairwise_cos_sim import PairwiseCosSim
 from aprec.recommenders.booking_recommender.booking_recommender import BookingRecommender
 from tensorflow.keras.optimizers import Adam
 from aprec.evaluation.metrics.sps import SPS
@@ -20,7 +16,10 @@ def top_recommender():
     return TopRecommender()
 
 def conditional_top_recommender():
-    return ConditionalTopRecommender()
+    return ConditionalTopRecommender('hotel_country')
+
+def filter_seen_recommender(recommender):
+    return FilterSeenRecommender(recommender)
 
 def svd_recommender(k):
     return SvdRecommender(k)
@@ -40,7 +39,9 @@ def mlp_historical_embedding(loss, activation_override=None):
 RECOMMENDERS = {
     "top_recommender": top_recommender,
     "conditional_top_recommender": conditional_top_recommender(),
+    "conditional_top_filter_visited": lambda: filter_seen_recommender(conditional_top_recommender()),
     "svd_recommender": lambda: svd_recommender(30),
+    "svd_filter_visited": lambda: filter_seen_recommender(svd_recommender(30)),
     "APREC-GMLPHE-Lambdarank": lambda: mlp_historical_embedding('lambdarank', 'linear'),
 
 }
