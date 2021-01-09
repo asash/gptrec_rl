@@ -29,7 +29,7 @@ def mlp_historical_embedding(loss, activation_override=None):
     if activation_override is not None:
         activation = activation_override
     return BookingRecommender(train_epochs=10000, loss=loss,
-                                        optimizer=Adam(), early_stop_epochs=100,
+                                        optimizer=Adam(), early_stop_epochs=10,
                                         batch_size=250, sigma=1.0, ndcg_at=40,
                                         n_val_users=2000,
                                         bottleneck_size=64,
@@ -48,7 +48,7 @@ RECOMMENDERS = {
 
 SPLIT_STRATEGY = "LEAVE_ONE_OUT"
 
-USERS_FRACTIONS = [1.0]
+USERS_FRACTIONS = [0.1]
 
 dataset_for_metric = [action for action in get_booking_dataset('./booking_data/booking_train_set.csv')]
 METRICS = [Precision(4), SPS(4), NDCG(4), NDCG(40)]
