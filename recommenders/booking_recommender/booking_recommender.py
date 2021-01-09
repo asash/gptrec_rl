@@ -5,6 +5,7 @@ from collections import defaultdict
 
 from aprec.utils.item_id import ItemId
 from aprec.recommenders.metrics.ndcg import KerasNDCG
+from aprec.recommenders.metrics.success import KerasSuccess
 from aprec.recommenders.losses.lambdarank import LambdaRankLoss
 from aprec.recommenders.losses.xendcg import XENDCGLoss
 from aprec.recommenders.recommender import Recommender
@@ -14,7 +15,6 @@ from aprec.recommenders.booking_recommender.booking_history_batch_generator impo
     encode_additional_features, id_vector
 from tensorflow.keras.models import Model
 import tensorflow.keras.layers as layers
-from keras_self_attention import SeqSelfAttention
 import numpy as np
 
 
@@ -96,11 +96,12 @@ class BookingRecommender(Recommender):
                                                 affiliates_dict = self.affiliates,
                                                      validation=True)
         self.model = self.get_model()
-        best_ndcg = 0
+        best_success = 0
         steps_since_improved = 0
         best_epoch = -1 
         best_weights = self.model.get_weights()
         val_ndcg_history = []
+        val_success_history = []
         for epoch in range(self.train_epochs):
             generator = BookingHistoryBatchGenerator(train_users, self.max_history_length, self.items.size(),
                                               batch_size=self.batch_size, country_dict = self.countries,
@@ -108,23 +109,26 @@ class BookingRecommender(Recommender):
             print(f"epoch: {epoch}")
             train_history = self.model.fit(generator, validation_data=val_generator)
             val_ndcg = train_history.history[f"val_ndcg_at_{self.ndcg_at}"][-1]
+            val_success = train_history.history[f"val_Success_at_4"][-1]
             val_ndcg_history.append(val_ndcg)
+            val_success_history.append(val_success)
+
             steps_since_improved += 1
-            if val_ndcg > best_ndcg:
+            if val_success > best_success:
                 steps_since_improved = 0
-                best_ndcg = val_ndcg
+                best_success = val_success
                 best_epoch =  epoch
                 best_weights = self.model.get_weights()
-            print(f"best_ndcg: {best_ndcg}, steps_since_improved: {steps_since_improved}")
+            print(f"best_val_success: {best_success}, steps_since_improved: {steps_since_improved}")
             if steps_since_improved >= self.early_stop_epochs:
                 print(f"early stopped at epoch {epoch}")
                 break
             K.clear_session()
             gc.collect()
         self.model.set_weights(best_weights)
-        self.metadata = {"epochs_trained": best_epoch + 1, "best_val_ndcg": best_ndcg, "val_ndcg_history": val_ndcg_history}
+        self.metadata = {"epochs_trained": best_epoch + 1, "best_val_ndcg": best_success, "val_ndcg_history": val_ndcg_history}
         print(self.get_metadata())
-        print(f"taken best model from epoch{best_epoch}. best_val_ndcg: {best_ndcg}")
+        print(f"taken best model from epoch{best_epoch}. best_val_ndcg: {best_success}")
 
     def get_model(self):
         country_embedding = layers.Embedding(self.countries.size() + 1, 10)
@@ -157,6 +161,7 @@ class BookingRecommender(Recommender):
         model = Model(inputs=[history_input, features_input, user_country_input,
                               hotel_country_input, affiliate_id_input], outputs=output)
         ndcg_metric = KerasNDCG(self.ndcg_at)
+        success_4_metric = KerasSuccess(4)
 
         loss = self.loss
         if loss == 'lambdarank':
@@ -165,7 +170,7 @@ class BookingRecommender(Recommender):
         if loss == 'xendcg':
             loss = self.get_xendcg_loss()
 
-        model.compile(optimizer=self.optimizer, loss=loss, metrics=[ndcg_metric])
+        model.compile(optimizer=self.optimizer, loss=loss, metrics=[ndcg_metric, success_4_metric])
         return model
 
     def get_lambdarank_loss(self):
