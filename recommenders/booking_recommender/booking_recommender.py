@@ -14,6 +14,7 @@ from aprec.recommenders.booking_recommender.booking_history_batch_generator impo
     encode_additional_features, id_vector
 from tensorflow.keras.models import Model
 import tensorflow.keras.layers as layers
+from keras_self_attention import SeqSelfAttention
 import numpy as np
 
 
@@ -27,6 +28,7 @@ class BookingRecommender(Recommender):
                  early_stop_epochs = 100,
                  sigma = 1,
                  ndcg_at = 30,
+                 batch_normalization = True,
                  ):
         self.users = ItemId()
         self.items = ItemId()
@@ -49,6 +51,7 @@ class BookingRecommender(Recommender):
         self.sigma = sigma
         self.ndcg_at = ndcg_at
         self.output_layer_activation = output_layer_activation
+        self.batch_normalization = batch_normalization
 
     def get_metadata(self):
         return self.metadata
@@ -62,9 +65,9 @@ class BookingRecommender(Recommender):
     def add_action(self, action):
         user_id_internal = self.users.get_id(action.user_id)
         item_id_internal = self.items.get_id(action.item_id)
-        user_country_id_internal = self.countries.get_id(action.data['booker_country'])
-        hotel_country_id_internal = self.countries.get_id(action.data['hotel_country'])
-        affiliate_id_internal = self.affiliates.get_id(action.data['affiliate_id'])
+        self.countries.get_id(action.data['booker_country'])
+        self.countries.get_id(action.data['hotel_country'])
+        self.affiliates.get_id(action.data['affiliate_id'])
         self.user_actions[user_id_internal].append((item_id_internal, action))
 
     def user_actions_by_id_list(self, id_list):
@@ -140,14 +143,15 @@ class BookingRecommender(Recommender):
         affiliate_id_embedding = layers.Embedding(self.affiliates.size() + 1, 5)(affiliate_id_input)
         concatenated = layers.Concatenate()([history_embedding, features_input,
                                              user_country_embedding, hotel_country_embedding, affiliate_id_embedding])
-        x = layers.Flatten()(concatenated)
-        x = layers.BatchNormalization()(x)
-        x = layers.Dense(256, name="dense1", activation="swish")(x)
-        x = layers.Dense(128, name="dense2", activation="swish")(x)
+        if self.batch_normalization:
+            concatenated = layers.BatchNormalization()(concatenated)
+        x = layers.Conv1D(32, 5, activation='swish')(concatenated)
+        x = layers.Conv1D(32, 5, activation='swish')(x)
+        x = layers.Conv1D(32, 5, activation='swish')(x)
+        x = layers.Flatten()(x)
         x = layers.Dense(self.bottleneck_size,
                                name="bottleneck", activation="swish")(x)
         x = layers.Dropout(0.5, name="dropout")(x)
-        x = layers.Dense(128, name="dense3", activation="swish")(x)
         x = layers.Dense(256, name="dense4", activation="swish")(x)
         output = layers.Dense(self.items.size(), name="output", activation=self.output_layer_activation)(x)
         model = Model(inputs=[history_input, features_input, user_country_input,
