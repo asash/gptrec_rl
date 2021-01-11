@@ -154,7 +154,7 @@ class BookingRecommender(Recommender):
         x = layers.Dense(self.bottleneck_size,
                                name="bottleneck", activation="swish")(x)
         x = layers.Dropout(0.5, name="dropout")(x)
-        x = layers.Dense(256, name="dense4", activation="swish")(x)
+        x = layers.Dense(1000, name="dense4", activation="swish")(x)
         output = layers.Dense(self.items.size(), name="output", activation=self.output_layer_activation)(x)
         model = Model(inputs=[history_input, features_input, user_country_input,
                               hotel_country_input, affiliate_id_input], outputs=output)
