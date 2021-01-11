@@ -5,7 +5,10 @@ from aprec.recommenders.recommender import Recommender
 
 class TransitionsChainRecommender(Recommender):
     """
-    TODO
+    This recommender was written for situation when we have sequence of events for each user and we want
+    to predict the last element of this sequence.
+    During the training phase we calculate counts between events in a sequence and last event (target).
+    During the inference phase we take all events of user and sum up all counts to predict next event.
     """
     def __init__(self):
         self.item_id_to_index: dict = dict()
@@ -35,7 +38,7 @@ class TransitionsChainRecommender(Recommender):
 
     def get_next_items(self, user_id, limit):
         if user_id not in self.user_to_items:
-            raise Exception("New user without field value")
+            raise Exception("New user without history")
         last_items_indexes = [self.item_id_to_index[idx] for idx in self.user_to_items[user_id]]
         total_predictions = [
             (index, prob) for index, prob in zip(
