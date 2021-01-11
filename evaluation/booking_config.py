@@ -2,6 +2,7 @@ from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.conditional_top_recommender import ConditionalTopRecommender
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.recommenders.item_item import ItemItemRecommender
+from aprec.recommenders.transition_chain_recommender import TransitionsChainRecommender
 from aprec.recommenders.svd import SvdRecommender
 from aprec.evaluation.metrics.precision import Precision
 from aprec.evaluation.metrics.ndcg import NDCG
@@ -45,6 +46,7 @@ RECOMMENDERS = {
     "conditional_top_recommender": conditional_top_recommender,
     "svd_recommender": lambda: svd_recommender(30),
     "item_temem_recommender": item_item_recommender,
+    "transitions_chain_recommender": TransitionsChainRecommender,
     #"APREC-GMLPHE-Lambdarank": lambda: mlp_historical_embedding('lambdarank', 'linear'),
 }
 
