@@ -34,10 +34,10 @@ def mlp_historical_embedding(loss, activation_override=None):
     if activation_override is not None:
         activation = activation_override
     return BookingRecommender(train_epochs=10000, loss=loss,
-                                        optimizer=Adam(), early_stop_epochs=10,
+                                        optimizer=Adam(), early_stop_epochs=20,
                                         batch_size=250, sigma=1.0, ndcg_at=40,
                                         n_val_users=2000,
-                                        bottleneck_size=1000,
+                                        bottleneck_size=64,
                                         max_history_len=50,
                                         output_layer_activation=activation)
 
