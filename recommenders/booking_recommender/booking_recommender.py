@@ -147,9 +147,9 @@ class BookingRecommender(Recommender):
         concatenated = layers.Concatenate()([history_embedding, features_input,
                                              user_country_embedding, hotel_country_embedding, affiliate_id_embedding])
         x = layers.BatchNormalization()(concatenated)
-        x = layers.Conv1D(32, 5, activation='swish')(x)
-        x = layers.Conv1D(32, 5, activation='swish')(x)
-        x = layers.Conv1D(32, 5, activation='swish')(x)
+        x = layers.Attention()([x, x])
+        x = layers.Attention()([x, x])
+        x = layers.Attention()([x, x])
         x = layers.Flatten()(x)
         x = layers.Dense(self.bottleneck_size,
                                name="bottleneck", activation="swish")(x)
