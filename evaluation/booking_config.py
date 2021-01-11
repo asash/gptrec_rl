@@ -47,7 +47,7 @@ RECOMMENDERS = {
     "svd_recommender": lambda: svd_recommender(30),
     "item_temem_recommender": item_item_recommender,
     "transitions_chain_recommender": TransitionsChainRecommender,
-    "APREC-GMLPHE-Lambdarank": lambda: mlp_historical_embedding('lambdarank', 'linear'),
+    "APREC-GMLPHE-Lambdarank": lambda: mlp_historical_embedding('lambdarank', 'tanh'),
 }
 
 SPLIT_STRATEGY = "LEAVE_ONE_OUT"
