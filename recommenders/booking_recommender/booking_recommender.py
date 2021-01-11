@@ -148,7 +148,7 @@ class BookingRecommender(Recommender):
                                              user_country_embedding, hotel_country_embedding, affiliate_id_embedding])
         x = layers.BatchNormalization()(concatenated)
         x = layers.Attention()([x, x])
-        x = layers.Attention(dropout=0.5)([x, x])
+        x = layers.Attention()([x, x])
         x = layers.Attention()([x, x])
         x = layers.Flatten()(x)
         x = layers.Dense(self.bottleneck_size,
