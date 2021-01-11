@@ -1,6 +1,7 @@
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.conditional_top_recommender import ConditionalTopRecommender
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
+from aprec.recommenders.item_item import ItemItemRecommender
 from aprec.recommenders.svd import SvdRecommender
 from aprec.evaluation.metrics.precision import Precision
 from aprec.evaluation.metrics.ndcg import NDCG
@@ -24,6 +25,9 @@ def filter_seen_recommender(recommender):
 def svd_recommender(k):
     return SvdRecommender(k)
 
+def item_item_recommender():
+    return ItemItemRecommender()
+
 def mlp_historical_embedding(loss, activation_override=None):
     activation = 'linear' if loss == 'lambdarank' else 'sigmoid'
     if activation_override is not None:
@@ -40,7 +44,8 @@ RECOMMENDERS = {
     "top_recommender": top_recommender,
     "conditional_top_recommender": conditional_top_recommender,
     "svd_recommender": lambda: svd_recommender(30),
-    "APREC-GMLPHE-Lambdarank": lambda: mlp_historical_embedding('lambdarank', 'linear'),
+    "item_temem_recommender": item_item_recommender,
+    #"APREC-GMLPHE-Lambdarank": lambda: mlp_historical_embedding('lambdarank', 'linear'),
 }
 
 SPLIT_STRATEGY = "LEAVE_ONE_OUT"
