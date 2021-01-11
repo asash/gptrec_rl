@@ -15,11 +15,11 @@ class TransitionsChainRecommender(Recommender):
 
         self.user_field_values: dict = dict()
         self.chain_to_items: dict = dict()
-        self.chain_indicator_field = chain_indicator_field
+        self.chain_indicator_field: str = chain_indicator_field
 
     def add_action(self, action):
         if self.chain_indicator_field not in action.data:
-            raise Exception(f"this actions does not have required field: {self.chain_indicator_field}")
+            raise Exception(f"this actions does not have required field: {self.chain_indicator_field}. Contains: {action.data}")
 
         if action.item_id not in self.item_id_to_index:
             self.item_id_to_index[action.item_id] = self.items_count
