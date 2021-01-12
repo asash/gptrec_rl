@@ -22,6 +22,14 @@ def split_actions(actions, fractions):
     result.append(actions_list[left_border:right_border])
     return result
 
+
+def get_control_users(actions):
+    result = set()
+    for action in actions:
+        if 'is_control' in action.data and action.data['is_control']:
+            result.add(action.user_id)
+    return result
+
 def leave_one_out(actions, max_test_users=1000):
     sorted_actions = sorted(actions, key=lambda x: x.timestamp)
     users = defaultdict(list)
@@ -29,7 +37,9 @@ def leave_one_out(actions, max_test_users=1000):
         users[action.user_id].append(action)
     train = []
     test = []
-    test_user_ids = set(np.random.choice(list(users.keys()), max_test_users, replace=False))
+    control_users = get_control_users(actions)
+    valid_user_selection = users.keys() - control_users
+    test_user_ids = set(np.random.choice(list(valid_user_selection), max_test_users, replace=False))
     for user_id in users:
         if user_id in test_user_ids:
             train += users[user_id][:-1]

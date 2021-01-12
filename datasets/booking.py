@@ -25,7 +25,7 @@ def split_csv_string(string):
 
 
 
-def get_booking_dataset(filename):
+def get_booking_dataset_one_file(filename, is_testset=False):
     actions = []
     with open(filename) as input_file:
         input_file.readline()
@@ -33,11 +33,19 @@ def get_booking_dataset(filename):
         while(len(next_line) != 0):
             parts = split_csv_string(next_line)
             try:
-                _, user_id, checkin_str, checkout_str, city_id,\
-                        device_class, affiliate_id,\
-                        booker_country, hotel_country, utrip_id = parts
+                if not is_testset:
+                    _, user_id, checkin_str, checkout_str, city_id,\
+                            device_class, affiliate_id,\
+                            booker_country, hotel_country, utrip_id = parts
+                else:
+                    user_id, checkin_str, checkout_str, device_class, affiliate_id,booker_country,utrip_id,row_num,\
+                                total_rows,city_id,hotel_country = parts
+
             except Exception as ex:
                 raise Exception(f"incorrect line: {next_line}")
+            if city_id == "0":
+                next_line = input_file.readline()
+                continue
             date_format = "%Y-%m-%d"
             checkin = datetime.strptime(checkin_str, date_format)
             checkout = datetime.strptime(checkout_str, date_format)
@@ -47,8 +55,16 @@ def get_booking_dataset(filename):
                                                                           'hotel_country': hotel_country,
                                                                           'booker_country': hotel_country,
                                                                           'checkin_date': checkin,
-                                                                          'checkout_date': checkout
+                                                                          'checkout_date': checkout,
+                                                                          'is_control': is_testset
                                                                          })
             actions.append(action)
             next_line = input_file.readline()
     return actions
+
+def get_booking_dataset(train_filename, test_filename):
+    train_actions = get_booking_dataset_one_file(train_filename, is_testset=False)
+    test_actions = get_booking_dataset_one_file(test_filename, is_testset=True)
+    return train_actions + test_actions
+
+

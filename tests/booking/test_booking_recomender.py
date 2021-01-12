@@ -8,8 +8,9 @@ from aprec.recommenders.booking_recommender.booking_recommender import BookingRe
 class TestBookingRecommender(unittest.TestCase):
     def test_booking_recommender(self):
         current_dir = os.path.dirname(__file__)
-        booking_file = os.path.join(current_dir, "booking_train_dataset.csv")
-        dataset = get_booking_dataset(booking_file)
+        booking_train_file = os.path.join(current_dir, "booking_train_dataset.csv")
+        booking_test_file = os.path.join(current_dir, "booking_test_dataset.csv")
+        dataset = get_booking_dataset(booking_train_file, booking_test_file)
         recommender = BookingRecommender(train_epochs=10, n_val_users=73, batch_size=2, max_history_len=15,
                                          loss='lambdarank', output_layer_activation='linear')
         for action in dataset:

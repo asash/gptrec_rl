@@ -1,3 +1,4 @@
+import os
 import sys
 import importlib.util
 import json
@@ -18,17 +19,21 @@ def config():
     config = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(config)
     if len(sys.argv) > 2:
-        config.out_file = open(sys.argv[2], 'w') 
+        config.out_file = open(sys.argv[2], 'w')
+        config.out_dir = os.path.dirname(sys.argv[2])
     else:
         config.out_file = sys.stdout
+        config.out_dir = os.getcwd()
+
     return config
 
 class RecommendersEvaluator(object):
-    def __init__(self, actions, recommenders, metrics, data_splitter):
+    def __init__(self, actions, recommenders, metrics, data_splitter, callbacks=()):
         self.actions = actions
         self.metrics = metrics
         self.recommenders = recommenders
         self.data_splitter = data_splitter
+        self.callbacks = callbacks
 
     def __call__(self):
         result = {"recommenders": {}}
@@ -57,6 +62,8 @@ class RecommendersEvaluator(object):
             print("done")
             print(json.dumps(evaluation_result))
             result['recommenders'][recommender_name] = evaluation_result
+            for callback in self.callbacks:
+                callback(recommender, recommender_name, config)
             del(recommender)
         return result
 
@@ -69,6 +76,10 @@ def real_hash(obj):
 def run_experiment(config):
     result = []
     all_actions = list(config.DATASET)
+    callbacks = ()
+    if hasattr(config, 'CALLBACKS'):
+        callbacks = config.CALLBACKS
+
     for users_fraction in config.USERS_FRACTIONS:
         every_user = 1/users_fraction
         print("read data...")
@@ -83,10 +94,12 @@ def run_experiment(config):
         print("evaluating...")
 
         data_splitter = get_data_splitter(config)
+
         recommender_evaluator = RecommendersEvaluator(actions,
                                      config.RECOMMENDERS,
                                      config.METRICS,
-                                     data_splitter)
+                                     data_splitter,
+                                     callbacks)
         result_for_fraction = recommender_evaluator()
         result_for_fraction['users_fraction'] = users_fraction
         result_for_fraction['num_items'] = len(item_id_set)

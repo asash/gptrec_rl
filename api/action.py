@@ -1,6 +1,8 @@
 import json
 class Action(object):
-    def __init__(self, user_id, item_id, timestamp, data={}):
+    def __init__(self, user_id, item_id, timestamp, data=None):
+        if data is None:
+            data = dict()
         self.user_id = user_id
         self.item_id = item_id
         self.data = data
@@ -12,7 +14,7 @@ class Action(object):
                     self.item_id, 
                     self.timestamp)
        if self.data != {}:
-           result += ", data={}".format(json.dumps(self.data))
+           result += ", data={}".format(str(self.data))
        result += ")"
        return result
 
