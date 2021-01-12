@@ -47,8 +47,6 @@ RECOMMENDERS = {
     "svd_recommender": lambda: svd_recommender(30),
     "item_temem_recommender": item_item_recommender,
     "transitions_chain_recommender": TransitionsChainRecommender,
-    "APREC-GMLPHE-Lambdarank-32": lambda: mlp_historical_embedding('lambdarank', 'linear', 32),
-    "APREC-GMLPHE-Lambdarank-64": lambda: mlp_historical_embedding('lambdarank', 'linear', 64),
     "APREC-GMLPHE-Lambdarank-128": lambda: mlp_historical_embedding('lambdarank', 'linear', 128),
     "APREC-GMLPHE-Lambdarank-256": lambda: mlp_historical_embedding('lambdarank', 'linear', 256),
     "APREC-GMLPHE-Lambdarank-512": lambda: mlp_historical_embedding('lambdarank', 'linear', 512),
