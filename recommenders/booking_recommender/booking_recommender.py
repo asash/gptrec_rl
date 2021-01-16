@@ -9,8 +9,8 @@ from aprec.recommenders.metrics.success import KerasSuccess
 from aprec.recommenders.losses.lambdarank import LambdaRankLoss
 from aprec.recommenders.losses.xendcg import XENDCGLoss
 from aprec.recommenders.recommender import Recommender
-from aprec.recommenders.booking_recommender.booking_history_batch_generator import BookingHistoryBatchGenerator,\
-    ACTION_FEATURES
+from aprec.recommenders.booking_recommender.booking_history_batch_generator import BookingHistoryBatchGenerator, \
+    ACTION_FEATURES, encode_action_features
 from aprec.recommenders.booking_recommender.booking_history_batch_generator import history_to_vector,\
     encode_additional_features, id_vector
 from tensorflow.keras.models import Model
@@ -130,17 +130,18 @@ class BookingRecommender(Recommender):
         print(f"taken best model from epoch{best_epoch}. best_val_ndcg: {best_success}")
 
     def get_model(self):
-        country_embedding = layers.Embedding(self.countries.size() + 1, 10)
+        target_features = layers.Input(shape=len(ACTION_FEATURES))
+        target_features_encoded = layers.Dense(50, activation='swish')(target_features)
+        target_features_encoded = layers.BatchNormalization()(target_features_encoded)
 
+        country_embedding = layers.Embedding(self.countries.size() + 1, 10)
         history_input = layers.Input(shape=(self.max_history_length))
         features_input = layers.Input(shape=(self.max_history_length, len(ACTION_FEATURES)))
 
         user_country_input = layers.Input(shape=(self.max_history_length))
         hotel_country_input = layers.Input(shape=(self.max_history_length))
         affiliate_id_input = layers.Input(shape=(self.max_history_length))
-
         history_embedding = layers.Embedding(self.items.size() + 1, 32)(history_input)
-
         user_country_embedding = country_embedding(user_country_input)
         hotel_country_embedding = country_embedding(hotel_country_input)
         affiliate_id_embedding = layers.Embedding(self.affiliates.size() + 1, 5)(affiliate_id_input)
@@ -153,11 +154,12 @@ class BookingRecommender(Recommender):
         x = layers.Flatten()(x)
         x = layers.Dense(self.bottleneck_size,
                                name="bottleneck", activation="swish")(x)
+        x = layers.Concatenate()([x, target_features_encoded])
         x = layers.Dense(1000, name="dense4", activation="sigmoid")(x)
         x = layers.Dropout(0.5, name="dropout")(x)
         output = layers.Dense(self.items.size(), name="output", activation=self.output_layer_activation)(x)
         model = Model(inputs=[history_input, features_input, user_country_input,
-                              hotel_country_input, affiliate_id_input], outputs=output)
+                              hotel_country_input, affiliate_id_input, target_features], outputs=output)
         ndcg_metric = KerasNDCG(self.ndcg_at)
         success_4_metric = KerasSuccess(4)
 
@@ -177,17 +179,19 @@ class BookingRecommender(Recommender):
     def get_xendcg_loss(self):
         return XENDCGLoss(self.items.size(), self.batch_size)
 
-    def get_next_items(self, user_id, limit):
+    def get_next_items(self, user_id, limit, features=None):
         actions = self.user_actions[self.users.get_id(user_id)]
         items = [action[1] for action in actions]
-        return self.get_model_predictions(items, limit)
+        return self.get_model_predictions(items, limit, target_action=features)
 
-    def get_model_predictions(self, items_list, limit):
+    def get_model_predictions(self, items_list, limit, target_action):
         actions = [(self.items.get_id(action.item_id), action) for action in items_list]
         history_vector = history_to_vector(actions, self.max_history_length, self.items.size())\
             .reshape(1, self.max_history_length)
         additional_features = encode_additional_features(actions, self.max_history_length)\
             .reshape(1, self.max_history_length, len(ACTION_FEATURES))
+
+        target_features = encode_action_features(target_action).reshape(1, len(ACTION_FEATURES))
 
         user_countries = id_vector(actions, self.max_history_length, self.countries, 'booker_country') \
             .reshape(1, self.max_history_length)
@@ -196,25 +200,8 @@ class BookingRecommender(Recommender):
         affiliate_ids = id_vector(actions, self.max_history_length, self.affiliates, 'affiliate_id') \
             .reshape(1, self.max_history_length)
         scores = self.model.predict([history_vector, additional_features, user_countries,
-                                     hotel_countries, affiliate_ids])[0]
+                                     hotel_countries, affiliate_ids, target_features])[0]
         best_ids = np.argsort(scores)[::-1][:limit]
         result = [(self.items.reverse_id(id), scores[id]) for id in best_ids]
         return result
-
-    def recommend_by_items(self, items_list, limit):
-        items_iternal = []
-        for item in items_list:
-            item_id = self.items.get_id(item)
-            items_iternal.append(item_id)
-        return self.get_model_predictions(items_iternal, limit)
-
-    def get_similar_items(self, item_id, limit):
-        raise (NotImplementedError)
-
-    def to_str(self):
-        raise (NotImplementedError)
-
-    def from_str(self):
-        raise (NotImplementedError)
-
 

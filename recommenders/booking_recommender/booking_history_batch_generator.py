@@ -1,3 +1,4 @@
+import copy
 import math
 import random
 
@@ -51,9 +52,19 @@ class BookingHistoryBatchGenerator(Sequence):
         self.user_country_matrix = self.id_vectors(history, self.history_size, self.country_dict, 'booker_country')
         self.hotel_country_matrix = self.id_vectors(history, self.history_size, self.country_dict, 'hotel_country')
         self.affiliate_id_matrix = self.id_vectors(history, self.history_size, self.affiliates_dict, 'affiliate_id')
+        self.target_features = self.target_features(target)
         self.target_matrix = self.get_target_matrix(target, self.n_items)
         self.current_position = 0
         self.max = self.__len__()
+
+    @staticmethod
+    def target_features(user_actions):
+        result = []
+        for actions in user_actions:
+            target_action = copy.deepcopy(actions[0][1])
+            target_action.data['hotel_country'] = ""
+            result.append(encode_action_features(target_action))
+        return np.array(result)
 
     @staticmethod
     def additional_features(user_actions, history_size):
@@ -125,8 +136,9 @@ class BookingHistoryBatchGenerator(Sequence):
         user_countries = self.user_country_matrix[start:end]
         hotel_countries = self.hotel_country_matrix[start:end]
         affiliates = self.affiliate_id_matrix[start:end]
+        target_features = self.target_features[start:end]
         target = self.target_matrix[start:end].todense()
-        return [history, features, user_countries, hotel_countries, affiliates], target
+        return [history, features, user_countries, hotel_countries, affiliates, target_features], target
 
     def __next__(self):
         if self.current_position >= self.max:

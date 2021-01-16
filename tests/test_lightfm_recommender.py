@@ -7,7 +7,7 @@ import unittest
 USER_ID = '120'
 
 class TestLightFMRecommender(unittest.TestCase):
-    def test_mlp_recommender(self):
+    def test_lightfm_recommender(self):
         lightfm_recommender = LightFMRecommender(30, 'bpr')
         recommender = FilterSeenRecommender(lightfm_recommender)
         for action in generator_limit(get_movielens_actions(), 10000):

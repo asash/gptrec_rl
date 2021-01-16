@@ -39,7 +39,7 @@ class SvdRecommender(Recommender):
         self.user_vectors = self.model.fit_transform(matrix)
         self.mean_user = np.mean(self.user_vectors, axis=0)
 
-    def get_next_items(self, user_id, limit):
+    def get_next_items(self, user_id, limit, features=None):
         user_vec = self.mean_user
         if self.users.has_item(user_id):
             user_vec = self.user_vectors[self.users.get_id(user_id)]

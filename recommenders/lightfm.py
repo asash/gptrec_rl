@@ -32,7 +32,7 @@ class LightFMRecommender(Recommender):
         self.model = LightFM(no_components=self.latent_components, loss=self.loss)
         self.model.fit_partial(matrix_original, epochs=self.n_epochs, verbose=True)
 
-    def get_next_items(self, user_id_external, limit):
+    def get_next_items(self, user_id_external, limit, features=None):
         if not(self.users.has_item(user_id_external)):
             raise Exception("can't process unknown users")
         user_id = self.users.get_id(user_id_external)

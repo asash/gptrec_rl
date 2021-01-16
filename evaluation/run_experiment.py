@@ -34,6 +34,10 @@ class RecommendersEvaluator(object):
         self.recommenders = recommenders
         self.data_splitter = data_splitter
         self.callbacks = callbacks
+        self.features_from_test = None
+
+    def set_features_from_test(self, features_from_test):
+        self.features_from_test = features_from_test
 
     def __call__(self):
         result = {"recommenders": {}}
@@ -53,7 +57,7 @@ class RecommendersEvaluator(object):
 
             print("calculating metrics...")
             evaluate_time_start = time.time()
-            evaluation_result = evaluate_recommender(recommender, test, self.metrics)
+            evaluation_result = evaluate_recommender(recommender, test, self.metrics, self.features_from_test)
             evaluate_time_end = time.time()
             print("calculating metrics...")
             evaluation_result['model_build_time'] =  build_time_end - build_time_start
@@ -100,6 +104,8 @@ def run_experiment(config):
                                      config.METRICS,
                                      data_splitter,
                                      callbacks)
+        if  hasattr(config, 'FEATURES_FROM_TEST'):
+            recommender_evaluator.set_features_from_test(config.FEATURES_FROM_TEST)
         result_for_fraction = recommender_evaluator()
         result_for_fraction['users_fraction'] = users_fraction
         result_for_fraction['num_items'] = len(item_id_set)

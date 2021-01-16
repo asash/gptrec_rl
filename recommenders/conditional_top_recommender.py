@@ -30,7 +30,7 @@ class ConditionalTopRecommender(Recommender):
             field_value: counter.most_common() for field_value, counter in self.items_counts.items()
         }
 
-    def get_next_items(self, user_id, limit):
+    def get_next_items(self, user_id, limit, features=None):
         if user_id not in self.user_field_values:
             raise Exception("New user without field value")
         return self.precalculated_top_items[self.user_field_values[user_id]][:limit]

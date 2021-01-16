@@ -8,7 +8,7 @@ class TestBookingDataset(unittest.TestCase):
     def test_train_dataset(self):
         current_dir = os.path.dirname(__file__)
         booking_file = os.path.join(current_dir, "booking_train_dataset.csv")
-        dataset = get_booking_dataset_one_file(booking_file, is_testset=False)
+        dataset, submit = get_booking_dataset_one_file(booking_file, is_testset=False)
         recommender = TopRecommender()
         for action in dataset:
             recommender.add_action(action)
@@ -20,7 +20,7 @@ class TestBookingDataset(unittest.TestCase):
     def test_test_dataset(self):
         current_dir = os.path.dirname(__file__)
         booking_file = os.path.join(current_dir, "booking_test_dataset.csv")
-        dataset = get_booking_dataset_one_file(booking_file, is_testset=True)
+        dataset, submit = get_booking_dataset_one_file(booking_file, is_testset=True)
         recommender = TopRecommender()
         for action in dataset:
             recommender.add_action(action)
@@ -33,7 +33,7 @@ class TestBookingDataset(unittest.TestCase):
         current_dir = os.path.dirname(__file__)
         booking_train_file = os.path.join(current_dir, "booking_train_dataset.csv")
         booking_test_file = os.path.join(current_dir, "booking_test_dataset.csv")
-        dataset = get_booking_dataset(booking_train_file, booking_test_file)
+        dataset, submit = get_booking_dataset(booking_train_file, booking_test_file)
         recommender = TopRecommender()
         for action in dataset:
             recommender.add_action(action)

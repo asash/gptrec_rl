@@ -74,7 +74,7 @@ class GreedyMLPHistorical(Recommender):
         model.compile(optimizer='adam', loss='binary_crossentropy')
         return model
 
-    def get_next_items(self, user_id, limit):
+    def get_next_items(self, user_id, limit, features=None):
         vector = np.zeros(self.items.size())
         if self.users.has_item(user_id):
             actions = self.user_actions[self.users.get_id(user_id)]

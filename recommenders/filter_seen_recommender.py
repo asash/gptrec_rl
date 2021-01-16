@@ -16,7 +16,7 @@ class FilterSeenRecommender(Recommender):
     def rebuild_model(self):
         self.recommender.rebuild_model()
 
-    def get_next_items(self, user_id, limit):
+    def get_next_items(self, user_id, limit, features=None):
         user_seen_cnt = len(self.user_seen[user_id])
         raw = self.recommender.get_next_items(user_id, limit + user_seen_cnt)
         filtered = filter(lambda item_score: item_score[0] not in self.user_seen[user_id], raw)

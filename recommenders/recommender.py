@@ -8,7 +8,7 @@ class Recommender():
     def rebuild_model(self):
         raise(NotImplementedError)
 
-    def get_next_items(self, user_id, limit):
+    def get_next_items(self, user_id, limit, features=None):
         raise(NotImplementedError)
 
     def recommend_by_items(self, items_list, limit):

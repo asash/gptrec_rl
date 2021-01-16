@@ -36,7 +36,7 @@ class TransitionsChainRecommender(Recommender):
             for item_id in items[:-1]:
                 self.transition_matrix[self.item_id_to_index[item_id]][self.item_id_to_index[target_item]] += 1
 
-    def get_next_items(self, user_id, limit):
+    def get_next_items(self, user_id, limit, features=None):
         if user_id not in self.user_to_items:
             raise Exception("New user without history")
         last_items_indexes = [self.item_id_to_index[idx] for idx in self.user_to_items[user_id]]

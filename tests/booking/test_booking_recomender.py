@@ -10,13 +10,13 @@ class TestBookingRecommender(unittest.TestCase):
         current_dir = os.path.dirname(__file__)
         booking_train_file = os.path.join(current_dir, "booking_train_dataset.csv")
         booking_test_file = os.path.join(current_dir, "booking_test_dataset.csv")
-        dataset = get_booking_dataset(booking_train_file, booking_test_file)
+        dataset, submit = get_booking_dataset(booking_train_file, booking_test_file)
         recommender = BookingRecommender(train_epochs=10, n_val_users=73, batch_size=2, max_history_len=15,
                                          loss='lambdarank', output_layer_activation='linear')
         for action in dataset:
             recommender.add_action(action)
         recommender.rebuild_model()
-        result = recommender.get_next_items('39641', 10)
+        result = recommender.get_next_items('39641', 10, dataset[0])
         print(result)
 
 if __name__ == "__main__":

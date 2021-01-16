@@ -73,7 +73,7 @@ class GRURecommender(Recommender):
         model.compile(optimizer=optimizer, loss='binary_crossentropy')
         return model
 
-    def get_next_items(self, user_id, limit):
+    def get_next_items(self, user_id, limit, features=None):
         actions = self.user_actions[self.users.get_id(user_id)]
         items = [action[1] for action in actions]
         return self.get_model_predictions(items, limit)

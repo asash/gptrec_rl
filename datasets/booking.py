@@ -25,8 +25,9 @@ def split_csv_string(string):
 
 
 
-def get_booking_dataset_one_file(filename, is_testset=False):
+def get_booking_dataset_one_file(filename, is_testset=False, max_actions=None):
     actions = []
+    submit_actions = []
     with open(filename) as input_file:
         input_file.readline()
         next_line = input_file.readline()
@@ -43,9 +44,6 @@ def get_booking_dataset_one_file(filename, is_testset=False):
 
             except Exception as ex:
                 raise Exception(f"incorrect line: {next_line}")
-            if city_id == "0":
-                next_line = input_file.readline()
-                continue
             date_format = "%Y-%m-%d"
             checkin = datetime.strptime(checkin_str, date_format)
             checkout = datetime.strptime(checkout_str, date_format)
@@ -53,18 +51,25 @@ def get_booking_dataset_one_file(filename, is_testset=False):
                                                                           'device_class': device_class,
                                                                           'affiliate_id': affiliate_id,
                                                                           'hotel_country': hotel_country,
-                                                                          'booker_country': hotel_country,
+                                                                          'booker_country': booker_country,
                                                                           'checkin_date': checkin,
                                                                           'checkout_date': checkout,
                                                                           'is_control': is_testset
                                                                          })
-            actions.append(action)
+            if action.item_id == "0":
+                submit_actions.append(action)
+            else:
+                actions.append(action)
+            if max_actions is not None and len(actions) >= max_actions:
+                break
             next_line = input_file.readline()
-    return actions
+    return actions, submit_actions
 
-def get_booking_dataset(train_filename, test_filename):
-    train_actions = get_booking_dataset_one_file(train_filename, is_testset=False)
-    test_actions = get_booking_dataset_one_file(test_filename, is_testset=True)
-    return train_actions + test_actions
+def get_booking_dataset(train_filename, test_filename, max_actions_per_file=None):
+    train_actions, _ = get_booking_dataset_one_file(train_filename, is_testset=False,
+                                                 max_actions=max_actions_per_file)
+    test_actions, submit_actions = get_booking_dataset_one_file(test_filename, is_testset=True,
+                                                 max_actions=max_actions_per_file)
+    return train_actions + test_actions, submit_actions
 
 

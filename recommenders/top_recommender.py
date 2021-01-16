@@ -11,7 +11,7 @@ class TopRecommender(Recommender):
     def rebuild_model(self):
         self.most_common = self.items_counter.most_common()
 
-    def get_next_items(self, user_id, limit):
+    def get_next_items(self, user_id, limit, features=None):
         return self.most_common[:limit]
 
     def get_similar_items(self, item_id, limit):

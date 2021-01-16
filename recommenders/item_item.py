@@ -39,7 +39,7 @@ class ItemItemRecommender(Recommender):
             self.item_sims[item_id].sort(key=lambda x: -x[1])
         self.most_common = self.item_cnt.most_common() 
         
-    def get_next_items(self, user_id, limit):
+    def get_next_items(self, user_id, limit, features=None):
         internal_user_id = self.users.get_id(user_id)
         user_history = self.user_items[internal_user_id]
         return self.predict_by_history(user_history, limit)
