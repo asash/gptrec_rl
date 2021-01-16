@@ -21,8 +21,11 @@ DATASET, SUBMIT_ACTIONS = get_booking_dataset('./booking_data/booking_train_set.
                               './booking_data/booking_test_set.csv')
 
 def generate_submit(recommender, recommender_name, config):
+    if not recommender_name.startswith('APREC'):
+        return
+    print("writing_recommendations")
     with open(os.path.join(config.out_dir, recommender_name + "_submit_" + ".csv"), 'w') as out_file:
-        out_file.write("utrip_id,city_id_1,city_id_2,city_id_3,city_id_4")
+        out_file.write("utrip_id,city_id_1,city_id_2,city_id_3,city_id_4\n")
         for action in tqdm(config.SUBMIT_ACTIONS):
             recommendations = recommender.get_next_items(action.user_id, limit=4, features=action)
             city_ids = [recommendation[0] for recommendation in recommendations]
