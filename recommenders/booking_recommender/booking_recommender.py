@@ -103,7 +103,7 @@ class BookingRecommender(Recommender):
         for epoch in range(self.train_epochs):
             generator = BookingHistoryBatchGenerator(train_users, self.max_history_length, self.items.size(),
                                               batch_size=self.batch_size, country_dict = self.countries,
-                                                     affiliates_dict = self.affiliates)
+                                                     affiliates_dict = self.affiliates, validation=True)
             print(f"epoch: {epoch}")
             train_history = self.model.fit(generator, validation_data=val_generator)
             val_ndcg = train_history.history[f"val_ndcg_at_{self.ndcg_at}"][-1]
