@@ -28,7 +28,8 @@ class BookingRecommender(Recommender):
                  early_stop_epochs = 100,
                  sigma = 1,
                  ndcg_at = 30,
-                 ):
+                 target_decay=0.6,
+                 min_target_value=0.0):
         self.users = ItemId()
         self.items = ItemId()
         self.countries = ItemId()
@@ -49,6 +50,8 @@ class BookingRecommender(Recommender):
         self.batch_size = batch_size
         self.sigma = sigma
         self.ndcg_at = ndcg_at
+        self.target_decay = target_decay
+        self.min_target_value = min_target_value
         self.output_layer_activation = output_layer_activation
 
     def get_metadata(self):
@@ -91,8 +94,9 @@ class BookingRecommender(Recommender):
         print("train_users: {}, val_users:{}, items:{}".format(len(train_users), len(val_users), self.items.size()))
         val_generator = BookingHistoryBatchGenerator(val_users, self.max_history_length, self.items.size(),
                                               batch_size=self.batch_size, country_dict = self.countries,
-                                                affiliates_dict = self.affiliates,
-                                                     validation=True)
+                                              affiliates_dict = self.affiliates, validation=True,
+                                              target_decay=self.target_decay,
+                                              min_target_val=self.min_target_value)
         self.model = self.get_model()
         best_success = 0
         steps_since_improved = 0
@@ -103,7 +107,9 @@ class BookingRecommender(Recommender):
         for epoch in range(self.train_epochs):
             generator = BookingHistoryBatchGenerator(train_users, self.max_history_length, self.items.size(),
                                               batch_size=self.batch_size, country_dict = self.countries,
-                                                     affiliates_dict = self.affiliates, validation=True)
+                                              affiliates_dict = self.affiliates,
+                                              target_decay=self.target_decay,
+                                              min_target_val=self.min_target_value)
             print(f"epoch: {epoch}")
             train_history = self.model.fit(generator, validation_data=val_generator)
             val_ndcg = train_history.history[f"val_ndcg_at_{self.ndcg_at}"][-1]
