@@ -21,6 +21,7 @@ DATASET, SUBMIT_ACTIONS = get_booking_dataset('./booking_data/booking_train_set.
                               './booking_data/booking_test_set.csv')
 
 def generate_submit(recommender, recommender_name, config):
+    return
     if not recommender_name.startswith('APREC'):
         return
     print("writing_recommendations")
@@ -75,11 +76,17 @@ RECOMMENDERS = {
     "conditional_top_recommender": conditional_top_recommender,
 #    "svd_recommender": lambda: svd_recommender(30),
 #    "item_temem_recommender": item_item_recommender,
-    "transitions_chain_recommender": TransitionsChainRecommender,
-    "APREC-GMLPHE-cce-256": lambda: mlp_historical_embedding('categorical_crossentropy', 'softmax', 256, target_decay=0, min_target_val=0),
-    "APREC-GMLPHE-Lambdarank-256": lambda: mlp_historical_embedding('lambdarank', 'linear', 256, target_decay=0, min_target_val=0),
+#    "transitions_chain_recommender": TransitionsChainRecommender,
+#    "APREC-GMLPHE-cce-256": lambda: mlp_historical_embedding('categorical_crossentropy', 'softmax', 256, target_decay=0, min_target_val=0),
+    "APREC-GMLPHE-Lambdarank-256-0.5": lambda: mlp_historical_embedding('lambdarank', 'linear', 256, target_decay=0.5),
+    "APREC-GMLPHE-Lambdarank-256-0.7": lambda: mlp_historical_embedding('lambdarank', 'linear', 256, target_decay=0.7),
+    "APREC-GMLPHE-Lambdarank-256-0.3": lambda: mlp_historical_embedding('lambdarank', 'linear', 256, target_decay=0.3),
+    "APREC-GMLPHE-Lambdarank-256-0.9": lambda: mlp_historical_embedding('lambdarank', 'linear', 256, target_decay=0.9),
+    "APREC-GMLPHE-Lambdarank-256-0.1": lambda: mlp_historical_embedding('lambdarank', 'linear', 256, target_decay=0.1),
+    "APREC-GMLPHE-Lambdarank-256-1": lambda: mlp_historical_embedding('lambdarank', 'linear', 256, target_decay=1.0),
+    "APREC-GMLPHE-Lambdarank-256-0.0": lambda: mlp_historical_embedding('lambdarank', 'linear', 256, target_decay=0.0),
 }
 
 SPLIT_STRATEGY = "LEAVE_ONE_OUT"
-USERS_FRACTIONS = [1.0]
+USERS_FRACTIONS = [0.2]
 METRICS = [Precision(4), SPS(4), NDCG(4), NDCG(40)]
