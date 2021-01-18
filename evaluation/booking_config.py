@@ -72,8 +72,8 @@ def mlp_historical_embedding(loss, activation_override=None, bottleneck_size=64,
                                         output_layer_activation=activation)
 
 RECOMMENDERS = {
-    "top_recommender": top_recommender,
-    "conditional_top_recommender": conditional_top_recommender,
+#    "top_recommender": top_recommender,
+#    "conditional_top_recommender": conditional_top_recommender,
 #    "svd_recommender": lambda: svd_recommender(30),
 #    "item_temem_recommender": item_item_recommender,
 #    "transitions_chain_recommender": TransitionsChainRecommender,
