@@ -15,7 +15,9 @@ ACTION_FEATURES = [
     ['checkin_weekday', lambda action: (action.data['checkin_date'].weekday()) + 1],
     ['checkout_weekday', lambda action: (action.data['checkout_date'].weekday()) + 1],
     ['over_weekend', lambda action: over_weekend(action.data['checkin_date'], action.data['checkout_date'])],
-    ['same_country', lambda action: action.data['booker_country'] == action.data['hotel_country']]
+    ['same_country', lambda action: action.data['booker_country'] == action.data['hotel_country']],
+    ['from_start', lambda action:action.data.get('from_start', 0)],
+    ['remain', lambda action:action.data.get('remain', 0)]
 ]
 
 def over_weekend(start_date, end_date):
@@ -165,7 +167,10 @@ def encode_action_features(action):
 def encode_additional_features(actions, history_size):
     action_vectors = []
     taken_actions = actions[-history_size:]
-    for action in taken_actions:
+    for i in range(len(taken_actions)):
+        action = taken_actions[i]
+        action[1].data['from_start'] = i + 1
+        action[1].data['remain'] = len(taken_actions) - i
         action_vectors.append(encode_action_features(action[1]))
     result = np.array(action_vectors).reshape((len(taken_actions), len(ACTION_FEATURES)))
     n_pad = history_size - len(actions)
