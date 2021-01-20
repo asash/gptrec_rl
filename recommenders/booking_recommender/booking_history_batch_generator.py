@@ -16,9 +16,10 @@ ACTION_FEATURES = [
     ['checkout_weekday', lambda action: (action.data['checkout_date'].weekday()) + 1],
     ['over_weekend', lambda action: over_weekend(action.data['checkin_date'], action.data['checkout_date'])],
     ['same_country', lambda action: action.data['booker_country'] == action.data['hotel_country']],
-    ['from_start', lambda action:action.data.get('from_start', 0)],
-    ['remain', lambda action:action.data.get('remain', 0)]
+    ['from_start', lambda action: action.data.get('from_start', 0)],
+    ['remain', lambda action: action.data.get('remain', 0)]
 ]
+
 
 def over_weekend(start_date, end_date):
     n_nighs = (end_date - start_date).days
@@ -31,10 +32,11 @@ def over_weekend(start_date, end_date):
 
 class BookingHistoryBatchGenerator(Sequence):
     def __init__(self, user_actions, history_size, n_items, affiliates_dict,
-                 country_dict,batch_size=1000, validation=False, target_decay=0.6,
-                min_target_val=0.03):
+                 country_dict, cities, countries,
+                 batch_size=1000, validation=False, target_decay=0.6,
+                 min_target_val=0.03):
         self.user_actions = user_actions
-        self.history_size= history_size
+        self.history_size = history_size
         self.n_items = n_items
         self.batch_size = batch_size
         self.history_matrix = None
@@ -43,9 +45,10 @@ class BookingHistoryBatchGenerator(Sequence):
         self.target_decay = target_decay
         self.min_target_val = min_target_val
         self.country_dict = country_dict
-        self.affiliates_dict =affiliates_dict
+        self.affiliates_dict = affiliates_dict
+        self.cities = cities
+        self.countries = countries
         self.reset()
-
 
     def reset(self):
         history, target = self.split_actions(self.user_actions)
@@ -58,6 +61,7 @@ class BookingHistoryBatchGenerator(Sequence):
         self.target_matrix = self.get_target_matrix(target, self.n_items)
         self.current_position = 0
         self.max = self.__len__()
+        pass
 
     @staticmethod
     def target_features(user_actions):
@@ -103,9 +107,8 @@ class BookingHistoryBatchGenerator(Sequence):
                 cur_val *= self.target_decay
                 if cur_val < self.min_target_val:
                     cur_val = self.min_target_val
-        result =  csr_matrix((vals, (rows, cols)), shape=(len(user_actions), n_items))
+        result = csr_matrix((vals, (rows, cols)), shape=(len(user_actions), n_items))
         return result
-
 
     def split_actions(self, user_actions):
         history = []
@@ -123,7 +126,7 @@ class BookingHistoryBatchGenerator(Sequence):
         else:
             n_history_actions = len(user) - 1
         n_target_actions = len(user) - n_history_actions
-        history_actions =user [:n_history_actions]
+        history_actions = user[:n_history_actions]
         target_actions = user[-n_target_actions:]
         return history_actions, target_actions
 
@@ -140,7 +143,8 @@ class BookingHistoryBatchGenerator(Sequence):
         affiliates = self.affiliate_id_matrix[start:end]
         target_features = self.target_features[start:end]
         target = self.target_matrix[start:end].todense()
-        return [history, features, user_countries, hotel_countries, affiliates, target_features], target
+        return [history, features, user_countries, hotel_countries, affiliates, target_features,
+                self.cities, self.countries], target
 
     def __next__(self):
         if self.current_position >= self.max:
@@ -175,7 +179,7 @@ def encode_additional_features(actions, history_size):
     result = np.array(action_vectors).reshape((len(taken_actions), len(ACTION_FEATURES)))
     n_pad = history_size - len(actions)
     if n_pad > 0:
-        result = np.pad(result,((n_pad, 0), (0, 0)), mode='constant', constant_values=0)
+        result = np.pad(result, ((n_pad, 0), (0, 0)), mode='constant', constant_values=0)
     return result
 
 
