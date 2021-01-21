@@ -1,6 +1,9 @@
+from collections import defaultdict, Counter
+
 import numpy as np
 
 from aprec.recommenders.recommender import Recommender
+from aprec.recommenders.top_recommender import TopRecommender
 
 
 class TransitionsChainRecommender(Recommender):
@@ -11,10 +14,11 @@ class TransitionsChainRecommender(Recommender):
     During the inference phase we take all events of user and sum up all counts to predict next event.
     """
     def __init__(self):
+        self.top_recommender = TopRecommender()
         self.item_id_to_index: dict = dict()
         self.index_to_item_id: dict = dict()
         self.items_count: int = 0
-        self.transition_matrix: np.array = np.array([])
+        self.transition_matrix = defaultdict(Counter)
 
         self.user_to_items: dict = dict()
 
@@ -28,25 +32,51 @@ class TransitionsChainRecommender(Recommender):
             self.user_to_items[action.user_id] = [action.item_id]
         else:
             self.user_to_items[action.user_id].append(action.item_id)
+        self.top_recommender.add_action(action)
 
     def rebuild_model(self):
-        self.transition_matrix = np.zeros(shape=(self.items_count, self.items_count))
+        self.top_recommender.rebuild_model()
+        self.transition_matrix = defaultdict(Counter)
         for _, items in self.user_to_items.items():
-            target_item = items[-1]
-            for item_id in items[:-1]:
-                self.transition_matrix[self.item_id_to_index[item_id]][self.item_id_to_index[target_item]] += 1
+            for t in range(1, len(items)):
+                target_item = items[t]
+                for item_id in items[:t]:
+                    self.transition_matrix[self.item_id_to_index[item_id]][self.item_id_to_index[target_item]] += 1
+        self.graph = defaultdict(list)
+        for start in self.transition_matrix:
+            for stop in self.transition_matrix[start].most_common(50):
+                self.graph[start].append(stop)
+        pass
 
     def get_next_items(self, user_id, limit, features=None):
         if user_id not in self.user_to_items:
             raise Exception("New user without history")
-        last_items_indexes = [self.item_id_to_index[idx] for idx in self.user_to_items[user_id]]
-        total_predictions = [
-            (index, prob) for index, prob in zip(
-                range(self.items_count), np.sum(self.transition_matrix[last_items_indexes], axis=0)
-            )
-        ]
-        total_predictions.sort(key=lambda x: -x[1])
-        return [(self.index_to_item_id[idx], prob) for idx, prob in total_predictions[:limit]]
+        return self.recommend_by_items(self.user_to_items[user_id], limit)
+
+    def recommend_by_items(self, items_list, limit):
+        last_items_indices = [self.item_id_to_index[idx] for idx in items_list]
+        sums = defaultdict(lambda: 0)
+        for item_idx in last_items_indices:
+            for next, score in self.graph[item_idx]:
+                sums[next] += score
+        predictions = sorted(sums.keys(), key=lambda x: -sums[x])
+        result = []
+        recommended = set()
+        for prediction in predictions:
+            item = self.index_to_item_id[prediction]
+            score = sums[prediction]
+            recommended.add(item)
+            result.append((item, score))
+
+        if len(recommended) < limit:
+            for item, score in self.top_recommender.get_next_items(0, 2*limit):
+                if item in recommended:
+                    continue
+                result.append((item, 0))
+                if len(result) >= limit:
+                    break
+        return result[:limit]
+
 
     def get_similar_items(self, item_id, limit):
         raise NotImplementedError

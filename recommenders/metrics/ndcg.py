@@ -17,6 +17,7 @@ class KerasNDCG(object):
        return K.sum(gain * self.discounts, axis=-1)
 
     def __call__(self, y_true, y_pred):
+        eps = 0.000001
         top_k = tf.nn.top_k(y_pred, self.k)
         gains = tf.gather(y_true, top_k.indices, batch_dims=1)
         dcg_val = self.dcg(gains)
@@ -24,5 +25,5 @@ class KerasNDCG(object):
         ideal_top_k = tf.nn.top_k(y_true, self.k)
         ideal_gains = tf.gather(y_true, ideal_top_k.indices, batch_dims=1)
         idcg_val = self.dcg(ideal_gains)
-        return K.mean(dcg_val / idcg_val)
+        return K.mean(dcg_val / (idcg_val + eps))
 

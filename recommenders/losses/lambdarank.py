@@ -64,7 +64,7 @@ class LambdaRankLoss(object):
 
         #normalize dcg gaps - inspired by lightbm
         norms = (1 - range_is_zero) * (tf.abs(pairwise_diffs) + 0.01) + (range_is_zero)
-        abs_delta_ndcg = abs_delta_ndcg / norms
+        abs_delta_ndcg = tf.math.divide_no_nan(abs_delta_ndcg, norms)
 
 
         sigmoid = 1.0 / (1 + tf.exp(self.sigma * (pairwise_diffs)))
@@ -84,7 +84,7 @@ class LambdaRankLoss(object):
 
         #normalize results - inspired by lightbm
         all_lambdas_sum = tf.reshape(tf.reduce_sum(tf.abs(lambda_sum_result), axis=(1)), (self.batch_size, 1))
-        norm_factor = tf.math.log(all_lambdas_sum + 1) / (all_lambdas_sum * tf.math.log(2.0))
+        norm_factor = tf.math.divide_no_nan(tf.math.log(all_lambdas_sum + 1), (all_lambdas_sum * tf.math.log(2.0)))
         lambda_sum = lambda_sum_result * norm_factor
 
         batch_indices = tf.reshape(tf.repeat(tf.range(self.batch_size), self.n_items), (self.batch_size, self.n_items))

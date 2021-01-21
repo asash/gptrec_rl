@@ -3,6 +3,8 @@ import tensorflow.keras.backend as K
 import random
 from collections import defaultdict
 
+from aprec.recommenders.top_recommender import TopRecommender
+from aprec.recommenders.transition_chain_recommender import TransitionsChainRecommender
 from aprec.utils.item_id import ItemId
 from aprec.recommenders.metrics.ndcg import KerasNDCG
 from aprec.recommenders.metrics.success import KerasSuccess
@@ -10,7 +12,7 @@ from aprec.recommenders.losses.lambdarank import LambdaRankLoss
 from aprec.recommenders.losses.xendcg import XENDCGLoss
 from aprec.recommenders.recommender import Recommender
 from aprec.recommenders.booking_recommender.booking_history_batch_generator import BookingHistoryBatchGenerator, \
-    ACTION_FEATURES, encode_action_features
+    ACTION_FEATURES, encode_action_features, get_candidates_one_trip
 from aprec.recommenders.booking_recommender.booking_history_batch_generator import history_to_vector,\
     encode_additional_features, id_vector
 from tensorflow.keras.models import Model
@@ -29,7 +31,8 @@ class BookingRecommender(Recommender):
                  sigma = 1,
                  ndcg_at = 30,
                  target_decay=0.6,
-                 min_target_value=0.0):
+                 min_target_value=0.0,
+                 candidates_cnt = 100):
         self.users = ItemId()
         self.items = ItemId()
         self.countries = ItemId()
@@ -53,8 +56,9 @@ class BookingRecommender(Recommender):
         self.target_decay = target_decay
         self.min_target_value = min_target_value
         self.output_layer_activation = output_layer_activation
+        self.candidates_cnt = candidates_cnt
         self.city_country_mapping = {}
-
+        self.candidates_recommender = TransitionsChainRecommender()
 
     def get_metadata(self):
         return self.metadata
@@ -73,6 +77,7 @@ class BookingRecommender(Recommender):
         self.city_country_mapping[item_id_internal] = hotel_country_id
         self.affiliates.get_id(action.data['affiliate_id'])
         self.user_actions[user_id_internal].append((item_id_internal, action))
+        self.candidates_recommender.add_action(action)
 
     def user_actions_by_id_list(self, id_list):
         result = []
@@ -92,20 +97,19 @@ class BookingRecommender(Recommender):
             self.user_actions[user_id].sort(key=lambda x: x[1].timestamp)
 
     def rebuild_model(self):
+        self.candidates_recommender.rebuild_model()
         self.sort_actions()
         train_users, val_users = self.split_users()
         print("train_users: {}, val_users:{}, items:{}".format(len(train_users), len(val_users), self.items.size()))
-        self.cities = np.array([[i for i in range(len(self.city_country_mapping))]] * self.batch_size)
-        self.city_countries = np.array([[self.city_country_mapping.get(i) for i in range(len(self.city_country_mapping))]]
-                          * self.batch_size)
-
         val_generator = BookingHistoryBatchGenerator(val_users, self.max_history_length, self.items.size(),
                                               batch_size=self.batch_size, country_dict = self.countries,
+                                              candidates_recommender=self.candidates_recommender,
+                                              city_dict=self.items,
                                               affiliates_dict = self.affiliates,
-                                              cities=self.cities,
-                                              countries=self.city_countries,
                                               validation=True,
+                                              city_country_mapping = self.city_country_mapping,
                                               target_decay=self.target_decay,
+                                              n_candidates=self.candidates_cnt,
                                               min_target_val=self.min_target_value)
         self.model = self.get_model()
         best_success = 0
@@ -118,8 +122,10 @@ class BookingRecommender(Recommender):
             generator = BookingHistoryBatchGenerator(train_users, self.max_history_length, self.items.size(),
                                               batch_size=self.batch_size, country_dict = self.countries,
                                               affiliates_dict = self.affiliates,
-                                              cities = self.cities,
-                                              countries = self.city_countries,
+                                              candidates_recommender=self.candidates_recommender,
+                                              city_dict=self.items,
+                                              city_country_mapping=self.city_country_mapping,
+                                              n_candidates=self.candidates_cnt,
                                               target_decay=self.target_decay,
                                               min_target_val=self.min_target_value)
             print(f"epoch: {epoch}")
@@ -176,11 +182,11 @@ class BookingRecommender(Recommender):
         x = layers.Dense(1000, name="dense4", activation="sigmoid")(x)
         x = layers.Dropout(0.5, name="dropout")(x)
 
-        target_city_input = layers.Input(shape=(self.items.size()))
-        target_city_emb = layers.Embedding(self.items.size(), 500)(target_city_input)
+        candiate_city_input = layers.Input(shape=(self.candidates_cnt))
+        target_city_emb = layers.Embedding(self.items.size() + 1, 500)(candiate_city_input)
 
-        target_country_input = layers.Input(shape=(self.items.size()))
-        target_country_emb = layers.Embedding(self.countries.size(), 500)(target_country_input)
+        candidate_country_input = layers.Input(shape=(self.candidates_cnt))
+        target_country_emb = layers.Embedding(self.countries.size() + 1, 500)(candidate_country_input)
 
         target_embedding = layers.Concatenate()([target_city_emb, target_country_emb])
 
@@ -188,7 +194,8 @@ class BookingRecommender(Recommender):
 
         model = Model(inputs=[history_input, features_input, user_country_input,
                               hotel_country_input, affiliate_id_input, target_features,
-                              target_city_input, target_country_input], outputs=output)
+                              candiate_city_input, candidate_country_input], outputs=output)
+
         ndcg_metric = KerasNDCG(self.ndcg_at)
         success_4_metric = KerasSuccess(4)
 
@@ -205,7 +212,7 @@ class BookingRecommender(Recommender):
         return model
 
     def get_lambdarank_loss(self):
-        return LambdaRankLoss(self.items.size(), self.batch_size, self.sigma, ndcg_at=self.ndcg_at)
+        return LambdaRankLoss(self.candidates_cnt, self.batch_size, self.sigma, ndcg_at=self.ndcg_at)
 
     def get_xendcg_loss(self):
         return XENDCGLoss(self.items.size(), self.batch_size)
@@ -231,11 +238,22 @@ class BookingRecommender(Recommender):
         affiliate_ids = id_vector(actions, self.max_history_length, self.affiliates, 'affiliate_id') \
             .reshape(1, self.max_history_length)
 
-        cities = self.cities[0].reshape(1, self.items.size())
-        countries = self.city_countries[0].reshape(1, self.items.size())
+        item_ids = [action.item_id for action in items_list]
+        candidates, countries = get_candidates_one_trip(item_ids, self.items,
+                                                        self.candidates_recommender,
+                                                        self.candidates_cnt,
+                                                        self.city_country_mapping,
+                                                        self.countries)
+
+        candiates = np.array(candidates).reshape(1, self.candidates_cnt)
+        countries = np.array(countries).reshape(1, self.candidates_cnt)
         scores = self.model.predict([history_vector, additional_features, user_countries,
-                                     hotel_countries, affiliate_ids, target_features, cities, countries])[0]
-        best_ids = np.argsort(scores)[::-1][:limit]
-        result = [(self.items.reverse_id(id), scores[id]) for id in best_ids]
+                                     hotel_countries, affiliate_ids, target_features, candiates, countries])[0]
+        result = []
+        for i in range(len(candiates)):
+            item = self.items.reverse_id(candiates[0][i])
+            score = scores[i]
+            result.append((item, score))
+        result = sorted(result, key=lambda x: -x[1])
         return result
 

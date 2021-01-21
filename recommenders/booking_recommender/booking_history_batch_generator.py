@@ -32,7 +32,11 @@ def over_weekend(start_date, end_date):
 
 class BookingHistoryBatchGenerator(Sequence):
     def __init__(self, user_actions, history_size, n_items, affiliates_dict,
-                 country_dict, cities, countries,
+                 country_dict,
+                 city_dict,
+                 candidates_recommender,
+                 city_country_mapping,
+                 n_candidates,
                  batch_size=1000, validation=False, target_decay=0.6,
                  min_target_val=0.03):
         self.user_actions = user_actions
@@ -42,12 +46,14 @@ class BookingHistoryBatchGenerator(Sequence):
         self.history_matrix = None
         self.target_matrix = None
         self.validation = validation
+        self.city_dict = city_dict
         self.target_decay = target_decay
         self.min_target_val = min_target_val
         self.country_dict = country_dict
+        self.n_candidates = n_candidates
         self.affiliates_dict = affiliates_dict
-        self.cities = cities
-        self.countries = countries
+        self.candidates_recommender = candidates_recommender
+        self.city_country_mapping = city_country_mapping
         self.reset()
 
     def reset(self):
@@ -57,14 +63,29 @@ class BookingHistoryBatchGenerator(Sequence):
         self.user_country_matrix = self.id_vectors(history, self.history_size, self.country_dict, 'booker_country')
         self.hotel_country_matrix = self.id_vectors(history, self.history_size, self.country_dict, 'hotel_country')
         self.affiliate_id_matrix = self.id_vectors(history, self.history_size, self.affiliates_dict, 'affiliate_id')
-        self.target_features = self.target_features(target)
-        self.target_matrix = self.get_target_matrix(target, self.n_items)
+        self.target_features = self.get_target_trip_features(target)
+        self.candidates, self.candidate_countries = self.get_candidates(history)
+        self.target_matrix = self.get_target_matrix(target, self.candidates)
         self.current_position = 0
         self.max = self.__len__()
         pass
 
+    def get_candidates(self, user_actions):
+        result_candidate_cities = []
+        result_candidate_countries = []
+        for trip in user_actions:
+            item_ids = [action[1].item_id for action in trip]
+            candidates, countries = get_candidates_one_trip(item_ids, self.city_dict,
+                                                                 self.candidates_recommender,
+                                                                 self.n_candidates,
+                                                                 self.city_country_mapping,
+                                                                 self.country_dict)
+            result_candidate_cities.append(candidates)
+            result_candidate_countries.append(countries)
+        return np.array(result_candidate_cities), np.array(result_candidate_countries)
+
     @staticmethod
-    def target_features(user_actions):
+    def get_target_trip_features(user_actions):
         result = []
         for actions in user_actions:
             target_action = copy.deepcopy(actions[0][1])
@@ -93,22 +114,30 @@ class BookingHistoryBatchGenerator(Sequence):
             result.append(history_to_vector(actions, history_size, n_items))
         return np.array(result)
 
-    def get_target_matrix(self, user_actions, n_items):
-        rows = []
-        cols = []
-        vals = []
-        for i in range(len(user_actions)):
+    def get_target_matrix(self, user_actions, candidates):
+       result = []
+       for i in range(len(user_actions)):
+            user_result = []
+            target_val = {}
             cur_val = 0.99
+            user_sum = 0
             for action_num in range(len(user_actions[i])):
                 action = user_actions[i][action_num]
-                rows.append(i)
-                cols.append(action[0])
-                vals.append(cur_val)
+                target_val[action[0]] = cur_val
                 cur_val *= self.target_decay
                 if cur_val < self.min_target_val:
                     cur_val = self.min_target_val
-        result = csr_matrix((vals, (rows, cols)), shape=(len(user_actions), n_items))
-        return result
+            for j in range(self.n_candidates):
+               city = candidates[i][j]
+               if city in target_val:
+                   user_result.append(target_val[city])
+                   user_sum += target_val[city]
+               else:
+                   user_result.append(0.0)
+            if user_sum  == 0:
+                user_result[random.randint(0, len(user_result) - 1)] = 0.001
+            result.append(user_result)
+       return np.array(result)
 
     def split_actions(self, user_actions):
         history = []
@@ -142,9 +171,11 @@ class BookingHistoryBatchGenerator(Sequence):
         hotel_countries = self.hotel_country_matrix[start:end]
         affiliates = self.affiliate_id_matrix[start:end]
         target_features = self.target_features[start:end]
-        target = self.target_matrix[start:end].todense()
+        target = self.target_matrix[start:end]
+        candidate_cities = self.candidates[start:end]
+        candidate_countries = self.candidate_countries[start:end]
         return [history, features, user_countries, hotel_countries, affiliates, target_features,
-                self.cities, self.countries], target
+                candidate_cities, candidate_countries], target
 
     def __next__(self):
         if self.current_position >= self.max:
@@ -190,3 +221,12 @@ def id_vector(actions, history_size, translate_dict, property):
     if n_pad > 0:
         result = np.pad(result, ((n_pad, 0)), mode='constant', constant_values=translate_dict.size())
     return result
+
+def get_candidates_one_trip(item_ids, city_dict, candidates_recommender, n_candidates, city_country_mapping, country_dict):
+    candidates = [city_dict.get_id(candidate[0]) for candidate
+                  in candidates_recommender.recommend_by_items(item_ids, n_candidates)]
+    countries = [city_country_mapping[city] for city in candidates]
+    if (len(candidates)) < n_candidates:
+        candidates += [city_dict.size()] * (n_candidates - len(candidates))
+        countries += [country_dict.size()] * (n_candidates - len(countries))
+    return candidates, countries
