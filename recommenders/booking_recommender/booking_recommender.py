@@ -151,7 +151,7 @@ class BookingRecommender(Recommender):
         self.metadata = {"epochs_trained": best_epoch + 1, "best_val_ndcg": best_success, "val_ndcg_history":
             val_ndcg_history, "val_success_history": val_success_history}
         print(self.get_metadata())
-        print(f"taken best model from epoch{best_epoch}. best_val_ndcg: {best_success}")
+        print(f"taken best model from epoch{best_epoch}. best_val_success: {best_success}")
 
     def get_model(self):
         target_features = layers.Input(shape=len(ACTION_FEATURES))
@@ -250,10 +250,10 @@ class BookingRecommender(Recommender):
         scores = self.model.predict([history_vector, additional_features, user_countries,
                                      hotel_countries, affiliate_ids, target_features, candiates, countries])[0]
         result = []
-        for i in range(len(candiates)):
+        for i in range(len(candiates[0])):
             item = self.items.reverse_id(candiates[0][i])
             score = scores[i]
             result.append((item, score))
         result = sorted(result, key=lambda x: -x[1])
-        return result
+        return result[:limit]
 
