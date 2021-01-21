@@ -64,6 +64,7 @@ class BookingHistoryBatchGenerator(Sequence):
         self.hotel_country_matrix = self.id_vectors(history, self.history_size, self.country_dict, 'hotel_country')
         self.affiliate_id_matrix = self.id_vectors(history, self.history_size, self.affiliates_dict, 'affiliate_id')
         self.target_features = self.get_target_trip_features(target)
+        self.target_affiliate_ids = self.get_target_affiliate_ids(target, self.affiliates_dict)
         self.candidates, self.candidate_countries = self.get_candidates(history)
         self.target_matrix = self.get_target_matrix(target, self.candidates)
         self.current_position = 0
@@ -92,6 +93,15 @@ class BookingHistoryBatchGenerator(Sequence):
             target_action.data['hotel_country'] = ""
             result.append(encode_action_features(target_action))
         return np.array(result)
+
+    @staticmethod
+    def get_target_affiliate_ids(user_actions, affiliates_dict):
+        result = []
+        for actions in user_actions:
+            id = affiliates_dict.get_id(actions[0][1].data['affiliate_id'])
+            result.append(id)
+        return np.array(result)
+
 
     @staticmethod
     def additional_features(user_actions, history_size):
@@ -171,10 +181,11 @@ class BookingHistoryBatchGenerator(Sequence):
         hotel_countries = self.hotel_country_matrix[start:end]
         affiliates = self.affiliate_id_matrix[start:end]
         target_features = self.target_features[start:end]
+        target_affiliate_ids = self.target_affiliate_ids[start:end]
         target = self.target_matrix[start:end]
         candidate_cities = self.candidates[start:end]
         candidate_countries = self.candidate_countries[start:end]
-        return [history, features, user_countries, hotel_countries, affiliates, target_features,
+        return [history, features, user_countries, hotel_countries, affiliates, target_features, target_affiliate_ids,
                 candidate_cities, candidate_countries], target
 
     def __next__(self):

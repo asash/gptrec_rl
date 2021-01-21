@@ -157,10 +157,17 @@ class BookingRecommender(Recommender):
         target_features = layers.Input(shape=len(ACTION_FEATURES))
         target_features_encoded = layers.Dense(50, activation='swish')(target_features)
         target_features_encoded = layers.BatchNormalization()(target_features_encoded)
+        affiliate_id_embedding = layers.Embedding(self.affiliates.size() + 1, 5)
+        target_affiliate_id_input = layers.Input(shape=(1, 1))
+        target_affiliate_id_embedding = affiliate_id_embedding(target_affiliate_id_input)
+        target_affiliate_id_embedding = layers.Flatten()(target_affiliate_id_embedding)
+        target_affiliate_id_embedding = layers.BatchNormalization()(target_affiliate_id_embedding)
+        target_features_encoded = layers.Concatenate()([target_features_encoded, target_affiliate_id_embedding])
 
         country_embedding = layers.Embedding(self.countries.size() + 1, 10)
         history_input = layers.Input(shape=(self.max_history_length))
         features_input = layers.Input(shape=(self.max_history_length, len(ACTION_FEATURES)))
+
 
         user_country_input = layers.Input(shape=(self.max_history_length))
         hotel_country_input = layers.Input(shape=(self.max_history_length))
@@ -168,9 +175,10 @@ class BookingRecommender(Recommender):
         history_embedding = layers.Embedding(self.items.size() + 1, 32)(history_input)
         user_country_embedding = country_embedding(user_country_input)
         hotel_country_embedding = country_embedding(hotel_country_input)
-        affiliate_id_embedding = layers.Embedding(self.affiliates.size() + 1, 5)(affiliate_id_input)
+        history_affiliates_embeddings = affiliate_id_embedding(affiliate_id_input)
         concatenated = layers.Concatenate()([history_embedding, features_input,
-                                             user_country_embedding, hotel_country_embedding, affiliate_id_embedding])
+                                             user_country_embedding,
+                                             hotel_country_embedding, history_affiliates_embeddings])
         x = layers.BatchNormalization()(concatenated)
         x = layers.Attention()([x, x])
         x = layers.Attention()([x, x])
@@ -193,7 +201,7 @@ class BookingRecommender(Recommender):
         output = layers.Dot(axes=[1,2])([x, target_embedding])
 
         model = Model(inputs=[history_input, features_input, user_country_input,
-                              hotel_country_input, affiliate_id_input, target_features,
+                              hotel_country_input, affiliate_id_input, target_features, target_affiliate_id_input,
                               candiate_city_input, candidate_country_input], outputs=output)
 
         ndcg_metric = KerasNDCG(self.ndcg_at)
@@ -229,6 +237,8 @@ class BookingRecommender(Recommender):
         additional_features = encode_additional_features(actions, self.max_history_length)\
             .reshape(1, self.max_history_length, len(ACTION_FEATURES))
 
+        target_affiliate_id = np.array(self.affiliates.get_id(target_action.data['affiliate_id'])).reshape(1,1)
+
         target_features = encode_action_features(target_action).reshape(1, len(ACTION_FEATURES))
 
         user_countries = id_vector(actions, self.max_history_length, self.countries, 'booker_country') \
@@ -248,7 +258,8 @@ class BookingRecommender(Recommender):
         candiates = np.array(candidates).reshape(1, self.candidates_cnt)
         countries = np.array(countries).reshape(1, self.candidates_cnt)
         scores = self.model.predict([history_vector, additional_features, user_countries,
-                                     hotel_countries, affiliate_ids, target_features, candiates, countries])[0]
+                                     hotel_countries, affiliate_ids, target_features, target_affiliate_id,
+                                     candiates, countries])[0]
         result = []
         for i in range(len(candiates[0])):
             item = self.items.reverse_id(candiates[0][i])
