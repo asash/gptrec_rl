@@ -154,6 +154,8 @@ class BookingRecommender(Recommender):
         print(f"taken best model from epoch{best_epoch}. best_val_success: {best_success}")
 
     def get_model(self):
+        city_embedding = layers.Embedding(self.items.size() + 1, 32)
+        country_embedding = layers.Embedding(self.countries.size() + 1, 32)
         target_features = layers.Input(shape=len(ACTION_FEATURES))
         target_features_encoded = layers.Dense(50, activation='swish')(target_features)
         target_features_encoded = layers.BatchNormalization()(target_features_encoded)
@@ -164,7 +166,6 @@ class BookingRecommender(Recommender):
         target_affiliate_id_embedding = layers.BatchNormalization()(target_affiliate_id_embedding)
         target_features_encoded = layers.Concatenate()([target_features_encoded, target_affiliate_id_embedding])
 
-        country_embedding = layers.Embedding(self.countries.size() + 1, 10)
         history_input = layers.Input(shape=(self.max_history_length))
         features_input = layers.Input(shape=(self.max_history_length, len(ACTION_FEATURES)))
 
@@ -172,7 +173,7 @@ class BookingRecommender(Recommender):
         user_country_input = layers.Input(shape=(self.max_history_length))
         hotel_country_input = layers.Input(shape=(self.max_history_length))
         affiliate_id_input = layers.Input(shape=(self.max_history_length))
-        history_embedding = layers.Embedding(self.items.size() + 1, 32)(history_input)
+        history_embedding = city_embedding(history_input)
         user_country_embedding = country_embedding(user_country_input)
         hotel_country_embedding = country_embedding(hotel_country_input)
         history_affiliates_embeddings = affiliate_id_embedding(affiliate_id_input)
@@ -180,8 +181,7 @@ class BookingRecommender(Recommender):
                                              user_country_embedding,
                                              hotel_country_embedding, history_affiliates_embeddings])
         x = layers.BatchNormalization()(concatenated)
-        x = layers.AdditiveAttention()([x, x])
-        x = layers.AdditiveAttention()([x, x])
+        x = layers.Attention()([x, x])
         # x = layers.Flatten()(x)
         # x = layers.Dense(self.bottleneck_size,
         #                        name="bottleneck", activation="swish")(x)
@@ -190,12 +190,12 @@ class BookingRecommender(Recommender):
         # x = layers.Dropout(0.5, name="dropout")(x)
 
         candiate_city_input = layers.Input(shape=(self.candidates_cnt))
-        target_city_emb = layers.Embedding(self.items.size() + 1, 100)(candiate_city_input)
+        target_city_emb = city_embedding(candiate_city_input)
         candidate_country_input = layers.Input(shape=(self.candidates_cnt))
-        target_country_emb = layers.Embedding(self.countries.size() + 1, 100)(candidate_country_input)
+        target_country_emb = country_embedding(candidate_country_input)
         target_embedding = layers.Concatenate()([target_city_emb, target_country_emb])
         target_embedding = layers.Conv1D(x.shape[-1], 1, activation='tanh')(target_embedding)
-        target_embedding = layers.AdditiveAttention()([target_embedding, target_embedding])
+        target_embedding = layers.Attention()([target_embedding, target_embedding])
 
         target_attention = layers.AdditiveAttention()([target_embedding, x])
 
