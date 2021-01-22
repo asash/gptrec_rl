@@ -183,22 +183,24 @@ class BookingRecommender(Recommender):
         x = layers.Attention()([x, x])
         x = layers.Attention()([x, x])
         x = layers.Attention()([x, x])
-        x = layers.Flatten()(x)
-        x = layers.Dense(self.bottleneck_size,
-                               name="bottleneck", activation="swish")(x)
-        x = layers.Concatenate()([x, target_features_encoded])
-        x = layers.Dense(1000, name="dense4", activation="sigmoid")(x)
-        x = layers.Dropout(0.5, name="dropout")(x)
+        # x = layers.Flatten()(x)
+        # x = layers.Dense(self.bottleneck_size,
+        #                        name="bottleneck", activation="swish")(x)
+        # x = layers.Concatenate()([x, target_features_encoded])
+        # x = layers.Dense(1000, name="dense4", activation="sigmoid")(x)
+        # x = layers.Dropout(0.5, name="dropout")(x)
 
         candiate_city_input = layers.Input(shape=(self.candidates_cnt))
-        target_city_emb = layers.Embedding(self.items.size() + 1, 500)(candiate_city_input)
-
+        target_city_emb = layers.Embedding(self.items.size() + 1, 100)(candiate_city_input)
         candidate_country_input = layers.Input(shape=(self.candidates_cnt))
-        target_country_emb = layers.Embedding(self.countries.size() + 1, 500)(candidate_country_input)
-
+        target_country_emb = layers.Embedding(self.countries.size() + 1, 100)(candidate_country_input)
         target_embedding = layers.Concatenate()([target_city_emb, target_country_emb])
+        target_embedding = layers.Conv1D(x.shape[-1], 1, activation='sigmoid')(target_embedding)
 
-        output = layers.Dot(axes=[1,2])([x, target_embedding])
+        target_attention = layers.Attention()([target_embedding, x])
+        target_features_encoded =  layers.Dense(x.shape[-1], activation='tanh')(target_features_encoded)
+
+        output = layers.Dot(axes=-1)([target_attention, target_features_encoded])
 
         model = Model(inputs=[history_input, features_input, user_country_input,
                               hotel_country_input, affiliate_id_input, target_features, target_affiliate_id_input,
