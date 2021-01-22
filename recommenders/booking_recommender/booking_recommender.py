@@ -204,10 +204,11 @@ class BookingRecommender(Recommender):
         candidate_country_input = layers.Input(shape=(self.candidates_cnt))
         target_country_emb = country_embedding(candidate_country_input)
         target_embedding = layers.Concatenate()([target_city_emb, target_country_emb])
-        target_embedding = layers.Conv1D(x.shape[-1], 1, activation='swish')(target_embedding)
+        target_embedding = layers.Convolution1D(x.shape[-1], 1, activation='swish')(target_embedding)
         target_embedding = self.block(target_embedding)
 
         target_attention = layers.MultiHeadAttention(num_heads=5, key_dim=x.shape[-1])(target_embedding, x)
+        target_attention = layers.Multiply()([target_attention, target_embedding])
         target_attention = layers.Convolution1D(x.shape[-1], 1, activation='sigmoid')(target_attention)
 
         target_features_encoded =  layers.Dense(x.shape[-1], activation='sigmoid')(target_features_encoded)
