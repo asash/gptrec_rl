@@ -180,9 +180,9 @@ class BookingRecommender(Recommender):
                                              user_country_embedding,
                                              hotel_country_embedding, history_affiliates_embeddings])
         x = layers.BatchNormalization()(concatenated)
-        x = layers.Attention()([x, x])
-        x = layers.Attention()([x, x])
-        x = layers.Attention()([x, x])
+        x = layers.AdditiveAttention()([x, x])
+        x = layers.AdditiveAttention()([x, x])
+        x = layers.AdditiveAttention()([x, x])
         # x = layers.Flatten()(x)
         # x = layers.Dense(self.bottleneck_size,
         #                        name="bottleneck", activation="swish")(x)
@@ -195,7 +195,7 @@ class BookingRecommender(Recommender):
         candidate_country_input = layers.Input(shape=(self.candidates_cnt))
         target_country_emb = layers.Embedding(self.countries.size() + 1, 100)(candidate_country_input)
         target_embedding = layers.Concatenate()([target_city_emb, target_country_emb])
-        target_embedding = layers.Conv1D(x.shape[-1], 1, activation='sigmoid')(target_embedding)
+        target_embedding = layers.Conv1D(x.shape[-1], 1, activation='tanh')(target_embedding)
 
         target_attention = layers.Attention()([target_embedding, x])
         target_features_encoded =  layers.Dense(x.shape[-1], activation='tanh')(target_features_encoded)
