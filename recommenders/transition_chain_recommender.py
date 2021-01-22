@@ -1,3 +1,4 @@
+import math
 from collections import defaultdict, Counter
 
 import numpy as np
@@ -37,6 +38,17 @@ class TransitionsChainRecommender(Recommender):
     def rebuild_model(self):
         self.top_recommender.rebuild_model()
         self.transition_matrix = defaultdict(Counter)
+        df = Counter()
+        for _, items in self.user_to_items.items():
+            for item in set(items):
+                df[item] += 1
+
+        df = dict(df)
+        idf = dict()
+        for item in df:
+            idf[item] = len(self.user_to_items) / math.log(df[item] + 1)
+
+
         for _, items in self.user_to_items.items():
             for t in range(1, len(items)):
                 target_item = items[t]
@@ -44,7 +56,7 @@ class TransitionsChainRecommender(Recommender):
                     self.transition_matrix[self.item_id_to_index[item_id]][self.item_id_to_index[target_item]] += 1
         self.graph = defaultdict(list)
         for start in self.transition_matrix:
-            for stop in self.transition_matrix[start].most_common(50):
+            for stop in self.transition_matrix[start].most_common(500):
                 self.graph[start].append(stop)
         pass
 

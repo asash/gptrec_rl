@@ -16,7 +16,7 @@ class GetPredictions(object):
         user_id, features = request
         return self.recommender.get_next_items(user_id, self.limit, features)
 
-def evaluate_recommender(recommender, actions, metrics, features_from_test=None, recommendations_limit=50):
+def evaluate_recommender(recommender, actions, metrics, features_from_test=None, recommendations_limit=900):
     by_user = group_by_user(actions)
     metric_sum = defaultdict(lambda: 0.0)
     get_predictions = GetPredictions(recommender, recommendations_limit)

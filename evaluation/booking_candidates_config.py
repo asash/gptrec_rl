@@ -10,7 +10,6 @@ from aprec.recommenders.transition_chain_recommender import TransitionsChainReco
 from aprec.recommenders.svd import SvdRecommender
 from aprec.evaluation.metrics.precision import Precision
 from aprec.evaluation.metrics.ndcg import NDCG
-from aprec.recommenders.booking_recommender.booking_recommender import BookingRecommender
 from tensorflow.keras.optimizers import Adam
 from aprec.evaluation.metrics.sps import SPS
 from aprec.datasets.booking import get_booking_dataset
@@ -69,18 +68,12 @@ def mlp_historical_embedding(loss, activation_override=None, bottleneck_size=64,
                                         n_val_users=4000,
                                         bottleneck_size=bottleneck_size,
                                         max_history_len=50,
-                                        candidates_cnt=500,
                                         output_layer_activation=activation)
 
 RECOMMENDERS = {
-    "top_recommender": top_recommender,
-    "conditional_top_recommender": conditional_top_recommender,
-    "svd_recommender": lambda: svd_recommender(30),
-#    "item_temem_recommender": item_item_recommender,
     "transitions_chain_recommender": TransitionsChainRecommender,
-    "APREC-GMLPHE-Lambdarank-256-0.5": lambda: mlp_historical_embedding('lambdarank', 'linear', 256, target_decay=0.5),
 }
 
 SPLIT_STRATEGY = "LEAVE_ONE_OUT"
 USERS_FRACTIONS = [1.0]
-METRICS = [Precision(4), SPS(4), NDCG(4), NDCG(40)]
+METRICS = [Precision(4), SPS(4), NDCG(4), NDCG(40), SPS(50), SPS(100), SPS(150), SPS(200), SPS(300), SPS(400), SPS(500), SPS(600), SPS(700), SPS(800), SPS(900), SPS(1000)]
