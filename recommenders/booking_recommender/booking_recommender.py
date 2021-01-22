@@ -153,6 +153,14 @@ class BookingRecommender(Recommender):
         print(self.get_metadata())
         print(f"taken best model from epoch{best_epoch}. best_val_success: {best_success}")
 
+    def block(self, x, num_heads=5):
+        shortcut = x
+        attention = layers.MultiHeadAttention(num_heads, key_dim=x.shape[-1])(x, x)
+        attention = layers.Convolution1D(x.shape[-1], 1, activation='swish')(attention)
+        output = layers.Multiply()([shortcut, attention])
+        output = layers.LayerNormalization()(output)
+        return output
+
     def get_model(self):
         city_embedding = layers.Embedding(self.items.size() + 1, 32)
         country_embedding = layers.Embedding(self.countries.size() + 1, 32)
@@ -181,7 +189,9 @@ class BookingRecommender(Recommender):
                                              user_country_embedding,
                                              hotel_country_embedding, history_affiliates_embeddings])
         x = layers.BatchNormalization()(concatenated)
-        x = layers.Attention()([x, x])
+        x = self.block(x)
+        x = self.block(x)
+        x = self.block(x)
         # x = layers.Flatten()(x)
         # x = layers.Dense(self.bottleneck_size,
         #                        name="bottleneck", activation="swish")(x)
@@ -194,12 +204,15 @@ class BookingRecommender(Recommender):
         candidate_country_input = layers.Input(shape=(self.candidates_cnt))
         target_country_emb = country_embedding(candidate_country_input)
         target_embedding = layers.Concatenate()([target_city_emb, target_country_emb])
-        target_embedding = layers.Conv1D(x.shape[-1], 1, activation='tanh')(target_embedding)
-        target_embedding = layers.Attention()([target_embedding, target_embedding])
+        target_embedding = layers.Conv1D(x.shape[-1], 1, activation='swish')(target_embedding)
+        target_embedding = self.block(target_embedding)
 
-        target_attention = layers.AdditiveAttention()([target_embedding, x])
+        target_attention = layers.MultiHeadAttention(num_heads=5, key_dim=x.shape[-1])(target_embedding, x)
+        target_attention = layers.Convolution1D(x.shape[-1], 1, activation='sigmoid')(target_attention)
 
-        target_features_encoded =  layers.Dense(x.shape[-1], activation='tanh')(target_features_encoded)
+        target_features_encoded =  layers.Dense(x.shape[-1], activation='sigmoid')(target_features_encoded)
+        target_features_encoded = layers.LayerNormalization()(target_features_encoded)
+        target_features_encoded = layers.Dropout(0.5)(target_features_encoded)
         output = layers.Dot(axes=-1)([target_attention, target_features_encoded])
 
         model = Model(inputs=[history_input, features_input, user_country_input,
