@@ -157,7 +157,7 @@ class BookingRecommender(Recommender):
         shortcut = x
         attention = layers.MultiHeadAttention(num_heads, key_dim=x.shape[-1])(x, x)
         attention = layers.Convolution1D(x.shape[-1], 1, activation='swish')(attention)
-        output = layers.Add()([shortcut, attention])
+        output = layers.Multiply()([shortcut, attention])
         output = layers.LayerNormalization()(output)
         return output
 
@@ -167,6 +167,7 @@ class BookingRecommender(Recommender):
 
         reverse_pos_input = layers.Input(shape=(self.max_history_length))
         reverse_pos_embedding = layers.Embedding(self.max_history_length +1, 10)(reverse_pos_input)
+
 
         city_embedding = layers.Embedding(self.items.size() + 1, 32)
         country_embedding = layers.Embedding(self.countries.size() + 1, 32)
@@ -191,15 +192,22 @@ class BookingRecommender(Recommender):
         user_country_embedding = country_embedding(user_country_input)
         hotel_country_embedding = country_embedding(hotel_country_input)
         history_affiliates_embeddings = affiliate_id_embedding(affiliate_id_input)
-        concatenated = layers.Concatenate()([history_embedding, direct_pos_embedding, reverse_pos_embedding,
+        concatenated = layers.Concatenate()([history_embedding,
                                              features_input,
                                              user_country_embedding,
                                              hotel_country_embedding, history_affiliates_embeddings])
+
+
+
+        position_embedding = layers.Concatenate()([direct_pos_embedding, reverse_pos_embedding])
+        position_embedding = layers.Convolution1D(concatenated.shape[-1], 1)(position_embedding)
+
         x = layers.BatchNormalization()(concatenated)
+        x = layers.Convolution1D(x.shape[-1], 1)(x)
+        x = layers.Multiply()([x, position_embedding])
         x = self.block(x)
         x = self.block(x)
         x = self.block(x)
-        x = layers.Convolution1D(x.shape[-1], 1, activation='swish')(x)
         # x = layers.Flatten()(x)
         # x = layers.Dense(self.bottleneck_size,
         #                        name="bottleneck", activation="swish")(x)
@@ -214,7 +222,6 @@ class BookingRecommender(Recommender):
         target_embedding = layers.Concatenate()([target_city_emb, target_country_emb])
         target_embedding = layers.Convolution1D(x.shape[-1], 1, activation='swish')(target_embedding)
         target_embedding = self.block(target_embedding)
-        target_embedding = layers.Convolution1D(x.shape[-1], 1, activation='swish')(target_embedding)
 
         target_attention = layers.MultiHeadAttention(num_heads=5, key_dim=x.shape[-1])(target_embedding, x)
         target_attention = layers.Multiply()([target_attention, target_embedding])
