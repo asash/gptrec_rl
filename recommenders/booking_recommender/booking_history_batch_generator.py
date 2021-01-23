@@ -10,10 +10,13 @@ ACTION_FEATURES = [
     ['is_desktop', lambda action: int(action.data['device_class'] == 'desktop')],
     ['is_mobile', lambda action: int(action.data['device_class'] == 'mobile')],
     ['n_nights', lambda action: (action.data['checkout_date'] - action.data['checkin_date']).days],
-    ['checkin_day_of_year', lambda action: (action.data['checkin_date'].timetuple().tm_yday) + 1],
-    ['checkout_day_of_year', lambda action: (action.data['checkout_date'].timetuple().tm_yday) + 1],
-    ['checkin_weekday', lambda action: (action.data['checkin_date'].weekday()) + 1],
-    ['checkout_weekday', lambda action: (action.data['checkout_date'].weekday()) + 1],
+    ['checkin_day_of_year', lambda action: ((action.data['checkin_date'].timetuple().tm_yday) + 1) / 365],
+    ['checkout_day_of_year', lambda action: ((action.data['checkout_date'].timetuple().tm_yday) + 1) / 365],
+    ['checkin_year_2016', lambda action: action.data['checkin_date'].year == 2015],
+    ['checkin_year_2016', lambda action: action.data['checkin_date'].year == 2016],
+    ['checkin_year_2017', lambda action: action.data['checkin_date'].year == 2017],
+    ['checkin_weekday', lambda action: ((action.data['checkin_date'].weekday()) + 1) / 7],
+    ['checkout_weekday', lambda action: ((action.data['checkout_date'].weekday()) + 1) / 7],
     ['over_weekend', lambda action: over_weekend(action.data['checkin_date'], action.data['checkout_date'])],
     ['same_country', lambda action: action.data['booker_country'] == action.data['hotel_country']],
     ['from_start', lambda action: action.data.get('from_start', 0)],
@@ -60,6 +63,7 @@ class BookingHistoryBatchGenerator(Sequence):
         history, target = self.split_actions(self.user_actions)
         self.history_matrix = self.matrix_for_embedding(history, self.history_size, self.n_items)
         self.additional_features = self.additional_features(history, self.history_size)
+        self.direct_position, self.reverse_position = self.positions(history, self.history_size)
         self.user_country_matrix = self.id_vectors(history, self.history_size, self.country_dict, 'booker_country')
         self.hotel_country_matrix = self.id_vectors(history, self.history_size, self.country_dict, 'hotel_country')
         self.affiliate_id_matrix = self.id_vectors(history, self.history_size, self.affiliates_dict, 'affiliate_id')
@@ -71,16 +75,23 @@ class BookingHistoryBatchGenerator(Sequence):
         self.max = self.__len__()
         pass
 
+    def positions(self, trips, history_size):
+        result_direct, result_reverse = [], []
+        for trip in trips:
+            result_direct.append(direct_positions(len(trip), history_size))
+            result_reverse.append(reverse_positions(len(trip), history_size))
+        return np.array(result_direct), np.array(result_reverse)
+
     def get_candidates(self, user_actions):
         result_candidate_cities = []
         result_candidate_countries = []
         for trip in user_actions:
             item_ids = [action[1].item_id for action in trip]
             candidates, countries = get_candidates_one_trip(item_ids, self.city_dict,
-                                                                 self.candidates_recommender,
-                                                                 self.n_candidates,
-                                                                 self.city_country_mapping,
-                                                                 self.country_dict)
+                                                            self.candidates_recommender,
+                                                            self.n_candidates,
+                                                            self.city_country_mapping,
+                                                            self.country_dict)
             result_candidate_cities.append(candidates)
             result_candidate_countries.append(countries)
         return np.array(result_candidate_cities), np.array(result_candidate_countries)
@@ -101,7 +112,6 @@ class BookingHistoryBatchGenerator(Sequence):
             id = affiliates_dict.get_id(actions[0][1].data['affiliate_id'])
             result.append(id)
         return np.array(result)
-
 
     @staticmethod
     def additional_features(user_actions, history_size):
@@ -125,8 +135,8 @@ class BookingHistoryBatchGenerator(Sequence):
         return np.array(result)
 
     def get_target_matrix(self, user_actions, candidates):
-       result = []
-       for i in range(len(user_actions)):
+        result = []
+        for i in range(len(user_actions)):
             user_result = []
             target_val = {}
             cur_val = 0.99
@@ -138,16 +148,16 @@ class BookingHistoryBatchGenerator(Sequence):
                 if cur_val < self.min_target_val:
                     cur_val = self.min_target_val
             for j in range(self.n_candidates):
-               city = candidates[i][j]
-               if city in target_val:
-                   user_result.append(target_val[city])
-                   user_sum += target_val[city]
-               else:
-                   user_result.append(0.0)
-            if user_sum  == 0:
+                city = candidates[i][j]
+                if city in target_val:
+                    user_result.append(target_val[city])
+                    user_sum += target_val[city]
+                else:
+                    user_result.append(0.0)
+            if user_sum == 0:
                 user_result[random.randint(0, len(user_result) - 1)] = 0.001
             result.append(user_result)
-       return np.array(result)
+        return np.array(result)
 
     def split_actions(self, user_actions):
         history = []
@@ -185,7 +195,9 @@ class BookingHistoryBatchGenerator(Sequence):
         target = self.target_matrix[start:end]
         candidate_cities = self.candidates[start:end]
         candidate_countries = self.candidate_countries[start:end]
-        return [history, features, user_countries, hotel_countries, affiliates, target_features, target_affiliate_ids,
+        direct_pos = self.direct_position[start:end]
+        reverse_pos = self.reverse_position[start:end]
+        return [history, direct_pos, reverse_pos, features, user_countries, hotel_countries, affiliates, target_features, target_affiliate_ids,
                 candidate_cities, candidate_countries], target
 
     def __next__(self):
@@ -206,7 +218,7 @@ def history_to_vector(user_actions, vector_size, special_value):
 
 
 def encode_action_features(action):
-    result = [feature[1](action) for feature in ACTION_FEATURES]
+    result = np.array([feature[1](action) for feature in ACTION_FEATURES])
     return np.array(result)
 
 
@@ -233,7 +245,9 @@ def id_vector(actions, history_size, translate_dict, property):
         result = np.pad(result, ((n_pad, 0)), mode='constant', constant_values=translate_dict.size())
     return result
 
-def get_candidates_one_trip(item_ids, city_dict, candidates_recommender, n_candidates, city_country_mapping, country_dict):
+
+def get_candidates_one_trip(item_ids, city_dict, candidates_recommender, n_candidates, city_country_mapping,
+                            country_dict):
     candidates = [city_dict.get_id(candidate[0]) for candidate
                   in candidates_recommender.recommend_by_items(item_ids, n_candidates)]
     countries = [city_country_mapping[city] for city in candidates]
@@ -241,3 +255,17 @@ def get_candidates_one_trip(item_ids, city_dict, candidates_recommender, n_candi
         candidates += [city_dict.size()] * (n_candidates - len(candidates))
         countries += [country_dict.size()] * (n_candidates - len(countries))
     return candidates, countries
+
+
+def direct_positions(trip_len, history_size):
+    if trip_len >= history_size:
+        return list(range(1, history_size + 1))
+    else:
+        return [0] * (history_size - trip_len) + list(range(1, trip_len + 1))
+
+
+def reverse_positions(trip_len, history_size):
+    if trip_len >= history_size:
+        return list(range(history_size, 0, -1))
+    else:
+        return [0] * (history_size - trip_len) + list(range(trip_len, 0, -1))
