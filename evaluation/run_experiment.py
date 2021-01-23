@@ -67,7 +67,7 @@ class RecommendersEvaluator(object):
             print(json.dumps(evaluation_result))
             result['recommenders'][recommender_name] = evaluation_result
             for callback in self.callbacks:
-                callback(recommender, recommender_name, config)
+                callback(recommender, recommender_name, evaluation_result, config)
             del(recommender)
         return result
 

@@ -20,11 +20,14 @@ from tqdm import tqdm
 DATASET, SUBMIT_ACTIONS = get_booking_dataset('./booking_data/booking_train_set.csv',
                               './booking_data/booking_test_set.csv')
 
-def generate_submit(recommender, recommender_name, config):
-    return
-    if not recommender_name.startswith('APREC'):
+GENERATE_SUBMIT_THRESHOLD = 0.51
+
+def generate_submit(recommender, recommender_name, evaluation_result, config):
+    if evaluation_result["SPS@4"] < config.GENERATE_SUBMIT_THRESHOLD:
+        print("SPS@4 is less than threshold, not generating the submit")
         return
-    print("writing_recommendations")
+
+    print("generating submit...")
     with open(os.path.join(config.out_dir, recommender_name + "_submit_" + ".csv"), 'w') as out_file:
         out_file.write("utrip_id,city_id_1,city_id_2,city_id_3,city_id_4\n")
         for action in tqdm(config.SUBMIT_ACTIONS):
@@ -75,7 +78,7 @@ def mlp_historical_embedding(loss, activation_override=None, bottleneck_size=64,
 RECOMMENDERS = {
     "top_recommender": top_recommender,
     "conditional_top_recommender": conditional_top_recommender,
-    "svd_recommender": lambda: svd_recommender(30),
+    #"svd_recommender": lambda: svd_recommender(30),
 #    "item_temem_recommender": item_item_recommender,
     "transitions_chain_recommender": TransitionsChainRecommender,
     "APREC-GMLPHE-Lambdarank-256-0.5": lambda: mlp_historical_embedding('lambdarank', 'linear', 256, target_decay=0.5),
