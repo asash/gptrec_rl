@@ -163,18 +163,18 @@ class BookingRecommender(Recommender):
 
     def get_model(self):
         direct_pos_input = layers.Input(shape=(self.max_history_length))
-        direct_pos_embedding = layers.Embedding(self.max_history_length +1, 10)(direct_pos_input)
+        direct_pos_embedding = layers.Embedding(self.max_history_length +1, 20)(direct_pos_input)
 
         reverse_pos_input = layers.Input(shape=(self.max_history_length))
-        reverse_pos_embedding = layers.Embedding(self.max_history_length +1, 10)(reverse_pos_input)
+        reverse_pos_embedding = layers.Embedding(self.max_history_length +1, 20)(reverse_pos_input)
 
 
-        city_embedding = layers.Embedding(self.items.size() + 1, 32)
-        country_embedding = layers.Embedding(self.countries.size() + 1, 32)
+        city_embedding = layers.Embedding(self.items.size() + 1, 64)
+        country_embedding = layers.Embedding(self.countries.size() + 1, 64)
         target_features = layers.Input(shape=len(ACTION_FEATURES))
         target_features_encoded = layers.Dense(50, activation='swish')(target_features)
         target_features_encoded = layers.BatchNormalization()(target_features_encoded)
-        affiliate_id_embedding = layers.Embedding(self.affiliates.size() + 1, 5)
+        affiliate_id_embedding = layers.Embedding(self.affiliates.size() + 1, 10)
         target_affiliate_id_input = layers.Input(shape=(1, 1))
         target_affiliate_id_embedding = affiliate_id_embedding(target_affiliate_id_input)
         target_affiliate_id_embedding = layers.Flatten()(target_affiliate_id_embedding)

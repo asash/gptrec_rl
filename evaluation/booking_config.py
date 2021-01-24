@@ -67,7 +67,7 @@ def mlp_historical_embedding(loss, activation_override=None, bottleneck_size=64,
     if activation_override is not None:
         activation = activation_override
     return BookingRecommender(train_epochs=10000, loss=loss,
-                                        optimizer=Adam(), early_stop_epochs=30,
+                                        optimizer=Adam(), early_stop_epochs=20,
                                         batch_size=500, sigma=1.0, ndcg_at=40,
                                         n_val_users=4000,
                                         bottleneck_size=bottleneck_size,
