@@ -3,8 +3,9 @@ import math
 import random
 
 import numpy as np
-from scipy.sparse import csr_matrix
 from tensorflow.python.keras.utils.data_utils import Sequence
+from tqdm import tqdm
+from tqdm.contrib.concurrent import process_map, thread_map
 
 ACTION_FEATURES = [
     ['is_desktop', lambda action: int(action.data['device_class'] == 'desktop')],
@@ -41,8 +42,8 @@ class BookingHistoryBatchGenerator(Sequence):
                  city_country_mapping,
                  n_candidates,
                  batch_size=1000, validation=False, target_decay=0.6,
-                 min_target_val=0.03):
-        self.user_actions = user_actions
+                 min_target_val=0.03, epoch_size = 20000):
+        self.user_actions = np.random.choice(user_actions, epoch_size, replace=False)
         self.history_size = history_size
         self.n_items = n_items
         self.batch_size = batch_size
@@ -69,7 +70,7 @@ class BookingHistoryBatchGenerator(Sequence):
         self.affiliate_id_matrix = self.id_vectors(history, self.history_size, self.affiliates_dict, 'affiliate_id')
         self.target_features = self.get_target_trip_features(target)
         self.target_affiliate_ids = self.get_target_affiliate_ids(target, self.affiliates_dict)
-        self.candidates, self.candidate_countries = self.get_candidates(history)
+        self.candidates, self.candidate_countries, self.candidate_features = self.get_candidates(history)
         self.target_matrix = self.get_target_matrix(target, self.candidates)
         self.current_position = 0
         self.max = self.__len__()
@@ -85,16 +86,22 @@ class BookingHistoryBatchGenerator(Sequence):
     def get_candidates(self, user_actions):
         result_candidate_cities = []
         result_candidate_countries = []
-        for trip in user_actions:
-            item_ids = [action[1].item_id for action in trip]
-            candidates, countries = get_candidates_one_trip(item_ids, self.city_dict,
-                                                            self.candidates_recommender,
-                                                            self.n_candidates,
-                                                            self.city_country_mapping,
-                                                            self.country_dict)
+        result_candidate_features = []
+        print('generating candidates...')
+        candidates_generator = CandidatesGenerator(self.city_dict,
+                                                   self.candidates_recommender,
+                                                   self.n_candidates,
+                                                   self.city_country_mapping)
+        result = []
+        for trip in tqdm(user_actions):
+            actions = [item[1] for item in trip]
+            result.append(candidates_generator(actions))
+
+        for candidates, countries, features in result:
             result_candidate_cities.append(candidates)
             result_candidate_countries.append(countries)
-        return np.array(result_candidate_cities), np.array(result_candidate_countries)
+            result_candidate_features.append(features)
+        return np.array(result_candidate_cities), np.array(result_candidate_countries), np.array(result_candidate_features)
 
     @staticmethod
     def get_target_trip_features(user_actions):
@@ -171,7 +178,7 @@ class BookingHistoryBatchGenerator(Sequence):
     def split_user(self, user):
         if not self.validation:
             history_fraction = random.random()
-            n_history_actions = int(len(user) * history_fraction)
+            n_history_actions = max(1, int(len(user) * history_fraction))
         else:
             n_history_actions = len(user) - 1
         n_target_actions = len(user) - n_history_actions
@@ -197,8 +204,9 @@ class BookingHistoryBatchGenerator(Sequence):
         candidate_countries = self.candidate_countries[start:end]
         direct_pos = self.direct_position[start:end]
         reverse_pos = self.reverse_position[start:end]
+        candidate_features = self.candidate_features[start:end]
         return [history, direct_pos, reverse_pos, features, user_countries, hotel_countries, affiliates, target_features, target_affiliate_ids,
-                candidate_cities, candidate_countries], target
+                candidate_cities, candidate_countries, candidate_features], target
 
     def __next__(self):
         if self.current_position >= self.max:
@@ -246,15 +254,20 @@ def id_vector(actions, history_size, translate_dict, property):
     return result
 
 
-def get_candidates_one_trip(item_ids, city_dict, candidates_recommender, n_candidates, city_country_mapping,
-                            country_dict):
-    candidates = [city_dict.get_id(candidate[0]) for candidate
-                  in candidates_recommender.recommend_by_items(item_ids, n_candidates)]
-    countries = [city_country_mapping[city] for city in candidates]
-    if (len(candidates)) < n_candidates:
-        candidates += [city_dict.size()] * (n_candidates - len(candidates))
-        countries += [country_dict.size()] * (n_candidates - len(countries))
-    return candidates, countries
+class CandidatesGenerator(object):
+    def __init__(self, city_dict, candidates_recommender, n_candidates, city_country_mapping):
+        self.city_dict = city_dict
+        self.candidates_recommender = candidates_recommender
+        self.n_candidates = n_candidates
+        self.city_country_mapping = city_country_mapping
+
+    def __call__(self, trip):
+        candidates_with_features = self.candidates_recommender.get_candidates_with_features(trip, self.n_candidates)
+        candidates = [self.city_dict.get_id(candidate[0]) for candidate
+                      in candidates_with_features]
+        countries = [self.city_country_mapping[city] for city in candidates]
+        candidate_features = [item[1] for item in candidates_with_features]
+        return candidates, countries, candidate_features
 
 
 def direct_positions(trip_len, history_size):

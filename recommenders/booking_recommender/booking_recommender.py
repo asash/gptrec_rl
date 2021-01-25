@@ -3,8 +3,7 @@ import tensorflow.keras.backend as K
 import random
 from collections import defaultdict
 
-from aprec.recommenders.top_recommender import TopRecommender
-from aprec.recommenders.transition_chain_recommender import TransitionsChainRecommender
+from aprec.recommenders.booking_recommender.candidates_recommender import BookingCandidatesRecommender
 from aprec.utils.item_id import ItemId
 from aprec.recommenders.metrics.ndcg import KerasNDCG
 from aprec.recommenders.metrics.success import KerasSuccess
@@ -12,7 +11,7 @@ from aprec.recommenders.losses.lambdarank import LambdaRankLoss
 from aprec.recommenders.losses.xendcg import XENDCGLoss
 from aprec.recommenders.recommender import Recommender
 from aprec.recommenders.booking_recommender.booking_history_batch_generator import BookingHistoryBatchGenerator, \
-    ACTION_FEATURES, encode_action_features, get_candidates_one_trip, direct_positions, reverse_positions
+    ACTION_FEATURES, encode_action_features, CandidatesGenerator, direct_positions, reverse_positions
 from aprec.recommenders.booking_recommender.booking_history_batch_generator import history_to_vector,\
     encode_additional_features, id_vector
 from tensorflow.keras.models import Model
@@ -32,7 +31,7 @@ class BookingRecommender(Recommender):
                  ndcg_at = 30,
                  target_decay=0.6,
                  min_target_value=0.0,
-                 candidates_cnt = 100):
+                 candidates_cnt = 50, epoch_size=20000, val_epoch_size=2000):
         self.users = ItemId()
         self.items = ItemId()
         self.countries = ItemId()
@@ -58,7 +57,9 @@ class BookingRecommender(Recommender):
         self.output_layer_activation = output_layer_activation
         self.candidates_cnt = candidates_cnt
         self.city_country_mapping = {}
-        self.candidates_recommender = TransitionsChainRecommender()
+        self.candidates_recommender = BookingCandidatesRecommender()
+        self.epoch_size = epoch_size
+        self.val_epoch_size = val_epoch_size
 
     def get_metadata(self):
         return self.metadata
@@ -110,7 +111,7 @@ class BookingRecommender(Recommender):
                                               city_country_mapping = self.city_country_mapping,
                                               target_decay=self.target_decay,
                                               n_candidates=self.candidates_cnt,
-                                              min_target_val=self.min_target_value)
+                                              min_target_val=self.min_target_value, epoch_size=self.val_epoch_size)
         self.model = self.get_model()
         best_success = 0
         steps_since_improved = 0
@@ -127,7 +128,7 @@ class BookingRecommender(Recommender):
                                               city_country_mapping=self.city_country_mapping,
                                               n_candidates=self.candidates_cnt,
                                               target_decay=self.target_decay,
-                                              min_target_val=self.min_target_value)
+                                              min_target_val=self.min_target_value, epoch_size=self.epoch_size)
             print(f"epoch: {epoch}")
             train_history = self.model.fit(generator, validation_data=val_generator)
             val_ndcg = train_history.history[f"val_ndcg_at_{self.ndcg_at}"][-1]
@@ -163,18 +164,18 @@ class BookingRecommender(Recommender):
 
     def get_model(self):
         direct_pos_input = layers.Input(shape=(self.max_history_length))
-        direct_pos_embedding = layers.Embedding(self.max_history_length +1, 20)(direct_pos_input)
+        direct_pos_embedding = layers.Embedding(self.max_history_length +1, 10)(direct_pos_input)
 
         reverse_pos_input = layers.Input(shape=(self.max_history_length))
-        reverse_pos_embedding = layers.Embedding(self.max_history_length +1, 20)(reverse_pos_input)
+        reverse_pos_embedding = layers.Embedding(self.max_history_length +1, 10)(reverse_pos_input)
 
 
-        city_embedding = layers.Embedding(self.items.size() + 1, 64)
-        country_embedding = layers.Embedding(self.countries.size() + 1, 64)
+        city_embedding = layers.Embedding(self.items.size() + 1, 32)
+        country_embedding = layers.Embedding(self.countries.size() + 1, 32)
         target_features = layers.Input(shape=len(ACTION_FEATURES))
         target_features_encoded = layers.Dense(50, activation='swish')(target_features)
         target_features_encoded = layers.BatchNormalization()(target_features_encoded)
-        affiliate_id_embedding = layers.Embedding(self.affiliates.size() + 1, 10)
+        affiliate_id_embedding = layers.Embedding(self.affiliates.size() + 1, 5)
         target_affiliate_id_input = layers.Input(shape=(1, 1))
         target_affiliate_id_embedding = affiliate_id_embedding(target_affiliate_id_input)
         target_affiliate_id_embedding = layers.Flatten()(target_affiliate_id_embedding)
@@ -219,7 +220,9 @@ class BookingRecommender(Recommender):
         target_city_emb = city_embedding(candiate_city_input)
         candidate_country_input = layers.Input(shape=(self.candidates_cnt))
         target_country_emb = country_embedding(candidate_country_input)
-        target_embedding = layers.Concatenate()([target_city_emb, target_country_emb])
+        candidate_features_input = layers.Input(shape=(self.candidates_cnt, self.candidates_recommender.n_features))
+
+        target_embedding = layers.Concatenate()([target_city_emb, target_country_emb, candidate_features_input])
         target_embedding = layers.Convolution1D(x.shape[-1], 1, activation='swish')(target_embedding)
         target_embedding = self.block(target_embedding)
 
@@ -233,7 +236,7 @@ class BookingRecommender(Recommender):
 
         model = Model(inputs=[history_input, direct_pos_input, reverse_pos_input, features_input, user_country_input,
                               hotel_country_input, affiliate_id_input, target_features, target_affiliate_id_input,
-                              candiate_city_input, candidate_country_input], outputs=output)
+                              candiate_city_input, candidate_country_input, candidate_features_input], outputs=output)
 
         ndcg_metric = KerasNDCG(self.ndcg_at)
         success_4_metric = KerasSuccess(4)
@@ -287,17 +290,19 @@ class BookingRecommender(Recommender):
             .reshape(1, self.max_history_length)
 
         item_ids = [action.item_id for action in items_list]
-        candidates, countries = get_candidates_one_trip(item_ids, self.items,
-                                                        self.candidates_recommender,
-                                                        self.candidates_cnt,
-                                                        self.city_country_mapping,
-                                                        self.countries)
+        candidates_generator = CandidatesGenerator(self.items,
+                                                   self.candidates_recommender,
+                                                   self.candidates_cnt,
+                                                   self.city_country_mapping)
+        candidates, countries, candidate_features = candidates_generator(items_list)
 
         candiates = np.array(candidates).reshape(1, self.candidates_cnt)
         countries = np.array(countries).reshape(1, self.candidates_cnt)
+        candidate_features = np.array(candidate_features)\
+            .reshape(1, self.candidates_cnt, self.candidates_recommender.n_features)
         scores = self.model.predict([history_vector, direct_pos, reverse_pos, additional_features, user_countries,
                                      hotel_countries, affiliate_ids, target_features, target_affiliate_id,
-                                     candiates, countries])[0]
+                                     candiates, countries, candidate_features])[0]
         result = []
         for i in range(len(candiates[0])):
             item = self.items.reverse_id(candiates[0][i])
