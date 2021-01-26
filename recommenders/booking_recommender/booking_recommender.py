@@ -19,6 +19,11 @@ import tensorflow.keras.layers as layers
 import numpy as np
 
 
+NUM_AFFILIATES = 3612
+NUM_CITIES = 39903
+NUM_COUNTRIES = 197
+
+
 class BookingRecommender(Recommender):
     def __init__(self, bottleneck_size=32, train_epochs=300, n_val_users=1000,
                  max_history_len=1000, 
@@ -78,7 +83,6 @@ class BookingRecommender(Recommender):
         self.city_country_mapping[item_id_internal] = hotel_country_id
         self.affiliates.get_id(action.data['affiliate_id'])
         self.user_actions[user_id_internal].append((item_id_internal, action))
-        self.candidates_recommender.add_action(action)
 
     def user_actions_by_id_list(self, id_list):
         result = []
@@ -98,10 +102,18 @@ class BookingRecommender(Recommender):
             self.user_actions[user_id].sort(key=lambda x: x[1].timestamp)
 
     def rebuild_model(self):
-        self.candidates_recommender.rebuild_model()
         self.sort_actions()
         train_users, val_users = self.split_users()
         print("train_users: {}, val_users:{}, items:{}".format(len(train_users), len(val_users), self.items.size()))
+
+        print("rebuilding candidates generator...")
+        for trip in train_users:
+            for(_, action) in trip:
+                self.candidates_recommender.add_action(action)
+
+        self.candidates_recommender.rebuild_model()
+
+
         val_generator = BookingHistoryBatchGenerator(val_users, self.max_history_length, self.items.size(),
                                               batch_size=self.batch_size, country_dict = self.countries,
                                               candidates_recommender=self.candidates_recommender,
@@ -170,12 +182,12 @@ class BookingRecommender(Recommender):
         reverse_pos_embedding = layers.Embedding(self.max_history_length +1, 10)(reverse_pos_input)
 
 
-        city_embedding = layers.Embedding(self.items.size() + 1, 32)
-        country_embedding = layers.Embedding(self.countries.size() + 1, 32)
+        city_embedding = layers.Embedding(NUM_CITIES + 1, 32)
+        country_embedding = layers.Embedding(NUM_COUNTRIES + 1, 32)
         target_features = layers.Input(shape=len(ACTION_FEATURES))
         target_features_encoded = layers.Dense(50, activation='swish')(target_features)
         target_features_encoded = layers.BatchNormalization()(target_features_encoded)
-        affiliate_id_embedding = layers.Embedding(self.affiliates.size() + 1, 5)
+        affiliate_id_embedding = layers.Embedding(NUM_AFFILIATES + 1, 5)
         target_affiliate_id_input = layers.Input(shape=(1, 1))
         target_affiliate_id_embedding = affiliate_id_embedding(target_affiliate_id_input)
         target_affiliate_id_embedding = layers.Flatten()(target_affiliate_id_embedding)

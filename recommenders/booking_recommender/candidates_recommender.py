@@ -159,7 +159,7 @@ class BookingCandidatesRecommender(Recommender):
 
         result = []
         for city, _ in recs:
-            city_country = self.city_country_mapping[city]
+            city_country = self.city_country_mapping.get(city, "")
 
             candidate_vector = []
 
@@ -181,7 +181,7 @@ class BookingCandidatesRecommender(Recommender):
 
 
             #city global popularty
-            city_pos, city_pop = self.top_city_idx[city]
+            city_pos, city_pop = self.top_city_idx.get(city, (self.inf, 0.0))
             candidate_vector.append(city_pos / self.inf)
 
             candidate_vector.append(city_pop)
@@ -206,7 +206,7 @@ class BookingCandidatesRecommender(Recommender):
                     trip_city = trip[idx].item_id
                     transition_pos, transition_prob = self.city_transitions_idx.get((trip_city, city), (self.inf, 0.0))
                     same_as_trip_city = int(city == trip_city)
-                    same_country = int(self.city_country_mapping[trip_city] == city_country)
+                    same_country = int(self.city_country_mapping.get(trip_city, "") == city_country)
                 candidate_vector.append(transition_pos / self.inf)
                 candidate_vector.append(transition_prob)
                 candidate_vector.append(same_as_trip_city)

@@ -13,7 +13,7 @@ class TestBookingRecommender(unittest.TestCase):
         dataset, submit = get_booking_dataset(booking_train_file, booking_test_file)
         recommender = BookingRecommender(train_epochs=10, n_val_users=73, batch_size=2, max_history_len=15,
                                          loss='lambdarank', output_layer_activation='linear', val_epoch_size=50,
-                                         epoch_size=50)
+                                         epoch_size=10)
         for action in dataset:
             recommender.add_action(action)
         recommender.rebuild_model()

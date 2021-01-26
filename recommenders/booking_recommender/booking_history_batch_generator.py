@@ -7,6 +7,8 @@ from tensorflow.python.keras.utils.data_utils import Sequence
 from tqdm import tqdm
 from tqdm.contrib.concurrent import process_map, thread_map
 
+from aprec.recommenders.booking_recommender.candidates_recommender import BookingCandidatesRecommender
+
 ACTION_FEATURES = [
     ['is_desktop', lambda action: int(action.data['device_class'] == 'desktop')],
     ['is_mobile', lambda action: int(action.data['device_class'] == 'mobile')],
@@ -43,7 +45,8 @@ class BookingHistoryBatchGenerator(Sequence):
                  n_candidates,
                  batch_size=1000, validation=False, target_decay=0.6,
                  min_target_val=0.03, epoch_size = 20000):
-        self.user_actions = np.random.choice(user_actions, epoch_size, replace=False)
+        self.user_actions = user_actions
+        self.epoch_size = epoch_size
         self.history_size = history_size
         self.n_items = n_items
         self.batch_size = batch_size
@@ -61,7 +64,21 @@ class BookingHistoryBatchGenerator(Sequence):
         self.reset()
 
     def reset(self):
-        history, target = self.split_actions(self.user_actions)
+        users_to_train = set(np.random.choice(range(len(self.user_actions)), self.epoch_size, replace=False))
+        if not(self.validation):
+            print('building candidates generator...')
+            self.candidates_recommender = BookingCandidatesRecommender()
+            for i in tqdm(range(len(self.user_actions))):
+                if i not in users_to_train:
+                    for _, action in self.user_actions[i]:
+                        self.candidates_recommender.add_action(action)
+            self.candidates_recommender.rebuild_model()
+
+        train = []
+        for idx in users_to_train:
+            train.append(self.user_actions[idx])
+
+        history, target = self.split_actions(train)
         self.history_matrix = self.matrix_for_embedding(history, self.history_size, self.n_items)
         self.additional_features = self.additional_features(history, self.history_size)
         self.direct_position, self.reverse_position = self.positions(history, self.history_size)
