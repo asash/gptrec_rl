@@ -22,6 +22,10 @@ class BookingCandidatesRecommender(Recommender):
         self.top_city_idx = {}
         self.city_country_mapping = {}
         self.sample_user_id = None
+        self.city_month_cnt = defaultdict(lambda: [0] * 12)
+        self.city_year_cnt = defaultdict(lambda: [0]*3)
+        self.zero_month_vector = [0]*12
+        self.zero_year_vector = [0, 0, 0]
 
     def add_action(self, action):
         self.user_actions[action.user_id].append(action)
@@ -37,23 +41,18 @@ class BookingCandidatesRecommender(Recommender):
             self.booker_trip_country_cnt[(booker_country, trip_country)] += 1
 
             for i in range(len(self.user_actions[user]) - 1):
-                current_city = self.user_actions[user][i].item_id
+                action = self.user_actions[user][i]
+                current_city = self.update_city_stat(action, booker_country, trip_country)
+
                 next_city = self.user_actions[user][i + 1].item_id
                 self.transitions_cnt[current_city][next_city] += 1
-                self.city_cnt[current_city] += 1
-                self.booker_trip_country_top[(booker_country, trip_country)][current_city] += 1
-                self.booker_country_top[booker_country][current_city] += 1
-                self.trip_country_top[trip_country][current_city] += 1
                 for j in range(i + 1, len(self.user_actions[user])):
                     next_city = self.user_actions[user][j].item_id
                     self.city_pairs[(current_city, next_city)] += 1
                     self.city_pairs[(next_city, current_city)] += 1
 
-            last_city = self.user_actions[user][-1].item_id
-            self.city_cnt[last_city] += 1
-            self.booker_trip_country_top[(booker_country, trip_country)][last_city] += 1
-            self.trip_country_top[trip_country][last_city] += 1
-            self.booker_country_top[booker_country][last_city] += 1
+            action = self.user_actions[user][-1]
+            self.update_city_stat(action, booker_country, trip_country)
 
         for city in self.transitions_cnt:
             self.transitions[city] = self.transitions_cnt[city].most_common()
@@ -79,6 +78,17 @@ class BookingCandidatesRecommender(Recommender):
                 city, cnt = self.booker_country_top[country][i]
                 self.booker_country_top_idx[(country, city)] = (i, cnt/ self.booker_country_cnt[country])
 
+        for city in self.city_month_cnt:
+            city_cnt = self.city_cnt[city]
+            for month in range(12):
+                self.city_month_cnt[city][month] /= city_cnt
+
+        for city in self.city_year_cnt:
+            city_cnt = self.city_cnt[city]
+            for year in range(3):
+                self.city_year_cnt[city][year] /= city_cnt
+
+
         self.top_cities = self.city_cnt.most_common()
         for i in range(len(self.top_cities)):
             city, cnt = self.top_cities[i]
@@ -99,10 +109,23 @@ class BookingCandidatesRecommender(Recommender):
         self.transitions_cnt = dict(self.transitions_cnt)
         self.city_pairs = dict(self.city_pairs)
         self.user_actions = dict(self.user_actions)
+        self.city_month_cnt = dict(self.city_month_cnt)
 
         trip = self.user_actions[self.sample_user_id]
         features = self.get_candidates_with_features(trip, 1)
         self.n_features = len(features[0][1])
+
+    def update_city_stat(self, action, booker_country, trip_country):
+        current_city = action.item_id
+        trip_month = action.timestamp.month - 1
+        trip_year = action.timestamp.year - 2015
+        self.city_month_cnt[current_city][trip_month] += 1
+        self.city_year_cnt[current_city][trip_year] += 1
+        self.city_cnt[current_city] += 1
+        self.booker_trip_country_top[(booker_country, trip_country)][current_city] += 1
+        self.booker_country_top[booker_country][current_city] += 1
+        self.trip_country_top[trip_country][current_city] += 1
+        return current_city
 
     def recommend_items_by_trip(self, trip, limit):
         trip_cities = [action.item_id  for action in trip]
@@ -200,6 +223,12 @@ class BookingCandidatesRecommender(Recommender):
 
             #how popular is the city within the trip
             candidate_vector.append(trip_counter[city] / (len(trip) + 0.0001))
+
+            candidate_month_distr = self.city_month_cnt.get(city, self.zero_month_vector)
+            candidate_vector += candidate_month_distr
+
+            candidate_year_distr = self.city_year_cnt.get(city, self.zero_year_vector)
+            candidate_vector += candidate_year_distr
 
             city_cnt = self.city_cnt.get(city, 0)
 

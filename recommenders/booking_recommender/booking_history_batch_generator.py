@@ -25,6 +25,11 @@ ACTION_FEATURES = [
     ['from_start', lambda action: action.data.get('from_start', 0)],
     ['remain', lambda action: action.data.get('remain', 0)]
 ]
+for month in range(1, 13):
+    ACTION_FEATURES.append(
+        [f'checkin_month_{month}', lambda action: action.data['checkin_date'].month == month],
+    )
+
 
 
 def over_weekend(start_date, end_date):
