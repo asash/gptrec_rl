@@ -236,6 +236,7 @@ class BookingRecommender(Recommender):
 
         target_embedding = layers.Concatenate()([target_city_emb, target_country_emb, candidate_features_input])
         target_embedding = layers.Convolution1D(x.shape[-1], 1, activation='swish')(target_embedding)
+        target_embedding = layers.Convolution1D(x.shape[-1], 1, activation='swish')(target_embedding)
         target_embedding = self.block(target_embedding)
 
         target_attention = layers.MultiHeadAttention(num_heads=5, key_dim=x.shape[-1])(target_embedding, x)
@@ -301,7 +302,6 @@ class BookingRecommender(Recommender):
         affiliate_ids = id_vector(actions, self.max_history_length, self.affiliates, 'affiliate_id') \
             .reshape(1, self.max_history_length)
 
-        item_ids = [action.item_id for action in items_list]
         candidates_generator = CandidatesGenerator(self.items,
                                                    self.candidates_recommender,
                                                    self.candidates_cnt,

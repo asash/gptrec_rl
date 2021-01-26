@@ -12,6 +12,7 @@ class BookingCandidatesRecommender(Recommender):
         self.booker_country_top = defaultdict(Counter)
         self.trip_country_top = defaultdict(Counter)
         self.booker_country_cnt = Counter()
+        self.city_pairs = Counter()
         self.trip_country_cnt = Counter()
         self.booker_trip_country_cnt = Counter()
         self.city_transitions_idx = {}
@@ -43,6 +44,10 @@ class BookingCandidatesRecommender(Recommender):
                 self.booker_trip_country_top[(booker_country, trip_country)][current_city] += 1
                 self.booker_country_top[booker_country][current_city] += 1
                 self.trip_country_top[trip_country][current_city] += 1
+                for j in range(i + 1, len(self.user_actions[user])):
+                    next_city = self.user_actions[user][j].item_id
+                    self.city_pairs[(current_city, next_city)] += 1
+                    self.city_pairs[(next_city, current_city)] += 1
 
             last_city = self.user_actions[user][-1].item_id
             self.city_cnt[last_city] += 1
@@ -92,6 +97,7 @@ class BookingCandidatesRecommender(Recommender):
         self.city_cnt = dict(self.city_cnt)
         self.transitions = dict(self.transitions)
         self.transitions_cnt = dict(self.transitions_cnt)
+        self.city_pairs = dict(self.city_pairs)
         self.user_actions = dict(self.user_actions)
 
         trip = self.user_actions[self.sample_user_id]
@@ -195,6 +201,7 @@ class BookingCandidatesRecommender(Recommender):
             #how popular is the city within the trip
             candidate_vector.append(trip_counter[city] / (len(trip) + 0.0001))
 
+            city_cnt = self.city_cnt.get(city, 0)
 
             for i in range(5):
                 transition_pos = self.inf
@@ -202,15 +209,21 @@ class BookingCandidatesRecommender(Recommender):
                 same_as_trip_city = 0
                 same_country = 0
                 idx = len(trip) -i - 1
+                cos_sim = 0.0
                 if idx >= 0:
                     trip_city = trip[idx].item_id
                     transition_pos, transition_prob = self.city_transitions_idx.get((trip_city, city), (self.inf, 0.0))
+
+                    trip_city_cnt = self.city_cnt.get(trip_city, 0)
+                    pair_cnt = self.city_pairs.get((trip_city, city), 0)
+                    cos_sim = pair_cnt ** 2 / (city_cnt * trip_city_cnt + 0.00001)
                     same_as_trip_city = int(city == trip_city)
                     same_country = int(self.city_country_mapping.get(trip_city, "") == city_country)
                 candidate_vector.append(transition_pos / self.inf)
                 candidate_vector.append(transition_prob)
                 candidate_vector.append(same_as_trip_city)
                 candidate_vector.append(same_country)
+                candidate_vector.append(cos_sim)
             result.append((city, candidate_vector))
         return result
 

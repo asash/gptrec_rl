@@ -20,7 +20,7 @@ from tqdm import tqdm
 DATASET, SUBMIT_ACTIONS = get_booking_dataset('./booking_data/booking_train_set.csv',
                               './booking_data/booking_test_set.csv')
 
-GENERATE_SUBMIT_THRESHOLD = 0.51
+GENERATE_SUBMIT_THRESHOLD = 0.537
 
 def generate_submit(recommender, recommender_name, evaluation_result, config):
     if evaluation_result["SPS@4"] < config.GENERATE_SUBMIT_THRESHOLD:
