@@ -187,6 +187,8 @@ class BookingRecommender(Recommender):
         target_features = layers.Input(shape=len(ACTION_FEATURES))
         target_features_encoded = layers.Dense(50, activation='swish')(target_features)
         target_features_encoded = layers.BatchNormalization()(target_features_encoded)
+        target_features_encoded = layers.Dense(50, activation='swish')(target_features_encoded)
+        target_features_encoded = layers.BatchNormalization()(target_features_encoded)
         affiliate_id_embedding = layers.Embedding(NUM_AFFILIATES + 1, 5)
         target_affiliate_id_input = layers.Input(shape=(1, 1))
         target_affiliate_id_embedding = affiliate_id_embedding(target_affiliate_id_input)
@@ -221,6 +223,8 @@ class BookingRecommender(Recommender):
         x = self.block(x)
         x = self.block(x)
         x = self.block(x)
+        x = self.block(x)
+        x = self.block(x)
         # x = layers.Flatten()(x)
         # x = layers.Dense(self.bottleneck_size,
         #                        name="bottleneck", activation="swish")(x)
@@ -235,6 +239,8 @@ class BookingRecommender(Recommender):
         candidate_features_input = layers.Input(shape=(self.candidates_cnt, self.candidates_recommender.n_features))
 
         target_embedding = layers.Concatenate()([target_city_emb, target_country_emb, candidate_features_input])
+        target_embedding = layers.Convolution1D(x.shape[-1], 1, activation='swish')(target_embedding)
+        target_embedding = layers.Convolution1D(x.shape[-1], 1, activation='swish')(target_embedding)
         target_embedding = layers.Convolution1D(x.shape[-1], 1, activation='swish')(target_embedding)
         target_embedding = layers.Convolution1D(x.shape[-1], 1, activation='swish')(target_embedding)
         target_embedding = self.block(target_embedding)
