@@ -62,7 +62,8 @@ def item_item_recommender():
 
 def mlp_historical_embedding():
     return BookingRecommenderLightgbm(batch_size=500,n_val_users=4000,
-                                      candidates_cnt=500, val_epoch_size=4000, epoch_size=10000)
+                                      candidates_cnt=500, val_epoch_size=4000, epoch_size=10000,
+                                      num_training_samples=50000000)
 
 RECOMMENDERS = {
     "top_recommender": top_recommender,
