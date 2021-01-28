@@ -140,7 +140,7 @@ class BookingRecommenderLightgbm(Recommender):
         qg = [self.candidates_cnt] * (len(y) // self.candidates_cnt)
         x = np.array(x)
         y = np.array(y)
-        self.model = LGBMRanker(n_estimators=10000, learning_rate=0.01)
+        self.model = LGBMRanker(n_estimators=10000)
         self.model.fit(x, y, group=qg, eval_set=[(val_x, val_y)], eval_group=[val_qg],
                        eval_metric='ndcg', eval_at=[4, 40], early_stopping_rounds=40)
 
