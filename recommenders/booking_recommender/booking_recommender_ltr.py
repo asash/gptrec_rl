@@ -4,6 +4,7 @@ from collections import defaultdict
 from lightgbm import LGBMRanker
 
 from aprec.recommenders.booking_recommender.candidates_recommender import BookingCandidatesRecommender
+from aprec.recommenders.booking_recommender.neural_ranker import NeuralRanker
 from aprec.utils.item_id import ItemId
 from aprec.recommenders.recommender import Recommender
 from aprec.recommenders.booking_recommender.booking_history_batch_generator import BookingHistoryBatchGenerator, \
@@ -33,10 +34,13 @@ def process_batch(candidate_features, target_features, target_batch):
 
 
 
-class BookingRecommenderLightgbm(Recommender):
+class BookingRecommenderLTR(Recommender):
     def __init__(self,n_val_users=1000,
                  batch_size = 1000,
-                 candidates_cnt = 50, epoch_size=20000, val_epoch_size=2000, num_training_samples = 1000000):
+                 candidates_cnt = 50, epoch_size=20000,
+                 val_epoch_size=2000,
+                 num_training_samples = 1000000,
+                 model_type = 'lightgbm', attention=False):
         self.users = ItemId()
         self.items = ItemId()
         self.countries = ItemId()
@@ -57,6 +61,8 @@ class BookingRecommenderLightgbm(Recommender):
         self.target_decay = 0.5
         self.min_target_value = 0.0
         self.num_training_samples = num_training_samples
+        self.model_type = model_type
+        self.attention=attention
 
     def get_metadata(self):
         return self.metadata
@@ -140,9 +146,14 @@ class BookingRecommenderLightgbm(Recommender):
         qg = [self.candidates_cnt] * (len(y) // self.candidates_cnt)
         x = np.array(x)
         y = np.array(y)
-        self.model = LGBMRanker(n_estimators=10000)
-        self.model.fit(x, y, group=qg, eval_set=[(val_x, val_y)], eval_group=[val_qg],
-                       eval_metric='ndcg', eval_at=[4, 40], early_stopping_rounds=40)
+        if self.model_type == 'lightgbm':
+            self.model = LGBMRanker(n_estimators=10000)
+            self.model.fit(x, y, group=qg, eval_set=[(val_x, val_y)], eval_group=[val_qg],
+                           eval_metric='ndcg', eval_at=[4, 40], early_stopping_rounds=40)
+        elif self.model_type == 'neural':
+            self.model = NeuralRanker(x.shape[-1], self.candidates_cnt, self.batch_size, attention=self.attention)
+            self.model.fit(x, y, val_x, val_y)
+
 
     def get_next_items(self, user_id, limit, features=None):
         actions = self.user_actions[self.users.get_id(user_id)]

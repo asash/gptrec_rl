@@ -243,6 +243,7 @@ class BookingRecommender(Recommender):
         target_attention = layers.Convolution1D(x.shape[-1], 1, activation='sigmoid')(target_attention)
 
         target_features_encoded =  layers.Dense(x.shape[-1], activation='swish')(target_features_encoded)
+        target_features_encoded =  layers.Dense(x.shape[-1], activation='tanh')(target_features_encoded)
         target_features_encoded = layers.Dropout(0.5)(target_features_encoded)
         output = layers.Dot(axes=-1)([target_attention, target_features_encoded])
 

@@ -9,7 +9,7 @@ from aprec.recommenders.transition_chain_recommender import TransitionsChainReco
 from aprec.recommenders.svd import SvdRecommender
 from aprec.evaluation.metrics.precision import Precision
 from aprec.evaluation.metrics.ndcg import NDCG
-from aprec.recommenders.booking_recommender.booking_recommender_lightgbm import BookingRecommenderLightgbm
+from aprec.recommenders.booking_recommender.booking_recommender_ltr import BookingRecommenderLTR
 from tensorflow.keras.optimizers import Adam
 from aprec.evaluation.metrics.sps import SPS
 from aprec.datasets.booking import get_booking_dataset
@@ -60,10 +60,10 @@ def svd_recommender(k):
 def item_item_recommender():
     return ItemItemRecommender()
 
-def mlp_historical_embedding():
-    return BookingRecommenderLightgbm(batch_size=500,n_val_users=4000,
-                                      candidates_cnt=500, val_epoch_size=4000, epoch_size=10000,
-                                      num_training_samples=50000000)
+def LTR(model_type, attention):
+    return BookingRecommenderLTR(batch_size=500, n_val_users=4000,
+                                 candidates_cnt=500, val_epoch_size=4000, epoch_size=10000,
+                                 num_training_samples=5000000, model_type=model_type, attention=attention)
 
 RECOMMENDERS = {
     "top_recommender": top_recommender,
@@ -71,7 +71,9 @@ RECOMMENDERS = {
     #"svd_recommender": lambda: svd_recommender(30),
 #    "item_temem_recommender": item_item_recommender,
     "transitions_chain_recommender": TransitionsChainRecommender,
-    "APREC-Lightgbm": lambda: mlp_historical_embedding(),
+    "APREC-Lightgbm": lambda: LTR('lightgbm', False),
+    "APREC-Neural": lambda: LTR('neural', False),
+    "APREC-Neural-Attention": lambda: LTR('neural', True),
 }
 
 SPLIT_STRATEGY = "LEAVE_ONE_OUT"
