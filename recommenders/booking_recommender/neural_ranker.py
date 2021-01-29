@@ -1,13 +1,16 @@
+from tempfile import NamedTemporaryFile
 import numpy as np
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Dense, Convolution1D, Input
-from tensorflow.python.keras.callbacks import EarlyStopping
-from tensorflow.python.keras.layers import Attention, Multiply
+from tensorflow.python.keras.callbacks import EarlyStopping, ModelCheckpoint
+from tensorflow.python.keras.layers import Attention, Multiply, Dropout, BatchNormalization, LayerNormalization
+from tensorflow.python.keras.models import load_model
 from tensorflow.python.keras.utils.data_utils import Sequence
+import keras.losses
+
 
 from aprec.recommenders.losses.lambdarank import LambdaRankLoss
 from aprec.recommenders.metrics.ndcg import KerasNDCG
-
 
 class BatchGenerator(Sequence):
     def __init__(self, x, y, query_group_size, batch_size=100):
@@ -25,18 +28,25 @@ class BatchGenerator(Sequence):
         return [self.x[idx]], self.y[idx]
 
 class NeuralRanker(object):
-    def __init__(self, features_num, query_group_size, batch_size=100, layer_sizes=(30,20,10,5), epochs=10000,
+    def __init__(self, features_num, query_group_size, batch_size=100, layer_sizes=(30,20,10,10), epochs=10000,
                  attention = True,
-                 early_stopping=40):
+                 early_stopping=40,
+                 dropout = True):
         input = Input(shape=(query_group_size, features_num))
         x = input
+        x = BatchNormalization()(x)
         for layer_size in layer_sizes:
             x = Convolution1D(layer_size, 1, activation='swish')(x)
+            x = LayerNormalization()(x)
         if attention:
             output = Attention()([x, x])
             output = Multiply()([output, x])
         else:
             output = x
+
+        output = Convolution1D(layer_sizes[-1], 1, activation="sigmoid")(output)
+        if (dropout):
+            output = Dropout(0.5)(output)
         output = Convolution1D(1, 1, activation='linear')(output)
         self.model = Model(inputs=[input], outputs=output)
         loss = LambdaRankLoss(n_items=query_group_size, batch_size=batch_size, ndcg_at=40)
@@ -50,8 +60,12 @@ class NeuralRanker(object):
     def fit(self, x, y, val_x, val_y):
         data_generator = BatchGenerator(x, y, self.query_group_size, self.batch_size)
         val_generator = BatchGenerator(val_x, val_y, self.query_group_size, self.batch_size)
-        es = EarlyStopping(monitor='val_ndcg_at_40', mode='max', patience=self.early_stopping, verbose=1)
-        self.model.fit(data_generator, validation_data=val_generator, epochs=self.n_epochs, callbacks=[es])
+        with NamedTemporaryFile(suffix='.h5', prefix='best_model_') as tmp:
+            es = EarlyStopping(monitor='val_ndcg_at_40', mode='max', patience=self.early_stopping, verbose=1)
+            mc = ModelCheckpoint(tmp.name, monitor='val_ndcg_at_40', mode='max', verbose=1,
+                                 save_best_only=True, save_weights_only=True)
+            self.model.fit(data_generator, validation_data=val_generator, epochs=self.n_epochs, callbacks=[es, mc])
+            self.model.load_weights(tmp.name)
 
     def predict(self, x):
         request = np.array(x)

@@ -66,14 +66,8 @@ def LTR(model_type, attention):
                                  num_training_samples=5000000, model_type=model_type, attention=attention)
 
 RECOMMENDERS = {
-    "top_recommender": top_recommender,
-    "conditional_top_recommender": conditional_top_recommender,
-    #"svd_recommender": lambda: svd_recommender(30),
-#    "item_temem_recommender": item_item_recommender,
-    "transitions_chain_recommender": TransitionsChainRecommender,
-    "APREC-Lightgbm": lambda: LTR('lightgbm', False),
     "APREC-Neural": lambda: LTR('neural', False),
-    "APREC-Neural-Attention": lambda: LTR('neural', True),
+    "APREC-Lightgbm": lambda: LTR('lightgbm', False),
 }
 
 SPLIT_STRATEGY = "LEAVE_ONE_OUT"
