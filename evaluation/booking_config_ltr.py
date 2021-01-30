@@ -61,7 +61,7 @@ def item_item_recommender():
     return ItemItemRecommender()
 
 def LTR(model_type, attention):
-    return BookingRecommenderLTR(batch_size=500, n_val_users=4000,
+    return BookingRecommenderLTR(batch_size=250, n_val_users=4000,
                                  candidates_cnt=500, val_epoch_size=4000, epoch_size=10000,
                                  num_training_samples=5000000, model_type=model_type, attention=attention)
 
