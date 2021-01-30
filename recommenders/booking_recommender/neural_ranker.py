@@ -29,7 +29,7 @@ class BatchGenerator(Sequence):
         return [self.x[idx]], self.y[idx]
 
 class NeuralRanker(object):
-    def __init__(self, features_num, query_group_size, batch_size=100, n_layers=10, n_heads=5, epochs=10000,
+    def __init__(self, features_num, query_group_size, batch_size=100, n_layers=50, n_heads=10, epochs=10000,
                  attention = True,
                  early_stopping=40,
                  dropout = True):
