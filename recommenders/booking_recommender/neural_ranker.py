@@ -3,7 +3,8 @@ import numpy as np
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Dense, Convolution1D, Input
 from tensorflow.python.keras.callbacks import EarlyStopping, ModelCheckpoint
-from tensorflow.python.keras.layers import Attention, Multiply, Dropout, BatchNormalization, LayerNormalization
+from tensorflow.python.keras.layers import Attention, Multiply, Dropout, BatchNormalization, LayerNormalization, \
+    Add, Maximum
 from tensorflow.python.keras.models import load_model
 from tensorflow.python.keras.utils.data_utils import Sequence
 import keras.losses
@@ -28,23 +29,29 @@ class BatchGenerator(Sequence):
         return [self.x[idx]], self.y[idx]
 
 class NeuralRanker(object):
-    def __init__(self, features_num, query_group_size, batch_size=100, layer_sizes=(30,20,10,10), epochs=10000,
+    def __init__(self, features_num, query_group_size, batch_size=100, n_layers=10, n_heads=5, epochs=10000,
                  attention = True,
                  early_stopping=40,
                  dropout = True):
         input = Input(shape=(query_group_size, features_num))
         x = input
         x = BatchNormalization()(x)
-        for layer_size in layer_sizes:
-            x = Convolution1D(layer_size, 1, activation='swish')(x)
+        for layer_size in range(n_layers):
+            shortcut = x
+            heads = []
+            for head in range(n_heads):
+                heads.append(Convolution1D(x.shape[-1], 1, activation='swish')(x))
+            x = Maximum()(heads)
+            x = Add()([x, shortcut])
             x = LayerNormalization()(x)
+            x = Dropout(0.2)(x)
         if attention:
             output = Attention()([x, x])
             output = Multiply()([output, x])
         else:
             output = x
 
-        output = Convolution1D(layer_sizes[-1], 1, activation="sigmoid")(output)
+        output = Convolution1D(output.shape[-1], 1, activation="sigmoid")(output)
         if (dropout):
             output = Dropout(0.5)(output)
         output = Convolution1D(1, 1, activation='linear')(output)
