@@ -44,7 +44,7 @@ class NeuralRanker(object):
             x = Maximum()(heads)
             x = Add()([x, shortcut])
             x = LayerNormalization()(x)
-            x = Dropout(0.15)(x)
+            x = Dropout(0.1)(x)
         if attention:
             output = Attention()([x, x])
             output = Multiply()([output, x])
