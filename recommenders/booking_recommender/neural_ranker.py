@@ -29,7 +29,7 @@ class BatchGenerator(Sequence):
         return [self.x[idx]], self.y[idx]
 
 class NeuralRanker(object):
-    def __init__(self, features_num, query_group_size, batch_size=100, n_layers=15, n_heads=10, epochs=10000,
+    def __init__(self, features_num, query_group_size, batch_size=100, n_layers=10, n_heads=10, epochs=10000,
                  attention = True,
                  early_stopping=40,
                  dropout = True):
@@ -44,7 +44,7 @@ class NeuralRanker(object):
             x = Maximum()(heads)
             x = Add()([x, shortcut])
             x = LayerNormalization()(x)
-            x = Dropout(0.1)(x)
+            x = Dropout(0.2)(x)
         if attention:
             output = Attention()([x, x])
             output = Multiply()([output, x])

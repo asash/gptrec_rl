@@ -1,4 +1,6 @@
 import random
+
+import lightgbm
 import numpy as np
 from collections import defaultdict
 from lightgbm import LGBMRanker
@@ -40,7 +42,9 @@ class BookingRecommenderLTR(Recommender):
                  candidates_cnt = 50, epoch_size=20000,
                  val_epoch_size=2000,
                  num_training_samples = 1000000,
-                 model_type = 'lightgbm', attention=False):
+                 model_type = 'lightgbm', attention=False, lgbm_boosting_type='gbdt', lgbm_objective='lambdarank'):
+        print(f"Creating LTR recommender. Model_type{model_type}, "
+              f"Lgbm_boosting_type:{lgbm_boosting_type}, lgbm_objective:{lgbm_objective}")
         self.users = ItemId()
         self.items = ItemId()
         self.countries = ItemId()
@@ -63,6 +67,9 @@ class BookingRecommenderLTR(Recommender):
         self.num_training_samples = num_training_samples
         self.model_type = model_type
         self.attention=attention
+        self.lgbm_boosting_type = lgbm_boosting_type
+        self.lgbm_objective = lgbm_objective
+
 
     def get_metadata(self):
         return self.metadata
@@ -147,9 +154,18 @@ class BookingRecommenderLTR(Recommender):
         x = np.array(x)
         y = np.array(y)
         if self.model_type == 'lightgbm':
-            self.model = LGBMRanker(n_estimators=10000)
+            bagging_fraction, bagging_freq = None, None
+            if self.lgbm_boosting_type == 'rf':
+                bagging_fraction=0.1
+                bagging_freq=5
+
+            callback = lightgbm.early_stopping(40, first_metric_only=True, verbose=True)
+
+            self.model = LGBMRanker(n_estimators=500, boosting_type=self.lgbm_boosting_type,
+                                    objective=self.lgbm_objective, bagging_fraction=bagging_fraction,
+                                    bagging_freq=bagging_freq)
             self.model.fit(x, y, group=qg, eval_set=[(val_x, val_y)], eval_group=[val_qg],
-                           eval_metric='ndcg', eval_at=[4, 40], early_stopping_rounds=40)
+                           eval_metric='ndcg', eval_at=[40], callbacks=[callback])
         elif self.model_type == 'neural':
             self.model = NeuralRanker(x.shape[-1], self.candidates_cnt, self.batch_size, attention=self.attention)
             self.model.fit(x, y, val_x, val_y)

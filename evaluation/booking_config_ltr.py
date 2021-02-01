@@ -1,16 +1,9 @@
 import copy
 import os
 
-from aprec.recommenders.top_recommender import TopRecommender
-from aprec.recommenders.conditional_top_recommender import ConditionalTopRecommender
-from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
-from aprec.recommenders.item_item import ItemItemRecommender
-from aprec.recommenders.transition_chain_recommender import TransitionsChainRecommender
-from aprec.recommenders.svd import SvdRecommender
 from aprec.evaluation.metrics.precision import Precision
 from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.recommenders.booking_recommender.booking_recommender_ltr import BookingRecommenderLTR
-from tensorflow.keras.optimizers import Adam
 from aprec.evaluation.metrics.sps import SPS
 from aprec.datasets.booking import get_booking_dataset
 from tqdm import tqdm
@@ -45,30 +38,21 @@ def features_from_test(test_actions):
 FEATURES_FROM_TEST = features_from_test
 CALLBACKS = (generate_submit, )
 
-def top_recommender():
-    return TopRecommender()
 
-def conditional_top_recommender():
-    return ConditionalTopRecommender('hotel_country')
-
-def filter_seen_recommender(recommender):
-    return FilterSeenRecommender(recommender)
-
-def svd_recommender(k):
-    return SvdRecommender(k)
-
-def item_item_recommender():
-    return ItemItemRecommender()
-
-def LTR(model_type, attention):
+def LTR(model_type, attention, lgbm_objecitve='lambdarank', lgbm_boosting_type='gbdt'):
     return BookingRecommenderLTR(batch_size=250, n_val_users=4000,
                                  candidates_cnt=500, val_epoch_size=4000, epoch_size=10000,
-                                 num_training_samples=5000000, model_type=model_type, attention=attention)
+                                 num_training_samples=5000000, model_type=model_type, attention=attention,
+                                 lgbm_objective=lgbm_objecitve, lgbm_boosting_type=lgbm_boosting_type)
 
-RECOMMENDERS = {
-    "APREC-Neural": lambda: LTR('neural', False),
-    "APREC-Lightgbm": lambda: LTR('lightgbm', False),
-}
+RECOMMENDERS = {}
+for boosting_type in ('rf', 'gbdt', 'dart'):
+   for objective in ('regression', 'lambdarank', 'rank_xendcg', 'regression_l1', 'huber',
+                     'fair', 'poisson', 'quantile', 'mape', 'tweedie'):
+       RECOMMENDERS[f"Lightgbm-{boosting_type}-{objective}"] = lambda boosting_type=boosting_type, objective=objective: LTR('lightgbm', False,
+                                                            lgbm_boosting_type=boosting_type, lgbm_objecitve=objective)
+RECOMMENDERS["APREC-Neural"] =  lambda: LTR('neural', False)
+RECOMMENDERS["APREC-Neural"] =  lambda: LTR('neural', True)
 
 SPLIT_STRATEGY = "LEAVE_ONE_OUT"
 USERS_FRACTIONS = [1.0]
