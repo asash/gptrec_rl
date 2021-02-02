@@ -4,7 +4,7 @@ from tensorflow.keras import Model
 from tensorflow.keras.layers import Dense, Convolution1D, Input
 from tensorflow.python.keras.callbacks import EarlyStopping, ModelCheckpoint
 from tensorflow.python.keras.layers import Attention, Multiply, Dropout, BatchNormalization, LayerNormalization, \
-    Add, Maximum
+    Add, Maximum, Average
 from tensorflow.python.keras.models import load_model
 from tensorflow.python.keras.utils.data_utils import Sequence
 import keras.losses
@@ -41,7 +41,7 @@ class NeuralRanker(object):
             heads = []
             for head in range(n_heads):
                 heads.append(Convolution1D(x.shape[-1], 1, activation='swish')(x))
-            x = Maximum()(heads)
+            x = Average()(heads)
             x = Add()([x, shortcut])
             x = LayerNormalization()(x)
             x = Dropout(0.2)(x)

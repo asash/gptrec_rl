@@ -10,7 +10,8 @@ def LTR(model_type, attention, lgbm_objecitve='lambdarank', lgbm_boosting_type='
     return BookingRecommenderLTR(batch_size=2, n_val_users=10,
                                  candidates_cnt=100, val_epoch_size=10, epoch_size=100,
                                  num_training_samples=50, model_type=model_type, attention=attention,
-                                 lgbm_objective=lgbm_objecitve, lgbm_boosting_type=lgbm_boosting_type)
+                                 lgbm_objective=lgbm_objecitve, lgbm_boosting_type=lgbm_boosting_type,
+                                 num_epochs=2)
 
 class TestBookingLtrRecommender(unittest.TestCase):
     def test_booking_ltr_recommender(self):

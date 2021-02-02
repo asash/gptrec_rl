@@ -42,6 +42,8 @@ class BookingRecommenderLTR(Recommender):
                  candidates_cnt = 50, epoch_size=20000,
                  val_epoch_size=2000,
                  num_training_samples = 1000000,
+                 num_epochs = 10000,
+                 early_stop_epochs=40,
                  model_type = 'lightgbm', attention=False, lgbm_boosting_type='gbdt', lgbm_objective='lambdarank'):
         print(f"Creating LTR recommender. Model_type{model_type}, "
               f"Lgbm_boosting_type:{lgbm_boosting_type}, lgbm_objective:{lgbm_objective}")
@@ -69,6 +71,8 @@ class BookingRecommenderLTR(Recommender):
         self.attention=attention
         self.lgbm_boosting_type = lgbm_boosting_type
         self.lgbm_objective = lgbm_objective
+        self.num_epochs = num_epochs
+        self.early_stop_epochs = early_stop_epochs
 
 
     def get_metadata(self):
@@ -159,15 +163,16 @@ class BookingRecommenderLTR(Recommender):
                 bagging_fraction=0.1
                 bagging_freq=5
 
-            callback = lightgbm.early_stopping(40, first_metric_only=True, verbose=True)
+            es_callback = lightgbm.early_stopping(self.early_stop_epochs, first_metric_only=True, verbose=True)
 
-            self.model = LGBMRanker(n_estimators=500, boosting_type=self.lgbm_boosting_type,
+            self.model = LGBMRanker(n_estimators=self.num_epochs, boosting_type=self.lgbm_boosting_type,
                                     objective=self.lgbm_objective, bagging_fraction=bagging_fraction,
                                     bagging_freq=bagging_freq)
             self.model.fit(x, y, group=qg, eval_set=[(val_x, val_y)], eval_group=[val_qg],
-                           eval_metric='ndcg', eval_at=[40], callbacks=[callback])
+                           eval_metric='ndcg', eval_at=[40], callbacks=[es_callback])
         elif self.model_type == 'neural':
-            self.model = NeuralRanker(x.shape[-1], self.candidates_cnt, self.batch_size, attention=self.attention)
+            self.model = NeuralRanker(x.shape[-1], self.candidates_cnt, self.batch_size, attention=self.attention,
+                                      epochs = self.num_epochs, early_stopping=self.early_stop_epochs)
             self.model.fit(x, y, val_x, val_y)
 
 

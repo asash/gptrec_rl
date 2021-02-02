@@ -46,13 +46,15 @@ def LTR(model_type, attention, lgbm_objecitve='lambdarank', lgbm_boosting_type='
                                  lgbm_objective=lgbm_objecitve, lgbm_boosting_type=lgbm_boosting_type)
 
 RECOMMENDERS = {}
-for boosting_type in ('rf', 'gbdt', 'dart'):
-   for objective in ('regression', 'lambdarank', 'rank_xendcg', 'regression_l1', 'huber',
-                     'fair', 'poisson', 'quantile', 'mape', 'tweedie'):
-       RECOMMENDERS[f"Lightgbm-{boosting_type}-{objective}"] = lambda boosting_type=boosting_type, objective=objective: LTR('lightgbm', False,
-                                                            lgbm_boosting_type=boosting_type, lgbm_objecitve=objective)
+
 RECOMMENDERS["APREC-Neural"] =  lambda: LTR('neural', False)
-RECOMMENDERS["APREC-Neural"] =  lambda: LTR('neural', True)
+RECOMMENDERS["APREC-Neural-attention"] =  lambda: LTR('neural', True)
+
+# for boosting_type in ('rf', 'gbdt', 'dart'):
+#    for objective in ('regression', 'lambdarank', 'rank_xendcg', 'regression_l1', 'huber',
+#                      'fair', 'poisson', 'quantile', 'mape', 'tweedie'):
+#        RECOMMENDERS[f"Lightgbm-{boosting_type}-{objective}"] = lambda boosting_type=boosting_type, objective=objective: LTR('lightgbm', False,
+#                                                             lgbm_boosting_type=boosting_type, lgbm_objecitve=objective)
 
 SPLIT_STRATEGY = "LEAVE_ONE_OUT"
 USERS_FRACTIONS = [1.0]
