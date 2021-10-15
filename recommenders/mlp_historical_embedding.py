@@ -9,7 +9,7 @@ from aprec.recommenders.losses.lambdarank import LambdaRankLoss
 from aprec.recommenders.losses.xendcg import XENDCGLoss
 from aprec.recommenders.recommender import Recommender
 from aprec.recommenders.history_batch_generator import HistoryBatchGenerator
-from aprec\
+from aprec \
     .recommenders.history_batch_generator import actions_to_vector
 from tensorflow.keras.models import Sequential
 import tensorflow.keras.layers as layers
@@ -18,14 +18,14 @@ import numpy as np
 
 class GreedyMLPHistoricalEmbedding(Recommender):
     def __init__(self, bottleneck_size=32, train_epochs=300, n_val_users=1000,
-                 max_history_len=1000, 
-                 loss = 'binary_crossentropy',
-                 output_layer_activation = 'sigmoid',
-                 optimizer = 'adam',
-                 batch_size = 1000,
-                 early_stop_epochs = 100,
-                 sigma = 1,
-                 ndcg_at = 30,
+                 max_history_len=1000,
+                 loss='binary_crossentropy',
+                 output_layer_activation='sigmoid',
+                 optimizer='adam',
+                 batch_size=1000,
+                 early_stop_epochs=100,
+                 sigma=1,
+                 ndcg_at=30,
                  ):
         self.users = ItemId()
         self.items = ItemId()
@@ -87,10 +87,11 @@ class GreedyMLPHistoricalEmbedding(Recommender):
         self.model = self.get_model(self.items.size())
         best_ndcg = 0
         steps_since_improved = 0
-        best_epoch = -1 
+        best_epoch = -1
         best_weights = self.model.get_weights()
         val_ndcg_history = []
         for epoch in range(self.train_epochs):
+            val_generator.reset()
             generator = HistoryBatchGenerator(train_users, self.max_history_length, self.items.size(),
                                               batch_size=self.batch_size)
             print(f"epoch: {epoch}")
@@ -101,7 +102,7 @@ class GreedyMLPHistoricalEmbedding(Recommender):
             if val_ndcg > best_ndcg:
                 steps_since_improved = 0
                 best_ndcg = val_ndcg
-                best_epoch =  epoch
+                best_epoch = epoch
                 best_weights = self.model.get_weights()
             print(f"best_ndcg: {best_ndcg}, steps_since_improved: {steps_since_improved}")
             if steps_since_improved >= self.early_stop_epochs:
@@ -110,7 +111,8 @@ class GreedyMLPHistoricalEmbedding(Recommender):
             K.clear_session()
             gc.collect()
         self.model.set_weights(best_weights)
-        self.metadata = {"epochs_trained": best_epoch + 1, "best_val_ndcg": best_ndcg, "val_ndcg_history": val_ndcg_history}
+        self.metadata = {"epochs_trained": best_epoch + 1, "best_val_ndcg": best_ndcg,
+                         "val_ndcg_history": val_ndcg_history}
         print(self.get_metadata())
         print(f"taken best model from epoch{best_epoch}. best_val_ndcg: {best_ndcg}")
 
@@ -171,5 +173,3 @@ class GreedyMLPHistoricalEmbedding(Recommender):
 
     def from_str(self):
         raise (NotImplementedError)
-
-

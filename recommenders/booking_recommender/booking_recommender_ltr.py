@@ -6,7 +6,6 @@ from collections import defaultdict
 from lightgbm import LGBMRanker
 
 from aprec.recommenders.booking_recommender.candidates_recommender import BookingCandidatesRecommender
-from aprec.recommenders.booking_recommender.neural_ranker import NeuralRanker
 from aprec.utils.item_id import ItemId
 from aprec.recommenders.recommender import Recommender
 from aprec.recommenders.booking_recommender.booking_history_batch_generator import BookingHistoryBatchGenerator, \
@@ -170,10 +169,8 @@ class BookingRecommenderLTR(Recommender):
                                     bagging_freq=bagging_freq)
             self.model.fit(x, y, group=qg, eval_set=[(val_x, val_y)], eval_group=[val_qg],
                            eval_metric='ndcg', eval_at=[40], callbacks=[es_callback])
-        elif self.model_type == 'neural':
-            self.model = NeuralRanker(x.shape[-1], self.candidates_cnt, self.batch_size, attention=self.attention,
-                                      epochs = self.num_epochs, early_stopping=self.early_stop_epochs)
-            self.model.fit(x, y, val_x, val_y)
+        else:
+            raise Exception(f"Unsupported Model Type {self.model_type}")
 
 
     def get_next_items(self, user_id, limit, features=None):

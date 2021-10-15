@@ -6,10 +6,10 @@ import unittest
 
 USER_ID = '120'
 
-class TestMLPRecommender(unittest.TestCase):
+class TestMLPHistoricalEmbeddingRecommender(unittest.TestCase):
     def test_mlp_recommender(self):
         mlp_recommender = GreedyMLPHistoricalEmbedding(train_epochs=10, n_val_users=10, early_stop_epochs=5,
-                                                       batch_size=10)
+                                                       batch_size=5)
         recommender = FilterSeenRecommender(mlp_recommender)
         for action in generator_limit(get_movielens_actions(), 10000):
             recommender.add_action(action)

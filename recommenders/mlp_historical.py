@@ -13,7 +13,7 @@ import math
 
 
 class GreedyMLPHistorical(Recommender):
-    def __init__(self,  bottleneck_size=32, train_epochs=300, n_val_users = 1000):
+    def __init__(self,  bottleneck_size=32, train_epochs=300, n_val_users = 1000, batch_size=256):
         self.users = ItemId()
         self.items = ItemId()
         self.user_actions = defaultdict(lambda: [])
@@ -24,6 +24,7 @@ class GreedyMLPHistorical(Recommender):
         self.bottleneck_size = bottleneck_size
         self.train_epochs = train_epochs
         self.n_val_users = n_val_users
+        self.batch_size = batch_size
 
     def name(self):
         return "GreedyMLPHistorical"
@@ -53,11 +54,11 @@ class GreedyMLPHistorical(Recommender):
     def rebuild_model(self):
         self.sort_actions()
         train_users, val_users = self.split_users()
-        val_generator = BatchGenerator(val_users, self.items.size())
+        val_generator = BatchGenerator(val_users, self.items.size(), self.batch_size)
         self.model = self.get_model(self.items.size())
         for epoch in range(self.train_epochs):
             print(f"epoch: {epoch}")
-            generator = BatchGenerator(train_users, self.items.size())
+            generator = BatchGenerator(train_users, self.items.size(), self.batch_size)
             self.model.fit(generator, validation_data=val_generator)
 
     def get_model(self, n_movies):
@@ -108,8 +109,8 @@ class GreedyMLPHistorical(Recommender):
 
 
 class BatchGenerator(Sequence):
-    def __init__(self, user_actions, n_items, batch_size = 1000):
-        history, target =  BatchGenerator.split_actions(user_actions)
+    def __init__(self, user_actions, n_items, batch_size = 256):
+        history, target = BatchGenerator.split_actions(user_actions)
         self.features_matrix = self.build_matrix(history, n_items)
         self.target_matrix = self.build_matrix(target, n_items)
         self.batch_size = batch_size

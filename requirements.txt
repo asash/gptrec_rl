@@ -1,3 +1,4 @@
+tqdm
 tensorflow-gpu
 requests
 pandas
@@ -6,4 +7,5 @@ scipy
 tornado
 numpy 
 scikit-learn
+lightgbm
 mmh3 

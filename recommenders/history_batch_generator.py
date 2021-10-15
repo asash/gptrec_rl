@@ -1,5 +1,6 @@
 import math
 import random
+import sys
 
 import numpy as np
 from scipy.sparse import csr_matrix
@@ -70,12 +71,12 @@ class HistoryBatchGenerator(Sequence):
         else:
             n_history_actions = len(user) - 1
         n_target_actions = len(user) - n_history_actions
-        history_actions =user [:n_history_actions]
+        history_actions =user[:n_history_actions]
         target_actions = user[-n_target_actions:]
         return history_actions, target_actions
 
     def __len__(self):
-        return math.floor(self.features_matrix.shape[0] / self.batch_size)
+        return self.features_matrix.shape[0] // self.batch_size
 
     def __getitem__(self, idx):
         history = self.features_matrix[idx * self.batch_size:(idx + 1) * self.batch_size]

@@ -57,6 +57,7 @@ class GRURecommender(Recommender):
         self.model = self.get_model(self.items.size())
         for epoch in range(self.train_epochs):
             print(f"epoch: {epoch}")
+            val_generator.reset()
             generator = HistoryBatchGenerator(train_users, self.max_history_length, self.items.size(),
                                               batch_size=self.batch_size)
             self.model.fit(generator, validation_data=val_generator)

@@ -26,8 +26,6 @@ class TestBookingLtrRecommender(unittest.TestCase):
                 recommenders[f"Lightgbm-{boosting_type}-{objective}"] = lambda boosting_type=boosting_type, objective=objective: LTR('lightgbm', False,
                                                                                     lgbm_boosting_type=boosting_type,
                                                                                     lgbm_objecitve=objective)
-        recommenders["APREC-Neural-pure"] =  lambda: LTR('neural', False)
-        recommenders["APREC-Neural-attention"] =  lambda: LTR('neural', True)
         for recommender_name in recommenders:
             print(f"testing {recommender_name}")
             recommender = recommenders[recommender_name]()
