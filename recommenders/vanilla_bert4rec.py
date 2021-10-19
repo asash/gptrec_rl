@@ -159,6 +159,8 @@ class VanillaBERT4Rec(Recommender):
         recs = self.predictions_cache[internal_user_id]
         result = []
         for internal_item_id, score in recs[:limit]:
+            if not internal_item_id.startswith("item_"):
+                continue
             item_id = self.item_ids.reverse_id(int(internal_item_id.split("_")[1]))
             result.append((item_id, score))
         return result
