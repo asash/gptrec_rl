@@ -66,3 +66,5 @@ METRICS = [Precision(5), NDCG(40), Recall(5), SPS(10), MRR(), MAP(10), AveragePo
 del(dataset_for_metric)
 
 
+SPLIT_STRATEGY = "LEAVE_ONE_OUT"
+
