@@ -1,5 +1,5 @@
 tqdm
-tensorflow
+tensorflow-gpu
 requests
 pandas
 lightfm
