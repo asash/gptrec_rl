@@ -100,8 +100,8 @@ def constant_recommender():
                                ('253', 0.257)])
 
 RECOMMENDERS = {
-    "APREC-GMLPHE-Lambdarank": lambda: mlp_historical_embedding('lambdarank'),
-    "APREC-GMLPHE-BCE": lambda: mlp_historical_embedding('binary_crossentropy'),
+   # "APREC-GMLPHE-Lambdarank": lambda: mlp_historical_embedding('lambdarank'),
+   # "APREC-GMLPHE-BCE": lambda: mlp_historical_embedding('binary_crossentropy'),
     "vanilla_bert4rec": vanilla_bert4rec,
     "top_recommender": top_recommender,
     "svd_recommender_30": lambda: svd_recommender(30),
