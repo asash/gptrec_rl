@@ -3,6 +3,7 @@ from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.lightfm import LightFMRecommender
 from aprec.recommenders.constant_recommender import ConstantRecommender
+from aprec.recommenders.mlp_historical_embedding import GreedyMLPHistoricalEmbedding
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.recommenders.vanilla_bert4rec import VanillaBERT4Rec
 from aprec.evaluation.metrics.precision import Precision
@@ -10,6 +11,7 @@ from aprec.evaluation.metrics.recall import Recall
 from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.evaluation.metrics.mrr import MRR
 from aprec.evaluation.metrics.map import MAP
+from tensorflow.keras.optimizers import Adam
 from aprec.evaluation.metrics.average_popularity_rank import AveragePopularityRank
 from aprec.evaluation.metrics.pairwise_cos_sim import PairwiseCosSim
 from aprec.evaluation.metrics.sps import SPS
@@ -68,6 +70,18 @@ def vanilla_bert4rec():
                               learning_rate=learning_rate)
     return FilterSeenRecommender(recommender)
 
+
+def mlp_historical_embedding(loss, activation_override=None):
+    activation = 'linear' if loss == 'lambdarank' else 'sigmoid'
+    if activation_override is not None:
+        activation = activation_override
+    return FilterSeenRecommender(GreedyMLPHistoricalEmbedding(train_epochs=10000, loss=loss,
+                                                              optimizer=Adam(), early_stop_epochs=100,
+                                                              batch_size=150, sigma=1.0, ndcg_at=40,
+                                                              n_val_users=600,
+                                                              bottleneck_size=64,
+                                                              output_layer_activation=activation))
+
 def constant_recommender():
     return ConstantRecommender([('457', 0.45),
                                ('380', 0.414),
@@ -86,6 +100,8 @@ def constant_recommender():
                                ('253', 0.257)])
 
 RECOMMENDERS = {
+    "APREC-GMLPHE-Lambdarank": lambda: mlp_historical_embedding('lambdarank'),
+    "APREC-GMLPHE-BCE": lambda: mlp_historical_embedding('binary_crossentropy'),
     "vanilla_bert4rec": vanilla_bert4rec,
     "top_recommender": top_recommender,
     "svd_recommender_30": lambda: svd_recommender(30),
@@ -95,12 +111,10 @@ RECOMMENDERS = {
 
 FRACTION_TO_SPLIT = 0.85
 
-METRICS = [Precision(5), NDCG(40), Recall(5), SPS(10), MRR(), MAP(10)]
-
-
-###dataset_for_metric = [action for action in get_movielens_actions(min_rating=1.0)]
-#           PairwiseCosSim(dataset_for_metric, 10)]
-#del(dataset_for_metric)
+dataset_for_metric = [action for action in get_movielens_actions(min_rating=1.0)]
+METRICS = [Precision(5), NDCG(40), Recall(5), SPS(10), MRR(), MAP(10), AveragePopularityRank(10, dataset_for_metric),
+           PairwiseCosSim(dataset_for_metric, 10)]
+del(dataset_for_metric)
 
 
 SPLIT_STRATEGY = "LEAVE_ONE_OUT"
