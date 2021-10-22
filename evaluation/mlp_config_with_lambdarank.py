@@ -52,5 +52,4 @@ RECOMMENDERS = {
 FRACTION_TO_SPLIT = 0.85
 
 METRICS = [Precision(5), NDCG(40), Recall(5), SPS(10), AveragePopularityRank(10, DATASET), PairwiseCosSim(DATASET, 10)]
-
-
+SPLIT_STRATEGY = "LEAVE_ONE_OUT"
