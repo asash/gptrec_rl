@@ -2,6 +2,7 @@ from aprec.datasets.movielens import get_movielens_actions, filter_popular_items
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.mlp_historical_embedding import GreedyMLPHistoricalEmbedding
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
+from aprec.recommenders.losses.bpr import bpr_loss
 from aprec.evaluation.metrics.precision import Precision
 from aprec.evaluation.metrics.recall import Recall
 from aprec.evaluation.metrics.ndcg import NDCG
@@ -13,7 +14,7 @@ from aprec.recommenders.lightfm import LightFMRecommender
 from tensorflow.keras.optimizers import Adam
 
 DATASET = [action for action in get_movielens_actions(min_rating=0.0)]
-USERS_FRACTIONS = [0.0078125, 0.015625, 0.03125, 0.0625, 0.125, 0.25, 0.5, 1.0]
+USERS_FRACTIONS = [0.1]
 
 
 def top_recommender():
@@ -40,10 +41,12 @@ RECOMMENDERS = {
     "lightfm_30_WARP": lambda: lightfm_recommender(30, 'warp'),
     "lightfm_30_BPR": lambda: lightfm_recommender(30, 'bpr'),
     "svd_recommender_30": lambda: svd_recommender(30),
-    "APREC-GMLPHE-XENDCG-linear": lambda: mlp_historical_embedding('xendcg', 'linear'),
-    "APREC-GMLPHE-XENDCG-sigmoid": lambda: mlp_historical_embedding('xendcg', 'sigmoid'),
+    "APREC-GMLPHE-BPR-linear":  lambda: mlp_historical_embedding(bpr_loss, 'linear'),
+    "APREC-GMLPHE-BPR-sigmoid":  lambda: mlp_historical_embedding(bpr_loss, 'sigmoid'),
     "APREC-GMLPHE-Lambdarank": lambda: mlp_historical_embedding('lambdarank'),
     "APREC-GMLPHE-BCE": lambda: mlp_historical_embedding('binary_crossentropy'),
+    "APREC-GMLPHE-XENDCG-linear": lambda: mlp_historical_embedding('xendcg', 'linear'),
+    "APREC-GMLPHE-XENDCG-sigmoid": lambda: mlp_historical_embedding('xendcg', 'sigmoid'),
 }
 
 FRACTION_TO_SPLIT = 0.85
