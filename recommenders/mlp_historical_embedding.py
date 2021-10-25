@@ -3,6 +3,7 @@ import tensorflow.keras.backend as K
 import random
 from collections import defaultdict
 
+from aprec.recommenders.losses.bpr import BPRLoss
 from aprec.utils.item_id import ItemId
 from aprec.recommenders.metrics.ndcg import KerasNDCG
 from aprec.recommenders.losses.lambdarank import LambdaRankLoss
@@ -24,6 +25,7 @@ class GreedyMLPHistoricalEmbedding(Recommender):
                  optimizer='adam',
                  batch_size=1000,
                  early_stop_epochs=100,
+                 target_decay = 1.0,
                  sigma=1,
                  ndcg_at=30,
                  ):
@@ -46,6 +48,7 @@ class GreedyMLPHistoricalEmbedding(Recommender):
         self.sigma = sigma
         self.ndcg_at = ndcg_at
         self.output_layer_activation = output_layer_activation
+        self.target_decay = target_decay
 
     def get_metadata(self):
         return self.metadata
@@ -83,7 +86,8 @@ class GreedyMLPHistoricalEmbedding(Recommender):
         train_users, val_users = self.split_users()
         print("train_users: {}, val_users:{}, items:{}".format(len(train_users), len(val_users), self.items.size()))
         val_generator = HistoryBatchGenerator(val_users, self.max_history_length, self.items.size(),
-                                              batch_size=self.batch_size, validation=True)
+                                              batch_size=self.batch_size, validation=True,
+                                              target_decay=self.target_decay)
         self.model = self.get_model(self.items.size())
         best_ndcg = 0
         steps_since_improved = 0
@@ -93,7 +97,7 @@ class GreedyMLPHistoricalEmbedding(Recommender):
         for epoch in range(self.train_epochs):
             val_generator.reset()
             generator = HistoryBatchGenerator(train_users, self.max_history_length, self.items.size(),
-                                              batch_size=self.batch_size)
+                                              batch_size=self.batch_size, target_decay=self.target_decay)
             print(f"epoch: {epoch}")
             train_history = self.model.fit(generator, validation_data=val_generator)
             val_ndcg = train_history.history[f"val_ndcg_at_{self.ndcg_at}"][-1]
@@ -136,6 +140,9 @@ class GreedyMLPHistoricalEmbedding(Recommender):
         if loss == 'xendcg':
             loss = self.get_xendcg_loss()
 
+        if loss == 'bpr':
+            loss = self.get_bpr_loss()
+
         model.compile(optimizer=self.optimizer, loss=loss, metrics=[ndcg_metric])
         return model
 
@@ -144,6 +151,9 @@ class GreedyMLPHistoricalEmbedding(Recommender):
 
     def get_xendcg_loss(self):
         return XENDCGLoss(self.items.size(), self.batch_size)
+
+    def get_bpr_loss(self):
+        return BPRLoss(max_positives=10)
 
     def get_next_items(self, user_id, limit, features=None):
         actions = self.user_actions[self.users.get_id(user_id)]
@@ -173,3 +183,5 @@ class GreedyMLPHistoricalEmbedding(Recommender):
 
     def from_str(self):
         raise (NotImplementedError)
+
+
