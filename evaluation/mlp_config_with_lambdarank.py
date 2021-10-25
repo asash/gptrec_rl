@@ -2,7 +2,6 @@ from aprec.datasets.movielens import get_movielens_actions, filter_popular_items
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.mlp_historical_embedding import GreedyMLPHistoricalEmbedding
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
-from aprec.recommenders.losses.bpr import bpr_loss
 from aprec.evaluation.metrics.precision import Precision
 from aprec.evaluation.metrics.recall import Recall
 from aprec.evaluation.metrics.ndcg import NDCG
