@@ -10,6 +10,9 @@ from evaluate_recommender import evaluate_recommender
 from filter_cold_start import filter_cold_start
 from tqdm import tqdm
 import time
+import tensorflow as tf
+
+
 
 def config():
     """ from https://stackoverflow.com/questions/67631/how-to-import-a-module-given-the-full-path"""
@@ -130,7 +133,8 @@ def write_result(config, result):
 
 
 if __name__ == "__main__":
+    physical_devices = tf.config.list_physical_devices('GPU') 
+    tf.config.experimental.set_memory_growth(physical_devices[0], True)
     config = config()
     run_experiment(config)
-
-
+    
