@@ -1,10 +1,12 @@
 import unittest
 import tensorflow.keras.backend as K
 
-from aprec.recommenders.losses.bpr import bpr_loss
+from aprec.recommenders.losses.bpr import BPRLoss
+
 
 class TestBPRLoss(unittest.TestCase):
         def test_bpr_loss(self):
+            bpr_loss = BPRLoss(3)
             val = bpr_loss(K.constant([[0, 0, 1, 1],
                                  [0, 0, 1, 1]]),
                      K.constant([[0.1, 0.3, 1, 0], [0, 0, 1, 1]]))
