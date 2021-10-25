@@ -36,8 +36,8 @@ def svd_recommender(k):
     return FilterSeenRecommender(SvdRecommender(num_latent_components=k))
 
 RECOMMENDERS = {
-#    "APREC-GMLPHE-BPR-linear":  lambda: mlp_historical_embedding('bpr', 'linear'),
-#    "APREC-GMLPHE-BPR-sigmoid":  lambda: mlp_historical_embedding('bpr', 'sigmoid'),
+    "APREC-GMLPHE-BPR-linear":  lambda: mlp_historical_embedding('bpr', 'linear'),
+    "APREC-GMLPHE-BPR-sigmoid":  lambda: mlp_historical_embedding('bpr', 'sigmoid'),
     "APREC-GMLPHE-Lambdarank": lambda: mlp_historical_embedding('lambdarank'),
     "APREC-GMLPHE-BCE": lambda: mlp_historical_embedding('binary_crossentropy'),
     "APREC-GMLPHE-XENDCG-linear": lambda: mlp_historical_embedding('xendcg', 'linear'),
