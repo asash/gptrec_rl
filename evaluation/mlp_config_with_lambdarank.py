@@ -36,16 +36,17 @@ def svd_recommender(k):
     return FilterSeenRecommender(SvdRecommender(num_latent_components=k))
 
 RECOMMENDERS = {
-    "top_recommender": top_recommender,
-    "lightfm_30_WARP": lambda: lightfm_recommender(30, 'warp'),
-    "lightfm_30_BPR": lambda: lightfm_recommender(30, 'bpr'),
-    "svd_recommender_30": lambda: svd_recommender(30),
     "APREC-GMLPHE-BPR-linear":  lambda: mlp_historical_embedding(bpr_loss, 'linear'),
     "APREC-GMLPHE-BPR-sigmoid":  lambda: mlp_historical_embedding(bpr_loss, 'sigmoid'),
     "APREC-GMLPHE-Lambdarank": lambda: mlp_historical_embedding('lambdarank'),
     "APREC-GMLPHE-BCE": lambda: mlp_historical_embedding('binary_crossentropy'),
     "APREC-GMLPHE-XENDCG-linear": lambda: mlp_historical_embedding('xendcg', 'linear'),
     "APREC-GMLPHE-XENDCG-sigmoid": lambda: mlp_historical_embedding('xendcg', 'sigmoid'),
+    "top_recommender": top_recommender,
+    "lightfm_30_WARP": lambda: lightfm_recommender(30, 'warp'),
+    "lightfm_30_BPR": lambda: lightfm_recommender(30, 'bpr'),
+    "svd_recommender_30": lambda: svd_recommender(30),
+ 
 }
 
 FRACTION_TO_SPLIT = 0.85
