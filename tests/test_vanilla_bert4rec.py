@@ -50,3 +50,6 @@ class TestVanillaBert4rec(unittest.TestCase):
             recommender.add_action(action)
         recommender.rebuild_model()
         print(recommender.get_next_items('120', 10))
+
+if __name__ == "__main__":
+    unittest.main()
