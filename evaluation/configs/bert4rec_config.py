@@ -38,7 +38,7 @@ def vanilla_bert4rec():
     pool_size = 10
     prop_sliding_window = 0.5
     num_warmup_steps = 100
-    num_train_steps = 100
+    num_train_steps = 400000
     batch_size = 256
     learning_rate = 1e-4
     random_seed = 31337
@@ -75,12 +75,12 @@ def mlp_historical_embedding(loss, activation_override=None):
     activation = 'linear' if loss == 'lambdarank' else 'sigmoid'
     if activation_override is not None:
         activation = activation_override
-    return FilterSeenRecommender(GreedyMLPHistoricalEmbedding(train_epochs=5, loss=loss,
+    return FilterSeenRecommender(GreedyMLPHistoricalEmbedding(train_epochs=10000, loss=loss,
                                                               optimizer=Adam(), early_stop_epochs=100,
                                                               batch_size=150, sigma=1.0, ndcg_at=40,
                                                               n_val_users=600,
                                                               bottleneck_size=64,
-                                                              output_layer_activation=activation))
+                                                              output_layer_activation=activation, target_decay=0.8))
 
 def constant_recommender():
     return ConstantRecommender([('457', 0.45),
@@ -103,6 +103,7 @@ RECOMMENDERS = {
     "vanilla_bert4rec": vanilla_bert4rec,
     "APREC-GMLPHE-Lambdarank": lambda: mlp_historical_embedding('lambdarank'),
     "APREC-GMLPHE-BCE": lambda: mlp_historical_embedding('binary_crossentropy'),
+    "APREC-GMLPHE-BPR": lambda: mlp_historical_embedding('bpr', 'linear'),
     "top_recommender": top_recommender,
     "svd_recommender_30": lambda: svd_recommender(30),
     "lightfm_recommender_30_warp": lambda: lightfm_recommender(30, 'warp'),
@@ -117,5 +118,5 @@ METRICS = [Precision(5), NDCG(40), Recall(5), SPS(10), MRR(), MAP(10), AveragePo
 del(dataset_for_metric)
 
 
-SPLIT_STRATEGY = "LEAVE_ONE_OUT"
+SPLIT_STRATEGY = "TEMPORAL_GLOBAL"
 
