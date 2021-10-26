@@ -18,7 +18,7 @@ from aprec.evaluation.metrics.sps import SPS
 
 DATASET = get_movielens_actions(min_rating=1.0)
 
-USERS_FRACTIONS = [.1]
+USERS_FRACTIONS = [1.]
 
 def top_recommender():
     return FilterSeenRecommender(TopRecommender())
@@ -38,7 +38,7 @@ def vanilla_bert4rec():
     pool_size = 10
     prop_sliding_window = 0.5
     num_warmup_steps = 100
-    num_train_steps = 400000
+    num_train_steps = 2000000
     batch_size = 256
     learning_rate = 1e-4
     random_seed = 31337
