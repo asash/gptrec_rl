@@ -100,14 +100,14 @@ def constant_recommender():
                                ('253', 0.257)])
 
 RECOMMENDERS = {
+    "top_recommender": top_recommender,
+    "svd_recommender_30": lambda: svd_recommender(30),
+    "constant_recommender": constant_recommender,
     "vanilla_bert4rec": vanilla_bert4rec,
     "APREC-GMLPHE-Lambdarank": lambda: mlp_historical_embedding('lambdarank'),
     "APREC-GMLPHE-BCE": lambda: mlp_historical_embedding('binary_crossentropy'),
     "APREC-GMLPHE-BPR": lambda: mlp_historical_embedding('bpr', 'linear'),
-    "top_recommender": top_recommender,
-    "svd_recommender_30": lambda: svd_recommender(30),
     "lightfm_recommender_30_warp": lambda: lightfm_recommender(30, 'warp'),
-    "constant_recommender": constant_recommender,
 }
 
 FRACTION_TO_SPLIT = 0.85
