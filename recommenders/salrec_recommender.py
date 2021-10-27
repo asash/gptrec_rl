@@ -124,13 +124,14 @@ class SalrecRecommender(Recommender):
         print(self.get_metadata())
         print(f"taken best model from epoch{best_epoch}. best_val_ndcg: {best_ndcg}")
 
-    def get_model(self, n_movies):
-        input = layers.Embedding(n_movies + 1, 64, input_length=self.max_history_length)
-        x = layers.BatchNormalization()(input)
+    def get_model(self, n_items):
+        input = layers.Input(shape=(self.max_history_length))
+        x = layers.Embedding(n_items + 1, 64)
+        x = layers.BatchNormalization()(x)
         for block_num in range(self.num_blocks):
             x = self.block(x)
         x = tf.math.reduce_mean(x, axis=-1)(x)
-        output = layers.Dense(n_movies, name="output", activation=self.output_layer_activation)
+        output = layers.Dense(n_items, name="output", activation=self.output_layer_activation)
         model = keras.Model(inputs = [input], output=output)
         ndcg_metric = KerasNDCG(self.ndcg_at)
         loss = self.loss
