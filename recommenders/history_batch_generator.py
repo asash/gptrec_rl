@@ -9,7 +9,7 @@ from tensorflow.python.keras.utils.data_utils import Sequence
 
 class HistoryBatchGenerator(Sequence):
     def __init__(self, user_actions, history_size, n_items, batch_size=1000, validation=False, target_decay=0.8,
-                min_target_val=0.1):
+                min_target_val=0.1, return_positions=False):
         self.user_actions = user_actions
         self.history_size= history_size
         self.n_items = n_items
@@ -19,12 +19,16 @@ class HistoryBatchGenerator(Sequence):
         self.validation = validation
         self.target_decay = target_decay
         self.min_target_val = min_target_val
+        self.return_positions = return_positions
         self.reset()
 
 
     def reset(self):
         history, target = self.split_actions(self.user_actions)
         self.features_matrix = self.matrix_for_embedding(history, self.history_size, self.n_items)
+        if self.return_positions:
+            self.direct_position, self.reverse_position = self.positions(history, self.history_size)
+
         self.target_matrix = self.get_target_matrix(target, self.n_items)
         self.current_position = 0
         self.max = self.__len__()
@@ -75,13 +79,28 @@ class HistoryBatchGenerator(Sequence):
         target_actions = user[-n_target_actions:]
         return history_actions, target_actions
 
+    def positions(self, sessions, history_size):
+        result_direct, result_reverse = [], []
+        for session in sessions:
+            result_direct.append(direct_positions(len(session), history_size))
+            result_reverse.append(reverse_positions(len(session), history_size))
+        return np.array(result_direct), np.array(result_reverse)
+
     def __len__(self):
         return self.features_matrix.shape[0] // self.batch_size
 
     def __getitem__(self, idx):
-        history = self.features_matrix[idx * self.batch_size:(idx + 1) * self.batch_size]
-        target = self.target_matrix[idx * self.batch_size:(idx + 1) * self.batch_size].todense()
-        return history, target
+        start = idx * self.batch_size
+        end = (idx + 1) * self.batch_size
+        history = self.features_matrix[start:end]
+        model_inputs = [history]
+        target = self.target_matrix[start:end].todense()
+        if self.return_positions:
+            direct_pos = self.direct_position[start:end]
+            reverse_pos = self.reverse_position[start:end]
+            model_inputs.append(direct_pos)
+            model_inputs.append(reverse_pos)
+        return model_inputs, target
 
     def __next__(self):
         if self.current_position >= self.max:
@@ -89,6 +108,19 @@ class HistoryBatchGenerator(Sequence):
         result = self.__getitem__(self.current_position)
         self.current_position += 1
         return result
+
+def direct_positions(session_len, history_size):
+    if session_len >= history_size:
+        return list(range(1, history_size + 1))
+    else:
+        return [0] * (history_size - session_len) + list(range(1, session_len + 1))
+
+
+def reverse_positions(session_len, history_size):
+    if session_len >= history_size:
+        return list(range(history_size, 0, -1))
+    else:
+        return [0] * (history_size - session_len) + list(range(session_len, 0, -1))
 
 
 def actions_to_vector(user_actions, vector_size, special_value):
