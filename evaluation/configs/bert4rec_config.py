@@ -32,14 +32,16 @@ def lightfm_recommender(k, loss):
 def vanilla_bert4rec():
     max_seq_length = 200
     masked_lm_prob = 0.2
-    max_predictions_per_seq = 40
+    max_predictions_per_seq = 20
+    batch_size = 256
+    num_train_steps = 400000
+
+    prop_sliding_window = 0.5
     mask_prob = 1.0
     dupe_factor = 10
     pool_size = 10
-    prop_sliding_window = 0.5
+
     num_warmup_steps = 100
-    num_train_steps = 2000000
-    batch_size = 256
     learning_rate = 1e-4
     random_seed = 31337
 
