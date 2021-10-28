@@ -38,8 +38,9 @@ def salrec(loss, activation_override=None):
                                                               optimizer=Adam(), early_stop_epochs=100,
                                                               batch_size=64, sigma=1.0, ndcg_at=40,
                                                               n_val_users=600,
-                                                              bottleneck_size=64,
-                                                              output_layer_activation=activation))
+                                                              output_layer_activation=activation,
+                                                              num_blocks=3
+                                                    ))
 
 def lightfm_recommender(k, loss):
     return FilterSeenRecommender(LightFMRecommender(k, loss))

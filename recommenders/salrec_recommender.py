@@ -20,12 +20,12 @@ import numpy as np
 
 
 class SalrecRecommender(Recommender):
-    def __init__(self, bottleneck_size=32, train_epochs=300, n_val_users=1000,
+    def __init__(self, train_epochs=300, n_val_users=1000,
                  max_history_len=1000,
                  loss='binary_crossentropy',
                  output_layer_activation='sigmoid',
                  optimizer='adam',
-                 batch_size=1000,
+                 batch_size=64,
                  early_stop_epochs=100,
                  target_decay = 1.0,
                  sigma=1,
@@ -39,7 +39,6 @@ class SalrecRecommender(Recommender):
         self.user_vectors = None
         self.matrix = None
         self.mean_user = None
-        self.bottleneck_size = bottleneck_size
         self.train_epochs = train_epochs
         self.n_val_users = n_val_users
         self.max_history_length = max_history_len
@@ -146,7 +145,7 @@ class SalrecRecommender(Recommender):
             x = self.block(x)
         x = tf.math.reduce_mean(x, axis=-1)
         x = layers.Dense(256, name="bottleneck", activation='swish')(x)
-        x = layers.Dropout(0.5, name="dropout")(x)
+        x = layers.Dropout(0.1, name="dropout")(x)
         x = layers.Dense(256, name="bottleneck_after_dropout", activation='swish')(x)
         output = layers.Dense(n_items, name="output", activation=self.output_layer_activation)(x)
         model = keras.Model(inputs = [input, direct_pos_input, reverse_pos_input], outputs=output)
