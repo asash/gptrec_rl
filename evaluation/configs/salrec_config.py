@@ -39,7 +39,7 @@ def salrec(loss, activation_override=None):
                                                               batch_size=64, sigma=1.0, ndcg_at=40,
                                                               n_val_users=600,
                                                               output_layer_activation=activation,
-                                                              num_blocks=3
+                                                              num_blocks=2
                                                     ))
 
 def lightfm_recommender(k, loss):

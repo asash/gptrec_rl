@@ -138,17 +138,17 @@ class SalrecRecommender(Recommender):
 
         input = layers.Input(shape=(self.max_history_length))
         x = layers.Embedding(n_items + 1, embedding_size)(input)
-        x = layers.BatchNormalization()(x)
         x = layers.Multiply()([x, position_embedding])
 
         for block_num in range(self.num_blocks):
-            x = self.block(x)
+             x = self.block(x)
         x = tf.math.reduce_mean(x, axis=-1)
         x = layers.Dense(256, name="bottleneck", activation='swish')(x)
-        x = layers.Dropout(0.1, name="dropout")(x)
+        x = layers.Dropout(0.3, name="dropout")(x)
         x = layers.Dense(256, name="bottleneck_after_dropout", activation='swish')(x)
         output = layers.Dense(n_items, name="output", activation=self.output_layer_activation)(x)
         model = keras.Model(inputs = [input, direct_pos_input, reverse_pos_input], outputs=output)
+        # model = keras.Model(inputs = [input], outputs=output)
         ndcg_metric = KerasNDCG(self.ndcg_at)
         loss = self.loss
         if loss == 'lambdarank':
