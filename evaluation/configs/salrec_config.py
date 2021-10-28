@@ -36,7 +36,7 @@ def salrec(loss, activation_override=None):
         activation = activation_override
     return FilterSeenRecommender(SalrecRecommender(train_epochs=10000, loss=loss,
                                                               optimizer=Adam(), early_stop_epochs=100,
-                                                              batch_size=150, sigma=1.0, ndcg_at=40,
+                                                              batch_size=64, sigma=1.0, ndcg_at=40,
                                                               n_val_users=600,
                                                               bottleneck_size=64,
                                                               output_layer_activation=activation))
