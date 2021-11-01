@@ -18,6 +18,19 @@ class Action(object):
        result += ")"
        return result
 
+    def to_json(self):
+        return json.dumps({
+            "user_id": self.user_id,
+            "item_id": self.item_id,
+            "data": self.data,
+            "timestamp": self.timestamp
+        })
+
+    @staticmethod
+    def from_json(action_str):
+        doc = json.loads(action_str)
+        return Action(doc["user_id"], doc["item_id"], doc["data"], doc["timestamp"])
+
     def __str__(self):
         return self.to_str()
         

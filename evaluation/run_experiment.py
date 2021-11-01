@@ -4,6 +4,7 @@ import importlib.util
 import json
 import copy 
 import mmh3
+import gzip
 
 from split_actions import split_actions, leave_one_out
 from evaluate_recommender import evaluate_recommender
@@ -30,13 +31,15 @@ def config():
 
     return config
 
+
 class RecommendersEvaluator(object):
-    def __init__(self, actions, recommenders, metrics, data_splitter, callbacks=()):
+    def __init__(self, actions, recommenders, metrics, out_dir, data_splitter, callbacks=()):
         self.actions = actions
         self.metrics = metrics
         self.recommenders = recommenders
         self.data_splitter = data_splitter
         self.callbacks = callbacks
+        self.out_dir = out_dir
         self.features_from_test = None
 
     def set_features_from_test(self, features_from_test):
@@ -45,6 +48,7 @@ class RecommendersEvaluator(object):
     def __call__(self):
         result = {"recommenders": {}}
         train, test = self.data_splitter(self.actions)
+        self.save_split(train, test)
         test = filter_cold_start(train, test)
         for recommender_name in self.recommenders:
             print("evaluating {}".format(recommender_name))
@@ -74,6 +78,14 @@ class RecommendersEvaluator(object):
             del(recommender)
         return result
 
+    def save_split(self, train, test):
+        self.save_actions(train, "train.json.gz")
+        self.save_actions(test, "test.json.gz")
+
+    def save_actions(self, actions, filename):
+        with gzip.open(os.path.join(self.out_dir, filename), 'w') as output:
+            for action in actions:
+                output.write(action.to_json().encode('utf-8') + b"\n")
 
 def real_hash(obj):
     str_val = str(obj)
@@ -105,6 +117,7 @@ def run_experiment(config):
         recommender_evaluator = RecommendersEvaluator(actions,
                                      config.RECOMMENDERS,
                                      config.METRICS,
+                                     config.out_dir,
                                      data_splitter,
                                      callbacks)
         if  hasattr(config, 'FEATURES_FROM_TEST'):
