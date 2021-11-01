@@ -6,6 +6,8 @@ import copy
 import mmh3
 import gzip
 
+from aprec.utils.os_utils import shell
+
 from split_actions import split_actions, leave_one_out
 from evaluate_recommender import evaluate_recommender
 from filter_cold_start import filter_cold_start
@@ -130,6 +132,8 @@ def run_experiment(config):
         result_for_fraction['num_users'] = len(user_id_set)
         result.append(result_for_fraction)
         write_result(config, result)
+        shell(f"python3 statistical_signifficance_test.py --predictions-dir={config.out_dir}/predictions/ "
+              f"--output-file={config.out_dir}/statistical_signifficance.json")
 
 def get_data_splitter(config):
     if config.SPLIT_STRATEGY == "TEMPORAL_GLOBAL":

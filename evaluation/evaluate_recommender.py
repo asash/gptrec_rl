@@ -3,7 +3,7 @@ import json
 from collections import defaultdict
 from tqdm import tqdm
 
-from aprec.utils.os import mkdir_p
+from aprec.utils.os_utils import mkdir_p
 
 
 def group_by_user(actions):

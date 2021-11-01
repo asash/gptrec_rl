@@ -3,7 +3,7 @@ import json
 from collections import Counter
 
 from aprec.api.action import Action
-from aprec.utils.os import mkdir_p_local, get_dir, shell
+from aprec.utils.os_utils import mkdir_p_local, get_dir, shell
 
 import os
 import logging
