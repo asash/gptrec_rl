@@ -64,7 +64,9 @@ class RecommendersEvaluator(object):
 
             print("calculating metrics...")
             evaluate_time_start = time.time()
-            evaluation_result = evaluate_recommender(recommender, test, self.metrics, self.features_from_test)
+            evaluation_result = evaluate_recommender(recommender, test,
+                                                     self.metrics, self.out_dir,
+                                                     recommender_name, self.features_from_test)
             evaluate_time_end = time.time()
             print("calculating metrics...")
             evaluation_result['model_build_time'] =  build_time_end - build_time_start

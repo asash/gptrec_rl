@@ -1,3 +1,5 @@
+import tempfile
+
 from aprec.datasets.movielens import get_movielens_actions, get_movies_catalog
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.recommenders.top_recommender import TopRecommender
@@ -19,7 +21,8 @@ class TestEvaluateRecommender(unittest.TestCase):
             recommender.add_action(action)
         recommender.rebuild_model()
         metrics = [Precision(1), Recall(1), Precision(5), Recall(5), Precision(10), Recall(10)]
-        result = evaluate_recommender(recommender, test, metrics)
+        output_dir = tempfile.mkdtemp()
+        result = evaluate_recommender(recommender, test, metrics, output_dir, "top_recommender")
         reference_result = {'precision@1': 0.0, 'recall@1': 0.0,
                             'precision@5': 0.00425531914893617, 'recall@5': 0.02127659574468085,
                             'precision@10': 0.002127659574468085, 'recall@10': 0.02127659574468085}
