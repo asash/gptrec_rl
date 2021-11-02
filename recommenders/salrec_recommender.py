@@ -1,4 +1,5 @@
 import gc
+import time
 
 import keras
 import tensorflow.keras.backend as K
@@ -90,6 +91,7 @@ class SalrecRecommender(Recommender):
         best_epoch = -1
         best_weights = self.model.get_weights()
         val_ndcg_history = []
+        start_time = time.time()
         for epoch in range(self.train_epochs):
             val_generator.reset()
             generator = HistoryBatchGenerator(train_users, self.max_history_length, self.items.size(),
@@ -97,15 +99,17 @@ class SalrecRecommender(Recommender):
                                               return_positions=True)
             print(f"epoch: {epoch}")
             train_history = self.model.fit(generator, validation_data=val_generator)
+            total_trainig_time = time.time() - start_time
             val_ndcg = train_history.history[f"val_ndcg_at_{self.ndcg_at}"][-1]
-            val_ndcg_history.append(val_ndcg)
+            val_ndcg_history.append((total_trainig_time, val_ndcg))
             steps_since_improved += 1
             if val_ndcg > best_ndcg:
                 steps_since_improved = 0
                 best_ndcg = val_ndcg
                 best_epoch = epoch
                 best_weights = self.model.get_weights()
-            print(f"best_ndcg: {best_ndcg}, steps_since_improved: {steps_since_improved}")
+            print(f"val_ndcg: {val_ndcg}, best_ndcg: {best_ndcg}, steps_since_improved: "
+                  f"{steps_since_improved}, total_training_time: {total_trainig_time}")
             if steps_since_improved >= self.early_stop_epochs:
                 print(f"early stopped at epoch {epoch}")
                 break
