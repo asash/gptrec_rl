@@ -15,7 +15,10 @@ from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.lightfm import LightFMRecommender
 from tensorflow.keras.optimizers import Adam
 
-DATASET = [action for action in get_amazon_books_dataset(min_users_per_item=50, min_actions_per_user=20)]
+from datasets.movielens import get_movielens_actions
+from utils.generator_limit import generator_limit
+
+DATASET =  [action for action in generator_limit(get_movielens_actions(), 10000)]
 USERS_FRACTIONS = [1.0]
 
 
@@ -29,7 +32,6 @@ def mlp_historical_embedding(loss, activation_override=None):
     return FilterSeenRecommender(GreedyMLPHistoricalEmbedding(train_epochs=10000, loss=loss,
                                                               optimizer=Adam(), early_stop_epochs=100,
                                                               batch_size=150, sigma=1.0, ndcg_at=40,
-                                                              n_val_users=600,
                                                               bottleneck_size=64,
                                                               output_layer_activation=activation))
 def lightfm_recommender(k, loss):

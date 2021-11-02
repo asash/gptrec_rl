@@ -40,3 +40,6 @@ class FilterSeenRecommender(Recommender):
         metadata = self.recommender.get_metadata()
         metadata['proxy_model'] = 'filter_seen_recommender'
         return metadata
+
+    def set_val_users(self, val_users):
+        self.recommender.set_val_users(val_users)

@@ -1,4 +1,5 @@
 import os
+import random
 import sys
 import importlib.util
 import json
@@ -35,7 +36,7 @@ def config():
 
 
 class RecommendersEvaluator(object):
-    def __init__(self, actions, recommenders, metrics, out_dir, data_splitter, callbacks=()):
+    def __init__(self, actions, recommenders, metrics, out_dir, data_splitter,  n_val_users, callbacks=()):
         self.actions = actions
         self.metrics = metrics
         self.recommenders = recommenders
@@ -43,21 +44,27 @@ class RecommendersEvaluator(object):
         self.callbacks = callbacks
         self.out_dir = out_dir
         self.features_from_test = None
+        self.n_val_users = n_val_users
+        self.train, self.test = self.data_splitter(actions)
+        self.save_split(self.train, self.test)
+        self.test = filter_cold_start(self.train, self.test)
+        all_train_user_ids = list(set([action.user_id for action in self.train]))
+        random.shuffle(all_train_user_ids)
+        self.val_user_ids = all_train_user_ids[:self.n_val_users]
 
     def set_features_from_test(self, features_from_test):
         self.features_from_test = features_from_test
 
     def __call__(self):
         result = {"recommenders": {}}
-        train, test = self.data_splitter(self.actions)
-        self.save_split(train, test)
-        test = filter_cold_start(train, test)
+
         for recommender_name in self.recommenders:
             print("evaluating {}".format(recommender_name))
             recommender = self.recommenders[recommender_name]()
             print("adding train actions...")
-            for action in tqdm(train):
+            for action in tqdm(self.train):
                 recommender.add_action(action)
+            recommender.set_val_users(self.val_user_ids)
             print("rebuilding model...")
             build_time_start = time.time()
             recommender.rebuild_model()
@@ -66,7 +73,7 @@ class RecommendersEvaluator(object):
 
             print("calculating metrics...")
             evaluate_time_start = time.time()
-            evaluation_result = evaluate_recommender(recommender, test,
+            evaluation_result = evaluate_recommender(recommender, self.test,
                                                      self.metrics, self.out_dir,
                                                      recommender_name, self.features_from_test)
             evaluate_time_end = time.time()
@@ -112,8 +119,15 @@ def run_experiment(config):
         print("actions in dataset: {}".format(len(actions)))
         item_id_set = set([action.item_id for action in actions])
         user_id_set = set([action.user_id for action in actions])
+
+        if hasattr(config, 'N_VAL_USERS'):
+            n_val_users = config.N_VAL_USERS
+        else:
+            n_val_users = len(user_id_set) // 10
+
         print("number of items in the dataset: {}".format(len(item_id_set)))
         print("number of users in the dataset: {}".format(len(user_id_set)))
+        print("number of val_users: {}".format(n_val_users))
         print("evaluating...")
 
         data_splitter = get_data_splitter(config)
@@ -123,6 +137,7 @@ def run_experiment(config):
                                      config.METRICS,
                                      config.out_dir,
                                      data_splitter,
+                                     n_val_users,
                                      callbacks)
         if  hasattr(config, 'FEATURES_FROM_TEST'):
             recommender_evaluator.set_features_from_test(config.FEATURES_FROM_TEST)

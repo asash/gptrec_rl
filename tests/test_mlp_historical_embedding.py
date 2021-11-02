@@ -8,8 +8,11 @@ USER_ID = '120'
 
 class TestMLPHistoricalEmbeddingRecommender(unittest.TestCase):
     def test_mlp_recommender(self):
-        mlp_recommender = GreedyMLPHistoricalEmbedding(train_epochs=10, n_val_users=10, early_stop_epochs=5,
+
+        val_users = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
+        mlp_recommender = GreedyMLPHistoricalEmbedding(train_epochs=10, early_stop_epochs=5,
                                                        batch_size=5)
+        mlp_recommender.set_val_users(val_users)
         recommender = FilterSeenRecommender(mlp_recommender)
         for action in generator_limit(get_movielens_actions(), 10000):
             recommender.add_action(action)

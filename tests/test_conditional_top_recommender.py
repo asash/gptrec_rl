@@ -2,9 +2,7 @@ import unittest
 
 from typing import List
 from aprec.api.action import Action
-from aprec.datasets.movielens import get_movielens_actions, get_movies_catalog
 from aprec.recommenders.conditional_top_recommender import ConditionalTopRecommender
-from aprec.utils.generator_limit import generator_limit
 
 
 class TestTopRecommender(unittest.TestCase):

@@ -1,6 +1,6 @@
 import tempfile
 
-from aprec.datasets.movielens import get_movielens_actions, get_movies_catalog
+from aprec.datasets.movielens import get_movielens_actions
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.utils.generator_limit import generator_limit

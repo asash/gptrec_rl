@@ -20,7 +20,7 @@ import numpy as np
 
 
 class SalrecRecommender(Recommender):
-    def __init__(self, train_epochs=300, n_val_users=1000,
+    def __init__(self, train_epochs=300,
                  max_history_len=1000,
                  loss='binary_crossentropy',
                  output_layer_activation='sigmoid',
@@ -40,7 +40,6 @@ class SalrecRecommender(Recommender):
         self.matrix = None
         self.mean_user = None
         self.train_epochs = train_epochs
-        self.n_val_users = n_val_users
         self.max_history_length = max_history_len
         self.loss = loss
         self.early_stop_epochs = early_stop_epochs
@@ -52,6 +51,7 @@ class SalrecRecommender(Recommender):
         self.output_layer_activation = output_layer_activation
         self.target_decay = target_decay
         self.num_blocks = num_blocks
+        self.val_users = None
 
     def get_metadata(self):
         return self.metadata
@@ -73,20 +73,13 @@ class SalrecRecommender(Recommender):
             result.append(self.user_actions[user_id])
         return result
 
-    def split_users(self):
-        all_user_ids = list(range(0, self.users.size()))
-        random.shuffle(all_user_ids)
-        val_users = self.user_actions_by_id_list(all_user_ids[:self.n_val_users])
-        train_users = self.user_actions_by_id_list(all_user_ids[self.n_val_users:])
-        return train_users, val_users
-
     def sort_actions(self):
         for user_id in self.user_actions:
             self.user_actions[user_id].sort()
 
     def rebuild_model(self):
         self.sort_actions()
-        train_users, val_users = self.split_users()
+        train_users, val_users = self.train_val_split()
         print("train_users: {}, val_users:{}, items:{}".format(len(train_users), len(val_users), self.items.size()))
         val_generator = HistoryBatchGenerator(val_users, self.max_history_length, self.items.size(),
                                               batch_size=self.batch_size, validation=True,
@@ -214,4 +207,10 @@ class SalrecRecommender(Recommender):
     def from_str(self):
         raise (NotImplementedError)
 
-
+    def train_val_split(self):
+        all_user_ids = set(range(0, self.users.size()))
+        val_user_ids = [self.users.get_id(val_user) for val_user in self.val_users]
+        train_user_ids = list(all_user_ids - set(val_user_ids))
+        val_users = self.user_actions_by_id_list(val_user_ids)
+        train_users = self.user_actions_by_id_list(train_user_ids)
+        return train_users, val_users

@@ -25,3 +25,6 @@ class Recommender():
 
     def get_metadata(self):
         return {}
+
+    def set_val_users(self, val_users):
+        self.val_users = val_users

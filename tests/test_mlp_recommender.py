@@ -2,7 +2,6 @@ from aprec.recommenders.mlp import GreedyMLP
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.datasets.movielens import get_movielens_actions, get_movies_catalog
 from aprec.utils.generator_limit import generator_limit
-from aprec.api.action import Action
 import unittest
 
 USER_ID = '120' 

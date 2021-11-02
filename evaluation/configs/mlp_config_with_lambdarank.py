@@ -12,8 +12,11 @@ from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.lightfm import LightFMRecommender
 from tensorflow.keras.optimizers import Adam
 
-DATASET = [action for action in get_movielens_actions(min_rating=0.0)]
-USERS_FRACTIONS = [0.1]
+from aprec.utils.generator_limit import generator_limit
+
+DATASET = [action for action in generator_limit(get_movielens_actions(), 1000000)]
+N_VAL_USERS=1000
+USERS_FRACTIONS = [1.0]
 
 
 def top_recommender():
@@ -26,7 +29,6 @@ def mlp_historical_embedding(loss, activation_override=None):
     return FilterSeenRecommender(GreedyMLPHistoricalEmbedding(train_epochs=10000, loss=loss,
                                                               optimizer=Adam(), early_stop_epochs=100,
                                                               batch_size=150, sigma=1.0, ndcg_at=40,
-                                                              n_val_users=600,
                                                               bottleneck_size=64,
                                                               output_layer_activation=activation))
 def lightfm_recommender(k, loss):

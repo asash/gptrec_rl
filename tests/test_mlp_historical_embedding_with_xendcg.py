@@ -9,16 +9,14 @@ USER_ID = '120'
 
 class TestMLPRecommenderWithXENDCG(unittest.TestCase):
     def test_mlp_recommender_with_xendcg(self):
-        val_users = 10
+        val_users = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
         batch_size = 10
-        mlp_recommender = GreedyMLPHistoricalEmbedding(train_epochs=10, n_val_users=val_users,
+        mlp_recommender = GreedyMLPHistoricalEmbedding(train_epochs=10,
                                                        batch_size=batch_size, loss='xendcg')
+        mlp_recommender.set_val_users(val_users)
         recommender = FilterSeenRecommender(mlp_recommender)
         for action in generator_limit(get_movielens_actions(), 10000):
             recommender.add_action(action)
-        batch_size = mlp_recommender.batch_size
-        n_items = mlp_recommender.items.size()
-        n_users = mlp_recommender.users.size()
         recommender.rebuild_model()
         recs = recommender.get_next_items(USER_ID, 10)
         print(recs)

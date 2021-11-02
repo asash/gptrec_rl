@@ -4,7 +4,6 @@ from math import sin, cos
 
 def generate_actions(n):
     max_users = n / 3
-    max_items = n / 3
     max_timestamp = n / 2
     result = []
     actions_set = set() 
