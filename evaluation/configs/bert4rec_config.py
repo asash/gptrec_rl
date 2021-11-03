@@ -81,7 +81,7 @@ def salrec(loss, activation_override=None):
                                                    optimizer=Adam(), early_stop_epochs=100,
                                                    batch_size=64, sigma=1.0, ndcg_at=40,
                                                    output_layer_activation=activation,
-                                                   num_blocks=2
+                                                   num_blocks=5
                                                    ))
 
 def mlp_historical_embedding(loss, activation_override=None):
