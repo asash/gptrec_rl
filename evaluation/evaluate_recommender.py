@@ -38,11 +38,11 @@ def evaluate_recommender(recommender, test_actions,
 
 
     print("generating predictions...")
-    all_predictions = list(tqdm(map(get_predictions, requests), total=len(all_user_ids)))
+    all_predictions = list(tqdm(map(get_predictions, requests), total=len(all_user_ids), ascii=True))
 
     print('calculating metrics...')
     user_docs = []
-    for i in tqdm(range(len(all_user_ids))):
+    for i in tqdm(range(len(all_user_ids)), ascii=True):
         user_id = all_user_ids[i]
         predictions = all_predictions[i]
         user_test_actions = test_actions_by_user[user_id]

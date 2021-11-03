@@ -73,7 +73,7 @@ class BookingHistoryBatchGenerator(Sequence):
         if not(self.validation):
             print('building candidates generator...')
             self.candidates_recommender = BookingCandidatesRecommender()
-            for i in tqdm(range(len(self.user_actions))):
+            for i in tqdm(range(len(self.user_actions)), ascii=True):
                 if i not in users_to_train:
                     for _, action in self.user_actions[i]:
                         self.candidates_recommender.add_action(action)
@@ -115,7 +115,7 @@ class BookingHistoryBatchGenerator(Sequence):
                                                    self.n_candidates,
                                                    self.city_country_mapping)
         result = []
-        for trip in tqdm(user_actions):
+        for trip in tqdm(user_actions, ascii=True):
             actions = [item[1] for item in trip]
             result.append(candidates_generator(actions))
 

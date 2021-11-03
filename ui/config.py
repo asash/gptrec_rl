@@ -10,7 +10,7 @@ actions = get_movielens_actions(1.0)
 recommender = FilterSeenRecommender(GreedyMLPHistorical(train_epochs=300))
 
 cnt = 0
-for action in tqdm(actions):
+for action in tqdm(actions, ascii=True):
     recommender.add_action(action)
     cnt += 1
 

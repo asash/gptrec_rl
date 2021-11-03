@@ -62,7 +62,7 @@ class RecommendersEvaluator(object):
             print("evaluating {}".format(recommender_name))
             recommender = self.recommenders[recommender_name]()
             print("adding train actions...")
-            for action in tqdm(self.train):
+            for action in tqdm(self.train, ascii=True):
                 recommender.add_action(action)
             recommender.set_val_users(self.val_user_ids)
             print("rebuilding model...")
