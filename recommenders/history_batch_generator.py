@@ -24,6 +24,7 @@ class HistoryBatchGenerator(Sequence):
 
 
     def reset(self):
+        random.shuffle(self.user_actions)
         history, target = self.split_actions(self.user_actions)
         self.features_matrix = self.matrix_for_embedding(history, self.history_size, self.n_items)
         if self.return_positions:
