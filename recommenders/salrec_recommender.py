@@ -141,7 +141,7 @@ class SalrecRecommender(Recommender):
              x = self.block(x)
         x = tf.math.reduce_mean(x, axis=-1)
         x = layers.Dense(256, name="bottleneck", activation='swish')(x)
-        x = layers.Dropout(0.3, name="dropout")(x)
+        x = layers.Dropout(0.5, name="dropout")(x)
         x = layers.Dense(256, name="bottleneck_after_dropout", activation='swish')(x)
         output = layers.Dense(n_items, name="output", activation=self.output_layer_activation)(x)
         model = keras.Model(inputs = [input, direct_pos_input, reverse_pos_input], outputs=output)
