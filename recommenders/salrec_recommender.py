@@ -61,7 +61,7 @@ class SalrecRecommender(Recommender):
         self.loss = loss
 
     def name(self):
-        return "GreedyMLPHistoricalEmbedding"
+        return "SalRec"
 
     def add_action(self, action):
         user_id_internal = self.users.get_id(action.user_id)
@@ -84,7 +84,7 @@ class SalrecRecommender(Recommender):
         print("train_users: {}, val_users:{}, items:{}".format(len(train_users), len(val_users), self.items.size()))
         val_generator = HistoryBatchGenerator(val_users, self.max_history_length, self.items.size(),
                                               batch_size=self.batch_size, validation=True,
-                                              target_decay=self.target_decay, return_positions=True)
+                                              target_decay=self.target_decay, return_reverse_positions=True)
         self.model = self.get_model(self.items.size())
         best_ndcg = 0
         steps_since_improved = 0
@@ -96,7 +96,7 @@ class SalrecRecommender(Recommender):
             val_generator.reset()
             generator = HistoryBatchGenerator(train_users, self.max_history_length, self.items.size(),
                                               batch_size=self.batch_size, target_decay=self.target_decay,
-                                              return_positions=True)
+                                              return_reverse_positions=True)
             print(f"epoch: {epoch}")
             train_history = self.model.fit(generator, validation_data=val_generator)
             total_trainig_time = time.time() - start_time
@@ -124,14 +124,9 @@ class SalrecRecommender(Recommender):
     def get_model(self, n_items):
         embedding_size = 64
 
-        direct_pos_input = layers.Input(shape=(self.max_history_length))
-        direct_pos_embedding = layers.Embedding(self.max_history_length +1, embedding_size // 2)(direct_pos_input)
-
         reverse_pos_input = layers.Input(shape=(self.max_history_length))
         reverse_pos_embedding = layers.Embedding(self.max_history_length +1, embedding_size // 2)(reverse_pos_input)
-
-        position_embedding = layers.Concatenate()([direct_pos_embedding, reverse_pos_embedding])
-        position_embedding = layers.Convolution1D(embedding_size, 1)(position_embedding)
+        position_embedding = layers.Convolution1D(embedding_size, 1)(reverse_pos_embedding)
 
         input = layers.Input(shape=(self.max_history_length))
         x = layers.Embedding(n_items + 1, embedding_size)(input)
@@ -144,7 +139,7 @@ class SalrecRecommender(Recommender):
         x = layers.Dropout(0.5, name="dropout")(x)
         x = layers.Dense(256, name="bottleneck_after_dropout", activation='swish')(x)
         output = layers.Dense(n_items, name="output", activation=self.output_layer_activation)(x)
-        model = keras.Model(inputs = [input, direct_pos_input, reverse_pos_input], outputs=output)
+        model = keras.Model(inputs = [input, reverse_pos_input], outputs=output)
         # model = keras.Model(inputs = [input], outputs=output)
         ndcg_metric = KerasNDCG(self.ndcg_at)
         loss = self.loss
@@ -177,12 +172,11 @@ class SalrecRecommender(Recommender):
     def get_model_predictions(self, items_list, limit):
         actions = [(0, action) for action in items_list]
         vector = actions_to_vector(actions, self.max_history_length, self.items.size())
-        direct_pos = np.array(direct_positions(len(items_list), self.max_history_length))\
-            .reshape(1, self.max_history_length)
+
         reverse_pos = np.array(reverse_positions(len(items_list), self.max_history_length)) \
             .reshape(1, self.max_history_length)
 
-        scores = self.model.predict([vector.reshape(1, self.max_history_length), direct_pos, reverse_pos])[0]
+        scores = self.model.predict([vector.reshape(1, self.max_history_length), reverse_pos])[0]
         best_ids = np.argsort(scores)[::-1][:limit]
         result = [(self.items.reverse_id(id), scores[id]) for id in best_ids]
         return result

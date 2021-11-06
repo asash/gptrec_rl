@@ -9,7 +9,7 @@ from tensorflow.python.keras.utils.data_utils import Sequence
 
 class HistoryBatchGenerator(Sequence):
     def __init__(self, user_actions, history_size, n_items, batch_size=1000, validation=False, target_decay=0.8,
-                min_target_val=0.1, return_positions=False):
+                min_target_val=0.1, return_drect_positions=False, return_reverse_positions=False):
         self.user_actions = user_actions
         self.history_size= history_size
         self.n_items = n_items
@@ -19,7 +19,8 @@ class HistoryBatchGenerator(Sequence):
         self.validation = validation
         self.target_decay = target_decay
         self.min_target_val = min_target_val
-        self.return_positions = return_positions
+        self.return_direct_positions = return_drect_positions
+        self.return_reverse_positions = return_reverse_positions
         self.reset()
 
 
@@ -27,7 +28,7 @@ class HistoryBatchGenerator(Sequence):
         random.shuffle(self.user_actions)
         history, target = self.split_actions(self.user_actions)
         self.features_matrix = self.matrix_for_embedding(history, self.history_size, self.n_items)
-        if self.return_positions:
+        if self.return_direct_positions or self.return_reverse_positions:
             self.direct_position, self.reverse_position = self.positions(history, self.history_size)
 
         self.target_matrix = self.get_target_matrix(target, self.n_items)
@@ -96,10 +97,11 @@ class HistoryBatchGenerator(Sequence):
         history = self.features_matrix[start:end]
         model_inputs = [history]
         target = self.target_matrix[start:end].todense()
-        if self.return_positions:
+        if self.return_direct_positions:
             direct_pos = self.direct_position[start:end]
-            reverse_pos = self.reverse_position[start:end]
             model_inputs.append(direct_pos)
+        if self.return_reverse_positions:
+            reverse_pos = self.reverse_position[start:end]
             model_inputs.append(reverse_pos)
         return model_inputs, target
 
