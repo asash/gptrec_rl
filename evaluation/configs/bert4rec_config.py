@@ -116,8 +116,8 @@ def constant_recommender():
 RECOMMENDERS = {
     "top_recommender": top_recommender,
     "svd_recommender_30": lambda: svd_recommender(30),
-    "vanilla_bert4rec-400000": lambda: vanilla_bert4rec(400000),
     "Salrec-Lambdarank": lambda: salrec('lambdarank'),
+    "vanilla_bert4rec-400000": lambda: vanilla_bert4rec(400000),
     "Salrec-BCE": lambda: salrec('binary_crossentropy'),
     "Salrec-BPR": lambda: salrec('bpr', 'linear'),
     "constant_recommender": constant_recommender,
