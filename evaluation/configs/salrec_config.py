@@ -1,6 +1,6 @@
-from aprec.datasets.movielens import get_movielens_actions, filter_popular_items
+from aprec.datasets.movielens import get_movielens_actions
 from aprec.recommenders.top_recommender import TopRecommender
-from aprec.recommenders.salrec_recommender import SalrecRecommender
+from aprec.recommenders.salrec.salrec_recommender import SalrecRecommender
 from aprec.recommenders.mlp_historical_embedding import GreedyMLPHistoricalEmbedding
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.evaluation.metrics.precision import Precision
@@ -24,7 +24,7 @@ def mlp_historical_embedding(loss, activation_override=None):
     activation = 'linear' if loss == 'lambdarank' else 'sigmoid'
     if activation_override is not None:
         activation = activation_override
-    return FilterSeenRecommender(GreedyMLPHistoricalEmbedding(train_epochs=10000, loss=loss,
+    return FilterSeenRecommender(GreedyMLPHistoricalEmbedding(train_epochs=10, loss=loss,
                                                               optimizer=Adam(), early_stop_epochs=100,
                                                               batch_size=150, sigma=1.0, ndcg_at=40,
                                                               bottleneck_size=64,
@@ -50,7 +50,7 @@ RECOMMENDERS = {
     "top_recommender": top_recommender,
     "svd_recommender_30": lambda: svd_recommender(30),
     "Salrec-Lambdarank": lambda: salrec('lambdarank'),
-    "APREC-GMLPHE-Lambdarank": lambda: mlp_historical_embedding('lambdarank'),
+#    "APREC-GMLPHE-Lambdarank": lambda: mlp_historical_embedding('lambdarank'),
     "lightfm_30_WARP": lambda: lightfm_recommender(30, 'warp'),
     "lightfm_30_BPR": lambda: lightfm_recommender(30, 'bpr'),
 
