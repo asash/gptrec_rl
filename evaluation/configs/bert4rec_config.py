@@ -21,15 +21,6 @@ DATASET = get_movielens_actions(min_rating=1.0)
 
 USERS_FRACTIONS = [1.]
 
-def top_recommender():
-    return FilterSeenRecommender(TopRecommender())
-
-def svd_recommender(k):
-    return FilterSeenRecommender(SvdRecommender(k))
-
-def lightfm_recommender(k, loss):
-    return FilterSeenRecommender(LightFMRecommender(k, loss))
-
 def vanilla_bert4rec(num_steps):
     max_seq_length = 50
     masked_lm_prob = 0.2
@@ -73,59 +64,16 @@ def vanilla_bert4rec(num_steps):
                                   learning_rate=learning_rate)
     return FilterSeenRecommender(recommender)
 
-def salrec(loss, activation_override=None):
-    activation = 'linear' if loss == 'lambdarank' else 'sigmoid'
-    if activation_override is not None:
-        activation = activation_override
-    return FilterSeenRecommender(SalrecRecommender(train_epochs=10000, loss=loss,
-                                                   optimizer=Adam(), early_stop_epochs=100,
-                                                   batch_size=64, sigma=1.0, ndcg_at=40,
-                                                   max_history_len=50,
-                                                   output_layer_activation=activation,
-                                                   num_blocks=2
-                                                   ))
-
-def mlp_historical_embedding(loss, activation_override=None):
-    activation = 'linear' if loss == 'lambdarank' else 'sigmoid'
-    if activation_override is not None:
-        activation = activation_override
-    return FilterSeenRecommender(GreedyMLPHistoricalEmbedding(train_epochs=10000, loss=loss,
-                                                              optimizer=Adam(), early_stop_epochs=100,
-                                                              batch_size=150, sigma=1.0, ndcg_at=40,
-                                                              bottleneck_size=64,
-                                                              max_history_len=50,
-                                                              output_layer_activation=activation, target_decay=0.8))
-
-def constant_recommender():
-    return ConstantRecommender([('457', 0.45),
-                                ('380', 0.414),
-                                ('110', 0.413),
-                                ('292', 0.365),
-                                ('296', 0.323),
-                                ('595', 0.313),
-                                ('588', 0.312),
-                                ('592', 0.293),
-                                ('440', 0.286),
-                                ('357', 0.286),
-                                ('434', 0.280),
-                                ('593', 0.280),
-                                ('733', 0.276),
-                                ('553', 0.257),
-                                ('253', 0.257)])
-
 RECOMMENDERS = {
-    "top_recommender": top_recommender,
-    "svd_recommender_30": lambda: svd_recommender(30),
-    "Salrec-BCE": lambda: salrec('binary_crossentropy'),
-    "Salrec-Lambdarank": lambda: salrec('lambdarank'),
+    "vanilla_bert4rec-25000": lambda: vanilla_bert4rec(25000),
+    "vanilla_bert4rec-50000": lambda: vanilla_bert4rec(50000),
+    "vanilla_bert4rec-100000": lambda: vanilla_bert4rec(100000),
+    "vanilla_bert4rec-200000": lambda: vanilla_bert4rec(200000),
     "vanilla_bert4rec-400000": lambda: vanilla_bert4rec(400000),
-    "Salrec-BPR": lambda: salrec('bpr', 'linear'),
-    "constant_recommender": constant_recommender,
-    "APREC-GMLPHE-Lambdarank": lambda: mlp_historical_embedding('lambdarank'),
-    "APREC-GMLPHE-BCE": lambda: mlp_historical_embedding('binary_crossentropy'),
-    "APREC-GMLPHE-BPR": lambda: mlp_historical_embedding('bpr', 'linear'),
-    "vanilla_bert4rec-2000000": lambda: vanilla_bert4rec(2000000),
-    "lightfm_recommender_30_warp": lambda: lightfm_recommender(30, 'warp'),
+    "vanilla_bert4rec-800000": lambda: vanilla_bert4rec(800000),
+    "vanilla_bert4rec-1600000": lambda: vanilla_bert4rec(1600000),
+    "vanilla_bert4rec-3200000": lambda: vanilla_bert4rec(3200000),
+    "vanilla_bert4rec-6400000": lambda: vanilla_bert4rec(6400000),
 }
 
 FRACTION_TO_SPLIT = 0.85
