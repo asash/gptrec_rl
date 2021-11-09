@@ -31,7 +31,7 @@ def lightfm_recommender(k, loss):
     return FilterSeenRecommender(LightFMRecommender(k, loss))
 
 def vanilla_bert4rec(num_steps):
-    max_seq_length = 200
+    max_seq_length = 50
     masked_lm_prob = 0.2
     max_predictions_per_seq = 20
     batch_size = 256
@@ -80,7 +80,7 @@ def salrec(loss, activation_override=None):
     return FilterSeenRecommender(SalrecRecommender(train_epochs=10000, loss=loss,
                                                    optimizer=Adam(), early_stop_epochs=100,
                                                    batch_size=64, sigma=1.0, ndcg_at=40,
-                                                   max_history_len=200,
+                                                   max_history_len=50,
                                                    output_layer_activation=activation,
                                                    num_blocks=2
                                                    ))
@@ -93,7 +93,7 @@ def mlp_historical_embedding(loss, activation_override=None):
                                                               optimizer=Adam(), early_stop_epochs=100,
                                                               batch_size=150, sigma=1.0, ndcg_at=40,
                                                               bottleneck_size=64,
-                                                              max_history_len=200,
+                                                              max_history_len=50,
                                                               output_layer_activation=activation, target_decay=0.8))
 
 def constant_recommender():
