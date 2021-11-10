@@ -27,44 +27,33 @@ def svd_recommender(k):
 def lightfm_recommender(k, loss):
     return FilterSeenRecommender(LightFMRecommender(k, loss))
 
-def constant_recommender():
-    return ConstantRecommender([('457', 0.45),
-                               ('380', 0.414),
-                               ('110', 0.413),
-                               ('292', 0.365),
-                               ('296', 0.323),
-                               ('595', 0.313), 
-                               ('588', 0.312), 
-                               ('592', 0.293),
-                               ('440', 0.286),
-                               ('357', 0.286),
-                               ('434', 0.280),
-                               ('593', 0.280),
-                               ('733', 0.276),
-                               ('553', 0.257),
-                               ('253', 0.257)])
-
 RECOMMENDERS = {
     "top_recommender": top_recommender, 
 #    "svd_recommender_10": lambda: svd_recommender(10), 
 #    "svd_recommender_20": lambda: svd_recommender(20), 
-    "svd_recommender_30": lambda: svd_recommender(30),
-    "lightfm_recommender_30_bpr": lambda: lightfm_recommender(30, 'bpr'),
-    "lightfm_recommender_30_warp": lambda: lightfm_recommender(30, 'warp'),
-    "lightfm_recommender_30_warp_kos": lambda: lightfm_recommender(30, 'warp-kos'),
-    "lightfm_recommender_100_bpr": lambda: lightfm_recommender(100, 'bpr'),
-    "lightfm_recommender_100_warp": lambda: lightfm_recommender(100, 'warp'),
-    "lightfm_recommender_100_warp_kos": lambda: lightfm_recommender(100, 'warp-kos'),
-    "constant_recommender": constant_recommender,
+    "svd_recommender_30": lambda: svd_recommender(2),
+    "svd_recommender_30": lambda: svd_recommender(4),
+    "svd_recommender_30": lambda: svd_recommender(8),
+    "svd_recommender_30": lambda: svd_recommender(16),
+    "svd_recommender_30": lambda: svd_recommender(32),
+    "svd_recommender_30": lambda: svd_recommender(64),
+    "svd_recommender_30": lambda: svd_recommender(128),
+    "svd_recommender_30": lambda: svd_recommender(256),
+#    "lightfm_recommender_30_bpr": lambda: lightfm_recommender(30, 'bpr'),
+#    "lightfm_recommender_30_warp": lambda: lightfm_recommender(30, 'warp'),
+#    "lightfm_recommender_30_warp_kos": lambda: lightfm_recommender(30, 'warp-kos'),
+#    "lightfm_recommender_100_bpr": lambda: lightfm_recommender(100, 'bpr'),
+#    "lightfm_recommender_100_warp": lambda: lightfm_recommender(100, 'warp'),
+#    "lightfm_recommender_100_warp_kos": lambda: lightfm_recommender(100, 'warp-kos'),
 }
 
 FRACTION_TO_SPLIT = 0.85
 
 dataset_for_metric = [action for action in get_movielens_actions(min_rating=1.0)]
-METRICS = [Precision(5), NDCG(40), Recall(5), SPS(10), MRR(), MAP(10), AveragePopularityRank(5, dataset_for_metric),
-           PairwiseCosSim(dataset_for_metric, 10)]
+METRICS = [Recall(10), Recall(20), Recall(30), Recall(100), Recall(200), Recall(300), Recall(500), Recall(1000), Recall(2000), Recall(3000)]
 del(dataset_for_metric)
 
 
+RECOMMENDATIONS_LIMIT = 3000
 SPLIT_STRATEGY = "LEAVE_ONE_OUT"
 

@@ -36,7 +36,7 @@ def config():
 
 
 class RecommendersEvaluator(object):
-    def __init__(self, actions, recommenders, metrics, out_dir, data_splitter,  n_val_users, callbacks=()):
+    def __init__(self, actions, recommenders, metrics, out_dir, data_splitter,  n_val_users, recommendations_limit, callbacks=()):
         self.actions = actions
         self.metrics = metrics
         self.recommenders = recommenders
@@ -49,6 +49,7 @@ class RecommendersEvaluator(object):
         self.save_split(self.train, self.test)
         self.test = filter_cold_start(self.train, self.test)
         all_train_user_ids = list(set([action.user_id for action in self.train]))
+        self.recommendations_limit = recommendations_limit
         random.shuffle(all_train_user_ids)
         self.val_user_ids = all_train_user_ids[:self.n_val_users]
 
@@ -75,7 +76,8 @@ class RecommendersEvaluator(object):
             evaluate_time_start = time.time()
             evaluation_result = evaluate_recommender(recommender, self.test,
                                                      self.metrics, self.out_dir,
-                                                     recommender_name, self.features_from_test)
+                                                     recommender_name, self.features_from_test, 
+                                                     recommendations_limit=self.recommendations_limit)
             evaluate_time_end = time.time()
             print("calculating metrics...")
             evaluation_result['model_build_time'] =  build_time_end - build_time_start
@@ -125,6 +127,11 @@ def run_experiment(config):
         else:
             n_val_users = len(user_id_set) // 10
 
+        if hasattr(config, 'RECOMMENDATIONS_LIMIT'):
+            recommendations_limit = config.RECOMMENDATIONS_LIMIT
+        else:
+            recommendations_limit = 900
+
         print("number of items in the dataset: {}".format(len(item_id_set)))
         print("number of users in the dataset: {}".format(len(user_id_set)))
         print("number of val_users: {}".format(n_val_users))
@@ -138,6 +145,7 @@ def run_experiment(config):
                                      config.out_dir,
                                      data_splitter,
                                      n_val_users,
+                                     recommendations_limit,
                                      callbacks)
         if  hasattr(config, 'FEATURES_FROM_TEST'):
             recommender_evaluator.set_features_from_test(config.FEATURES_FROM_TEST)
