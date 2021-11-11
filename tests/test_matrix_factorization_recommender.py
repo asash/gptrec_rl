@@ -8,7 +8,7 @@ USER_ID = '120'
 
 class TestMatrixFactorizationRecommender(unittest.TestCase):
     def test_matrix_factorization_recommender_recommender(self):
-        matrix_factorization_recommender = MatrixFactorizationRecommender(32, 30, 'binary_crossentropy', 64)
+        matrix_factorization_recommender = MatrixFactorizationRecommender(32, 5, 'lambdarank', batch_size=10)
         recommender = FilterSeenRecommender(matrix_factorization_recommender)
         for action in generator_limit(get_movielens_actions(), 10000):
             recommender.add_action(action)
