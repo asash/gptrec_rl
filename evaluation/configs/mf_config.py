@@ -17,7 +17,7 @@ from aprec.evaluation.metrics.sps import SPS
 
 DATASET = get_movielens_actions(min_rating=1.0)
 
-USERS_FRACTIONS = [1]
+USERS_FRACTIONS = [.1]
 
 def top_recommender():
     return FilterSeenRecommender(TopRecommender())
@@ -52,5 +52,5 @@ METRICS = [Precision(5), NDCG(40), Recall(5), SPS(10), MRR(), MAP(10)]
 
 
 RECOMMENDATIONS_LIMIT = 100
-SPLIT_STRATEGY = "LEAVE_ONE_OUT"
+SPLIT_STRATEGY = "TEMPORAL_GLOBAL"
 
