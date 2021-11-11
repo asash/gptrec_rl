@@ -57,12 +57,13 @@ class MatrixFactorizationRecommender(Recommender):
             self.model.fit(data_generator)
 
     def get_next_items(self, user_id, limit, features=None):
-        model_input = np.array([[self.users.get_id(user_id)]])
-        predictions = tf.nn.top_k(self.model.predict(model_input), limit)
-        result = []
-        for item_id, score in zip(predictions.indices[0], predictions.values[0]):
-            result.append((self.items.reverse_id(int(item_id)), float(score)))
-        return result
+       with tf.device('/cpu:0'):
+            model_input = np.array([[self.users.get_id(user_id)]])
+            predictions = tf.nn.top_k(self.model.predict(model_input), limit)
+            result = []
+            for item_id, score in zip(predictions.indices[0], predictions.values[0]):
+                result.append((self.items.reverse_id(int(item_id)), float(score)))
+            return result
 
     def get_lambdarank_loss(self):
         return LambdaRankLoss(self.items.size(), self.batch_size)
@@ -103,5 +104,10 @@ class DataGenerator(Sequence):
             users.append([self.users[i]])
             targets.append(self.full_matrix[self.users[i]].todense())
         users = np.array(users)
+<<<<<<< HEAD
         targets = np.reshape(np.array(targets), (self.batch_size, self.full_matrix.shape[1]))
         return users, targets
+=======
+        targets = np.array(targets)
+        return users, targets
+>>>>>>> cpu inference in mf
