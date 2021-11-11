@@ -34,7 +34,7 @@ for split_fraction in data:
         experiment_docs.append(recommender)
 
     df = pd.DataFrame(experiment_docs)
-    df = df.sort_values("ndcg@10")
+    df = df.sort_values("ndcg@40")
     df = df.set_index('name')
     print(df)
         
