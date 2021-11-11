@@ -14,11 +14,12 @@ from aprec.utils.item_id import ItemId
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Embedding
 from tensorflow.keras.optimizers import Adam
+from keras.regularizers import l2
 import tensorflow as tf
 
 
 class MatrixFactorizationRecommender(Recommender):
-    def __init__(self, embedding_size, num_epochs, loss, batch_size):
+    def __init__(self, embedding_size, num_epochs, loss, batch_size, regularization=0.01):
         self.users = ItemId()
         self.items = ItemId()
         self.user_actions = defaultdict(list)
@@ -28,6 +29,7 @@ class MatrixFactorizationRecommender(Recommender):
         self.batch_size = batch_size
         self.sigma = 1.0
         self.ndcg_at=40
+        self.regularization=regularization
 
     def add_action(self, action):
         self.user_actions[self.users.get_id(action.user_id)].append(self.items.get_id(action.item_id))
@@ -46,9 +48,9 @@ class MatrixFactorizationRecommender(Recommender):
             loss = self.get_bpr_loss()
 
         self.model = Sequential()
-        self.model.add(Embedding(self.users.size(), self.embedding_size+1, input_length=1))
+        self.model.add(Embedding(self.users.size(), self.embedding_size+1, input_length=1, embeddings_regularizer=l2(self.regularization)))
         self.model.add(Flatten())
-        self.model.add(Dense(self.items.size()))
+        self.model.add(Dense(self.items.size(), kernel_regularizer=l2(self.regularization), bias_regularizer=l2(self.regularization)))
         self.model.compile(optimizer=Adam(), loss=loss)
         data_generator = DataGenerator(self.user_actions, self.users.size(), self.items.size(), self.batch_size)
         for epoch in range(self.num_epochs):
