@@ -17,7 +17,7 @@ from aprec.evaluation.metrics.sps import SPS
 
 DATASET = get_movielens_actions(min_rating=1.0)
 
-USERS_FRACTIONS = [.1]
+USERS_FRACTIONS = [1]
 
 def top_recommender():
     return FilterSeenRecommender(TopRecommender())
