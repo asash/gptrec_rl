@@ -33,7 +33,10 @@ def lightfm_recommender(k, loss):
 
 RECOMMENDERS = {
     "top_recommender": top_recommender, 
+    "mf_32_30_lambdarank": lambda: mf_recommender(32, 30, 'lambdarank', 64),
+    "mf_32_30_bpr": lambda: mf_recommender(32, 30, 'bpr', 64),
     "mf_32_30_bce": lambda: mf_recommender(32, 30, 'binary_crossentropy', 64),
+    "mf_32_30_xendcg": lambda: mf_recommender(32, 30, 'xendcg', 64),
     "svd_recommender_32": lambda: svd_recommender(32),
     "lightfm_recommender_30_bpr": lambda: lightfm_recommender(30, 'bpr'),
 #    "lightfm_recommender_30_warp": lambda: lightfm_recommender(30, 'warp'),
