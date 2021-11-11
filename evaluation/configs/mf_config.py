@@ -45,7 +45,7 @@ RECOMMENDERS = {
 
 FRACTION_TO_SPLIT = 0.85
 
-METRICS = [Precision(10), Recall(10), NDCG(10)]
+METRICS = [Precision(5), NDCG(40), Recall(5), SPS(10), MRR(), MAP(10)]
 
 
 RECOMMENDATIONS_LIMIT = 100

@@ -104,10 +104,6 @@ class DataGenerator(Sequence):
             users.append([self.users[i]])
             targets.append(self.full_matrix[self.users[i]].todense())
         users = np.array(users)
-<<<<<<< HEAD
         targets = np.reshape(np.array(targets), (self.batch_size, self.full_matrix.shape[1]))
         return users, targets
-=======
-        targets = np.array(targets)
-        return users, targets
->>>>>>> cpu inference in mf
+
