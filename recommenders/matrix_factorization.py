@@ -19,7 +19,7 @@ import tensorflow as tf
 
 
 class MatrixFactorizationRecommender(Recommender):
-    def __init__(self, embedding_size, num_epochs, loss, batch_size, regularization=0.01):
+    def __init__(self, embedding_size, num_epochs, loss, batch_size, regularization=0.0):
         self.users = ItemId()
         self.items = ItemId()
         self.user_actions = defaultdict(list)

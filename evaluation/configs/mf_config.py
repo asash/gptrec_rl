@@ -35,6 +35,7 @@ RECOMMENDERS = {
     "top_recommender": top_recommender, 
     "mf_32_30_lambdarank": lambda: mf_recommender(32, 30, 'lambdarank', 64),
     "mf_32_30_bpr": lambda: mf_recommender(32, 30, 'bpr', 64),
+    "mf_32_30_mse": lambda: mf_recommender(32, 30, 'mean_squared_error', 64),
     "mf_32_30_bce": lambda: mf_recommender(32, 30, 'binary_crossentropy', 64),
     "mf_32_30_xendcg": lambda: mf_recommender(32, 30, 'xendcg', 64),
     "svd_recommender_32": lambda: svd_recommender(32),
@@ -46,7 +47,7 @@ RECOMMENDERS = {
 #    "lightfm_recommender_100_warp_kos": lambda: lightfm_recommender(100, 'warp-kos'),
 }
 
-FRACTION_TO_SPLIT = 0.85
+FRACTION_TO_SPLIT = 0.60
 
 METRICS = [Precision(5), NDCG(40), Recall(5), SPS(10), MRR(), MAP(10)]
 
