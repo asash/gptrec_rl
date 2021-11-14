@@ -1,4 +1,4 @@
-from aprec.datasets.movielens import get_movielens_actions
+from aprec.datasets.movielens20m import get_movielens20m_actions
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.constant_recommender import ConstantRecommender
@@ -10,7 +10,7 @@ from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.evaluation.metrics.sps import SPS
 
 
-DATASET = get_movielens_actions(min_rating=3.5)
+DATASET = get_movielens20m_actions(min_rating=3.5)
 USERS_FRACTION = 0.01 
 
 def top_recommender():

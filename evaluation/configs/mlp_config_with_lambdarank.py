@@ -1,4 +1,5 @@
-from aprec.datasets.movielens import get_movielens_actions, filter_popular_items
+from aprec.datasets.movielens20m import get_movielens20m_actions
+from datasets.dataset_utils import filter_popular_items
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.mlp_historical_embedding import GreedyMLPHistoricalEmbedding
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
@@ -14,7 +15,7 @@ from tensorflow.keras.optimizers import Adam
 
 from aprec.utils.generator_limit import generator_limit
 
-DATASET = [action for action in generator_limit(get_movielens_actions(), 1000000)]
+DATASET = [action for action in generator_limit(get_movielens20m_actions(), 1000000)]
 N_VAL_USERS=1000
 USERS_FRACTIONS = [1.0]
 

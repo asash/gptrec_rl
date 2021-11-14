@@ -1,5 +1,4 @@
 import os
-from collections import Counter
 
 import requests
 import logging
@@ -11,7 +10,7 @@ from aprec.api.catalog import Catalog
 
 DATASET_NAME = 'ml-20m'
 MOVIELENS_URL = "http://files.grouplens.org/datasets/movielens/{}.zip".format(DATASET_NAME)
-MOVIELENS_DIR = "data/movielens"
+MOVIELENS_DIR = "data/movielens20m"
 MOVIELENS_FILE = "movielens.zip"
 MOVIELENS_FILE_ABSPATH = os.path.join(get_dir(), MOVIELENS_DIR, MOVIELENS_FILE)
 MOVIELENS_DIR_ABSPATH = os.path.join(get_dir(), MOVIELENS_DIR)
@@ -47,7 +46,7 @@ def prepare_data():
     extract_movielens_dataset()
 
 
-def get_movielens_actions(min_rating=4.0):
+def get_movielens20m_actions(min_rating=4.0):
     prepare_data()
     with open(RATINGS_FILE, 'r') as data_file:
         header = True
@@ -61,14 +60,6 @@ def get_movielens_actions(min_rating=4.0):
                 if rating >= min_rating:
                     yield Action(user_id, movie_id, timestamp, {"rating": rating})
 
-def filter_popular_items(actions_generator, max_actions):
-    actions = []
-    items_counter = Counter()
-    for action in actions_generator:
-        actions.append(action)
-        items_counter[action.item_id] += 1
-    popular_items = set([item_id for (item_id, cnt) in items_counter.most_common(max_actions)])
-    return filter(lambda action: action.item_id in popular_items, actions)
 
 def get_movies_catalog():
     prepare_data()

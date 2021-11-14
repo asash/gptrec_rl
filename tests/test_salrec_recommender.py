@@ -1,6 +1,6 @@
-from recommenders.salrec.salrec_recommender import SalrecRecommender
+from aprec.recommenders.salrec.salrec_recommender import SalrecRecommender
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
-from aprec.datasets.movielens import get_movielens_actions
+from aprec.datasets.movielens20m import get_movielens20m_actions
 from aprec.utils.generator_limit import generator_limit
 from aprec.recommenders.losses.lambdarank import LambdaRankLoss
 import unittest
@@ -15,7 +15,7 @@ class TestSalrecRecommender(unittest.TestCase):
                                                        output_layer_activation='linear', max_history_len=50)
         salrec_recommender.set_val_users(val_users)
         recommender = FilterSeenRecommender(salrec_recommender)
-        for action in generator_limit(get_movielens_actions(), 10000):
+        for action in generator_limit(get_movielens20m_actions(), 10000):
             recommender.add_action(action)
         batch_size = salrec_recommender.batch_size
         n_items = salrec_recommender.items.size()

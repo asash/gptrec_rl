@@ -1,6 +1,6 @@
 import unittest
 
-from aprec.datasets.movielens import get_movielens_actions
+from aprec.datasets.movielens20m import get_movielens20m_actions
 from aprec.recommenders.vanilla_bert4rec import VanillaBERT4Rec
 from aprec.utils.generator_limit import generator_limit
 
@@ -46,7 +46,7 @@ class TestVanillaBert4rec(unittest.TestCase):
                                       num_train_steps=num_train_steps,
                                       batch_size=batch_size,
                                       learning_rate=learning_rate)
-        for action in generator_limit(get_movielens_actions(), 100000):
+        for action in generator_limit(get_movielens20m_actions(), 100000):
             recommender.add_action(action)
         recommender.rebuild_model()
         print(recommender.get_next_items('120', 10))

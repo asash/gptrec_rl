@@ -1,4 +1,4 @@
-from aprec.datasets.movielens import get_movielens_actions
+from aprec.datasets.movielens20m import get_movielens20m_actions
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.salrec.salrec_recommender import SalrecRecommender
 from aprec.recommenders.mlp_historical_embedding import GreedyMLPHistoricalEmbedding
@@ -13,7 +13,7 @@ from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.lightfm import LightFMRecommender
 from tensorflow.keras.optimizers import Adam
 
-DATASET = [action for action in get_movielens_actions(min_rating=0.0)]
+DATASET = [action for action in get_movielens20m_actions(min_rating=0.0)]
 USERS_FRACTIONS = [0.1]
 
 

@@ -1,6 +1,6 @@
 from aprec.recommenders.mlp_historical_embedding import GreedyMLPHistoricalEmbedding
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
-from aprec.datasets.movielens import get_movielens_actions
+from aprec.datasets.movielens20m import get_movielens20m_actions
 from aprec.utils.generator_limit import generator_limit
 from aprec.recommenders.losses.lambdarank import LambdaRankLoss
 import unittest
@@ -15,7 +15,7 @@ class TestMLPRecommenderWithLambdarank(unittest.TestCase):
                                                        output_layer_activation='linear')
         mlp_recommender.set_val_users(val_users)
         recommender = FilterSeenRecommender(mlp_recommender)
-        for action in generator_limit(get_movielens_actions(), 10000):
+        for action in generator_limit(get_movielens20m_actions(), 10000):
             recommender.add_action(action)
         batch_size = mlp_recommender.batch_size
         n_items = mlp_recommender.items.size()

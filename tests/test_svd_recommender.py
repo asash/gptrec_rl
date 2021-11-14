@@ -1,6 +1,6 @@
 from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
-from aprec.datasets.movielens import get_movielens_actions, get_movies_catalog
+from aprec.datasets.movielens20m import get_movielens20m_actions, get_movies_catalog
 from aprec.utils.generator_limit import generator_limit
 from aprec.api.action import Action
 import unittest
@@ -32,7 +32,7 @@ class TestSvdRecommender(unittest.TestCase):
     def test_svd_recommender(self):
         svd_recommender = SvdRecommender(10, random_seed=31337)
         recommender = FilterSeenRecommender(svd_recommender)
-        for action in generator_limit(get_movielens_actions(), 10000):
+        for action in generator_limit(get_movielens20m_actions(), 10000):
             recommender.add_action(action)
         recommender.rebuild_model()
         self.compare_recommendations(recommender.get_next_items(12341324, 10), REFERENCE_COLD_START)

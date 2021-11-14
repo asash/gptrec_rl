@@ -1,4 +1,4 @@
-from aprec.datasets.movielens import get_movielens_actions
+from aprec.datasets.movielens20m import get_movielens20m_actions
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.lightfm import LightFMRecommender
@@ -14,7 +14,7 @@ from aprec.evaluation.metrics.pairwise_cos_sim import PairwiseCosSim
 from aprec.evaluation.metrics.sps import SPS
 
 
-DATASET = get_movielens_actions(min_rating=1.0)
+DATASET = get_movielens20m_actions(min_rating=1.0)
 
 USERS_FRACTIONS = [.1]
 
@@ -49,7 +49,7 @@ RECOMMENDERS = {
 
 FRACTION_TO_SPLIT = 0.85
 
-dataset_for_metric = [action for action in get_movielens_actions(min_rating=1.0)]
+dataset_for_metric = [action for action in get_movielens20m_actions(min_rating=1.0)]
 METRICS = [Recall(10), Recall(20), Recall(30), Recall(100), Recall(200), Recall(300), Recall(500), Recall(1000), Recall(2000), Recall(3000)]
 del(dataset_for_metric)
 

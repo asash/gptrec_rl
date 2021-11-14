@@ -15,10 +15,10 @@ from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.lightfm import LightFMRecommender
 from tensorflow.keras.optimizers import Adam
 
-from datasets.movielens import get_movielens_actions
+from datasets.movielens20m import get_movielens20m_actions
 from utils.generator_limit import generator_limit
 
-DATASET =  [action for action in generator_limit(get_movielens_actions(), 10000)]
+DATASET =  [action for action in generator_limit(get_movielens20m_actions(), 10000)]
 USERS_FRACTIONS = [1.0]
 
 

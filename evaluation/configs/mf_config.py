@@ -1,4 +1,4 @@
-from aprec.datasets.movielens import get_movielens_actions
+from aprec.datasets.movielens20m import get_movielens20m_actions
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.lightfm import LightFMRecommender
@@ -15,7 +15,7 @@ from aprec.evaluation.metrics.pairwise_cos_sim import PairwiseCosSim
 from aprec.evaluation.metrics.sps import SPS
 
 
-DATASET = get_movielens_actions(min_rating=1.0)
+DATASET = get_movielens20m_actions(min_rating=1.0)
 
 USERS_FRACTIONS = [.1]
 
