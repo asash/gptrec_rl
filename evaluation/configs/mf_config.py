@@ -1,4 +1,4 @@
-from aprec.datasets.movielens20m import get_movielens20m_actions
+from aprec.datasets.movielens100k import get_movielens100k_actions
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.lightfm import LightFMRecommender
@@ -15,9 +15,9 @@ from aprec.evaluation.metrics.pairwise_cos_sim import PairwiseCosSim
 from aprec.evaluation.metrics.sps import SPS
 
 
-DATASET = get_movielens20m_actions(min_rating=1.0)
+DATASET = get_movielens100k_actions(min_rating=1.0)
 
-USERS_FRACTIONS = [.1]
+USERS_FRACTIONS = [1]
 
 def top_recommender():
     return FilterSeenRecommender(TopRecommender())
@@ -53,5 +53,5 @@ METRICS = [Precision(5), NDCG(40), Recall(5), SPS(10), MRR(), MAP(10)]
 
 
 RECOMMENDATIONS_LIMIT = 100
-SPLIT_STRATEGY = "TEMPORAL_GLOBAL"
+SPLIT_STRATEGY = "LEAVE_ONE_OUT"
 

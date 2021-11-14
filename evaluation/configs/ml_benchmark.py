@@ -1,4 +1,4 @@
-from aprec.datasets.movielens20m import get_movielens20m_actions
+from aprec.datasets.movielens100k import get_movielens100k_actions
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.salrec.salrec_recommender import SalrecRecommender
@@ -17,7 +17,7 @@ from aprec.evaluation.metrics.average_popularity_rank import AveragePopularityRa
 from aprec.evaluation.metrics.pairwise_cos_sim import PairwiseCosSim
 from aprec.evaluation.metrics.sps import SPS
 
-DATASET = get_movielens20m_actions(min_rating=1.0)
+DATASET = get_movielens100k_actions(min_rating=1.0)
 
 USERS_FRACTIONS = [1.]
 
@@ -128,10 +128,9 @@ RECOMMENDERS = {
     "lightfm_recommender_30_warp": lambda: lightfm_recommender(30, 'warp'),
 }
 
-FRACTION_TO_SPLIT = 0.85
-N_VAL_USERS=1000
+N_VAL_USERS=100
 
-dataset_for_metric = [action for action in get_movielens20m_actions(min_rating=1.0)]
+dataset_for_metric = [action for action in get_movielens100k_actions(min_rating=1.0)]
 METRICS = [Precision(5), NDCG(40), Recall(5), SPS(10), MRR(), MAP(10), AveragePopularityRank(10, dataset_for_metric),
            PairwiseCosSim(dataset_for_metric, 10)]
 del(dataset_for_metric)
