@@ -82,7 +82,8 @@ def salrec(loss, activation_override=None):
                                                    batch_size=64, sigma=1.0, ndcg_at=40,
                                                    max_history_len=150,
                                                    output_layer_activation=activation,
-                                                   num_blocks=2
+                                                   num_blocks=2,
+                                                   num_target_predictions=1
                                                    ))
 
 def mlp_historical_embedding(loss, activation_override=None):
@@ -127,6 +128,7 @@ RECOMMENDERS = {
 }
 
 N_VAL_USERS=64
+MAX_TEST_USERS=943
 
 dataset_for_metric = [action for action in get_movielens100k_actions(min_rating=1.0)]
 METRICS = [Precision(5), NDCG(40), Recall(5), SPS(10), MRR(), MAP(10), AveragePopularityRank(10, dataset_for_metric),
