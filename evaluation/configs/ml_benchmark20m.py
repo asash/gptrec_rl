@@ -80,9 +80,8 @@ def salrec(loss, activation_override=None):
     return FilterSeenRecommender(SalrecRecommender(train_epochs=10000, loss=loss,
                                                    optimizer=Adam(), early_stop_epochs=100,
                                                    batch_size=64, sigma=1.0, ndcg_at=40,
-                                                   max_history_len=250,
+                                                   max_history_len=150,
                                                    output_layer_activation=activation,
-                                                   num_target_predictions=1,
                                                    num_blocks=2
                                                    ))
 
@@ -92,9 +91,9 @@ def mlp_historical_embedding(loss, activation_override=None):
         activation = activation_override
     return FilterSeenRecommender(GreedyMLPHistoricalEmbedding(train_epochs=10000, loss=loss,
                                                               optimizer=Adam(), early_stop_epochs=100,
-                                                              batch_size=150, sigma=1.0, ndcg_at=40,
+                                                              batch_size=64, sigma=1.0, ndcg_at=40,
                                                               bottleneck_size=64,
-                                                              max_history_len=250,
+                                                              max_history_len=150,
                                                               output_layer_activation=activation, target_decay=0.8))
 
 def constant_recommender():
@@ -115,21 +114,11 @@ def constant_recommender():
                                 ('253', 0.257)])
 
 RECOMMENDERS = {
-    "top_recommender": top_recommender,
-    "svd_recommender_30": lambda: svd_recommender(30),
-    "Salrec-BCE": lambda: salrec('binary_crossentropy'),
-    "Salrec-Lambdarank": lambda: salrec('lambdarank'),
-    "vanilla_bert4rec-400000": lambda: vanilla_bert4rec(400000),
-    "Salrec-BPR": lambda: salrec('bpr', 'linear'),
-    "constant_recommender": constant_recommender,
-    "APREC-GMLPHE-Lambdarank": lambda: mlp_historical_embedding('lambdarank'),
-    "APREC-GMLPHE-BCE": lambda: mlp_historical_embedding('binary_crossentropy'),
-    "APREC-GMLPHE-BPR": lambda: mlp_historical_embedding('bpr', 'linear'),
-    "vanilla_bert4rec-2000000": lambda: vanilla_bert4rec(2000000),
-    "lightfm_recommender_30_warp": lambda: lightfm_recommender(30, 'warp'),
+    "Salrec-Lambdarank": lambda: salrec('lambdarank')
 }
 
-N_VAL_USERS=100
+N_VAL_USERS=1024
+MAX_TEST_USERS=4000
 
 dataset_for_metric = [action for action in get_movielens20m_actions(min_rating=1.0)]
 METRICS = [Precision(5), NDCG(40), Recall(5), SPS(10), MRR(), MAP(10), AveragePopularityRank(10, dataset_for_metric),

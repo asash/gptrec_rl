@@ -30,7 +30,7 @@ def get_control_users(actions):
             result.add(action.user_id)
     return result
 
-def leave_one_out(actions, max_test_users=943):
+def leave_one_out(actions, max_test_users=4000):
     sorted_actions = sorted(actions, key=lambda x: x.timestamp)
     users = defaultdict(list)
     for action in sorted_actions:

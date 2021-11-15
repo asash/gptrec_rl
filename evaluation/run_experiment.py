@@ -163,7 +163,11 @@ def get_data_splitter(config):
         split_fraction = config.FRACTION_TO_SPLIT
         return lambda actions: split_actions(actions, (split_fraction, 1 - split_fraction))
     elif config.SPLIT_STRATEGY == "LEAVE_ONE_OUT":
-        return leave_one_out
+        if hasattr(config, 'MAX_TEST_USERS'):
+            max_test_users = config.MAX_TEST_USERS
+        else:
+            max_test_users = 943
+        return lambda actions: leave_one_out(actions, max_test_users)
 
 def write_result(config, result):
     if config.out_file != sys.stdout:
