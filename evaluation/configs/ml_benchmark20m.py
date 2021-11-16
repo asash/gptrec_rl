@@ -82,7 +82,8 @@ def salrec(loss, activation_override=None):
                                                    batch_size=128, sigma=1.0, ndcg_at=40,
                                                    max_history_len=150,
                                                    output_layer_activation=activation,
-                                                   num_blocks=3
+                                                   num_blocks=3,
+                                                   target_decay=1.0
                                                    ))
 
 def mlp_historical_embedding(loss, activation_override=None):
