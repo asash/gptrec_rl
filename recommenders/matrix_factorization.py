@@ -21,7 +21,7 @@ from aprec.recommenders.losses.climf import CLIMFLoss
 
 
 class MatrixFactorizationRecommender(Recommender):
-    def __init__(self, embedding_size, num_epochs, loss, batch_size, regularization=0.0):
+    def __init__(self, embedding_size, num_epochs, loss, batch_size, regularization=0.0, learning_rate=0.001):
         self.users = ItemId()
         self.items = ItemId()
         self.user_actions = defaultdict(list)
@@ -32,6 +32,7 @@ class MatrixFactorizationRecommender(Recommender):
         self.sigma = 1.0
         self.max_positives=40
         self.regularization=regularization
+        self.learning_rate=learning_rate
 
     def add_action(self, action):
         self.user_actions[self.users.get_id(action.user_id)].append(self.items.get_id(action.item_id))
@@ -44,7 +45,7 @@ class MatrixFactorizationRecommender(Recommender):
         self.model.add(Embedding(self.users.size(), self.embedding_size+1, input_length=1, embeddings_regularizer=l2(self.regularization)))
         self.model.add(Flatten())
         self.model.add(Dense(self.items.size(), kernel_regularizer=l2(self.regularization), bias_regularizer=l2(self.regularization)))
-        self.model.compile(optimizer=Adam(), loss=loss)
+        self.model.compile(optimizer=Adam(learning_rate=self.learning_rate), loss=loss)
         data_generator = DataGenerator(self.user_actions, self.users.size(), self.items.size(), self.batch_size)
         for epoch in range(self.num_epochs):
             print(f"epoch: {epoch}")

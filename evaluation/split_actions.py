@@ -48,3 +48,27 @@ def leave_one_out(actions, max_test_users=4000):
             train += users[user_id]
     return sorted(train, key=lambda x: x.timestamp), sorted(test, key=lambda x: x.timestamp)
 
+def random_split(actions, test_fraction = 0.3, max_test_users=4000):
+    sorted_actions = sorted(actions, key=lambda x: x.timestamp)
+    users = defaultdict(list)
+    for action in sorted_actions:
+        users[action.user_id].append(action)
+    train = []
+    test = []
+    control_users = get_control_users(actions)
+    valid_user_selection = users.keys() - control_users
+    test_user_ids = set(np.random.choice(list(valid_user_selection), max_test_users, replace=False))
+    for user_id in users:
+        if user_id in test_user_ids:
+            num_user_actions = len(users[user_id])
+            num_test_actions = int(min(num_user_actions * test_fraction, 1))
+            test_action_indices = set(np.random.choice(range(num_test_actions), num_test_actions, replace=False))
+            for action_id in range(num_user_actions):
+                if action_id in test_action_indices:
+                    test.append(users[user_id][action_id])
+                else:
+                    train.append(users[user_id][action_id])
+        else:
+            train += users[user_id]
+    return sorted(train, key=lambda x: x.timestamp), sorted(test, key=lambda x: x.timestamp)
+

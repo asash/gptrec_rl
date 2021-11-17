@@ -5,6 +5,11 @@ import pandas as pd
 import re
 import sys
 
+pd.set_option("display.max_rows", None, "display.max_columns", None)
+pd.set_option('display.expand_frame_repr', False) 
+
+
+
 def is_experiment_start(line):
     return line.startswith('evaluating for')
 
