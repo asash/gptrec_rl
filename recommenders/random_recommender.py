@@ -1,5 +1,5 @@
 import numpy as np
-from recommenders.recommender import Recommender
+from aprec.recommenders.recommender import Recommender
 
 
 class RandomRecommender(Recommender):
@@ -19,3 +19,4 @@ class RandomRecommender(Recommender):
         for item in recommended_items:
             result.append((item, current_score))
             current_score *= 0.9
+        return result
