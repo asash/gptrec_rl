@@ -79,10 +79,10 @@ def salrec(loss, activation_override=None):
         activation = activation_override
     return FilterSeenRecommender(SalrecRecommender(train_epochs=10000, loss=loss,
                                                    optimizer=Adam(), early_stop_epochs=100,
-                                                   batch_size=128, sigma=1.0, ndcg_at=40,
-                                                   max_history_len=250,
+                                                   batch_size=64, sigma=1.0, ndcg_at=40,
+                                                   max_history_len=150,
                                                    output_layer_activation=activation,
-                                                   num_blocks=3,
+                                                   num_blocks=2,
                                                    num_target_predictions=1
                                                    ))
 
@@ -127,8 +127,8 @@ RECOMMENDERS = {
     "lightfm_recommender_30_warp": lambda: lightfm_recommender(30, 'warp'),
 }
 
-N_VAL_USERS=1024
-MAX_TEST_USERS=4000
+N_VAL_USERS=64
+MAX_TEST_USERS=943
 
 dataset_for_metric = [action for action in get_movielens100k_actions(min_rating=1.0)]
 METRICS = [Precision(5), NDCG(40), Recall(5), SPS(10), MRR(), MAP(10), AveragePopularityRank(10, dataset_for_metric),
