@@ -40,7 +40,8 @@ RECOMMENDERS = {
 }
 
 for i in range(100000):
-    loss = np.random.choice(['binary_crossentropy', 'xendcg', 'lambdarank', 'bpr', 'climf', 'mse'])
+    all_losses = ['binary_crossentropy', 'xendcg', 'lambdarank', 'bpr', 'climf', 'mse']
+    loss = all_losses[i % len(all_losses)]
     regularization = float(np.random.choice([0.0, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1, 2, 4]))
     embedding_size = int(np.random.choice([16, 32, 64, 128, 256, 512, 1024]))
     num_epochs = int(np.random.choice([16, 32, 64, 128, 256, 512, 1024]))
