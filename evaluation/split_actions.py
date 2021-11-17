@@ -61,7 +61,7 @@ def random_split(actions, test_fraction = 0.3, max_test_users=4000):
     for user_id in users:
         if user_id in test_user_ids:
             num_user_actions = len(users[user_id])
-            num_test_actions = int(min(num_user_actions * test_fraction, 1))
+            num_test_actions = int(max(num_user_actions * test_fraction, 1))
             test_action_indices = set(np.random.choice(range(num_test_actions), num_test_actions, replace=False))
             for action_id in range(num_user_actions):
                 if action_id in test_action_indices:

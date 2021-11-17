@@ -9,7 +9,7 @@ import gzip
 
 from aprec.utils.os_utils import shell
 
-from split_actions import split_actions, leave_one_out
+from split_actions import split_actions, leave_one_out, random_split
 from evaluate_recommender import evaluate_recommender
 from filter_cold_start import filter_cold_start
 from tqdm import tqdm
@@ -162,12 +162,22 @@ def get_data_splitter(config):
     if config.SPLIT_STRATEGY == "TEMPORAL_GLOBAL":
         split_fraction = config.FRACTION_TO_SPLIT
         return lambda actions: split_actions(actions, (split_fraction, 1 - split_fraction))
+
     elif config.SPLIT_STRATEGY == "LEAVE_ONE_OUT":
-        if hasattr(config, 'MAX_TEST_USERS'):
-            max_test_users = config.MAX_TEST_USERS
-        else:
-            max_test_users = 943
-        return lambda actions: leave_one_out(actions, max_test_users)
+        return lambda actions: leave_one_out(actions, get_max_test_users(config))
+
+    elif config.SPLIT_STRATEGY == "RANDOM_SPLIT":
+        test_fraction = config.TEST_FRACTION
+        return lambda actions: random_split(actions, test_fraction=test_fraction,
+                                            max_test_users=get_max_test_users(config))
+
+def get_max_test_users(config):
+    if hasattr(config, 'MAX_TEST_USERS'):
+        max_test_users = config.MAX_TEST_USERS
+    else:
+        max_test_users = 943 #number of users in movielens 100k dataset
+    return max_test_users
+
 
 def write_result(config, result):
     if config.out_file != sys.stdout:
