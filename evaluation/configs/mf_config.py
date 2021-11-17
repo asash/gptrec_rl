@@ -4,6 +4,7 @@ from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.lightfm import LightFMRecommender
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.recommenders.matrix_factorization import MatrixFactorizationRecommender
+from aprec.recommenders.random_recommender import RandomRecommender
 from aprec.evaluation.metrics.precision import Precision
 from aprec.evaluation.metrics.recall import Recall
 from aprec.evaluation.metrics.ndcg import NDCG
@@ -31,7 +32,8 @@ def lightfm_recommender(k, loss):
     return FilterSeenRecommender(LightFMRecommender(k, loss))
 
 RECOMMENDERS = {
-    "top_recommender": top_recommender, 
+    "top_recommender": top_recommender,
+    "random_recommender": RandomRecommender,
     "svd_recommender_32": lambda: svd_recommender(32),
     "lightfm_recommender_30_bpr": lambda: lightfm_recommender(30, 'bpr'),
     "lightfm_recommender_30_warp": lambda: lightfm_recommender(30, 'warp'),
@@ -39,7 +41,7 @@ RECOMMENDERS = {
 
 for i in range(100000):
     loss = np.random.choice(['binary_crossentropy', 'xendcg', 'lambdarank', 'bpr', 'climf', 'mse'])
-    regularization = float(np.random.choice([0.0, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1]))
+    regularization = float(np.random.choice([0.0, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1, 2, 4]))
     embedding_size = int(np.random.choice([16, 32, 64, 128, 256, 512, 1024]))
     num_epochs = int(np.random.choice([16, 32, 64, 128, 256, 512, 1024]))
     batch_size = int(np.random.choice([64, 128, 256, 512]))

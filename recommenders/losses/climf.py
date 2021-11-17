@@ -24,6 +24,7 @@ class CLIMFLoss(object):
 
     #equation (9) from the paper
     def __call__(self, y_true, y_pred):
+        EPS=1e-6
         top_true = tf.math.top_k(y_true, self.max_positives)
         true_values = top_true.values
         pred_ordered = tf.gather(y_pred, top_true.indices, batch_dims=1)
@@ -32,7 +33,7 @@ class CLIMFLoss(object):
         tiled_values = tf.tile(true_values, [1, y_pred.shape[-1]])
         mask = tf.reshape(tiled_values, (self.batch_size, self.num_items, true_values.shape[1]))
         mask = tf.transpose(mask, perm=[0, 2, 1])
-        second_climf_term = tf.math.reduce_sum(tf.math.log(1 - mask*values_sigmoid), axis=1)
+        second_climf_term = tf.math.reduce_sum(tf.math.log(1 - mask*values_sigmoid + EPS), axis=1)
         first_climf_term = tf.math.log_sigmoid(y_pred)
         result = -tf.reduce_sum(y_true*(second_climf_term + first_climf_term))
         return result
