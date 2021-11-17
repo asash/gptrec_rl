@@ -88,7 +88,8 @@ class SalrecRecommender(Recommender):
         print("train_users: {}, val_users:{}, items:{}".format(len(train_users), len(val_users), self.items.size()))
         val_generator = DataGenerator(val_users, self.max_history_length, self.items.size(),
                                               batch_size=self.batch_size, validation=True,
-                                              target_decay=self.target_decay)
+                                              target_decay=self.target_decay, 
+                                              num_actions_to_predict=self.num_target_predictions)
         self.model = self.get_model(self.items.size())
         best_ndcg = 0
         steps_since_improved = 0
@@ -99,7 +100,8 @@ class SalrecRecommender(Recommender):
         for epoch in range(self.train_epochs):
             val_generator.reset()
             generator = DataGenerator(train_users, self.max_history_length, self.items.size(),
-                                              batch_size=self.batch_size, target_decay=self.target_decay)
+                                              batch_size=self.batch_size, target_decay=self.target_decay,
+                                              num_actions_to_predict=self.num_target_predictions)
             print(f"epoch: {epoch}")
             train_history = self.model.fit(generator, validation_data=val_generator)
             total_trainig_time = time.time() - start_time
