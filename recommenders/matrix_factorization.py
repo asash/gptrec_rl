@@ -74,8 +74,17 @@ class MatrixFactorizationRecommender(Recommender):
                 result.append((self.items.reverse_id(int(item_id)), float(score)))
             return result
 
-    def get_bpr_loss(self):
-        return
+    def recommend_batch(self, recommendation_requests, limit):
+        model_input = np.array([[self.users.get_id(request[0])] for request in recommendation_requests])
+        predictions = tf.nn.top_k(self.model.predict(model_input), limit)
+        result = []
+        for idx in range(len(recommendation_requests)):
+            request_result = []
+            for item_id, score in zip(predictions.indices[idx][0], predictions.values[idx][0]):
+                request_result.append((self.items.reverse_id(int(item_id)), float(score)))
+            result.append(request_result)
+        return result
+
 
 class DataGenerator(Sequence):
     def __init__(self, user_actions, n_users, n_items, batch_size):
@@ -91,6 +100,8 @@ class DataGenerator(Sequence):
         self.full_matrix = csr_matrix((vals, (rows, cols)), shape=(n_users, n_items))
         self.users = list(range(n_users))
         self.batch_size = batch_size
+
+
 
     def shuffle(self):
         random.shuffle(self.users)

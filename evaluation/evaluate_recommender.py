@@ -12,14 +12,6 @@ def group_by_user(actions):
         result[action.user_id].append(action)
     return result
 
-class GetPredictions(object):
-    def __init__(self, recommender, limit):
-        self.recommender = recommender
-        self.limit = limit
-
-    def __call__(self, request):
-        user_id, features = request
-        return self.recommender.get_next_items(user_id, self.limit, features)
 
 def evaluate_recommender(recommender, test_actions,
                          metrics, out_dir, recommender_name,
@@ -27,7 +19,6 @@ def evaluate_recommender(recommender, test_actions,
 
     test_actions_by_user = group_by_user(test_actions)
     metric_sum = defaultdict(lambda: 0.0)
-    get_predictions = GetPredictions(recommender, recommendations_limit)
     all_user_ids = list(test_actions_by_user.keys())
     requests = []
     for user_id in all_user_ids:
@@ -38,7 +29,7 @@ def evaluate_recommender(recommender, test_actions,
 
 
     print("generating predictions...")
-    all_predictions = list(tqdm(map(get_predictions, requests), total=len(all_user_ids), ascii=True))
+    all_predictions = recommender.recommend_batch(requests, recommendations_limit)
 
     print('calculating metrics...')
     user_docs = []

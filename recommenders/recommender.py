@@ -11,6 +11,13 @@ class Recommender():
     def get_next_items(self, user_id, limit, features=None):
         raise(NotImplementedError)
 
+    #recommendation request = tuple(user_id, features)
+    def recommend_batch(self, recommendation_requests, limit):
+        results = []
+        for user_id, features in recommendation_requests:
+            results.append(self.get_next_items(user_id, limit, features))
+        return results
+
     def recommend_by_items(self, items_list, limit):
         raise(NotImplementedError)
 

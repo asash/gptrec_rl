@@ -18,6 +18,16 @@ class TestMatrixFactorizationRecommender(unittest.TestCase):
             recs = recommender.get_next_items(USER_ID, 10)
             print(recs)
 
+    def test_recommend_batch(self):
+        matrix_factorization_recommender = MatrixFactorizationRecommender(32, 5, 'mse', batch_size=10)
+        recommender = FilterSeenRecommender(matrix_factorization_recommender)
+        user_ids = set()
+        for action in generator_limit(get_movielens20m_actions(), 10000):
+            recommender.add_action(action)
+            user_ids.add(action.user_id)
+        recommender.rebuild_model()
+        requests = [(user_id, None) for user_id in ['142', '111', '57', '37', '136', '88']]
+        batch_recommendations = recommender.recommend_batch(requests, 10)
 
 
 if __name__ == "__main__":
