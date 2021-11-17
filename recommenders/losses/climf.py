@@ -8,8 +8,10 @@ from aprec.recommenders.losses.loss_utils import my_map
 
 
 class CLIMFLoss(object):
-    def __init__(self, max_positives=10):
+    def __init__(self,  batch_size, num_items, max_positives=10,):
         self.max_positives = max_positives
+        self.batch_size = batch_size
+        self.num_items = num_items
 
 
     def get_pairwise_diffs_matrix(self, x, y):
@@ -27,7 +29,8 @@ class CLIMFLoss(object):
         pred_ordered = tf.gather(y_pred, top_true.indices, batch_dims=1)
         values = self.get_pairwise_diffs_matrices(pred_ordered, y_pred)
         values_sigmoid = tf.math.sigmoid(values)
-        mask = tf.reshape(tf.tile(true_values, [1, y_pred.shape[-1]]), (true_values.shape[0], y_pred.shape[-1], true_values.shape[1]))
+        tiled_values = tf.tile(true_values, [1, y_pred.shape[-1]])
+        mask = tf.reshape(tiled_values, (self.batch_size, self.num_items, true_values.shape[1]))
         mask = tf.transpose(mask, perm=[0, 2, 1])
         second_climf_term = tf.math.reduce_sum(tf.math.log(1 - mask*values_sigmoid), axis=1)
         first_climf_term = tf.math.log_sigmoid(y_pred)

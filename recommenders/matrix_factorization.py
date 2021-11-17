@@ -17,6 +17,8 @@ from tensorflow.keras.optimizers import Adam
 from keras.regularizers import l2
 import tensorflow as tf
 
+from recommenders.losses.climf import CLIMFLoss
+
 
 class MatrixFactorizationRecommender(Recommender):
     def __init__(self, embedding_size, num_epochs, loss, batch_size, regularization=0.0):
@@ -28,7 +30,7 @@ class MatrixFactorizationRecommender(Recommender):
         self.loss = loss
         self.batch_size = batch_size
         self.sigma = 1.0
-        self.ndcg_at=40
+        self.max_positives=40
         self.regularization=regularization
 
     def add_action(self, action):
@@ -36,16 +38,7 @@ class MatrixFactorizationRecommender(Recommender):
 
 
     def rebuild_model(self):
-        loss = self.loss
-
-        if loss == 'lambdarank':
-            loss = self.get_lambdarank_loss()
-
-        if loss == 'xendcg':
-            loss = self.get_xendcg_loss()
-
-        if loss == 'bpr':
-            loss = self.get_bpr_loss()
+        loss = self.get_loss(self.loss, self.items.size(), self.batch_size, self.max_positives)
 
         self.model = Sequential()
         self.model.add(Embedding(self.users.size(), self.embedding_size+1, input_length=1, embeddings_regularizer=l2(self.regularization)))
@@ -58,6 +51,19 @@ class MatrixFactorizationRecommender(Recommender):
             data_generator.shuffle()
             self.model.fit(data_generator)
 
+    @staticmethod
+    def get_loss(loss_name, items_num, batch_size, max_positives=40):
+        if loss_name == 'lambdarank':
+            return LambdaRankLoss(items_num, batch_size, ndcg_at=max_positives)
+        if loss_name == 'xendcg':
+            return XENDCGLoss(items_num, batch_size)
+        if loss_name == 'bpr':
+            return BPRLoss(max_positives)
+        if loss_name == 'climf':
+            return CLIMFLoss(batch_size, items_num, max_positives)
+        else:
+            return loss_name
+
     def get_next_items(self, user_id, limit, features=None):
        with tf.device('/cpu:0'):
             model_input = np.array([[self.users.get_id(user_id)]])
@@ -67,14 +73,8 @@ class MatrixFactorizationRecommender(Recommender):
                 result.append((self.items.reverse_id(int(item_id)), float(score)))
             return result
 
-    def get_lambdarank_loss(self):
-        return LambdaRankLoss(self.items.size(), self.batch_size)
-
-    def get_xendcg_loss(self):
-        return XENDCGLoss(self.items.size(), self.batch_size)
-
     def get_bpr_loss(self):
-        return BPRLoss(max_positives=40)
+        return
 
 class DataGenerator(Sequence):
     def __init__(self, user_actions, n_users, n_items, batch_size):

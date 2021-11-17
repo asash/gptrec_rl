@@ -8,13 +8,15 @@ USER_ID = '120'
 
 class TestMatrixFactorizationRecommender(unittest.TestCase):
     def test_matrix_factorization_recommender_recommender(self):
-        matrix_factorization_recommender = MatrixFactorizationRecommender(32, 5, 'lambdarank', batch_size=10)
-        recommender = FilterSeenRecommender(matrix_factorization_recommender)
-        for action in generator_limit(get_movielens20m_actions(), 10000):
-            recommender.add_action(action)
-        recommender.rebuild_model()
-        recs = recommender.get_next_items(USER_ID, 10)
-        print(recs)
+        for loss in ['binary_crossentropy', 'bpr', 'lambdarank', 'xendcg', 'climf']:
+            print(f"testing matrix factorization model with {loss} loss")
+            matrix_factorization_recommender = MatrixFactorizationRecommender(32, 5, loss, batch_size=10)
+            recommender = FilterSeenRecommender(matrix_factorization_recommender)
+            for action in generator_limit(get_movielens20m_actions(), 10000):
+                recommender.add_action(action)
+            recommender.rebuild_model()
+            recs = recommender.get_next_items(USER_ID, 10)
+            print(recs)
 
 
 
