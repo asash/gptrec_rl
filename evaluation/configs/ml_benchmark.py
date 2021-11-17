@@ -127,8 +127,8 @@ RECOMMENDERS = {
     "lightfm_recommender_30_warp": lambda: lightfm_recommender(30, 'warp'),
 }
 
-N_VAL_USERS=64
-MAX_TEST_USERS=943
+N_VAL_USERS=1024
+MAX_TEST_USERS=4000
 
 dataset_for_metric = [action for action in get_movielens100k_actions(min_rating=1.0)]
 METRICS = [Precision(5), NDCG(40), Recall(5), SPS(10), MRR(), MAP(10), AveragePopularityRank(10, dataset_for_metric),
