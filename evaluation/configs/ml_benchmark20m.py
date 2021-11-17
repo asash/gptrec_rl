@@ -78,7 +78,7 @@ def salrec(loss, activation_override=None):
     if activation_override is not None:
         activation = activation_override
     return FilterSeenRecommender(SalrecRecommender(train_epochs=10000, loss=loss,
-                                                   optimizer=Adam(), early_stop_epochs=100,
+                                                   optimizer=Adam(learning_rate=0.01), early_stop_epochs=100,
                                                    batch_size=128, sigma=1.0, ndcg_at=40,
                                                    max_history_len=150,
                                                    output_layer_activation=activation,
@@ -123,7 +123,7 @@ N_VAL_USERS=1024
 MAX_TEST_USERS=4000
 
 dataset_for_metric = [action for action in get_movielens20m_actions(min_rating=1.0)]
-METRICS = [Precision(5), NDCG(40), Recall(5), SPS(10), MRR(), MAP(10), AveragePopularityRank(10, dataset_for_metric),
+METRICS = [NDCG(40), Precision(5), Recall(5), SPS(10), MRR(), MAP(10), AveragePopularityRank(10, dataset_for_metric),
            PairwiseCosSim(dataset_for_metric, 10)]
 del(dataset_for_metric)
 
