@@ -4,7 +4,7 @@
 
 import tensorflow as tf
 
-from recommenders.losses.loss_utils import my_map
+from aprec.recommenders.losses.loss_utils import my_map
 
 
 class CLIMFLoss(object):

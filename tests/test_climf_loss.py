@@ -15,3 +15,6 @@ class TestCLIMFLoss(unittest.TestCase):
         good_pred_loss = climf_loss(K.constant([[0, 0, 1, 1]]), K.constant([[0, 0, 1, 1]]))
         assert (poor_pred_loss > avg_pred_loss)
         assert (good_pred_loss < avg_pred_loss)
+
+if __name__ == "__main__":
+    unittest.main()
