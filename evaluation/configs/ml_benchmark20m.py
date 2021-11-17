@@ -83,6 +83,7 @@ def salrec(loss, activation_override=None):
                                                    max_history_len=150,
                                                    output_layer_activation=activation,
                                                    num_blocks=3,
+                                                   num_target_predictions=1,
                                                    target_decay=1.0
                                                    ))
 
