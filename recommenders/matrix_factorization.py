@@ -17,7 +17,7 @@ from tensorflow.keras.optimizers import Adam
 from keras.regularizers import l2
 import tensorflow as tf
 
-from recommenders.losses.climf import CLIMFLoss
+from aprec.recommenders.losses.climf import CLIMFLoss
 
 
 class MatrixFactorizationRecommender(Recommender):
