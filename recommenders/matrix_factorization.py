@@ -6,9 +6,6 @@ from keras.layers import Flatten
 from keras.utils.data_utils import Sequence
 from scipy.sparse import csr_matrix
 
-from aprec.losses.bpr import BPRLoss
-from aprec.losses.lambdarank import LambdaRankLoss
-from aprec.losses.xendcg import XENDCGLoss
 from aprec.recommenders.recommender import Recommender
 from aprec.utils.item_id import ItemId
 from tensorflow.keras.models import Sequential
@@ -16,8 +13,7 @@ from tensorflow.keras.layers import Dense, Embedding
 from tensorflow.keras.optimizers import Adam
 from keras.regularizers import l2
 import tensorflow as tf
-
-from aprec.losses.climf import CLIMFLoss
+from aprec.losses.get_loss import get_loss
 
 
 class MatrixFactorizationRecommender(Recommender):
@@ -39,7 +35,7 @@ class MatrixFactorizationRecommender(Recommender):
 
 
     def rebuild_model(self):
-        loss = self.get_loss(self.loss, self.items.size(), self.batch_size, self.max_positives)
+        loss = get_loss(self.loss, self.items.size(), self.batch_size, self.max_positives)
 
         self.model = Sequential()
         self.model.add(Embedding(self.users.size(), self.embedding_size+1, input_length=1, embeddings_regularizer=l2(self.regularization)))
@@ -51,19 +47,6 @@ class MatrixFactorizationRecommender(Recommender):
             print(f"epoch: {epoch}")
             data_generator.shuffle()
             self.model.fit(data_generator)
-
-    @staticmethod
-    def get_loss(loss_name, items_num, batch_size, max_positives=40):
-        if loss_name == 'lambdarank':
-            return LambdaRankLoss(items_num, batch_size, ndcg_at=max_positives)
-        if loss_name == 'xendcg':
-            return XENDCGLoss(items_num, batch_size)
-        if loss_name == 'bpr':
-            return BPRLoss(max_positives)
-        if loss_name == 'climf':
-            return CLIMFLoss(batch_size, items_num, max_positives)
-        else:
-            return loss_name
 
     def get_next_items(self, user_id, limit, features=None):
        with tf.device('/cpu:0'):

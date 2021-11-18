@@ -28,6 +28,7 @@ class TestMatrixFactorizationRecommender(unittest.TestCase):
         recommender.rebuild_model()
         requests = [(user_id, None) for user_id in ['142', '111', '57', '37', '136', '88']]
         batch_recommendations = recommender.recommend_batch(requests, 10)
+        print(batch_recommendations)
 
 
 if __name__ == "__main__":
