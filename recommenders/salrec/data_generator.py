@@ -8,7 +8,7 @@ from tensorflow.python.keras.utils.data_utils import Sequence
 
 
 class DataGenerator(Sequence):
-    def __init__(self, user_actions, history_size, n_items, batch_size=1000, validation=False, target_decay=0.8,
+    def __init__(self, user_actions, history_size, n_items, positional=True, batch_size=1000, validation=False, target_decay=0.8,
                 min_target_val=0.1, num_actions_to_predict=5):
         self.user_actions = user_actions
         self.history_size= history_size
@@ -20,6 +20,7 @@ class DataGenerator(Sequence):
         self.target_decay = target_decay
         self.min_target_val = min_target_val
         self.num_actions_to_predict = num_actions_to_predict
+        self.positional = positional
         self.reset()
 
 
@@ -129,10 +130,12 @@ class DataGenerator(Sequence):
         history = self.features_matrix[start:end]
         model_inputs = [history]
         target = self.target_matrix[start:end].todense()
-        positions = self.history_positions[start:end]
-        target_positions = self.target_positions[start:end]
-        model_inputs.append(positions)
-        model_inputs.append(target_positions)
+
+        if self.positional:
+            positions = self.history_positions[start:end]
+            target_positions = self.target_positions[start:end]
+            model_inputs.append(positions)
+            model_inputs.append(target_positions)
         return model_inputs, target
 
     def __next__(self):

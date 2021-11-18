@@ -5,12 +5,9 @@ import keras
 import tensorflow.keras.backend as K
 from collections import defaultdict
 
-from aprec.losses.bpr import BPRLoss
 from aprec.losses.get_loss import get_loss
 from aprec.utils.item_id import ItemId
 from aprec.recommenders.metrics.ndcg import KerasNDCG
-from aprec.losses.lambdarank import LambdaRankLoss
-from aprec.losses.xendcg import XENDCGLoss
 from aprec.recommenders.recommender import Recommender
 from aprec.recommenders.salrec.data_generator import DataGenerator,  reverse_positions
 from aprec \
@@ -32,7 +29,8 @@ class SalrecRecommender(Recommender):
                  ndcg_at=30,
                  num_blocks=5,
                  num_heads = 5,
-                 num_target_predictions=5
+                 num_target_predictions=5,
+                 positional=True
                  ):
         self.users = ItemId()
         self.items = ItemId()
@@ -57,6 +55,7 @@ class SalrecRecommender(Recommender):
         self.num_heads = num_heads
         self.num_target_predictions = num_target_predictions
         self.target_request = np.array([[self.max_history_length + 1] * num_target_predictions])
+        self.positional = positional
 
     def get_metadata(self):
         return self.metadata
@@ -89,7 +88,8 @@ class SalrecRecommender(Recommender):
         val_generator = DataGenerator(val_users, self.max_history_length, self.items.size(),
                                               batch_size=self.batch_size, validation=True,
                                               target_decay=self.target_decay, 
-                                              num_actions_to_predict=self.num_target_predictions)
+                                              num_actions_to_predict=self.num_target_predictions,
+                                               positional=self.positional)
         self.model = self.get_model(self.items.size())
         best_ndcg = 0
         steps_since_improved = 0
@@ -101,7 +101,8 @@ class SalrecRecommender(Recommender):
             val_generator.reset()
             generator = DataGenerator(train_users, self.max_history_length, self.items.size(),
                                               batch_size=self.batch_size, target_decay=self.target_decay,
-                                              num_actions_to_predict=self.num_target_predictions)
+                                              num_actions_to_predict=self.num_target_predictions,
+                                              positional=self.positional)
             print(f"epoch: {epoch}")
             train_history = self.model.fit(generator, validation_data=val_generator)
             total_trainig_time = time.time() - start_time
@@ -128,32 +129,39 @@ class SalrecRecommender(Recommender):
 
     def get_model(self, n_items):
         embedding_size = 64
-
-        pos_input = layers.Input(shape=(self.max_history_length))
-        position_embedding_layer = layers.Embedding(2*self.max_history_length + 1, embedding_size )
-
-        position_embedding = position_embedding_layer(pos_input)
-        position_embedding = layers.Dense(embedding_size, activation='swish')(position_embedding)
-
+        model_inputs = []
 
         input = layers.Input(shape=(self.max_history_length))
+        model_inputs.append(input)
+
         x = layers.Embedding(n_items + 1, embedding_size)(input)
-        x = layers.Multiply()([x, position_embedding])
+
+        if self.positional:
+            pos_input = layers.Input(shape=(self.max_history_length))
+            model_inputs.append(pos_input)
+            position_embedding_layer = layers.Embedding(2*self.max_history_length + 1, embedding_size )
+
+            position_embedding = position_embedding_layer(pos_input)
+            position_embedding = layers.Dense(embedding_size, activation='swish')(position_embedding)
+            x = layers.Multiply()([x, position_embedding])
+
+            target_pos_input = layers.Input(shape=(self.num_target_predictions))
+            model_inputs.append(target_pos_input)
+            target_pos_embedding = position_embedding_layer(target_pos_input)
+            target_pos_embedding = layers.Dense(embedding_size, activation='swish')(target_pos_embedding)
 
         for block_num in range(self.num_blocks):
              x = self.block(x)
 
+        if self.positional:
+            x = layers.MultiHeadAttention(self.num_heads, key_dim=x.shape[-1])(target_pos_embedding, x)
+            x = layers.LayerNormalization()(x)
 
-        target_pos_input = layers.Input(shape=(self.num_target_predictions))
-        target_pos_embedding = position_embedding_layer(target_pos_input)
-        target_pos_embedding = layers.Dense(embedding_size, activation='swish')(target_pos_embedding)
-        x = layers.MultiHeadAttention(self.num_heads, key_dim=x.shape[-1])(target_pos_embedding, x)
-        x = layers.LayerNormalization()(x)
         x = layers.Flatten()(x)
         x = layers.Dense(256, name="bottleneck", activation='swish')(x)
         x = layers.Dense(256, name="bottleneck_after_dropout", activation='swish')(x)
         output = layers.Dense(n_items, name="output", activation=self.output_layer_activation)(x)
-        model = keras.Model(inputs = [input, pos_input, target_pos_input], outputs=output)
+        model = keras.Model(inputs = model_inputs, outputs=output)
         # model = keras.Model(inputs = [input], outputs=output)
         ndcg_metric = KerasNDCG(self.ndcg_at)
         loss = get_loss(self.loss, self.items.size(), self.batch_size, self.ndcg_at)
@@ -170,10 +178,13 @@ class SalrecRecommender(Recommender):
         actions = [(0, action) for action in items_list]
         vector = actions_to_vector(actions, self.max_history_length, self.items.size())
 
-        pos = np.array(reverse_positions(len(items_list), self.max_history_length)) \
-            .reshape(1, self.max_history_length)
+        if self.positional:
+            pos = np.array(reverse_positions(len(items_list), self.max_history_length)) \
+                .reshape(1, self.max_history_length)
+            scores = self.model.predict([vector.reshape(1, self.max_history_length), pos, self.target_request])[0]
+        else:
+            scores = self.model.predict([vector.reshape(1, self.max_history_length)])[0]
 
-        scores = self.model.predict([vector.reshape(1, self.max_history_length), pos, self.target_request])[0]
         best_ids = np.argsort(scores)[::-1][:limit]
         result = [(self.items.reverse_id(id), scores[id]) for id in best_ids]
         return result
