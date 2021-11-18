@@ -72,7 +72,8 @@ class DataGenerator(Sequence):
             target_positions.append(user_target_positions)
         return history, history_positions, target, target_positions
 
-    def split_user(self, user):
+    def split_user(self, user_raw):
+        user = user_raw[-self.history_size:]
         if not self.validation:
             history_fraction = random.random()
             n_history_actions = int(len(user) * history_fraction)
@@ -107,10 +108,11 @@ class DataGenerator(Sequence):
 
     def get_position_id(self,n_history_actions, i):
         if i < n_history_actions:
-            return n_history_actions - i
+            result = n_history_actions - i
 
         else:
-            return self.history_size + (i - n_history_actions + 1)
+            result = self.history_size + (i - n_history_actions + 1)
+        return result
 
     def positions(self, sessions, history_size):
         result_reverse =[]

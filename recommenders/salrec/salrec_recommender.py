@@ -6,6 +6,7 @@ import tensorflow.keras.backend as K
 from collections import defaultdict
 
 from aprec.losses.bpr import BPRLoss
+from aprec.losses.get_loss import get_loss
 from aprec.utils.item_id import ItemId
 from aprec.recommenders.metrics.ndcg import KerasNDCG
 from aprec.losses.lambdarank import LambdaRankLoss
@@ -129,8 +130,7 @@ class SalrecRecommender(Recommender):
         embedding_size = 64
 
         pos_input = layers.Input(shape=(self.max_history_length))
-        position_embedding_layer = layers.Embedding(self.max_history_length +
-                                              self.num_target_predictions + 1, embedding_size )
+        position_embedding_layer = layers.Embedding(2*self.max_history_length + 1, embedding_size )
 
         position_embedding = position_embedding_layer(pos_input)
         position_embedding = layers.Dense(embedding_size, activation='swish')(position_embedding)
@@ -156,27 +156,10 @@ class SalrecRecommender(Recommender):
         model = keras.Model(inputs = [input, pos_input, target_pos_input], outputs=output)
         # model = keras.Model(inputs = [input], outputs=output)
         ndcg_metric = KerasNDCG(self.ndcg_at)
-        loss = self.loss
-        if loss == 'lambdarank':
-            loss = self.get_lambdarank_loss()
-
-        if loss == 'xendcg':
-            loss = self.get_xendcg_loss()
-
-        if loss == 'bpr':
-            loss = self.get_bpr_loss()
+        loss = get_loss(self.loss, self.items.size(), self.batch_size, self.ndcg_at)
 
         model.compile(optimizer=self.optimizer, loss=loss, metrics=[ndcg_metric])
         return model
-
-    def get_lambdarank_loss(self):
-        return LambdaRankLoss(self.items.size(), self.batch_size, self.sigma, ndcg_at=self.ndcg_at)
-
-    def get_xendcg_loss(self):
-        return XENDCGLoss(self.items.size(), self.batch_size)
-
-    def get_bpr_loss(self):
-        return BPRLoss(max_positives=10)
 
     def get_next_items(self, user_id, limit, features=None):
         actions = self.user_actions[self.users.get_id(user_id)]
