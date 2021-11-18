@@ -5,6 +5,8 @@ import keras
 import tensorflow.keras.backend as K
 from collections import defaultdict
 
+from keras.regularizers import l2
+
 from aprec.losses.get_loss import get_loss
 from aprec.utils.item_id import ItemId
 from aprec.recommenders.metrics.ndcg import KerasNDCG
@@ -30,7 +32,8 @@ class SalrecRecommender(Recommender):
                  num_blocks=5,
                  num_heads = 5,
                  num_target_predictions=5,
-                 positional=True
+                 positional=True,
+                 regularization = 0.0
                  ):
         self.users = ItemId()
         self.items = ItemId()
@@ -56,6 +59,7 @@ class SalrecRecommender(Recommender):
         self.num_target_predictions = num_target_predictions
         self.target_request = np.array([[self.max_history_length + 1] * num_target_predictions])
         self.positional = positional
+        self.regularization = regularization
 
     def get_metadata(self):
         return self.metadata
@@ -159,8 +163,10 @@ class SalrecRecommender(Recommender):
 
         x = layers.Flatten()(x)
         x = layers.Dense(256, name="bottleneck", activation='swish')(x)
-        x = layers.Dense(256, name="bottleneck_after_dropout", activation='swish')(x)
-        output = layers.Dense(n_items, name="output", activation=self.output_layer_activation)(x)
+        x = layers.Dense(256, name="bottleneck_after_dropout", activation='swish', bias_regularizer=l2(self.regularization),
+                         kernel_regularizer=l2(self.regularization))(x)
+        output = layers.Dense(n_items, name="output", activation=self.output_layer_activation, bias_regularizer=l2(self.regularization),
+                              kernel_regularizer=l2(self.regularization))(x)
         model = keras.Model(inputs = model_inputs, outputs=output)
         # model = keras.Model(inputs = [input], outputs=output)
         ndcg_metric = KerasNDCG(self.ndcg_at)
