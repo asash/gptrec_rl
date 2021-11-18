@@ -1,5 +1,5 @@
 import unittest
-from aprec.recommenders.losses.climf import CLIMFLoss
+from aprec.losses.climf import CLIMFLoss
 import tensorflow.keras.backend as K
 
 

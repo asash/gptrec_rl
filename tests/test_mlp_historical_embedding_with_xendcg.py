@@ -2,7 +2,6 @@ from aprec.recommenders.mlp_historical_embedding import GreedyMLPHistoricalEmbed
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.datasets.movielens20m import get_movielens20m_actions
 from aprec.utils.generator_limit import generator_limit
-from aprec.recommenders.losses.xendcg import XENDCGLoss
 import unittest
 
 USER_ID = '120'

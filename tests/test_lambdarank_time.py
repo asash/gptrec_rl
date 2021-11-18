@@ -1,4 +1,4 @@
-from aprec.recommenders.losses.lambdarank import LambdaRankLoss
+from aprec.losses.lambdarank import LambdaRankLoss
 import tensorflow as tf
 import unittest
 

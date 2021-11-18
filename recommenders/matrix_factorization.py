@@ -6,9 +6,9 @@ from keras.layers import Flatten
 from keras.utils.data_utils import Sequence
 from scipy.sparse import csr_matrix
 
-from aprec.recommenders.losses.bpr import BPRLoss
-from aprec.recommenders.losses.lambdarank import LambdaRankLoss
-from aprec.recommenders.losses.xendcg import XENDCGLoss
+from aprec.losses.bpr import BPRLoss
+from aprec.losses.lambdarank import LambdaRankLoss
+from aprec.losses import XENDCGLoss
 from aprec.recommenders.recommender import Recommender
 from aprec.utils.item_id import ItemId
 from tensorflow.keras.models import Sequential
@@ -17,7 +17,7 @@ from tensorflow.keras.optimizers import Adam
 from keras.regularizers import l2
 import tensorflow as tf
 
-from aprec.recommenders.losses.climf import CLIMFLoss
+from aprec.losses.climf import CLIMFLoss
 
 
 class MatrixFactorizationRecommender(Recommender):

@@ -1,4 +1,4 @@
-from aprec.recommenders.losses.lambdarank import  LambdaRankLoss
+from aprec.losses.lambdarank import  LambdaRankLoss
 import tensorflow.keras.backend as K
 from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Dense

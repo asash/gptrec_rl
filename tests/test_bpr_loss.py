@@ -1,7 +1,7 @@
 import unittest
 import tensorflow.keras.backend as K
 
-from aprec.recommenders.losses.bpr import BPRLoss
+from aprec.losses.bpr import BPRLoss
 
 
 class TestBPRLoss(unittest.TestCase):

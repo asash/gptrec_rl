@@ -3,7 +3,7 @@ import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 
-from aprec.recommenders.losses.xendcg import XENDCGLoss
+from aprec.losses import XENDCGLoss
 
 
 class TestXENDCGLoss(unittest.TestCase):

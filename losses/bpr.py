@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from aprec.recommenders.losses.loss_utils import my_map
+from aprec.losses.loss_utils import my_map
 
 
 class BPRLoss(object):

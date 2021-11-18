@@ -5,17 +5,16 @@ import keras
 import tensorflow.keras.backend as K
 from collections import defaultdict
 
-from aprec.recommenders.losses.bpr import BPRLoss
+from aprec.losses.bpr import BPRLoss
 from aprec.utils.item_id import ItemId
 from aprec.recommenders.metrics.ndcg import KerasNDCG
-from aprec.recommenders.losses.lambdarank import LambdaRankLoss
-from aprec.recommenders.losses.xendcg import XENDCGLoss
+from aprec.losses.lambdarank import LambdaRankLoss
+from aprec.losses import XENDCGLoss
 from aprec.recommenders.recommender import Recommender
 from aprec.recommenders.salrec.data_generator import DataGenerator,  reverse_positions
 from aprec \
     .recommenders.history_batch_generator import actions_to_vector
 import tensorflow.keras.layers as layers
-import tensorflow as tf
 import numpy as np
 
 
