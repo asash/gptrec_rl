@@ -75,7 +75,7 @@ class DataGenerator(Sequence):
 
     def split_user(self, user_raw):
         user = user_raw[-self.history_size:]
-        if not self.validation:
+        if (not self.validation) and (self.positional):
             history_fraction = random.random()
             n_history_actions = int(len(user) * history_fraction)
             actions_to_predict = np.random.choice(range(len(user)), self.num_actions_to_predict, replace=True)
