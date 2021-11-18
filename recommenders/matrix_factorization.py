@@ -8,7 +8,7 @@ from scipy.sparse import csr_matrix
 
 from aprec.losses.bpr import BPRLoss
 from aprec.losses.lambdarank import LambdaRankLoss
-from aprec.losses import XENDCGLoss
+from aprec.losses.xendcg import XENDCGLoss
 from aprec.recommenders.recommender import Recommender
 from aprec.utils.item_id import ItemId
 from tensorflow.keras.models import Sequential

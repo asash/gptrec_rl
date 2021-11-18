@@ -9,7 +9,7 @@ from aprec.losses.bpr import BPRLoss
 from aprec.utils.item_id import ItemId
 from aprec.recommenders.metrics.ndcg import KerasNDCG
 from aprec.losses.lambdarank import LambdaRankLoss
-from aprec.losses import XENDCGLoss
+from aprec.losses.xendcg import XENDCGLoss
 from aprec.recommenders.recommender import Recommender
 from aprec.recommenders.salrec.data_generator import DataGenerator,  reverse_positions
 from aprec \

@@ -8,7 +8,7 @@ from aprec.utils.item_id import ItemId
 from aprec.recommenders.metrics.ndcg import KerasNDCG
 from aprec.recommenders.metrics.success import KerasSuccess
 from aprec.losses.lambdarank import LambdaRankLoss
-from aprec.losses import XENDCGLoss
+from aprec.losses.xendcg import XENDCGLoss
 from aprec.recommenders.recommender import Recommender
 from aprec.recommenders.booking_recommender.booking_history_batch_generator import BookingHistoryBatchGenerator, \
     ACTION_FEATURES, encode_action_features, CandidatesGenerator, direct_positions, reverse_positions

@@ -3,7 +3,7 @@ import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 
-from aprec.losses import XENDCGLoss
+from aprec.losses.xendcg import XENDCGLoss
 
 
 class TestXENDCGLoss(unittest.TestCase):
@@ -33,3 +33,6 @@ class TestXENDCGLoss(unittest.TestCase):
         tf.print(result)
         assert (result[0, 0] > result[0, 1])
         assert (result[1, 0] < result[1, 1])
+
+if __name__ == "__main__":
+    unittest.main()
