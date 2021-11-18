@@ -78,13 +78,13 @@ def salrec(loss, activation_override=None):
     if activation_override is not None:
         activation = activation_override
     return FilterSeenRecommender(SalrecRecommender(train_epochs=10000, loss=loss,
-                                                   optimizer=Adam(learning_rate=0.01), early_stop_epochs=100,
+                                                   optimizer=Adam(), early_stop_epochs=100,
                                                    batch_size=128, sigma=1.0, ndcg_at=40,
                                                    max_history_len=150,
                                                    output_layer_activation=activation,
                                                    num_blocks=3,
                                                    num_target_predictions=5,
-                                                   target_decay=1.0
+                                                   target_decay=0.8
                                                    ))
 
 def mlp_historical_embedding(loss, activation_override=None):
