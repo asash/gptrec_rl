@@ -33,8 +33,12 @@ class SalrecRecommender(Recommender):
                  num_heads = 5,
                  num_target_predictions=5,
                  positional=True,
+                 embedding_size=64,
+                 bottleneck_size = 256,
+                 num_bottlenecks = 2,
                  regularization = 0.0
                  ):
+        self.embedding_size = embedding_size
         self.users = ItemId()
         self.items = ItemId()
         self.user_actions = defaultdict(lambda: [])
@@ -60,6 +64,8 @@ class SalrecRecommender(Recommender):
         self.target_request = np.array([[self.max_history_length + 1] * num_target_predictions])
         self.positional = positional
         self.regularization = regularization
+        self.bottleneck_size = bottleneck_size
+        self.num_bottlenecks = num_bottlenecks
 
     def get_metadata(self):
         return self.metadata
@@ -132,7 +138,7 @@ class SalrecRecommender(Recommender):
         print(f"taken best model from epoch{best_epoch}. best_val_ndcg: {best_ndcg}")
 
     def get_model(self, n_items):
-        embedding_size = 64
+        embedding_size = self.embedding_size
         model_inputs = []
 
         input = layers.Input(shape=(self.max_history_length))
@@ -162,13 +168,11 @@ class SalrecRecommender(Recommender):
             x = layers.LayerNormalization()(x)
 
         x = layers.Flatten()(x)
-        x = layers.Dense(256, name="bottleneck", activation='swish')(x)
-        x = layers.Dense(256, name="bottleneck_after_dropout", activation='swish', bias_regularizer=l2(self.regularization),
-                         kernel_regularizer=l2(self.regularization))(x)
+        for i in range(self.num_bottlenecks):
+            x = layers.Dense(self.bottleneck_size, activation='swish')(x)
         output = layers.Dense(n_items, name="output", activation=self.output_layer_activation, bias_regularizer=l2(self.regularization),
                               kernel_regularizer=l2(self.regularization))(x)
         model = keras.Model(inputs = model_inputs, outputs=output)
-        # model = keras.Model(inputs = [input], outputs=output)
         ndcg_metric = KerasNDCG(self.ndcg_at)
         loss = get_loss(self.loss, self.items.size(), self.batch_size, self.ndcg_at)
 
