@@ -14,6 +14,7 @@ from aprec.evaluation.metrics.mrr import MRR
 from aprec.evaluation.metrics.map import MAP
 from tensorflow.keras.optimizers import Adam
 from aprec.evaluation.metrics.average_popularity_rank import AveragePopularityRank
+from aprec.recommenders.random_recommender import RandomRecommender
 from aprec.evaluation.metrics.pairwise_cos_sim import PairwiseCosSim
 from aprec.evaluation.metrics.sps import SPS
 
@@ -116,7 +117,15 @@ def constant_recommender():
                                 ('253', 0.257)])
 
 RECOMMENDERS = {
-    "Salrec-Lambdarank": lambda: salrec('lambdarank')
+    "random_recommender": RandomRecommender,
+    "top_recommender": top_recommender,
+    "svd_recommender": lambda: svd_recommender(32),
+    "BERT4rec-default": lambda: vanilla_bert4rec(400000),
+    "Transformer-BCE": lambda: salrec('binary_crossentropy'),
+    "Transformer-Lambdarank": lambda: salrec('lambdarank'),
+    "BERT4rec-200000": lambda: vanilla_bert4rec(2000000),
+    "BERT4rec-800000": lambda: vanilla_bert4rec(8000000),
+    "Transformer-BPR": lambda: salrec('bpr')
 }
 
 N_VAL_USERS=1024
