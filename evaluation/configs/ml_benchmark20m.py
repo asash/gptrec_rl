@@ -120,12 +120,12 @@ RECOMMENDERS = {
     "random_recommender": RandomRecommender,
     "top_recommender": top_recommender,
     "svd_recommender": lambda: svd_recommender(32),
-    "BERT4rec-default": lambda: vanilla_bert4rec(400000),
     "Transformer-BCE": lambda: salrec('binary_crossentropy'),
+    "BERT4rec-800000": lambda: vanilla_bert4rec(8000000),
+    "Transformer-BPR": lambda: salrec('bpr'),
     "Transformer-Lambdarank": lambda: salrec('lambdarank'),
     "BERT4rec-200000": lambda: vanilla_bert4rec(2000000),
-    "BERT4rec-800000": lambda: vanilla_bert4rec(8000000),
-    "Transformer-BPR": lambda: salrec('bpr')
+    "BERT4rec-default": lambda: vanilla_bert4rec(400000),
 }
 
 N_VAL_USERS=1024
