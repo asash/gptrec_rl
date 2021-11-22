@@ -74,7 +74,7 @@ def vanilla_bert4rec(num_steps):
                                   learning_rate=learning_rate)
     return FilterSeenRecommender(recommender)
 
-def salrec(loss, activation_override=None):
+def salrec(loss, num_blocks, activation_override=None):
     activation = 'linear' if loss == 'lambdarank' else 'sigmoid'
     if activation_override is not None:
         activation = activation_override
@@ -83,7 +83,7 @@ def salrec(loss, activation_override=None):
                                                    batch_size=128, sigma=1.0, ndcg_at=40,
                                                    max_history_len=150,
                                                    output_layer_activation=activation,
-                                                   num_blocks=3,
+                                                   num_blocks=num_blocks,
                                                    num_target_predictions=5,
                                                    target_decay=0.8
                                                    ))
@@ -117,15 +117,10 @@ def constant_recommender():
                                 ('253', 0.257)])
 
 RECOMMENDERS = {
-    "random_recommender": RandomRecommender,
-    "top_recommender": top_recommender,
-    "svd_recommender": lambda: svd_recommender(32),
-    "Transformer-BCE": lambda: salrec('binary_crossentropy'),
-    "BERT4rec-800000": lambda: vanilla_bert4rec(8000000),
-    "Transformer-BPR": lambda: salrec('bpr'),
-    "Transformer-Lambdarank": lambda: salrec('lambdarank'),
-    "BERT4rec-200000": lambda: vanilla_bert4rec(2000000),
-    "BERT4rec-default": lambda: vanilla_bert4rec(400000),
+    "Transformer-BCE-10": lambda: salrec('binary_crossentropy', 10),
+    "Transformer-Lambdarank-10": lambda: salrec('binary_crossentropy', 10)
+    "Transformer-BCE-5": lambda: salrec('binary_crossentropy', 5),
+    "Transformer-Lambdarank-5": lambda: salrec('binary_crossentropy', 5)
 }
 
 N_VAL_USERS=1024
