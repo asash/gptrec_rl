@@ -117,10 +117,8 @@ def constant_recommender():
                                 ('253', 0.257)])
 
 RECOMMENDERS = {
-    "Transformer-Lambdarank-10": lambda: salrec('lambdarank', 5),
-    "Transformer-BCE-5": lambda: salrec('lambdarank', 10),
-    "Transformer-Lambdarank-5": lambda: salrec('binary_crossentropy', 5),
-    "Transformer-BCE-10": lambda: salrec('binary_crossentropy', 10),
+    "Transformer-Lambdarank-4": lambda: salrec('lambdarank', 4),
+    "Transformer-BCE-4": lambda: salrec('binary_crossentropy', 4),
 }
 
 N_VAL_USERS=1024
