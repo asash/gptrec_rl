@@ -74,12 +74,13 @@ def vanilla_bert4rec(num_steps):
                                   learning_rate=learning_rate)
     return FilterSeenRecommender(recommender)
 
-def salrec(loss, num_blocks, activation_override=None):
+def salrec(loss, num_blocks, learning_rate, activation_override=None):
     activation = 'linear' if loss == 'lambdarank' else 'sigmoid'
     if activation_override is not None:
         activation = activation_override
     return FilterSeenRecommender(SalrecRecommender(train_epochs=10000, loss=loss,
-                                                   optimizer=Adam(), early_stop_epochs=100,
+                                                   optimizer=Adam(learning_rate), 
+                                                   early_stop_epochs=100,
                                                    batch_size=128, sigma=1.0, ndcg_at=40,
                                                    max_history_len=150,
                                                    output_layer_activation=activation,
@@ -99,26 +100,9 @@ def mlp_historical_embedding(loss, activation_override=None):
                                                               max_history_len=150,
                                                               output_layer_activation=activation, target_decay=0.8))
 
-def constant_recommender():
-    return ConstantRecommender([('457', 0.45),
-                                ('380', 0.414),
-                                ('110', 0.413),
-                                ('292', 0.365),
-                                ('296', 0.323),
-                                ('595', 0.313),
-                                ('588', 0.312),
-                                ('592', 0.293),
-                                ('440', 0.286),
-                                ('357', 0.286),
-                                ('434', 0.280),
-                                ('593', 0.280),
-                                ('733', 0.276),
-                                ('553', 0.257),
-                                ('253', 0.257)])
-
 RECOMMENDERS = {
-    "Transformer-Lambdarank-4": lambda: salrec('lambdarank', 4),
-    "Transformer-BCE-4": lambda: salrec('binary_crossentropy', 4),
+    "Transformer-Lambdarank-blocks:3-lr:0.01": lambda: salrec('lambdarank', 3, 0.01),
+    "Transformer-Lambdarank-blocks:3-lr:0.0001": lambda: salrec('lambdarank', 3, 0.0001),
 }
 
 N_VAL_USERS=1024
