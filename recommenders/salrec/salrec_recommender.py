@@ -36,7 +36,8 @@ class SalrecRecommender(Recommender):
                  embedding_size=64,
                  bottleneck_size = 256,
                  num_bottlenecks = 2,
-                 regularization = 0.0
+                 regularization = 0.0,
+                 training_time_limit = None
                  ):
         self.embedding_size = embedding_size
         self.users = ItemId()
@@ -66,6 +67,7 @@ class SalrecRecommender(Recommender):
         self.regularization = regularization
         self.bottleneck_size = bottleneck_size
         self.num_bottlenecks = num_bottlenecks
+        self.trainig_time_limit = training_time_limit
 
     def get_metadata(self):
         return self.metadata
@@ -129,8 +131,14 @@ class SalrecRecommender(Recommender):
             if steps_since_improved >= self.early_stop_epochs:
                 print(f"early stopped at epoch {epoch}")
                 break
+
+            if self.trainig_time_limit is not None and total_trainig_time > self.trainig_time_limit:
+                print(f"time limit stop triggered at epoch {epoch}")
+                break
+
             K.clear_session()
             gc.collect()
+
         self.model.set_weights(best_weights)
         self.metadata = {"epochs_trained": best_epoch + 1, "best_val_ndcg": best_ndcg,
                          "val_ndcg_history": val_ndcg_history}
