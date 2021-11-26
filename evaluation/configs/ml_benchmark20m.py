@@ -84,6 +84,7 @@ def salrec(loss, num_blocks, learning_rate, activation_override=None):
                                                    batch_size=128, sigma=1.0, ndcg_at=40,
                                                    max_history_len=150,
                                                    output_layer_activation=activation,
+                                                   training_time_limit = 14400,
                                                    num_blocks=num_blocks,
                                                    num_target_predictions=5,
                                                    target_decay=0.8
@@ -101,7 +102,11 @@ def mlp_historical_embedding(loss, activation_override=None):
                                                               output_layer_activation=activation, target_decay=0.8))
 
 RECOMMENDERS = {
-    "Transformer-Lambdarank-blocks:3-lr:0.01": lambda: salrec('lambdarank', 3, 0.01),
+    "Transformer-Lambdarank-blocks:3-lr:0.005": lambda: salrec('lambdarank', 3, 0.005),
+    "Transformer-Lambdarank-blocks:3-lr:0.002": lambda: salrec('lambdarank', 3, 0.002),
+    "Transformer-Lambdarank-blocks:3-lr:0.001": lambda: salrec('lambdarank', 3, 0.001),
+    "Transformer-Lambdarank-blocks:3-lr:0.0005": lambda: salrec('lambdarank', 3, 0.0005),
+    "Transformer-Lambdarank-blocks:3-lr:0.0002": lambda: salrec('lambdarank', 3, 0.0002),
     "Transformer-Lambdarank-blocks:3-lr:0.0001": lambda: salrec('lambdarank', 3, 0.0001),
 }
 
