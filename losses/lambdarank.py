@@ -6,19 +6,18 @@ def print_tensor(name, tensor):
     K.print_tensor(tensor)
 
 class LambdaRankLoss(object):
-    def get_pairwise_diff_vector(self, x):
+    def get_pairwise_diffs_for_vector(self, x):
         a, b = tf.meshgrid(x[:self.ndcg_at], tf.transpose(x))
         return tf.subtract(b, a)
 
     def get_pairwise_diff_batch(self, x):
-        return tf.map_fn(self.get_pairwise_diff_vector, x)
+        return tf.vectorized_map(self.get_pairwise_diffs_for_vector, x)
 
     def need_swap_vector(self, x):
-        diffs = tf.cast(tf.sign(self.get_pairwise_diff_vector(x)), tf.float32)
-        return diffs
+        return tf.cast(tf.sign(self.get_pairwise_diffs_for_vector(x)), tf.float32)
 
     def need_swap_batch(self, x):
-        return tf.map_fn(self.need_swap_vector, x)
+        return tf.vectorized_map(self.need_swap_vector, x)
 
     def __init__(self, n_items, batch_size, sigma=1.0, ndcg_at = 30):
         self.__name__ = 'lambdarank'
@@ -27,7 +26,8 @@ class LambdaRankLoss(object):
         self.n_items = n_items
         self.ndcg_at = min(ndcg_at, n_items)
         self.dcg_position_discounts = tf.math.log(2.0) / tf.math.log(tf.cast(tf.range(n_items) + 2, tf.float32))
-        self.swap_importance = tf.abs(self.get_pairwise_diff_vector(self.dcg_position_discounts))
+        self.top_position_discounts = tf.reshape(self.dcg_position_discounts[:self.ndcg_at], (self.ndcg_at, 1))
+        self.swap_importance = tf.abs(self.get_pairwise_diffs_for_vector(self.dcg_position_discounts))
 
     def dcg(self, x):
         return tf.reduce_sum((2 ** x - 1) * self.dcg_position_discounts[:x.shape[0]])
@@ -46,16 +46,16 @@ class LambdaRankLoss(object):
         return result, grad
 
     def get_lambdas(self, y_true, y_pred):
-        top_k = tf.nn.top_k(y_pred, self.n_items)
-        col_indices = top_k.indices
-        pred_ordered = top_k.values
+        sorted_by_score = tf.nn.top_k(y_pred, self.n_items)
+        col_indices = sorted_by_score.indices
+        pred_ordered = sorted_by_score.values
         best_score = pred_ordered[:, 0]
         worst_score = pred_ordered[:, -1]
 
         range_is_zero = tf.reshape(tf.cast(tf.math.equal(best_score, worst_score), tf.float32), (self.batch_size, 1, 1))
 
-        true_ordered = tf.gather(y_true, top_k.indices, batch_dims=1)
-        inverse_idcg = tf.reshape(tf.map_fn(self.inverse_idcg, true_ordered), (self.batch_size, 1, 1))
+        true_ordered = tf.gather(y_true, sorted_by_score.indices, batch_dims=1)
+        inverse_idcg = self.get_inverse_idcg(true_ordered)
         S = self.need_swap_batch(true_ordered)
         true_gains = 2 ** true_ordered - 1
         true_gains_diff = self.get_pairwise_diff_batch(true_gains)
@@ -92,3 +92,11 @@ class LambdaRankLoss(object):
         result_lambdas = tf.scatter_nd(indices, tf.reshape(lambda_sum, [self.n_items * self.batch_size]),
                                        tf.constant([self.batch_size, self.n_items]))
         return result_lambdas
+
+    def get_inverse_idcg(self, true_ordered):
+        top_k_values = tf.nn.top_k(true_ordered, self.ndcg_at).values
+        top_k_discounted = tf.linalg.matmul(top_k_values, self.top_position_discounts)
+        result = tf.reshape(tf.math.divide_no_nan(1.0, top_k_discounted), (self.batch_size, 1, 1))
+        return result
+
+
