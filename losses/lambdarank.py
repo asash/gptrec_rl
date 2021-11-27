@@ -8,16 +8,20 @@ def print_tensor(name, tensor):
 class LambdaRankLoss(object):
     def get_pairwise_diffs_for_vector(self, x):
         a, b = tf.meshgrid(x[:self.ndcg_at], tf.transpose(x))
-        return tf.subtract(b, a)
+        result = tf.subtract(b, a)
+        return  result
 
     def get_pairwise_diff_batch(self, x):
-        return tf.vectorized_map(self.get_pairwise_diffs_for_vector, x)
+        x_top_tile = tf.tile(tf.expand_dims(x[:,:self.ndcg_at], 1), [1, self.n_items, 1])
+        x_tile = tf.tile(tf.expand_dims(x, 2), [1, 1, self.ndcg_at])
+        result = x_tile - x_top_tile
+        return result
 
     def need_swap_vector(self, x):
         return tf.cast(tf.sign(self.get_pairwise_diffs_for_vector(x)), tf.float32)
 
     def need_swap_batch(self, x):
-        return tf.vectorized_map(self.need_swap_vector, x)
+        return tf.cast(tf.sign(self.get_pairwise_diff_batch(x)), tf.float32)
 
     def __init__(self, n_items, batch_size, sigma=1.0, ndcg_at = 30):
         self.__name__ = 'lambdarank'
@@ -28,6 +32,7 @@ class LambdaRankLoss(object):
         self.dcg_position_discounts = tf.math.log(2.0) / tf.math.log(tf.cast(tf.range(n_items) + 2, tf.float32))
         self.top_position_discounts = tf.reshape(self.dcg_position_discounts[:self.ndcg_at], (self.ndcg_at, 1))
         self.swap_importance = tf.abs(self.get_pairwise_diffs_for_vector(self.dcg_position_discounts))
+        self.batch_indices = tf.reshape(tf.repeat(tf.range(self.batch_size), self.n_items), (self.batch_size, self.n_items))
 
     def dcg(self, x):
         return tf.reduce_sum((2 ** x - 1) * self.dcg_position_discounts[:x.shape[0]])
@@ -46,7 +51,6 @@ class LambdaRankLoss(object):
         return result, grad
 
 
-    @tf.function
     def get_lambdas(self, y_true, y_pred):
         sorted_by_score = tf.nn.top_k(y_pred, self.n_items)
         col_indices = sorted_by_score.indices
@@ -89,8 +93,7 @@ class LambdaRankLoss(object):
         norm_factor = tf.math.divide_no_nan(tf.math.log(all_lambdas_sum + 1), (all_lambdas_sum * tf.math.log(2.0)))
         lambda_sum = lambda_sum_result * norm_factor
 
-        batch_indices = tf.reshape(tf.repeat(tf.range(self.batch_size), self.n_items), (self.batch_size, self.n_items))
-        indices = tf.reshape(tf.stack([batch_indices, col_indices], axis=2), (self.n_items * self.batch_size, 2))
+        indices = tf.reshape(tf.stack([self.batch_indices, col_indices], axis=2), (self.n_items * self.batch_size, 2))
         result_lambdas = tf.scatter_nd(indices, tf.reshape(lambda_sum, [self.n_items * self.batch_size]),
                                        tf.constant([self.batch_size, self.n_items]))
         return result_lambdas
