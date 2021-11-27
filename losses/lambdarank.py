@@ -45,6 +45,8 @@ class LambdaRankLoss(object):
             return 0 * dy, lambdas * dy
         return result, grad
 
+
+    @tf.function
     def get_lambdas(self, y_true, y_pred):
         sorted_by_score = tf.nn.top_k(y_pred, self.n_items)
         col_indices = sorted_by_score.indices
