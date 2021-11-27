@@ -17,9 +17,6 @@ class LambdaRankLoss(object):
         result = x_tile - x_top_tile
         return result
 
-    def need_swap_vector(self, x):
-        return tf.cast(tf.sign(self.get_pairwise_diffs_for_vector(x)), tf.float32)
-
     def need_swap_batch(self, x):
         return tf.cast(tf.sign(self.get_pairwise_diff_batch(x)), tf.float32)
 
