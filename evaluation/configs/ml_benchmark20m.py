@@ -107,7 +107,7 @@ RECOMMENDERS = {
 }
 
 N_VAL_USERS=1024
-MAX_TEST_USERS=4000
+MAX_TEST_USERS=40000
 
 dataset_for_metric = [action for action in get_movielens20m_actions(min_rating=1.0)]
 METRICS = [NDCG(40), Precision(5), Recall(5), SPS(10), MRR(), MAP(10), AveragePopularityRank(10, dataset_for_metric),
