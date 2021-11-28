@@ -9,7 +9,7 @@ class TestLambdarankLoss(unittest.TestCase):
    def test_get_lambdas(self):
        batch_size = 128
        n_items = 27278
-       loss = LambdaRankLoss(n_items, batch_size, 1)
+       loss = LambdaRankLoss(n_items, batch_size, 1, ndcg_at=10)
        for i in tqdm(range(1000)):
            y_true = tf.random.uniform((batch_size, n_items))
            y_pred =  tf.random.uniform((batch_size, n_items))
