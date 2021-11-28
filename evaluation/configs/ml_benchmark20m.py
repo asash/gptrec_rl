@@ -74,14 +74,14 @@ def vanilla_bert4rec(num_steps):
                                   learning_rate=learning_rate)
     return FilterSeenRecommender(recommender)
 
-def salrec(loss, num_blocks, learning_rate, activation_override=None):
+def salrec(loss, num_blocks, learning_rate, ndcg_at, activation_override=None):
     activation = 'linear' if loss == 'lambdarank' else 'sigmoid'
     if activation_override is not None:
         activation = activation_override
     return FilterSeenRecommender(SalrecRecommender(train_epochs=10000, loss=loss,
                                                    optimizer=Adam(learning_rate), 
                                                    early_stop_epochs=100,
-                                                   batch_size=128, sigma=1.0, ndcg_at=10,
+                                                   batch_size=128, sigma=1.0, ndcg_at=ndcg_at,
                                                    max_history_len=150,
                                                    output_layer_activation=activation,
                                                    training_time_limit = 14400,
@@ -102,7 +102,11 @@ def mlp_historical_embedding(loss, activation_override=None):
                                                               output_layer_activation=activation, target_decay=0.8))
 
 RECOMMENDERS = {
-    "Transformer-Lambdarank-blocks:3-lr:0.001": lambda: salrec('lambdarank', 3, 0.001),
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:10": lambda: salrec('lambdarank', 3, 0.001, 10),
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:5": lambda: salrec('lambdarank', 3, 0.001, 5),
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:2": lambda: salrec('lambdarank', 3, 0.001, 2),
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:1": lambda: salrec('lambdarank', 3, 0.001, 1),
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:20": lambda: salrec('lambdarank', 3, 0.001, 20),
     "Transformer-BCE-blocks:3-lr:0.001": lambda: salrec('binary_crossentropy', 3, 0.001),
 }
 
@@ -110,7 +114,7 @@ N_VAL_USERS=1024
 MAX_TEST_USERS=40000
 
 dataset_for_metric = [action for action in get_movielens20m_actions(min_rating=1.0)]
-METRICS = [NDCG(10), Precision(10), Recall(10), SPS(10), SPS(10), MRR(), MAP(10), AveragePopularityRank(10, dataset_for_metric),
+METRICS = [NDCG(10),  NDCG(2), NDCG(5), NDCG(20), NDCG(40), Precision(10), Recall(10), SPS(1), SPS(10), MRR(), MAP(10), AveragePopularityRank(10, dataset_for_metric),
            PairwiseCosSim(dataset_for_metric, 10)]
 del(dataset_for_metric)
 
