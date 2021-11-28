@@ -107,7 +107,7 @@ RECOMMENDERS = {
     "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:2": lambda: salrec('lambdarank', 3, 0.001, 2),
     "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:1": lambda: salrec('lambdarank', 3, 0.001, 1),
     "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:20": lambda: salrec('lambdarank', 3, 0.001, 20),
-    "Transformer-BCE-blocks:3-lr:0.001": lambda: salrec('binary_crossentropy', 3, 0.001),
+    "Transformer-BCE-blocks:3-lr:0.001": lambda: salrec('binary_crossentropy', 3, 0.001, 10),
 }
 
 N_VAL_USERS=1024
