@@ -102,12 +102,12 @@ def mlp_historical_embedding(loss, activation_override=None):
                                                               output_layer_activation=activation, target_decay=0.8))
 
 RECOMMENDERS = {
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:10": lambda: salrec('lambdarank', 3, 0.001, 10),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:5": lambda: salrec('lambdarank', 3, 0.001, 5),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:2": lambda: salrec('lambdarank', 3, 0.001, 2),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:1": lambda: salrec('lambdarank', 3, 0.001, 1),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:20": lambda: salrec('lambdarank', 3, 0.001, 20),
-    "Transformer-BCE-blocks:3-lr:0.001": lambda: salrec('binary_crossentropy', 3, 0.001, 10),
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50": lambda: salrec('lambdarank', 3, 0.001, 50),
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:30": lambda: salrec('lambdarank', 3, 0.001, 30),
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:60": lambda: salrec('lambdarank', 3, 0.001, 60),
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:80": lambda: salrec('lambdarank', 3, 0.001, 80),
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:80": lambda: salrec('lambdarank', 3, 0.001, 100),
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:80": lambda: salrec('lambdarank', 3, 0.001, 120),
 }
 
 N_VAL_USERS=1024
