@@ -49,7 +49,7 @@ def parse_experiment(experiment_log):
                 metrics = []
                 experiment_finished = False
                 epoch = 0
-            if 'val_ndcg_at_40' in line:
+            if 'val_ndcg_at_' in line:
                     epoch += 1
                     epoch_metrics = get_metrics(line)
                     epoch_metrics['epoch'] = epoch
@@ -60,6 +60,7 @@ def parse_experiment(experiment_log):
             try:
                 experiment_results = json.loads(line)
                 experiment_results['model_name'] =  current_recommender
+                experiment_results['num_epochs'] = epoch
                 experiment_results['metrics_history'] = metrics
                 result.append(experiment_results)
                 experiment_finished = True
@@ -69,6 +70,7 @@ def parse_experiment(experiment_log):
         experiment_results = {}
         experiment_results['model_name'] =  current_recommender
         experiment_results['metrics_history'] = metrics
+        experiment_results['num_epochs'] = epoch
         result.append(experiment_results)
     return result
 
