@@ -60,6 +60,7 @@ class RecommendersEvaluator(object):
         result = {"recommenders": {}}
 
         for recommender_name in self.recommenders:
+            print("\n\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
             print("evaluating {}".format(recommender_name))
             recommender = self.recommenders[recommender_name]()
             print("adding train actions...")

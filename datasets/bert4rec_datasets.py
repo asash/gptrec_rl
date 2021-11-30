@@ -14,7 +14,7 @@ def get_bert4rec_dataset(dataset):
         current_timestamp = 0
         with open(dataset_filename) as input:
             for line in input:
-                user, item = [int(id) for id in line.strip().split()]
+                user, item = [str(id) for id in line.strip().split()]
                 if user != prev_user:
                     current_timestamp = 0
                 prev_user = user

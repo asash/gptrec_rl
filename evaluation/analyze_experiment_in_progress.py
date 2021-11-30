@@ -1,6 +1,4 @@
-from collections import defaultdict
 import json
-import numpy as np
 import pandas as pd
 import re
 import sys
@@ -89,7 +87,9 @@ def get_data_from_logs(logfile, experiment_num):
 if __name__ == "__main__":
     experiment_logs_file = sys.argv[1]
     data = get_data_from_logs(experiment_logs_file, 0)
-    df = pd.DataFrame(data).set_index('model_name').sort_values('ndcg@40')
+    df = pd.DataFrame(data).set_index('model_name')
+    metric_names = df.columns
+    df.sort_values(metric_names[0])
     del df['model_metadata']
     del df['metrics_history']
     print(df)

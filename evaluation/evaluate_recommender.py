@@ -52,7 +52,10 @@ def evaluate_recommender(recommender, test_actions,
     predictions_filename = f"{out_dir}/predictions/{recommender_name}.json.gz"
     with gzip.open(predictions_filename, "w") as output:
         for user_doc in user_docs:
-            output.write(json.dumps(user_doc).encode("utf-8") + b"\n")
+            try:
+                output.write(json.dumps(user_doc).encode("utf-8") + b"\n")
+            except:
+                pass
 
     result = {}
     for metric in metric_sum:
