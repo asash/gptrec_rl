@@ -47,11 +47,16 @@ class DataGenerator(Sequence):
         cols = []
         vals = []
         for i in range(len(user_actions)):
-            cur_val = 0.99
+            cur_val = 1.0
+            marked_actions = set()
             for action_num in range(len(user_actions[i])):
                 action = user_actions[i][action_num]
+                if action[1] in marked_actions:
+                    cur_val *= self.target_decay
+                    continue
                 rows.append(i)
                 cols.append(action[1])
+                marked_actions.add(action[1])
                 vals.append(cur_val)
                 cur_val *= self.target_decay
                 if cur_val < self.min_target_val:

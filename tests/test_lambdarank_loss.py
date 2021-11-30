@@ -1,4 +1,5 @@
 from aprec.losses.lambdarank import  LambdaRankLoss
+from bad_lambdarank_case import  case as bad_case
 import tensorflow.keras.backend as K
 from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Dense
@@ -13,8 +14,8 @@ class TestLambdarankLoss(unittest.TestCase):
         loss = LambdaRankLoss(len(y_true[0]), len(y_true), 1, ndcg_at)
         lambdas = loss.get_lambdas(y_true, y_pred)
         eps = 1e-4
-        res = tf.reduce_sum(tf.abs(lambdas - expected_lambdas))
-        assert (res < eps)
+        res = tf.reduce_all(tf.abs(lambdas - expected_lambdas) < eps)
+        assert res
 
     def test_get_lambdas(self):
         self.lambdas_sample_test([[1, 1, 1, 0, 1, 0, 0, 1, 0, 0], [0, 0, 0, 0, 1, 0, 0, 1, 0, 1]],
@@ -41,11 +42,11 @@ class TestLambdarankLoss(unittest.TestCase):
 
     def test_dcg(self):
         loss = LambdaRankLoss(4, 1, ndcg_at=1)
-        res = loss.inverse_idcg(K.constant([0, 0, 1, 1]))
+        res = loss.get_inverse_idcg(K.constant([[0, 0, 1, 1]]))
         assert res == 1
 
         loss = LambdaRankLoss(4, 1)
-        res = loss.inverse_idcg(K.constant([0, 0, 0, 1]))
+        res = loss.get_inverse_idcg(K.constant([[0, 0, 0, 1]]))
         assert res == 1
 
 

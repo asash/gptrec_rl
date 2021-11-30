@@ -18,28 +18,22 @@ class LambdaRankLoss(object):
         return result
 
     def need_swap_batch(self, x):
-        return tf.cast(tf.sign(self.get_pairwise_diff_batch(x)), tf.float32)
+        return tf.cast(tf.sign(self.get_pairwise_diff_batch(x)), self.dtype)
 
-    def __init__(self, n_items, batch_size, sigma=1.0, ndcg_at = 30):
+    def __init__(self, n_items, batch_size, sigma=1.0, ndcg_at = 30, dtype=tf.float32):
         self.__name__ = 'lambdarank'
         self.batch_size = batch_size
         self.sigma = sigma
         self.n_items = n_items
         self.ndcg_at = min(ndcg_at, n_items)
-        self.dcg_position_discounts = tf.math.log(2.0) / tf.math.log(tf.cast(tf.range(n_items) + 2, tf.float32))
+        self.dtype = dtype
+        self.dcg_position_discounts = tf.cast(tf.math.log(2.0), self.dtype) / tf.math.log(tf.cast(tf.range(n_items) + 2, self.dtype))
         self.top_position_discounts = tf.reshape(self.dcg_position_discounts[:self.ndcg_at], (self.ndcg_at, 1))
         self.swap_importance = tf.abs(self.get_pairwise_diffs_for_vector(self.dcg_position_discounts))
         self.batch_indices = tf.reshape(tf.tile(tf.expand_dims(tf.range(self.batch_size), 1), [1, self.n_items]),
                                         (n_items * batch_size, 1))
-        self.mask = tf.reshape(1 - tf.pad(tf.ones(self.ndcg_at), [[0, self.n_items - self.ndcg_at]]), (1, self.n_items))
-
-    def dcg(self, x):
-        return tf.reduce_sum((2 ** x - 1) * self.dcg_position_discounts[:x.shape[0]])
-
-    def inverse_idcg(self, x):
-        top_k = tf.nn.top_k(x, self.ndcg_at)
-        return tf.math.divide_no_nan(1., self.dcg(top_k.values))
-
+        self.mask = tf.cast(tf.reshape(1 - tf.pad(tf.ones(self.ndcg_at), [[0, self.n_items - self.ndcg_at]]), (1, self.n_items)), self.dtype)
+        pass
 
     @tf.custom_gradient
     def __call__(self, y_true, y_pred):
@@ -51,15 +45,15 @@ class LambdaRankLoss(object):
 
     @tf.function
     def get_lambdas(self, y_true, y_pred):
-        sorted_by_score = tf.nn.top_k(y_pred, self.n_items)
+        sorted_by_score = tf.nn.top_k(tf.cast(y_pred, self.dtype), self.n_items)
         col_indices_reshaped = tf.reshape(sorted_by_score.indices, (self.n_items * self.batch_size, 1))
         pred_ordered = sorted_by_score.values
         best_score = pred_ordered[:, 0]
         worst_score = pred_ordered[:, -1]
 
-        range_is_zero = tf.reshape(tf.cast(tf.math.equal(best_score, worst_score), tf.float32), (self.batch_size, 1, 1))
+        range_is_zero = tf.reshape(tf.cast(tf.math.equal(best_score, worst_score), self.dtype), (self.batch_size, 1, 1))
 
-        true_ordered = tf.gather(y_true, sorted_by_score.indices, batch_dims=1)
+        true_ordered = tf.gather(tf.cast(y_true, self.dtype), sorted_by_score.indices, batch_dims=1)
         inverse_idcg = self.get_inverse_idcg(true_ordered)
         S = self.need_swap_batch(true_ordered)
         true_gains = 2 ** true_ordered - 1
@@ -86,19 +80,19 @@ class LambdaRankLoss(object):
 
         #normalize results - inspired by lightbm
         all_lambdas_sum = tf.reshape(tf.reduce_sum(tf.abs(lambda_sum_result), axis=(1)), (self.batch_size, 1))
-        norm_factor = tf.math.divide_no_nan(tf.math.log(all_lambdas_sum + 1), (all_lambdas_sum * tf.math.log(2.0)))
+        norm_factor = tf.math.divide_no_nan(tf.math.log(all_lambdas_sum + 1),
+                                            (all_lambdas_sum * tf.cast(tf.math.log(2.0), self.dtype)))
         lambda_sum = lambda_sum_result * norm_factor
 
         indices = tf.concat([self.batch_indices, col_indices_reshaped], axis=1)
 
         result_lambdas = tf.scatter_nd(indices, tf.reshape(lambda_sum, [self.n_items * self.batch_size]),
                                        tf.constant([self.batch_size, self.n_items]))
-        return result_lambdas
+        return tf.cast(result_lambdas, tf.float32)
 
     def get_inverse_idcg(self, true_ordered):
         top_k_values = tf.nn.top_k(true_ordered, self.ndcg_at).values
         top_k_discounted = tf.linalg.matmul(top_k_values, self.top_position_discounts)
-        result = tf.reshape(tf.math.divide_no_nan(1.0, top_k_discounted), (self.batch_size, 1, 1))
-        return result
+        return tf.reshape(tf.math.divide_no_nan(tf.cast(1.0, self.dtype), top_k_discounted), (self.batch_size, 1, 1))
 
 
