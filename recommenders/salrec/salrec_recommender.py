@@ -15,6 +15,7 @@ from aprec.recommenders.salrec.data_generator import DataGenerator,  reverse_pos
 from aprec \
     .recommenders.history_batch_generator import actions_to_vector
 import tensorflow.keras.layers as layers
+import tensorflow as tf
 import numpy as np
 
 
@@ -37,7 +38,9 @@ class SalrecRecommender(Recommender):
                  bottleneck_size = 256,
                  num_bottlenecks = 2,
                  regularization = 0.0,
-                 training_time_limit = None
+                 training_time_limit = None,
+                 loss_internal_dtype = tf.float32,
+                 eval_ndcg_at = None
                  ):
         self.embedding_size = embedding_size
         self.users = ItemId()
@@ -68,6 +71,8 @@ class SalrecRecommender(Recommender):
         self.bottleneck_size = bottleneck_size
         self.num_bottlenecks = num_bottlenecks
         self.trainig_time_limit = training_time_limit
+        self.loss_internal_dtype = loss_internal_dtype
+        self.eval_ndcg_at = eval_ndcg_at if eval_ndcg_at is not None else self.ndcg_at
 
     def get_metadata(self):
         return self.metadata
@@ -118,7 +123,7 @@ class SalrecRecommender(Recommender):
             print(f"epoch: {epoch}")
             train_history = self.model.fit(generator, validation_data=val_generator)
             total_trainig_time = time.time() - start_time
-            val_ndcg = train_history.history[f"val_ndcg_at_{self.ndcg_at}"][-1]
+            val_ndcg = train_history.history[f"val_ndcg_at_{self.eval_ndcg_at}"][-1]
             val_ndcg_history.append((total_trainig_time, val_ndcg))
             steps_since_improved += 1
             if val_ndcg > best_ndcg:
@@ -181,8 +186,8 @@ class SalrecRecommender(Recommender):
         output = layers.Dense(n_items, name="output", activation=self.output_layer_activation, bias_regularizer=l2(self.regularization),
                               kernel_regularizer=l2(self.regularization))(x)
         model = keras.Model(inputs = model_inputs, outputs=output)
-        ndcg_metric = KerasNDCG(self.ndcg_at)
-        loss = get_loss(self.loss, self.items.size(), self.batch_size, self.ndcg_at)
+        ndcg_metric = KerasNDCG(self.eval_ndcg_at)
+        loss = get_loss(self.loss, self.items.size(), self.batch_size, self.ndcg_at, self.loss_internal_dtype)
 
         model.compile(optimizer=self.optimizer, loss=loss, metrics=[ndcg_metric])
         return model
