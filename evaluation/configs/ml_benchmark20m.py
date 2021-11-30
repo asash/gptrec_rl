@@ -83,7 +83,7 @@ def salrec(loss, num_blocks, learning_rate, ndcg_at,  session_len,  activation_o
                                                    optimizer=Adam(learning_rate), 
                                                    early_stop_epochs=100,
                                                    batch_size=128, sigma=1.0, ndcg_at=ndcg_at,
-                                                   max_history_len=session_len,,
+                                                   max_history_len=session_len,
                                                    output_layer_activation=activation,
                                                    training_time_limit = 3600,
                                                    num_blocks=num_blocks,
