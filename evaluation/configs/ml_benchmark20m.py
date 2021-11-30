@@ -17,6 +17,7 @@ from aprec.evaluation.metrics.average_popularity_rank import AveragePopularityRa
 from aprec.recommenders.random_recommender import RandomRecommender
 from aprec.evaluation.metrics.pairwise_cos_sim import PairwiseCosSim
 from aprec.evaluation.metrics.sps import SPS
+import tensorflow as tf
 
 DATASET = get_movielens20m_actions(min_rating=1.0)
 
@@ -74,7 +75,7 @@ def vanilla_bert4rec(num_steps):
                                   learning_rate=learning_rate)
     return FilterSeenRecommender(recommender)
 
-def salrec(loss, num_blocks, learning_rate, ndcg_at, activation_override=None):
+def salrec(loss, num_blocks, learning_rate, ndcg_at, dtype,  activation_override=None):
     activation = 'linear' if loss == 'lambdarank' else 'sigmoid'
     if activation_override is not None:
         activation = activation_override
@@ -84,10 +85,12 @@ def salrec(loss, num_blocks, learning_rate, ndcg_at, activation_override=None):
                                                    batch_size=128, sigma=1.0, ndcg_at=ndcg_at,
                                                    max_history_len=150,
                                                    output_layer_activation=activation,
-                                                   training_time_limit = 14400,
+                                                   training_time_limit = 3600,
                                                    num_blocks=num_blocks,
                                                    num_target_predictions=5,
-                                                   target_decay=0.8
+                                                   eval_ndcg_at=40,
+                                                   target_decay=0.8, 
+                                                   dtype=dtype,
                                                    ))
 
 def mlp_historical_embedding(loss, activation_override=None):
@@ -102,16 +105,13 @@ def mlp_historical_embedding(loss, activation_override=None):
                                                               output_layer_activation=activation, target_decay=0.8))
 
 RECOMMENDERS = {
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:40": lambda: salrec('lambdarank', 3, 0.001, 40),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:80": lambda: salrec('lambdarank', 3, 0.001, 80),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:100": lambda: salrec('lambdarank', 3, 0.001, 100),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:120": lambda: salrec('lambdarank', 3, 0.001, 120),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:150": lambda: salrec('lambdarank', 3, 0.001, 150),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:200": lambda: salrec('lambdarank', 3, 0.001, 200),
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:40-dtype:float16": lambda: salrec('lambdarank', 3, 0.001, 40, tf.float16),
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:40-dtype:float32": lambda: salrec('lambdarank', 3, 0.001, 40, tf.float32),
+    "Transformer-BCE-blocks:3-lr:0.001-ndcg:40-dtype:float32": lambda: salrec('binary_crossentropy', 3, 0.001, 40, tf.float32),
 }
 
 N_VAL_USERS=1024
-MAX_TEST_USERS=40000
+MAX_TEST_USERS=4000
 
 dataset_for_metric = [action for action in get_movielens20m_actions(min_rating=1.0)]
 METRICS = [NDCG(10),  NDCG(2), NDCG(5), NDCG(20), NDCG(40), Precision(10), Recall(10), SPS(1), SPS(10), MRR(), MAP(10), AveragePopularityRank(10, dataset_for_metric),
