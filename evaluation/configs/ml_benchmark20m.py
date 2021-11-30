@@ -90,7 +90,7 @@ def salrec(loss, num_blocks, learning_rate, ndcg_at, dtype,  activation_override
                                                    num_target_predictions=5,
                                                    eval_ndcg_at=40,
                                                    target_decay=0.8, 
-                                                   dtype=dtype,
+                                                   loss_internal_dtype=dtype
                                                    ))
 
 def mlp_historical_embedding(loss, activation_override=None):
