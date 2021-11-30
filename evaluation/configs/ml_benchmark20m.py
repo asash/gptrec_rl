@@ -75,7 +75,7 @@ def vanilla_bert4rec(num_steps):
                                   learning_rate=learning_rate)
     return FilterSeenRecommender(recommender)
 
-def salrec(loss, num_blocks, learning_rate, ndcg_at,  session_len,  activation_override=None):
+def salrec(loss, num_blocks, learning_rate, ndcg_at,  session_len,  lambdas_normalization, activation_override=None):
     activation = 'linear' if loss == 'lambdarank' else 'sigmoid'
     if activation_override is not None:
         activation = activation_override
@@ -90,6 +90,7 @@ def salrec(loss, num_blocks, learning_rate, ndcg_at,  session_len,  activation_o
                                                    num_target_predictions=5,
                                                    eval_ndcg_at=40,
                                                    target_decay=0.8, 
+                                                   loss_lambda_normalization=lambdas_normalization
                                                    ))
 
 def mlp_historical_embedding(loss, activation_override=None):
@@ -104,16 +105,8 @@ def mlp_historical_embedding(loss, activation_override=None):
                                                               output_layer_activation=activation, target_decay=0.8))
 
 RECOMMENDERS = {
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:150": lambda: salrec('lambdarank', 3, 0.001, 50, 150),
-    "Transformer-BCE-blocks:3-lr:0.001-ndcg:50-session_len:150": lambda: salrec('binary_crossentropy', 3, 0.001, 50, 150),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100": lambda: salrec('lambdarank', 3, 0.001, 50, 100),
-    "Transformer-BCE-blocks:3-lr:0.001-ndcg:50-session_len:100": lambda: salrec('binary_crossentropy', 3, 0.001, 50, 100),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:50": lambda: salrec('lambdarank', 3, 0.001, 50, 50),
-    "Transformer-BCE-blocks:3-lr:0.001-ndcg:50-session_len:50": lambda: salrec('binary_crossentropy', 3, 0.001, 50, 50),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:250": lambda: salrec('lambdarank', 3, 0.001, 50, 250),
-    "Transformer-BCE-blocks:3-lr:0.001-ndcg:50-session_len:250": lambda: salrec('binary_crossentropy', 3, 0.001, 50, 250),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:400": lambda: salrec('lambdarank', 3, 0.001, 50, 400),
-    "Transformer-BCE-blocks:3-lr:0.001-ndcg:50-session_len:400": lambda: salrec('binary_crossentropy', 3, 0.001, 50, 400),
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True": lambda: salrec('lambdarank', 3, 0.001, 50, 150, True),
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:False": lambda: salrec('lambdarank', 3, 0.001, 50, 150, False),
 }
 
 N_VAL_USERS=1024
