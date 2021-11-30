@@ -1,5 +1,4 @@
 from aprec.losses.lambdarank import  LambdaRankLoss
-from bad_lambdarank_case import  case as bad_case
 import tensorflow.keras.backend as K
 from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Dense
