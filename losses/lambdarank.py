@@ -5,6 +5,7 @@ def print_tensor(name, tensor):
     print(name)
     K.print_tensor(tensor)
 
+
 class LambdaRankLoss(object):
     def get_pairwise_diffs_for_vector(self, x):
         a, b = tf.meshgrid(x[:self.ndcg_at], tf.transpose(x))
@@ -20,7 +21,7 @@ class LambdaRankLoss(object):
     def need_swap_batch(self, x):
         return tf.cast(tf.sign(self.get_pairwise_diff_batch(x)), self.dtype)
 
-    def __init__(self, n_items, batch_size, sigma=1.0, ndcg_at = 30, dtype=tf.float32):
+    def __init__(self, n_items, batch_size, sigma=1.0, ndcg_at = 30, dtype=tf.float32, lambda_normalization=True):
         self.__name__ = 'lambdarank'
         self.batch_size = batch_size
         self.sigma = sigma
@@ -33,7 +34,7 @@ class LambdaRankLoss(object):
         self.batch_indices = tf.reshape(tf.tile(tf.expand_dims(tf.range(self.batch_size), 1), [1, self.n_items]),
                                         (n_items * batch_size, 1))
         self.mask = tf.cast(tf.reshape(1 - tf.pad(tf.ones(self.ndcg_at), [[0, self.n_items - self.ndcg_at]]), (1, self.n_items)), self.dtype)
-        pass
+        self.lambda_normalization = lambda_normalization
 
     @tf.custom_gradient
     def __call__(self, y_true, y_pred):
@@ -67,8 +68,6 @@ class LambdaRankLoss(object):
 
         sigmoid = 1.0 / (1 + tf.exp(self.sigma * (pairwise_diffs)))
 
-        #ranknet lambdas
-        #lambda_matrix = self.sigma * (0.5 * (1 - S) -sigmoid)
         lambda_matrix = -self.sigma * abs_delta_ndcg * sigmoid * S
 
 
@@ -78,11 +77,14 @@ class LambdaRankLoss(object):
         lambda_sum_raw_top_masked = lambda_sum_raw * self.mask
         lambda_sum_result = lambda_sum_raw_top_masked + top_lambda_sum
 
-        #normalize results - inspired by lightbm
-        all_lambdas_sum = tf.reshape(tf.reduce_sum(tf.abs(lambda_sum_result), axis=(1)), (self.batch_size, 1))
-        norm_factor = tf.math.divide_no_nan(tf.math.log(all_lambdas_sum + 1),
-                                            (all_lambdas_sum * tf.cast(tf.math.log(2.0), self.dtype)))
-        lambda_sum = lambda_sum_result * norm_factor
+        if self.lambda_normalization:
+            #normalize results - inspired by lightbm
+            all_lambdas_sum = tf.reshape(tf.reduce_sum(tf.abs(lambda_sum_result), axis=(1)), (self.batch_size, 1))
+            norm_factor = tf.math.divide_no_nan(tf.math.log(all_lambdas_sum + 1),
+                                                (all_lambdas_sum * tf.cast(tf.math.log(2.0), self.dtype)))
+            lambda_sum = lambda_sum_result * norm_factor
+        else:
+            lambda_sum = lambda_sum_result
 
         indices = tf.concat([self.batch_indices, col_indices_reshaped], axis=1)
 
