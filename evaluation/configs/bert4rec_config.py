@@ -1,25 +1,21 @@
 from aprec.datasets.movielens20m import get_movielens20m_actions
-from aprec.recommenders.top_recommender import TopRecommender
-from aprec.recommenders.svd import SvdRecommender
-from aprec.recommenders.salrec.salrec_recommender import SalrecRecommender
-from aprec.recommenders.lightfm import LightFMRecommender
-from aprec.recommenders.constant_recommender import ConstantRecommender
-from aprec.recommenders.mlp_historical_embedding import GreedyMLPHistoricalEmbedding
-from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.recommenders.vanilla_bert4rec import VanillaBERT4Rec
 from aprec.evaluation.metrics.precision import Precision
 from aprec.evaluation.metrics.recall import Recall
 from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.evaluation.metrics.mrr import MRR
 from aprec.evaluation.metrics.map import MAP
-from tensorflow.keras.optimizers import Adam
 from aprec.evaluation.metrics.average_popularity_rank import AveragePopularityRank
 from aprec.evaluation.metrics.pairwise_cos_sim import PairwiseCosSim
 from aprec.evaluation.metrics.sps import SPS
+from datasets.bert4rec_datasets import get_bert4rec_dataset
+from recommenders.filter_seen_recommender import FilterSeenRecommender
+from recommenders.top_recommender import TopRecommender
 
-DATASET = get_movielens20m_actions(min_rating=1.0)
+DATASET = get_bert4rec_dataset("ml-1m")
 
-USERS_FRACTIONS = [1.]
+USERS_FRACTIONS = [1]
+
 
 def vanilla_bert4rec(num_steps):
     max_seq_length = 50
@@ -64,25 +60,22 @@ def vanilla_bert4rec(num_steps):
                                   learning_rate=learning_rate)
     return FilterSeenRecommender(recommender)
 
+def top_recommender():
+    return FilterSeenRecommender(TopRecommender())
+
+def top_recommender_no_filters():
+    return TopRecommender()
+
 RECOMMENDERS = {
-    "vanilla_bert4rec-25000": lambda: vanilla_bert4rec(25000),
-    "vanilla_bert4rec-50000": lambda: vanilla_bert4rec(50000),
-    "vanilla_bert4rec-100000": lambda: vanilla_bert4rec(100000),
-    "vanilla_bert4rec-200000": lambda: vanilla_bert4rec(200000),
-    "vanilla_bert4rec-400000": lambda: vanilla_bert4rec(400000),
-    "vanilla_bert4rec-800000": lambda: vanilla_bert4rec(800000),
-    "vanilla_bert4rec-1600000": lambda: vanilla_bert4rec(1600000),
-    "vanilla_bert4rec-3200000": lambda: vanilla_bert4rec(3200000),
-    "vanilla_bert4rec-6400000": lambda: vanilla_bert4rec(6400000),
+    "top_recommender": top_recommender,
+    "top_recommender_no_filters": top_recommender_no_filters,
+    "vanilla_bert4rec-4000": lambda: vanilla_bert4rec(4000),
 }
 
-FRACTION_TO_SPLIT = 0.85
-N_VAL_USERS=1000
 
-dataset_for_metric = [action for action in get_movielens20m_actions(min_rating=1.0)]
-METRICS = [Precision(5), NDCG(40), Recall(5), SPS(10), MRR(), MAP(10), AveragePopularityRank(10, dataset_for_metric),
-           PairwiseCosSim(dataset_for_metric, 10)]
-del(dataset_for_metric)
+MAX_TEST_USERS=943
+
+METRICS = [SPS(1), SPS(5), SPS(10), MRR()]
 
 
 SPLIT_STRATEGY = "LEAVE_ONE_OUT"

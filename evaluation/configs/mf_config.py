@@ -4,13 +4,10 @@ from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.lightfm import LightFMRecommender
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.recommenders.matrix_factorization import MatrixFactorizationRecommender
-from aprec.recommenders.random_recommender import RandomRecommender
-from aprec.evaluation.metrics.precision import Precision
-from aprec.evaluation.metrics.recall import Recall
-from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.evaluation.metrics.mrr import MRR
-from aprec.evaluation.metrics.map import MAP
 from aprec.evaluation.metrics.sps import SPS
+from aprec.evaluation.metrics.ndcg import NDCG
+from aprec.evaluation.metrics.sampled_proxy_metric import SampledProxy
 import numpy as np
 
 
@@ -20,6 +17,9 @@ USERS_FRACTIONS = [1]
 
 def top_recommender():
     return FilterSeenRecommender(TopRecommender())
+
+def top_recommender_nofilter():
+    return TopRecommender()
 
 def svd_recommender(k):
     return FilterSeenRecommender(SvdRecommender(k))
@@ -33,7 +33,8 @@ def lightfm_recommender(k, loss):
 
 RECOMMENDERS = {
     "top_recommender": top_recommender,
-    "lightfm_recommender_30_bpr": lambda: lightfm_recommender(30, 'bpr'),
+    #"top_recommender_nofilter": top_recommender_nofilter,
+    #"lightfm_recommender_30_bpr": lambda: lightfm_recommender(30, 'bpr'),
 }
 
 for i in range(0):
@@ -52,9 +53,12 @@ for i in range(0):
 
 
 TEST_FRACTION = 0.25
-MAX_TEST_USERS=943
+MAX_TEST_USERS=6040
 
-METRICS = [SPS(1), SPS(5), SPS(10), MRR()]
+all_item_ids, probs = SampledProxy.all_item_ids_probs(DATASET)
+
+METRICS = [SampledProxy(all_item_ids, probs, 100, metric) for metric in
+                [SPS(1), SPS(5), SPS(10), NDCG(5), NDCG(10), MRR(),]]
 
 
 RECOMMENDATIONS_LIMIT = 100
