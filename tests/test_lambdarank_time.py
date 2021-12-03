@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 
 from aprec.losses.lambdarank import LambdaRankLoss
@@ -7,21 +9,22 @@ import unittest
 
 class TestLambdaranTime(unittest.TestCase):
    def test_get_lambdas(self):
+       random.seed(31337)
+       np.random.seed(31337)
        batch_size = 128
-       positives_per_sample = 5
+       dataset_size = 128 * 1024
+       positives_per_sample = 100
        n_items = 27278
 
        y_true = np.zeros((batch_size, n_items))
-       cur = 1.0
        for sample_num in range(batch_size):
             positives = np.random.choice((range(n_items)), positives_per_sample, replace=False)
             for positive in positives:
-                y_true[sample_num][positive] = cur
-                cur *= 0.8
+                y_true[sample_num][positive] = random.random()
        y_true = tf.constant(y_true)
 
        loss = LambdaRankLoss(n_items, batch_size, 1, ndcg_at=40, dtype=tf.float32)
-       for i in tqdm(range(1000)):
+       for i in tqdm(range(dataset_size // batch_size)):
            y_pred =  tf.random.uniform((batch_size, n_items))
            #keras.losses.binary_crossentropy(y_true, y_pred)
            loss.get_lambdas(y_true, y_pred)

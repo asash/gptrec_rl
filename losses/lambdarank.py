@@ -41,32 +41,29 @@ class LambdaRankLoss(object):
             return 0 * dy, lambdas * dy
         return result, grad
 
+    @tf.function
     def get_lambdas(self, y_true, y_pred):
         sorted_by_score = tf.nn.top_k(tf.cast(y_pred, self.dtype), self.n_items)
         col_indices_reshaped = tf.reshape(sorted_by_score.indices, (self.n_items * self.batch_size, 1))
         pred_ordered = sorted_by_score.values
+        true_ordered = tf.gather(tf.cast(y_true, self.dtype), sorted_by_score.indices, batch_dims=1)
+        inverse_idcg = self.get_inverse_idcg(true_ordered)
+        true_gains = 2 ** true_ordered - 1
+        true_gains_diff = self.get_pairwise_diff_batch(true_gains)
+        S = tf.sign(true_gains_diff)
+        delta_ndcg = true_gains_diff * self.swap_importance * inverse_idcg
+        pairwise_diffs = self.get_pairwise_diff_batch(pred_ordered) * S
+
+        #normalize dcg gaps - inspired by lightbm
         best_score = pred_ordered[:, 0]
         worst_score = pred_ordered[:, -1]
 
         range_is_zero = tf.reshape(tf.cast(tf.math.equal(best_score, worst_score), self.dtype), (self.batch_size, 1, 1))
-
-        true_ordered = tf.gather(tf.cast(y_true, self.dtype), sorted_by_score.indices, batch_dims=1)
-        true_ordered_sparse = tf.sparse.from_dense(true_ordered)
-        inverse_idcg = self.get_inverse_idcg(true_ordered)
-        true_gains = 2 ** true_ordered - 1
-        true_gains_diff = self.get_pairwise_diff_batch(true_gains)
-        S = tf.cast(tf.sign(true_gains_diff), self.dtype)
-        abs_delta_ndcg = tf.abs(true_gains_diff * self.swap_importance) * inverse_idcg
-        pairwise_diffs = self.get_pairwise_diff_batch(pred_ordered) * S
-        #normalize dcg gaps - inspired by lightbm
         norms = (1 - range_is_zero) * (tf.abs(pairwise_diffs) + 0.01) + (range_is_zero)
-        abs_delta_ndcg = tf.math.divide_no_nan(abs_delta_ndcg, norms)
+        delta_ndcg = tf.math.divide_no_nan(delta_ndcg, norms)
 
-
-        sigmoid = 1.0 / (1 + tf.exp(self.sigma * (pairwise_diffs)))
-
-        lambda_matrix = -self.sigma * abs_delta_ndcg * sigmoid * S
-
+        sigmoid = -self.sigma / (1 + tf.exp(self.sigma * (pairwise_diffs)))
+        lambda_matrix =  delta_ndcg * sigmoid
 
         #calculate sum of lambdas by rows. For top items - calculate as sum by columns.
         lambda_sum_raw = tf.reduce_sum(lambda_matrix, axis=2)
@@ -84,7 +81,6 @@ class LambdaRankLoss(object):
             lambda_sum = lambda_sum_result
 
         indices = tf.concat([self.batch_indices, col_indices_reshaped], axis=1)
-
         result_lambdas = tf.scatter_nd(indices, tf.reshape(lambda_sum, [self.n_items * self.batch_size]),
                                        tf.constant([self.batch_size, self.n_items]))
         return tf.cast(result_lambdas, tf.float32)
