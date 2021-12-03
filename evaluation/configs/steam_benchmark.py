@@ -108,8 +108,8 @@ def mlp_historical_embedding(loss, activation_override=None):
                                                               output_layer_activation=activation, target_decay=0.8))
 
 RECOMMENDERS = {
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True": lambda: salrec('lambdarank', 3, 0.001, 50, 50, True),
-    "Transformer-BCE-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True": lambda: salrec('binary_crossentropy', 3, 0.001, 50, 50, True),
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True": lambda: salrec('lambdarank', 3, 0.001, 50, 100, True),
+    "Transformer-BCE-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True": lambda: salrec('binary_crossentropy', 3, 0.001, 50, 100, True),
     "vanilla_bert4rec-800000": lambda: vanilla_bert4rec(800000)
 }
 
