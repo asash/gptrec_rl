@@ -42,8 +42,8 @@ def parse_experiment(experiment_log):
     metrics = []
     experiment_finished = True
     for line in experiment_log:
-            if line.startswith('evaluating '):
-                current_recommender = line.split(' ')[1]
+            if line.startswith('evaluating ') or line.startswith("!!!!!!!!!   evaluating"):
+                current_recommender = line.split(' ')[-1]
                 metrics = []
                 experiment_finished = False
                 epoch = 0

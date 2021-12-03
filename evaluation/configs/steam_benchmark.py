@@ -48,7 +48,7 @@ def vanilla_bert4rec(num_steps):
     prop_sliding_window=0.5
     dupe_factor=10
     pool_size=10
-
+    radom_seed=31337
 
     {
       "attention_probs_dropout_prob": 0.2,
@@ -61,7 +61,6 @@ def vanilla_bert4rec(num_steps):
       "num_attention_heads": 8,
       "num_hidden_layers": 2,
       "type_vocab_size": 2,
-      "vocab_size": 13048
     }
     recommender = VanillaBERT4Rec(max_seq_length=max_seq_length,
                                   masked_lm_prob=masked_lm_prob,
@@ -108,8 +107,8 @@ def mlp_historical_embedding(loss, activation_override=None):
                                                               output_layer_activation=activation, target_decay=0.8))
 
 RECOMMENDERS = {
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True": lambda: salrec('lambdarank', 3, 0.001, 50, 100, True),
-    "Transformer-BCE-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True": lambda: salrec('binary_crossentropy', 3, 0.001, 50, 100, True),
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:50-lambda_norm:True": lambda: salrec('lambdarank', 3, 0.001, 50, 50, True),
+    "Transformer-BCE-blocks:3-lr:0.001-ndcg:50-session_len:50:-lambda_norm:True": lambda: salrec('binary_crossentropy', 3, 0.001, 50, 50, True),
     "vanilla_bert4rec-800000": lambda: vanilla_bert4rec(800000)
 }
 
