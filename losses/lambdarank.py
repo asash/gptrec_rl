@@ -28,7 +28,7 @@ class LambdaRankLoss(object):
         self.n_items = n_items
         self.ndcg_at = min(ndcg_at, n_items)
         self.dtype = dtype
-        self.dcg_position_discounts = tf.cast(tf.math.log(2.0), self.dtype) / tf.math.log(tf.cast(tf.range(n_items) + 2, self.dtype))
+        self.dcg_position_discounts = 1. / tf.experimental.numpy.log2(tf.cast(tf.range(n_items) + 2, self.dtype))
         self.top_position_discounts = tf.reshape(self.dcg_position_discounts[:self.ndcg_at], (self.ndcg_at, 1))
         self.swap_importance = tf.abs(self.get_pairwise_diffs_for_vector(self.dcg_position_discounts))
         self.batch_indices = tf.reshape(tf.tile(tf.expand_dims(tf.range(self.batch_size), 1), [1, self.n_items]),
@@ -80,8 +80,8 @@ class LambdaRankLoss(object):
         if self.lambda_normalization:
             #normalize results - inspired by lightbm
             all_lambdas_sum = tf.reshape(tf.reduce_sum(tf.abs(lambda_sum_result), axis=(1)), (self.batch_size, 1))
-            norm_factor = tf.math.divide_no_nan(tf.math.log(all_lambdas_sum + 1),
-                                                (all_lambdas_sum * tf.cast(tf.math.log(2.0), self.dtype)))
+            norm_factor = tf.math.divide_no_nan(tf.experimental.numpy.log2(all_lambdas_sum + 1), all_lambdas_sum )
+
             lambda_sum = lambda_sum_result * norm_factor
         else:
             lambda_sum = lambda_sum_result
