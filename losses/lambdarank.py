@@ -18,9 +18,6 @@ class LambdaRankLoss(object):
         result = x_tile - x_top_tile
         return result
 
-    def need_swap_batch(self, x):
-        return tf.cast(tf.sign(self.get_pairwise_diff_batch(x)), self.dtype)
-
     def __init__(self, n_items, batch_size, sigma=1.0, ndcg_at = 30, dtype=tf.float32, lambda_normalization=True):
         self.__name__ = 'lambdarank'
         self.batch_size = batch_size
@@ -44,7 +41,6 @@ class LambdaRankLoss(object):
             return 0 * dy, lambdas * dy
         return result, grad
 
-    @tf.function
     def get_lambdas(self, y_true, y_pred):
         sorted_by_score = tf.nn.top_k(tf.cast(y_pred, self.dtype), self.n_items)
         col_indices_reshaped = tf.reshape(sorted_by_score.indices, (self.n_items * self.batch_size, 1))
@@ -55,10 +51,11 @@ class LambdaRankLoss(object):
         range_is_zero = tf.reshape(tf.cast(tf.math.equal(best_score, worst_score), self.dtype), (self.batch_size, 1, 1))
 
         true_ordered = tf.gather(tf.cast(y_true, self.dtype), sorted_by_score.indices, batch_dims=1)
+        true_ordered_sparse = tf.sparse.from_dense(true_ordered)
         inverse_idcg = self.get_inverse_idcg(true_ordered)
-        S = self.need_swap_batch(true_ordered)
         true_gains = 2 ** true_ordered - 1
         true_gains_diff = self.get_pairwise_diff_batch(true_gains)
+        S = tf.cast(tf.sign(true_gains_diff), self.dtype)
         abs_delta_ndcg = tf.abs(true_gains_diff * self.swap_importance) * inverse_idcg
         pairwise_diffs = self.get_pairwise_diff_batch(pred_ordered) * S
         #normalize dcg gaps - inspired by lightbm
