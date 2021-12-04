@@ -49,6 +49,7 @@ def vanilla_bert4rec(num_steps):
     pool_size=10
     num_train_steps = num_steps
     num_warmup_steps = 100
+    learning_rate=1e-4
     random_seed=31337
 
     bert_config={
