@@ -49,7 +49,7 @@ def vanilla_bert4rec(num_steps):
     pool_size=10
     random_seed=31337
 
-    {
+    bert_config={
       "attention_probs_dropout_prob": 0.2,
       "hidden_act": "gelu",
       "hidden_dropout_prob": 0.2,
@@ -108,13 +108,6 @@ def mlp_historical_embedding(loss, activation_override=None):
 RECOMMENDERS = {
     "svd_recommender-30": lambda: svd_recommender(30),
     "top-recommender": lambda: top_recommender(),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:50-lambda_norm:True-targets:3": lambda: salrec('lambdarank', 3, 0.001, 50, 50, True, 3),
-    "Transformer-BCE-blocks:3-lr:0.001-ndcg:50-session_len:50:-lambda_norm:True-targets:3": lambda: salrec('binary_crossentropy', 3, 0.001, 50, 50, True, 3),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:50-lambda_norm:True-targets:5": lambda: salrec('lambdarank', 3, 0.001, 50, 50, True, 5),
-    "Transformer-BCE-blocks:3-lr:0.001-ndcg:50-session_len:50:-lambda_norm:True-targets:5": lambda: salrec('binary_crossentropy', 3, 0.001, 50, 50,True, 5),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:50-lambda_norm:True-targets:1": lambda: salrec('lambdarank', 3, 0.001, 50, 50, True, 1),
-    "Transformer-BCE-blocks:3-lr:0.001-ndcg:50-session_len:50:-lambda_norm:True-targets:1": lambda: salrec('binary_crossentropy', 3, 0.001, 50, 50, True, 1),
-
     "vanilla_bert4rec-800000": lambda: vanilla_bert4rec(800000),
     "vanilla_bert4rec-400000": lambda: vanilla_bert4rec(400000),
     "vanilla_bert4rec-1600000": lambda: vanilla_bert4rec(1600000),
