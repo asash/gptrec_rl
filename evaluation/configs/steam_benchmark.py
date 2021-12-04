@@ -42,13 +42,12 @@ def vanilla_bert4rec(num_steps):
 
     dim=256
     batch_size=256
-    num_train_steps=800000
 
     mask_prob=1.0
     prop_sliding_window=0.5
     dupe_factor=10
     pool_size=10
-    radom_seed=31337
+    random_seed=31337
 
     {
       "attention_probs_dropout_prob": 0.2,
@@ -77,7 +76,7 @@ def vanilla_bert4rec(num_steps):
                                   learning_rate=learning_rate)
     return FilterSeenRecommender(recommender)
 
-def salrec(loss, num_blocks, learning_rate, ndcg_at,  session_len,  lambdas_normalization, activation_override=None):
+def salrec(loss, num_blocks, learning_rate, ndcg_at,  session_len,  lambdas_normalization, n_targets, activation_override=None):
     activation = 'linear' if loss == 'lambdarank' else 'sigmoid'
     if activation_override is not None:
         activation = activation_override
@@ -89,7 +88,7 @@ def salrec(loss, num_blocks, learning_rate, ndcg_at,  session_len,  lambdas_norm
                                                    output_layer_activation=activation,
                                                    training_time_limit = 3600,
                                                    num_blocks=num_blocks,
-                                                   num_target_predictions=5,
+                                                   num_target_predictions=n_targets,
                                                    eval_ndcg_at=40,
                                                    target_decay=0.8, 
                                                    loss_lambda_normalization=lambdas_normalization
@@ -107,16 +106,26 @@ def mlp_historical_embedding(loss, activation_override=None):
                                                               output_layer_activation=activation, target_decay=0.8))
 
 RECOMMENDERS = {
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:50-lambda_norm:True": lambda: salrec('lambdarank', 3, 0.001, 50, 50, True),
-    "Transformer-BCE-blocks:3-lr:0.001-ndcg:50-session_len:50:-lambda_norm:True": lambda: salrec('binary_crossentropy', 3, 0.001, 50, 50, True),
-    "vanilla_bert4rec-800000": lambda: vanilla_bert4rec(800000)
+    "svd_recommender-30": lambda: svd_recommender(30),
+    "top-recommender": lambda: top_recommender(),
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:50-lambda_norm:True-targets:3": lambda: salrec('lambdarank', 3, 0.001, 50, 50, True, 3),
+    "Transformer-BCE-blocks:3-lr:0.001-ndcg:50-session_len:50:-lambda_norm:True-targets:3": lambda: salrec('binary_crossentropy', 3, 0.001, 50, 50, 3, True, 3),
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:50-lambda_norm:True-targets:5": lambda: salrec('lambdarank', 3, 0.001, 50, 50, True, 5),
+    "Transformer-BCE-blocks:3-lr:0.001-ndcg:50-session_len:50:-lambda_norm:True-targets:5": lambda: salrec('binary_crossentropy', 3, 0.001, 50, 50, 3, True, 5),
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:50-lambda_norm:True-targets:1": lambda: salrec('lambdarank', 3, 0.001, 50, 50, True, 1),
+    "Transformer-BCE-blocks:3-lr:0.001-ndcg:50-session_len:50:-lambda_norm:True-targets:1": lambda: salrec('binary_crossentropy', 3, 0.001, 50, 50, 3, True, 1),
+
+    "vanilla_bert4rec-800000": lambda: vanilla_bert4rec(800000),
+    "vanilla_bert4rec-400000": lambda: vanilla_bert4rec(400000),
+    "vanilla_bert4rec-1600000": lambda: vanilla_bert4rec(1600000),
+    "vanilla_bert4rec-3200000": lambda: vanilla_bert4rec(3200000),
 }
 
 N_VAL_USERS=1024
 MAX_TEST_USERS=4000
 
 dataset_for_metric = [action for action in get_movielens20m_actions(min_rating=1.0)]
-METRICS = [NDCG(10),  NDCG(2), NDCG(5), NDCG(20), NDCG(40), Precision(10), Recall(10), SPS(1), SPS(10), MRR(), MAP(10), AveragePopularityRank(10, dataset_for_metric),
+METRICS = [NDCG(40), Precision(10), Recall(10), SPS(1), SPS(10), MRR(), MAP(10), AveragePopularityRank(10, dataset_for_metric),
            PairwiseCosSim(dataset_for_metric, 10)]
 del(dataset_for_metric)
 

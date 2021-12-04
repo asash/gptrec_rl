@@ -69,7 +69,10 @@ def top_recommender_no_filters():
 RECOMMENDERS = {
     "top_recommender": top_recommender,
     "top_recommender_no_filters": top_recommender_no_filters,
-    "vanilla_bert4rec-4000": lambda: vanilla_bert4rec(4000),
+    "vanilla_bert4rec-400000": lambda: vanilla_bert4rec(400000),
+    "vanilla_bert4rec-800000": lambda: vanilla_bert4rec(800000),
+    "vanilla_bert4rec-1600000": lambda: vanilla_bert4rec(1600000),
+    "vanilla_bert4rec-3200000": lambda: vanilla_bert4rec(1600000),
 }
 
 
