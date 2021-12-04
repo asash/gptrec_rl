@@ -47,6 +47,7 @@ def vanilla_bert4rec(num_steps):
     prop_sliding_window=0.5
     dupe_factor=10
     pool_size=10
+    num_train_steps = num_steps
     num_warmup_steps = 100
     random_seed=31337
 
