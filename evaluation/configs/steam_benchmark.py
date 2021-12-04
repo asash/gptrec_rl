@@ -108,8 +108,6 @@ def mlp_historical_embedding(loss, activation_override=None):
                                                               output_layer_activation=activation, target_decay=0.8))
 
 RECOMMENDERS = {
-    "svd_recommender-30": lambda: svd_recommender(30),
-    "top-recommender": lambda: top_recommender(),
     "vanilla_bert4rec-800000": lambda: vanilla_bert4rec(800000),
     "vanilla_bert4rec-400000": lambda: vanilla_bert4rec(400000),
     "vanilla_bert4rec-1600000": lambda: vanilla_bert4rec(1600000),
