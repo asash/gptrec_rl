@@ -20,7 +20,8 @@ class LambdaRankLoss(object):
 
     def __init__(self, n_items, batch_size, sigma=1.0,
                  ndcg_at = 30, dtype=tf.float32, lambda_normalization=True,
-                 pred_truncate_at = None
+                 pred_truncate_at = None,
+                 bce_grad_weight = 0.0
                  ):
         self.__name__ = 'lambdarank'
         self.batch_size = batch_size
@@ -28,6 +29,7 @@ class LambdaRankLoss(object):
         self.n_items = n_items
         self.ndcg_at = min(ndcg_at, n_items)
         self.dtype = dtype
+        self.bce_grad_weight = bce_grad_weight
 
         if pred_truncate_at == None:
             self.pred_truncate_at = n_items
@@ -49,11 +51,15 @@ class LambdaRankLoss(object):
     @tf.custom_gradient
     def __call__(self, y_true, y_pred):
         result = tf.reduce_mean(tf.abs(y_pred))
+
         def grad(dy):
             lambdas = self.get_lambdas(y_true, y_pred)
-            return 0 * dy, lambdas * dy
+            bce_loss =  tf.nn.sigmoid_cross_entropy_with_logits(y_true, y_pred)
+            bce_grad = tf.gradients(bce_loss, [y_pred])[0]
+            return 0 * dy, ((1 - self.bce_grad_weight) * lambdas + (bce_grad * self.bce_grad_weight)) * dy
         return result, grad
 
+    @tf.function
     def get_lambdas(self, y_true, y_pred):
         sorted_by_score = tf.nn.top_k(tf.cast(y_pred, self.dtype), self.pred_truncate_at)
         col_indices_reshaped = tf.reshape(sorted_by_score.indices, (self.pred_truncate_at * self.batch_size, 1))
