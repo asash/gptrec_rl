@@ -41,6 +41,8 @@ class SalrecRecommender(Recommender):
                  training_time_limit = None,
                  loss_internal_dtype = tf.float32,
                  loss_lambda_normalization = True,
+                 loss_pred_truncate = None,
+                 loss_bce_weight = 0.0,
                  eval_ndcg_at = None
                  ):
         self.embedding_size = embedding_size
@@ -75,6 +77,8 @@ class SalrecRecommender(Recommender):
         self.loss_internal_dtype = loss_internal_dtype
         self.eval_ndcg_at = eval_ndcg_at if eval_ndcg_at is not None else self.ndcg_at
         self.loss_lambda_normalization = loss_lambda_normalization
+        self.loss_pred_truncate = loss_pred_truncate
+        self.loss_bce_weight = loss_bce_weight
 
     def get_metadata(self):
         return self.metadata
@@ -191,7 +195,9 @@ class SalrecRecommender(Recommender):
         ndcg_metric = KerasNDCG(self.eval_ndcg_at)
         loss = get_loss(self.loss, self.items.size(),
                         self.batch_size, self.ndcg_at,
-                        self.loss_internal_dtype, self.loss_lambda_normalization)
+                        self.loss_internal_dtype, self.loss_lambda_normalization,
+                        lambdarank_pred_truncate=self.loss_pred_truncate,
+                        lambdarank_bce_weight=self.loss_bce_weight)
 
         model.compile(optimizer=self.optimizer, loss=loss, metrics=[ndcg_metric])
         return model
