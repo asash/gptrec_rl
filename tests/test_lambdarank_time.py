@@ -14,8 +14,8 @@ class TestLambdaranTime(unittest.TestCase):
        batch_size = 128
        dataset_size = 128 * 1024
        positives_per_sample = 100
-       n_items = 27278
-       pred_truncate_at = 1000
+       n_items = 50000
+       pred_truncate_at = 500
 
        y_true = np.zeros((batch_size, n_items))
        for sample_num in range(batch_size):
@@ -28,7 +28,7 @@ class TestLambdaranTime(unittest.TestCase):
                              pred_truncate_at=pred_truncate_at, bce_grad_weight=0.1)
        for i in tqdm(range(dataset_size // batch_size)):
            y_pred =  tf.random.uniform((batch_size, n_items))
-           #keras.losses.binary_crossentropy(y_true, y_pred)
+           #tf.keras.losses.binary_crossentropy(y_true, y_pred)
            loss.get_lambdas(y_true, y_pred)
 
 
