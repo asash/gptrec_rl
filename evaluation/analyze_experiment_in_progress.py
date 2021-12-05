@@ -90,8 +90,16 @@ if __name__ == "__main__":
     df = pd.DataFrame(data).set_index('model_name')
     metric_names = df.columns
     df.sort_values(metric_names[0])
-    del df['model_metadata']
-    del df['metrics_history']
+    
+    try:
+        del df['model_metadata']    
+    except:
+        pass
+
+    try: 
+        del df['metrics_history']
+    except:
+        pass
     print(df)
 
 
