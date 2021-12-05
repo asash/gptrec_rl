@@ -15,6 +15,7 @@ class TestLambdaranTime(unittest.TestCase):
        dataset_size = 128 * 1024
        positives_per_sample = 100
        n_items = 27278
+       pred_truncate_at = 1000
 
        y_true = np.zeros((batch_size, n_items))
        for sample_num in range(batch_size):
@@ -23,7 +24,7 @@ class TestLambdaranTime(unittest.TestCase):
                 y_true[sample_num][positive] = random.random()
        y_true = tf.constant(y_true)
 
-       loss = LambdaRankLoss(n_items, batch_size, 1, ndcg_at=40, dtype=tf.float32)
+       loss = LambdaRankLoss(n_items, batch_size, 1, ndcg_at=40, dtype=tf.float32, pred_truncate_at=pred_truncate_at)
        for i in tqdm(range(dataset_size // batch_size)):
            y_pred =  tf.random.uniform((batch_size, n_items))
            #keras.losses.binary_crossentropy(y_true, y_pred)
