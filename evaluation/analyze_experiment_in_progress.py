@@ -89,7 +89,7 @@ if __name__ == "__main__":
     data = get_data_from_logs(experiment_logs_file, 0)
     df = pd.DataFrame(data).set_index('model_name')
     metric_names = df.columns
-    df.sort_values(metric_names[0])
+    df = df.sort_values(metric_names[0])
     
     try:
         del df['model_metadata']    
