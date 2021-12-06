@@ -81,14 +81,14 @@ def vanilla_bert4rec(num_steps):
 
 
 def salrec(loss, num_blocks, learning_rate, ndcg_at,
-                session_len,  lambdas_normalization, activation_override=None,
+                session_len,  lambdas_normalization=True, activation_override=None,
                 loss_pred_truncate=None,
-                loss_bce_weight=0.0
+                loss_bce_weight=0.0, filter_seen=True
            ):
     activation = 'linear' if loss == 'lambdarank' else 'sigmoid'
     if activation_override is not None:
         activation = activation_override
-    return FilterSeenRecommender(SalrecRecommender(train_epochs=10000, loss=loss,
+    recommender = SalrecRecommender(train_epochs=10000, loss=loss,
                                                    optimizer=Adam(learning_rate), 
                                                    early_stop_epochs=100,
                                                    batch_size=128, sigma=1.0, ndcg_at=ndcg_at,
@@ -102,7 +102,11 @@ def salrec(loss, num_blocks, learning_rate, ndcg_at,
                                                    loss_lambda_normalization=lambdas_normalization,
                                                    loss_pred_truncate=loss_pred_truncate,
                                                    loss_bce_weight=loss_bce_weight
-                                                   ))
+                                                   )
+    if filter_seen:
+        return FilterSeenRecommender(recommender)
+    else: 
+        return recommender
 
 
 def mlp_historical_embedding(loss, activation_override=None):
@@ -117,20 +121,27 @@ def mlp_historical_embedding(loss, activation_override=None):
                                                               output_layer_activation=activation, target_decay=0.8))
 
 RECOMMENDERS = {
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:2500-bce_weight:0.5":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=2500, loss_bce_weight=0.5),
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:2500-bce_weight:0.5_fs:True":
+        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=2500, loss_bce_weight=0.5, filter_seen=True),
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:None-bce_weight:0.0_fs:True":
+        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=None, loss_bce_weight=0.0, filter_seen=True),
+    "Transformer-BCE-blocks:3-lr:0.001-ndcg:50-session_len:100_fs:True":
+        lambda: salrec('binary_crossentropy', 3, 0.001, 50, 100, filter_seen=True),
 
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:None-bce_weight:0.0":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=None, loss_bce_weight=0.0),
 
-    "Transformer-BCE-blocks:3-lr:0.001-ndcg:50-session_len:100":
-        lambda: salrec('binary_crossentropy', 3, 0.001, 50, 100),
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:2500-bce_weight:0.5_fs:False":
+        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=2500, loss_bce_weight=0.5, filter_seen=False),
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:None-bce_weight:0.0_fs:False":
+        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=None, loss_bce_weight=0.0, filter_seen=False),
+    "Transformer-BCE-blocks:3-lr:0.001-ndcg:50-session_len:100_fs:False":
+        lambda: salrec('binary_crossentropy', 3, 0.001, 50, 100, filter_seen=False),
+
 
 }
 
 
-N_VAL_USERS=1024
-MAX_TEST_USERS=4000
+N_VAL_USERS=2048
+MAX_TEST_USERS=8096
 
 dataset_for_metric = [action for action in get_movielens20m_actions(min_rating=1.0)]
 METRICS = [NDCG(40), Precision(10), Recall(10), SPS(1), SPS(10), MRR(), MAP(10), AveragePopularityRank(10, dataset_for_metric),
