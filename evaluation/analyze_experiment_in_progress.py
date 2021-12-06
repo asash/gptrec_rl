@@ -88,8 +88,13 @@ if __name__ == "__main__":
     experiment_logs_file = sys.argv[1]
     data = get_data_from_logs(experiment_logs_file, 0)
     df = pd.DataFrame(data).set_index('model_name')
-    metric_names = df.columns
-    df = df.sort_values(metric_names[0])
+    if len(sys.argv) > 2:
+        main_metric = sys.argv[2]
+    else:
+        metric_names = df.columns
+        main_metric = metric_names[0]
+
+    df = df.sort_values(main_metric)
     
     try:
         del df['model_metadata']    
