@@ -24,6 +24,6 @@ class AveragePopularityRank(Metric):
             if item_id in self.pop_rank:
                 s += self.pop_rank[item_id]
                 cnt += 1
+        if cnt == 0:
+            return 0
         return s/cnt
-
-
