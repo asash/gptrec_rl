@@ -79,7 +79,12 @@ def vanilla_bert4rec(num_steps):
                                   learning_rate=learning_rate)
     return FilterSeenRecommender(recommender)
 
-def salrec(loss, num_blocks, learning_rate, ndcg_at,  session_len,  lambdas_normalization, n_targets, activation_override=None):
+
+def salrec(loss, num_blocks, learning_rate, ndcg_at,
+                session_len,  lambdas_normalization, activation_override=None,
+                loss_pred_truncate=None,
+                loss_bce_weight=0.0
+           ):
     activation = 'linear' if loss == 'lambdarank' else 'sigmoid'
     if activation_override is not None:
         activation = activation_override
@@ -91,11 +96,14 @@ def salrec(loss, num_blocks, learning_rate, ndcg_at,  session_len,  lambdas_norm
                                                    output_layer_activation=activation,
                                                    training_time_limit = 3600,
                                                    num_blocks=num_blocks,
-                                                   num_target_predictions=n_targets,
+                                                   num_target_predictions=5,
                                                    eval_ndcg_at=40,
                                                    target_decay=0.8, 
-                                                   loss_lambda_normalization=lambdas_normalization
+                                                   loss_lambda_normalization=lambdas_normalization,
+                                                   loss_pred_truncate=loss_pred_truncate,
+                                                   loss_bce_weight=loss_bce_weight
                                                    ))
+
 
 def mlp_historical_embedding(loss, activation_override=None):
     activation = 'linear' if loss == 'lambdarank' else 'sigmoid'
@@ -109,11 +117,17 @@ def mlp_historical_embedding(loss, activation_override=None):
                                                               output_layer_activation=activation, target_decay=0.8))
 
 RECOMMENDERS = {
-    "vanilla_bert4rec-800000": lambda: vanilla_bert4rec(800000),
-    "vanilla_bert4rec-400000": lambda: vanilla_bert4rec(400000),
-    "vanilla_bert4rec-1600000": lambda: vanilla_bert4rec(1600000),
-    "vanilla_bert4rec-3200000": lambda: vanilla_bert4rec(3200000),
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:2500-bce_weight:0.5":
+        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=2500, loss_bce_weight=0.5),
+
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:None-bce_weight:0.0":
+        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=None, loss_bce_weight=0.0),
+
+    "Transformer-BCE-blocks:3-lr:0.001-ndcg:50-session_len:100":
+        lambda: salrec('binary_crossentropy', 3, 0.001, 50, 100),
+
 }
+
 
 N_VAL_USERS=1024
 MAX_TEST_USERS=4000
