@@ -20,7 +20,7 @@ def skip_n_experiments(input_file, experiment_num):
             current_experiment += 1
             
 def get_metrics(line):
-    regexp = re.compile(r'[a-zA-Z0-9_]+\: [0-9\.]+')
+    regexp = re.compile(r'[a-zA-Z0-9_]+\: [0-9\.\+\-eE]+')
     result = {}
     for metric_str in regexp.findall(line):
         metric, value = metric_str.split(': ')

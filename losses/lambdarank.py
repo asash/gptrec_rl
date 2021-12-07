@@ -126,23 +126,22 @@ class LambdaRankLoss(object):
         return tf.reshape(tf.math.divide_no_nan(tf.cast(1.0, self.dtype), top_k_discounted), (self.batch_size, 1, 1))
 
 
-class LambdarankLambdasLen(object):
+class LambdarankLambdasSum(object):
     def __init__(self, lambdarank_loss):
         self.lambdarank_loss = lambdarank_loss
         self.name = "lambdarank_lambdas_len"
 
     def __call__(self, y_true, y_pred):
         lambdas = self.lambdarank_loss.get_lambdas(y_true, y_pred)
-        norms = tf.norm(lambdas, axis=1)
-        return (1 - self.lambdarank_loss.bce_grad_weight) * tf.reduce_mean(norms)
+        return (1 - self.lambdarank_loss.bce_grad_weight) * tf.reduce_sum(tf.abs(lambdas))
 
-class BCELambdasLen(object):
+class BCELambdasSum(object):
     def __init__(self, lambdarank_loss):
         self.lambdarank_loss = lambdarank_loss
         self.name = "bce_lambdas_len"
 
     def __call__(self, y_true, y_pred):
         lambdas = self.lambdarank_loss.get_bce_lambdas(y_true, y_pred)
-        norms = tf.norm(lambdas, axis=1)
-        return (1 - self.lambdarank_loss.bce_grad_weight) * tf.reduce_mean(norms)
+        norms = tf.reduce_sum(lambdas, axis=1)
+        return (self.lambdarank_loss.bce_grad_weight) * tf.reduce_sum(tf.abs(lambdas))
 

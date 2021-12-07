@@ -8,7 +8,7 @@ from collections import defaultdict
 from keras.regularizers import l2
 
 from aprec.losses.get_loss import get_loss
-from aprec.losses.lambdarank import LambdarankLambdasLen, BCELambdasLen
+from aprec.losses.lambdarank import LambdarankLambdasSum, BCELambdasSum
 from aprec.utils.item_id import ItemId
 from aprec.recommenders.metrics.ndcg import KerasNDCG
 from aprec.recommenders.recommender import Recommender
@@ -205,8 +205,8 @@ class SalrecRecommender(Recommender):
                         lambdarank_bce_weight=self.loss_bce_weight)
         metrics = [ndcg_metric]
         if self.log_lambdas_len:
-            metrics.append(LambdarankLambdasLen(loss))
-            metrics.append(BCELambdasLen(loss))
+            metrics.append(LambdarankLambdasSum(loss))
+            metrics.append(BCELambdasSum(loss))
 
 
         model.compile(optimizer=self.optimizer, loss=loss, metrics=metrics)
