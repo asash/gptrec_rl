@@ -61,13 +61,15 @@ class LambdaRankLoss(object):
         return result, grad
 
     def get_bce_lambdas(self, y_true, y_pred):
-        bce_loss = tf.nn.sigmoid_cross_entropy_with_logits(y_true, y_pred)
-        return tf.gradients(bce_loss, [y_pred])[0]
+        with tf.GradientTape() as g:
+            g.watch(y_pred)
+            bce_loss = tf.nn.sigmoid_cross_entropy_with_logits(y_true, y_pred)
+            logits_loss_lambdas = g.gradient(bce_loss, y_pred) / self.n_items
+        return  logits_loss_lambdas
 
     def bce_lambdas_len(self, y_true, y_pred):
-        bce_loss = tf.nn.sigmoid_cross_entropy_with_logits(y_true, y_pred)
-        bce_grad = tf.gradients(bce_loss, [y_pred])[0]
-        norms = tf.norm(bce_grad, axis=1)
+        bce_lambdas = self.get_bce_lambdas(y_true, y_pred)
+        norms = tf.norm(bce_lambdas , axis=1)
         return self.bce_grad_weight * tf.reduce_mean(norms)
 
 
