@@ -1,6 +1,7 @@
 import random
 
 from aprec.datasets.movielens20m import get_movielens20m_actions
+from aprec.datasets.movielens100k import get_movielens100k_actions
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.salrec.salrec_recommender import SalrecRecommender
@@ -19,6 +20,7 @@ from aprec.evaluation.metrics.pairwise_cos_sim import PairwiseCosSim
 from aprec.evaluation.metrics.sps import SPS
 
 DATASET = get_movielens20m_actions(min_rating=1.0)
+
 
 USERS_FRACTIONS = [1.]
 
@@ -83,13 +85,13 @@ def salrec(loss, num_blocks, learning_rate, ndcg_at,
     activation = 'linear' if loss == 'lambdarank' else 'sigmoid'
     if activation_override is not None:
         activation = activation_override
-    return FilterSeenRecommender(SalrecRecommender(train_epochs=10000, loss=loss,
+    return FilterSeenRecommender(SalrecRecommender(train_epochs=56, loss=loss,
                                                    optimizer=Adam(learning_rate), 
                                                    early_stop_epochs=100,
                                                    batch_size=128, sigma=1.0, ndcg_at=ndcg_at,
                                                    max_history_len=session_len,
                                                    output_layer_activation=activation,
-                                                   training_time_limit = 3600,
+                                                   training_time_limit = 3600*24,
                                                    num_blocks=num_blocks,
                                                    num_target_predictions=5,
                                                    eval_ndcg_at=40,
@@ -99,7 +101,6 @@ def salrec(loss, num_blocks, learning_rate, ndcg_at,
                                                    loss_bce_weight=loss_bce_weight, 
                                                    log_lambdas_len=log_lambdas
                                                    ))
-
 
 def mlp_historical_embedding(loss, activation_override=None):
     activation = 'linear' if loss == 'lambdarank' else 'sigmoid'
@@ -113,33 +114,23 @@ def mlp_historical_embedding(loss, activation_override=None):
                                                               output_layer_activation=activation, target_decay=0.8))
 
 recommenders_raw = {
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:2500-bce_weight:0.5":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=2500, loss_bce_weight=0.5),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:2500-bce_weight:0.0":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=2500, loss_bce_weight=0.0),
-    "Transformer-BCE-blocks:3-lr:0.001-ndcg:50-session_len:100":
-        lambda: salrec('binary_crossentropy', 3, 0.001, 50, 100),
-
-
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:1000-bce_weight:0.5-log_lambdas:True":
+        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=1000, loss_bce_weight=0.5, log_lambdas=True),
 }
 all_recommenders = list(recommenders_raw.keys())
+random.shuffle(all_recommenders)
+
 
 RECOMMENDERS = {}
-for iteration in range(10):
-    for model in all_recommenders:
-        RECOMMENDERS[model + f"-iteration:{iteration}"] = recommenders_raw[model]
+for model in all_recommenders:
+    RECOMMENDERS[model] = recommenders_raw[model]
 
 print(f"evaluating {len(RECOMMENDERS)} models")
 
 N_VAL_USERS=1024
-MAX_TEST_USERS=4000
+MAX_TEST_USERS=4096
 
-dataset_for_metric = [action for action in get_movielens20m_actions(min_rating=1.0)]
-METRICS = [NDCG(10),  NDCG(2), NDCG(5), NDCG(20), NDCG(40), Precision(10), Recall(10), SPS(1), SPS(10), MRR(), MAP(10), AveragePopularityRank(10, dataset_for_metric),
-           PairwiseCosSim(dataset_for_metric, 10)]
-del(dataset_for_metric)
+METRICS = [NDCG(10),  NDCG(2), NDCG(5), NDCG(20), NDCG(40), Precision(10), Recall(10), SPS(1), SPS(10), MRR(), MAP(10)]
 
 
 SPLIT_STRATEGY = "LEAVE_ONE_OUT"
