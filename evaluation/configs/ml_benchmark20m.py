@@ -77,7 +77,8 @@ def vanilla_bert4rec(num_steps):
 def salrec(loss, num_blocks, learning_rate, ndcg_at,
                 session_len,  lambdas_normalization, activation_override=None,
                 loss_pred_truncate=None,
-                loss_bce_weight=0.0
+                loss_bce_weight=0.0,
+                log_lambdas=False
            ):
     activation = 'linear' if loss == 'lambdarank' else 'sigmoid'
     if activation_override is not None:
@@ -88,14 +89,15 @@ def salrec(loss, num_blocks, learning_rate, ndcg_at,
                                                    batch_size=128, sigma=1.0, ndcg_at=ndcg_at,
                                                    max_history_len=session_len,
                                                    output_layer_activation=activation,
-                                                   training_time_limit = 3600,
+                                                   training_time_limit = 3600*24,
                                                    num_blocks=num_blocks,
                                                    num_target_predictions=5,
                                                    eval_ndcg_at=40,
                                                    target_decay=0.8, 
                                                    loss_lambda_normalization=lambdas_normalization,
                                                    loss_pred_truncate=loss_pred_truncate,
-                                                   loss_bce_weight=loss_bce_weight
+                                                   loss_bce_weight=loss_bce_weight, 
+                                                   log_lambdas_len=log_lambdas
                                                    ))
 
 def mlp_historical_embedding(loss, activation_override=None):
@@ -110,8 +112,8 @@ def mlp_historical_embedding(loss, activation_override=None):
                                                               output_layer_activation=activation, target_decay=0.8))
 
 recommenders_raw = {
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:1000-bce_weight:0.5":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=1000, loss_bce_weight=0.5),
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:1000-bce_weight:0.5-log_lambdas:True":
+        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=1000, loss_bce_weight=0.5, log_lambdas:True),
 }
 all_recommenders = list(recommenders_raw.keys())
 random.shuffle(all_recommenders)
