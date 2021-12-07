@@ -53,11 +53,25 @@ class LambdaRankLoss(object):
         result = tf.reduce_mean(tf.abs(y_pred))
 
         def grad(dy):
-            lambdas = self.get_lambdas(y_true, y_pred)
-            bce_loss =  tf.nn.sigmoid_cross_entropy_with_logits(y_true, y_pred)
-            bce_grad = tf.gradients(bce_loss, [y_pred])[0]
-            return 0 * dy, ((1 - self.bce_grad_weight) * lambdas + (bce_grad * self.bce_grad_weight)) * dy
+            lambdarank_lambdas = self.get_lambdas(y_true, y_pred)
+            bce_lambdas = self.get_bce_lambdas(y_true, y_pred)
+            return 0 * dy, ((1 - self.bce_grad_weight) * lambdarank_lambdas + (bce_lambdas * self.bce_grad_weight)) * dy
+
+
         return result, grad
+
+    def get_bce_lambdas(self, y_true, y_pred):
+        bce_loss = tf.nn.sigmoid_cross_entropy_with_logits(y_true, y_pred)
+        return tf.gradients(bce_loss, [y_pred])[0]
+
+    def bce_lambdas_len(self, y_true, y_pred):
+        bce_loss = tf.nn.sigmoid_cross_entropy_with_logits(y_true, y_pred)
+        bce_grad = tf.gradients(bce_loss, [y_pred])[0]
+        norms = tf.norm(bce_grad, axis=1)
+        return self.bce_grad_weight * tf.reduce_mean(norms)
+
+
+
 
     @tf.function
     def get_lambdas(self, y_true, y_pred):
@@ -109,4 +123,24 @@ class LambdaRankLoss(object):
         top_k_discounted = tf.linalg.matmul(top_k_values, self.top_position_discounts)
         return tf.reshape(tf.math.divide_no_nan(tf.cast(1.0, self.dtype), top_k_discounted), (self.batch_size, 1, 1))
 
+
+class LambdarankLambdasLen(object):
+    def __init__(self, lambdarank_loss):
+        self.lambdarank_loss = lambdarank_loss
+        self.name = "lambdarank_lambdas_len"
+
+    def __call__(self, y_true, y_pred):
+        lambdas = self.lambdarank_loss.get_lambdas(y_true, y_pred)
+        norms = tf.norm(lambdas, axis=1)
+        return (1 - self.lambdarank_loss.bce_grad_weight) * tf.reduce_mean(norms)
+
+class BCELambdasLen(object):
+    def __init__(self, lambdarank_loss):
+        self.lambdarank_loss = lambdarank_loss
+        self.name = "bce_lambdas_len"
+
+    def __call__(self, y_true, y_pred):
+        lambdas = self.lambdarank_loss.get_bce_lambdas(y_true, y_pred)
+        norms = tf.norm(lambdas, axis=1)
+        return (1 - self.lambdarank_loss.bce_grad_weight) * tf.reduce_mean(norms)
 

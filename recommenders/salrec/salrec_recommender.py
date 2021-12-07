@@ -8,6 +8,7 @@ from collections import defaultdict
 from keras.regularizers import l2
 
 from aprec.losses.get_loss import get_loss
+from aprec.losses.lambdarank import LambdarankLambdasLen, BCELambdasLen
 from aprec.utils.item_id import ItemId
 from aprec.recommenders.metrics.ndcg import KerasNDCG
 from aprec.recommenders.recommender import Recommender
@@ -43,7 +44,8 @@ class SalrecRecommender(Recommender):
                  loss_lambda_normalization = True,
                  loss_pred_truncate = None,
                  loss_bce_weight = 0.0,
-                 eval_ndcg_at = None
+                 eval_ndcg_at = None,
+                 log_lambdas_len = False
                  ):
         self.embedding_size = embedding_size
         self.users = ItemId()
@@ -79,6 +81,9 @@ class SalrecRecommender(Recommender):
         self.loss_lambda_normalization = loss_lambda_normalization
         self.loss_pred_truncate = loss_pred_truncate
         self.loss_bce_weight = loss_bce_weight
+        if log_lambdas_len and loss != 'lambdarank':
+            raise Exception("logging lambdas len is only possible with lambdarank loss")
+        self.log_lambdas_len = log_lambdas_len
 
     def get_metadata(self):
         return self.metadata
@@ -198,8 +203,13 @@ class SalrecRecommender(Recommender):
                         self.loss_internal_dtype, self.loss_lambda_normalization,
                         lambdarank_pred_truncate=self.loss_pred_truncate,
                         lambdarank_bce_weight=self.loss_bce_weight)
+        metrics = [ndcg_metric]
+        if self.log_lambdas_len:
+            metrics.append(LambdarankLambdasLen(loss))
+            metrics.append(BCELambdasLen(loss))
 
-        model.compile(optimizer=self.optimizer, loss=loss, metrics=[ndcg_metric])
+
+        model.compile(optimizer=self.optimizer, loss=loss, metrics=metrics)
         return model
 
     def get_next_items(self, user_id, limit, features=None):

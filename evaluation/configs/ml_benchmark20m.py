@@ -82,7 +82,7 @@ def salrec(loss, num_blocks, learning_rate, ndcg_at,
     activation = 'linear' if loss == 'lambdarank' else 'sigmoid'
     if activation_override is not None:
         activation = activation_override
-    return FilterSeenRecommender(SalrecRecommender(train_epochs=10000, loss=loss,
+    return FilterSeenRecommender(SalrecRecommender(train_epochs=56, loss=loss,
                                                    optimizer=Adam(learning_rate), 
                                                    early_stop_epochs=100,
                                                    batch_size=128, sigma=1.0, ndcg_at=ndcg_at,
@@ -110,86 +110,8 @@ def mlp_historical_embedding(loss, activation_override=None):
                                                               output_layer_activation=activation, target_decay=0.8))
 
 recommenders_raw = {
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:500-bce_weight:0.0":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=500, loss_bce_weight=0.0),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:500-bce_weight:0.1":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=500, loss_bce_weight=0.1),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:500-bce_weight:0.3":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=500, loss_bce_weight=0.3),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:500-bce_weight:0.5":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=500, loss_bce_weight=0.5),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:500-bce_weight:0.8":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=500, loss_bce_weight=0.8),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:500-bce_weight:1.0":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=500, loss_bce_weight=1.0),
-
-
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:1000-bce_weight:0.0":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=1000, loss_bce_weight=0.0),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:1000-bce_weight:0.1":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=1000, loss_bce_weight=0.1),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:1000-bce_weight:0.3":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=1000, loss_bce_weight=0.3),
     "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:1000-bce_weight:0.5":
         lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=1000, loss_bce_weight=0.5),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:1000-bce_weight:0.8":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=1000, loss_bce_weight=0.8),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:1000-bce_weight:1.0":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=1000, loss_bce_weight=1.0),
-
-
-
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:2500-bce_weight:0.0":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=2500, loss_bce_weight=0.0),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:2500-bce_weight:0.1":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=2500, loss_bce_weight=0.1),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:2500-bce_weight:0.3":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=2500, loss_bce_weight=0.3),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:2500-bce_weight:0.5":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=2500, loss_bce_weight=0.5),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:2500-bce_weight:0.8":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=2500, loss_bce_weight=0.8),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:2500-bce_weight:1.0":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=2500, loss_bce_weight=1.0),
-
-
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:5000-bce_weight:0.0":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=5000, loss_bce_weight=0.0),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:5000-bce_weight:0.1":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=5000, loss_bce_weight=0.1),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:5000-bce_weight:0.3":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=5000, loss_bce_weight=0.3),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:5000-bce_weight:0.5":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=5000, loss_bce_weight=0.5),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:5000-bce_weight:0.8":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=5000, loss_bce_weight=0.8),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:5000-bce_weight:1.0":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=5000, loss_bce_weight=1.0),
-
-
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:10000-bce_weight:0.0":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=10000, loss_bce_weight=0.0),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:10000-bce_weight:0.1":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=10000, loss_bce_weight=0.1),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:10000-bce_weight:0.3":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=10000, loss_bce_weight=0.3),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:10000-bce_weight:0.5":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=10000, loss_bce_weight=0.5),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:10000-bce_weight:0.8":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=10000, loss_bce_weight=0.8),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:10000-bce_weight:1.0":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=10000, loss_bce_weight=1.0),
-
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:25000-bce_weight:0.0":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=25000, loss_bce_weight=0.0),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:25000-bce_weight:0.1":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=25000, loss_bce_weight=0.1),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:25000-bce_weight:0.3":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=25000, loss_bce_weight=0.3),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:25000-bce_weight:0.5":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=25000, loss_bce_weight=0.5),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:25000-bce_weight:1.0":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=25000, loss_bce_weight=1.0),
 }
 all_recommenders = list(recommenders_raw.keys())
 random.shuffle(all_recommenders)
