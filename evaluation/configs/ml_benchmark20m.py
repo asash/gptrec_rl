@@ -127,7 +127,7 @@ recommenders_raw = {
         lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=1000, loss_bce_weight=1.0, log_lambdas=True),
 
     "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:1000-bce_weight:0.0-log_lambdas:True":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=1000, loss_bce_weight=0.0, log_lambdas=True)
+        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=1000, loss_bce_weight=0.0, log_lambdas=True),
 
     "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:1000-bce_weight:0.1-log_lambdas:True":
         lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=None, loss_bce_weight=0.0, log_lambdas=True),
