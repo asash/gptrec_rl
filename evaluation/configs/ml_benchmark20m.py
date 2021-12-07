@@ -129,7 +129,7 @@ all_recommenders = list(recommenders_raw.keys())
 RECOMMENDERS = {}
 for iteration in range(10):
     for model in all_recommenders:
-	RECOMMENDERS[model + f"-iteration:{iteration}"] = recommenders_raw[model]
+        RECOMMENDERS[model + f"-iteration:{iteration}"] = recommenders_raw[model]
 
 print(f"evaluating {len(RECOMMENDERS)} models")
 
