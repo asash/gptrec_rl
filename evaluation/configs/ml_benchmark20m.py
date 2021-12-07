@@ -100,6 +100,7 @@ def salrec(loss, num_blocks, learning_rate, ndcg_at,
                                                    log_lambdas_len=log_lambdas
                                                    ))
 
+
 def mlp_historical_embedding(loss, activation_override=None):
     activation = 'linear' if loss == 'lambdarank' else 'sigmoid'
     if activation_override is not None:
@@ -112,16 +113,23 @@ def mlp_historical_embedding(loss, activation_override=None):
                                                               output_layer_activation=activation, target_decay=0.8))
 
 recommenders_raw = {
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:1000-bce_weight:0.5-log_lambdas:True":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=1000, loss_bce_weight=0.5, log_lambdas:True),
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True":
+        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True),
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:2500-bce_weight:0.5":
+        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=2500, loss_bce_weight=0.5),
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:2500-bce_weight:0.0":
+        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=2500, loss_bce_weight=0.0),
+    "Transformer-BCE-blocks:3-lr:0.001-ndcg:50-session_len:100":
+        lambda: salrec('binary_crossentropy', 3, 0.001, 50, 100),
+
+
 }
 all_recommenders = list(recommenders_raw.keys())
-random.shuffle(all_recommenders)
-
 
 RECOMMENDERS = {}
-for model in all_recommenders:
-    RECOMMENDERS[model] = recommenders_raw[model]
+for iteration in range(10):
+    for model in all_recommenders:
+	RECOMMENDERS[model + f"-iteration:{iteration}"] = recommenders_raw[model]
 
 print(f"evaluating {len(RECOMMENDERS)} models")
 
