@@ -83,13 +83,13 @@ def salrec(loss, num_blocks, learning_rate, ndcg_at,
     activation = 'linear' if loss == 'lambdarank' else 'sigmoid'
     if activation_override is not None:
         activation = activation_override
-    return FilterSeenRecommender(SalrecRecommender(train_epochs=56, loss=loss,
+    return FilterSeenRecommender(SalrecRecommender(train_epochs=10000, loss=loss,
                                                    optimizer=Adam(learning_rate), 
                                                    early_stop_epochs=100,
                                                    batch_size=128, sigma=1.0, ndcg_at=ndcg_at,
                                                    max_history_len=session_len,
                                                    output_layer_activation=activation,
-                                                   training_time_limit = 3600*24,
+                                                   training_time_limit = 3600,
                                                    num_blocks=num_blocks,
                                                    num_target_predictions=5,
                                                    eval_ndcg_at=40,
