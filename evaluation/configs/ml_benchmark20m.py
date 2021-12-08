@@ -150,14 +150,14 @@ recommenders_raw = {
     "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:9000-bce_weight:0.975-log_lambdas:False":
         lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=9000, loss_bce_weight=0.975, log_lambdas=False),
 
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:9000-bce_weight:0.9-log_lambdas:False":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=9000, loss_bce_weight=0.925, log_lambdas=False),
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:1500-bce_weight:0.9-log_lambdas:False":
+        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=1500, loss_bce_weight=0.925, log_lambdas=False),
 
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:9000-bce_weight:0.95-log_lambdas:False":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=9000, loss_bce_weight=0.95, log_lambdas=False),
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:1500-bce_weight:0.95-log_lambdas:False":
+        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=1500, loss_bce_weight=0.95, log_lambdas=False),
 
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:9000-bce_weight:0.975-log_lambdas:False":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=9000, loss_bce_weight=0.975, log_lambdas=False),
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:1500-bce_weight:0.975-log_lambdas:False":
+        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=1500, loss_bce_weight=0.975, log_lambdas=False),
 }
 
 all_recommenders = list(recommenders_raw.keys())
