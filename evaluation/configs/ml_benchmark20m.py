@@ -114,50 +114,21 @@ def mlp_historical_embedding(loss, activation_override=None):
                                                               output_layer_activation=activation, target_decay=0.8))
 
 recommenders_raw = {
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:2500-bce_weight:0.9-log_lambdas:False":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=2500, loss_bce_weight=0.925, log_lambdas=False),
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:4000-bce_weight:0.975":
+        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=4000, loss_bce_weight=0.975),
 
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:2500-bce_weight:0.95-log_lambdas:False":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=2500, loss_bce_weight=0.95, log_lambdas=False),
 
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:2500-bce_weight:0.975-log_lambdas:False":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=2500, loss_bce_weight=0.975, log_lambdas=False),
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:4000-bce_weight:0.0":
+        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=4000, loss_bce_weight=0.0),
 
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:4000-bce_weight:0.9-log_lambdas:False":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=4000, loss_bce_weight=0.925, log_lambdas=False),
 
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:4000-bce_weight:0.95-log_lambdas:False":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=4000, loss_bce_weight=0.95, log_lambdas=False),
+    "Transformer-BCE-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True":
+        lambda: salrec('binary_crossentropy', 3, 0.001, 50, 100, True),
 
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:4000-bce_weight:0.975-log_lambdas:False":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=4000, loss_bce_weight=0.975, log_lambdas=False),
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True":
+        lambda: salrec('Lambdarank', 3, 0.001, 50, 100, True),
 
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:6000-bce_weight:0.9-log_lambdas:False":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=6000, loss_bce_weight=0.925, log_lambdas=False),
 
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:6000-bce_weight:0.95-log_lambdas:False":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=6000, loss_bce_weight=0.95, log_lambdas=False),
-
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:6000-bce_weight:0.975-log_lambdas:False":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=6000, loss_bce_weight=0.975, log_lambdas=False),
-
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:9000-bce_weight:0.9-log_lambdas:False":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=9000, loss_bce_weight=0.925, log_lambdas=False),
-
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:9000-bce_weight:0.95-log_lambdas:False":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=9000, loss_bce_weight=0.95, log_lambdas=False),
-
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:9000-bce_weight:0.975-log_lambdas:False":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=9000, loss_bce_weight=0.975, log_lambdas=False),
-
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:1500-bce_weight:0.9-log_lambdas:False":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=1500, loss_bce_weight=0.925, log_lambdas=False),
-
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:1500-bce_weight:0.95-log_lambdas:False":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=1500, loss_bce_weight=0.95, log_lambdas=False),
-
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:1500-bce_weight:0.975-log_lambdas:False":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=1500, loss_bce_weight=0.975, log_lambdas=False),
 }
 
 all_recommenders = list(recommenders_raw.keys())
@@ -171,7 +142,7 @@ for model in all_recommenders:
 print(f"evaluating {len(RECOMMENDERS)} models")
 
 N_VAL_USERS=1024
-MAX_TEST_USERS=4096
+MAX_TEST_USERS=65536
 
 METRICS = [NDCG(10),  NDCG(2), NDCG(5), NDCG(20), NDCG(40), Precision(10), Recall(10), SPS(1), SPS(10), MRR(), MAP(10)]
 
