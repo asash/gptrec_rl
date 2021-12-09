@@ -126,7 +126,7 @@ recommenders_raw = {
         lambda: salrec('binary_crossentropy', 3, 0.001, 50, 100, True),
 
     "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True":
-        lambda: salrec('Lambdarank', 3, 0.001, 50, 100, True),
+        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True),
 
 
 }
