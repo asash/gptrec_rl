@@ -137,8 +137,8 @@ random.shuffle(all_recommenders)
 
 
 RECOMMENDERS = {
-        "svd_recommender:" lambda: svd_recommender(30), 
-        "top_recommender:" top_recommender, 
+        "svd_recommender": lambda: svd_recommender(30), 
+        "top_recommender": top_recommender, 
 
     }
 for model in all_recommenders:
