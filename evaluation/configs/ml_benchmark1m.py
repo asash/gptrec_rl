@@ -136,7 +136,11 @@ all_recommenders = list(recommenders_raw.keys())
 random.shuffle(all_recommenders)
 
 
-RECOMMENDERS = {}
+RECOMMENDERS = {
+        "svd_recommender:" lambda: svd_recommender(30), 
+        "top_recommender:" top_recommender, 
+
+    }
 for model in all_recommenders:
     RECOMMENDERS[model] = recommenders_raw[model]
 
