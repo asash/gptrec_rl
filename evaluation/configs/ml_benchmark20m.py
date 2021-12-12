@@ -87,11 +87,11 @@ def salrec(loss, num_blocks, learning_rate, ndcg_at,
         activation = activation_override
     return FilterSeenRecommender(SalrecRecommender(train_epochs=10000, loss=loss,
                                                    optimizer=Adam(learning_rate), 
-                                                   early_stop_epochs=100,
+                                                   early_stop_epochs=300,
                                                    batch_size=128, sigma=1.0, ndcg_at=ndcg_at,
                                                    max_history_len=session_len,
                                                    output_layer_activation=activation,
-                                                   training_time_limit = 3600,
+                                                   training_time_limit = 3600*12,
                                                    num_blocks=num_blocks,
                                                    num_target_predictions=5,
                                                    eval_ndcg_at=40,
@@ -114,20 +114,8 @@ def mlp_historical_embedding(loss, activation_override=None):
                                                               output_layer_activation=activation, target_decay=0.8))
 
 recommenders_raw = {
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:4000-bce_weight:0.975":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=4000, loss_bce_weight=0.975),
-
-
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:4000-bce_weight:0.0":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=4000, loss_bce_weight=0.0),
-
-
-    "Transformer-BCE-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True":
-        lambda: salrec('binary_crossentropy', 3, 0.001, 50, 100, True),
-
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True),
-
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:2500-bce_weight:0.975":
+        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=2500, loss_bce_weight=0.975),
 
 }
 
