@@ -2,14 +2,14 @@ import keras
 import numpy as np
 from scipy.sparse import csr_matrix
 from tensorflow.keras.optimizers import Adam
-from tqdm import tqdm
+from tqdm import trange
 
 from aprec.recommenders.recommender import Recommender
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Input, Dense
 from tensorflow.keras.losses import BinaryCrossentropy
 import tensorflow as tf
-from utils.item_id import ItemId
+from aprec.utils.item_id import ItemId
 
 
 #https://dl.acm.org/doi/abs/10.5555/3172077.3172336
@@ -56,7 +56,8 @@ class DeepMFRecommender(Recommender):
 
         all_users = np.array(range(self.users.size()))
         all_items = np.array(range(self.items.size()))
-        for i in tqdm(range(self.steps), ascii=True):
+        pbar = trange(self.steps, ascii=True)
+        for step in pbar:
             users = np.random.choice(all_users, self.num_users_per_sample)
             items = np.random.choice(all_items, self.num_items_per_sample)
             users_input = np.asarray(self.user_item_matrix[users]\
@@ -66,9 +67,9 @@ class DeepMFRecommender(Recommender):
             target = tf.gather(users_input[0], items, axis=1)
 
             target = tf.reshape(target, (1, self.num_users_per_sample, self.num_items_per_sample))
-
-            self.model.fit([users_input, items_input], target, epochs=1)
-
+            history = self.model.fit([users_input, items_input], target, epochs=1, verbose=0)
+            loss_val = history.history['loss'][0]
+            pbar.set_description(f"loss: {loss_val:.06f}")
 
     def get_model(self):
 
