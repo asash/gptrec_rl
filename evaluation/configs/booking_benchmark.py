@@ -26,13 +26,13 @@ DATASET = get_booking_dataset(unix_timestamps=True)[0]
 USERS_FRACTIONS = [1.]
 
 def top_recommender():
-    return FilterSeenRecommender(TopRecommender())
+    return TopRecommender()
 
 def svd_recommender(k):
-    return FilterSeenRecommender(SvdRecommender(k))
+    return SvdRecommender(k)
 
 def lightfm_recommender(k, loss):
-    return FilterSeenRecommender(LightFMRecommender(k, loss))
+    return LightFMRecommender(k, loss)
 
 def vanilla_bert4rec(num_steps):
     max_seq_length = 50
@@ -75,7 +75,7 @@ def vanilla_bert4rec(num_steps):
                                   num_train_steps=num_train_steps,
                                   batch_size=batch_size,
                                   learning_rate=learning_rate)
-    return FilterSeenRecommender(recommender)
+    return recommender
 
 def salrec(loss, num_blocks, learning_rate, ndcg_at,
                 session_len,  lambdas_normalization, activation_override=None,
@@ -86,7 +86,7 @@ def salrec(loss, num_blocks, learning_rate, ndcg_at,
     activation = 'linear' if loss == 'lambdarank' else 'sigmoid'
     if activation_override is not None:
         activation = activation_override
-    return FilterSeenRecommender(SalrecRecommender(train_epochs=10000, loss=loss,
+    return SalrecRecommender(train_epochs=10000, loss=loss,
                                                    optimizer=Adam(learning_rate), 
                                                    early_stop_epochs=100,
                                                    batch_size=128, sigma=1.0, ndcg_at=ndcg_at,
@@ -101,18 +101,7 @@ def salrec(loss, num_blocks, learning_rate, ndcg_at,
                                                    loss_pred_truncate=loss_pred_truncate,
                                                    loss_bce_weight=loss_bce_weight, 
                                                    log_lambdas_len=log_lambdas
-                                                   ))
-
-def mlp_historical_embedding(loss, activation_override=None):
-    activation = 'linear' if loss == 'lambdarank' else 'sigmoid'
-    if activation_override is not None:
-        activation = activation_override
-    return FilterSeenRecommender(DNNRecommender(train_epochs=10000, loss=loss,
-                                                optimizer=Adam(), early_stop_epochs=100,
-                                                batch_size=64, sigma=1.0, ndcg_at=40,
-                                                bottleneck_size=64,
-                                                max_history_len=150,
-                                                output_layer_activation=activation, target_decay=0.8))
+                                                   )
 
 recommenders_raw = {
     "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:4000-bce_weight:0.975":
