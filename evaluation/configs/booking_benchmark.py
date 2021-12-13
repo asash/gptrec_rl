@@ -20,7 +20,7 @@ from aprec.evaluation.metrics.average_popularity_rank import AveragePopularityRa
 from aprec.evaluation.metrics.pairwise_cos_sim import PairwiseCosSim
 from aprec.evaluation.metrics.sps import SPS
 
-DATASET = get_booking_dataset()[0]
+DATASET = get_booking_dataset(unix_timestamps=True)[0]
 
 
 USERS_FRACTIONS = [1.]
