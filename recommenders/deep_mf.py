@@ -36,7 +36,7 @@ class DeepMFRecommender(Recommender):
         self.item_hidden_layers = item_hidden_layers
         self.latent_dim_size = latent_dim_size
         self.activation = activation
-        self.items_per_pred_iter = 1000
+        self.items_per_pred_iter = items_per_pred_iter
         self.loss = loss
         self.rows = []
         self.cols = []

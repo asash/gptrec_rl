@@ -21,7 +21,8 @@ class LambdaRankLoss(object):
     def __init__(self, n_items, batch_size, sigma=1.0,
                  ndcg_at = 30, dtype=tf.float32, lambda_normalization=True,
                  pred_truncate_at = None,
-                 bce_grad_weight = 0.0
+                 bce_grad_weight = 0.0,
+                 remove_batch_dim = False
                  ):
         self.__name__ = 'lambdarank'
         self.batch_size = batch_size
@@ -30,6 +31,7 @@ class LambdaRankLoss(object):
         self.ndcg_at = min(ndcg_at, n_items)
         self.dtype = dtype
         self.bce_grad_weight = bce_grad_weight
+        self.remove_batch_dim = remove_batch_dim
 
         if pred_truncate_at == None:
             self.pred_truncate_at = n_items
@@ -49,7 +51,13 @@ class LambdaRankLoss(object):
         self.lambda_normalization = lambda_normalization
 
     @tf.custom_gradient
-    def __call__(self, y_true, y_pred):
+    def __call__(self, y_true_raw, y_pred_raw):
+        if self.remove_batch_dim:
+            y_true = tf.reshape(y_true_raw, (self.batch_size, self.n_items))
+            y_pred = tf.reshape(y_true_raw, (self.batch_size, self.n_items))
+        else:
+            y_true = y_true_raw
+            y_pred = y_pred_raw
         result = tf.reduce_mean(tf.abs(y_pred))
 
         def grad(dy):

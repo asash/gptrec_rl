@@ -2,6 +2,7 @@ import math
 from collections import defaultdict, Counter
 
 import numpy as np
+from tqdm import tqdm
 
 from aprec.recommenders.recommender import Recommender
 from aprec.recommenders.top_recommender import TopRecommender
@@ -49,13 +50,16 @@ class TransitionsChainRecommender(Recommender):
             idf[item] = len(self.user_to_items) / math.log(df[item] + 1)
 
 
-        for _, items in self.user_to_items.items():
+        print("building transitions matrix...")
+        for _, items in tqdm(self.user_to_items.items()):
             for t in range(1, len(items)):
                 target_item = items[t]
                 for item_id in items[:t]:
                     self.transition_matrix[self.item_id_to_index[item_id]][self.item_id_to_index[target_item]] += 1
         self.graph = defaultdict(list)
-        for start in self.transition_matrix:
+
+        print("caching predictions...")
+        for start in tqdm(self.transition_matrix):
             for stop in self.transition_matrix[start].most_common(500):
                 self.graph[start].append(stop)
         pass
