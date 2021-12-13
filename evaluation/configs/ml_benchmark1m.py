@@ -1,5 +1,7 @@
 import random
 
+from keras.losses import BinaryCrossentropy
+
 from aprec.datasets.movielens20m import get_movielens20m_actions
 from aprec.datasets.movielens100k import get_movielens100k_actions
 from aprec.datasets.bert4rec_datasets import get_bert4rec_dataset
@@ -19,9 +21,18 @@ from tensorflow.keras.optimizers import Adam
 from aprec.evaluation.metrics.average_popularity_rank import AveragePopularityRank
 from aprec.evaluation.metrics.pairwise_cos_sim import PairwiseCosSim
 from aprec.evaluation.metrics.sps import SPS
+from losses.lambdarank import LambdaRankLoss
+from recommenders.deep_mf import DeepMFRecommender
 
 DATASET = get_bert4rec_dataset("ml-1m")
 
+
+def deepmf(users_per_sample, items_per_sample, loss, truncation_level=None, bce_weight=0.0):
+    if loss == 'lambdarank':
+        loss = LambdaRankLoss(items_per_sample, users_per_sample,
+                              ndcg_at=50, pred_truncate_at=truncation_level,
+                              bce_grad_weight=bce_weight, remove_batch_dim=True)
+    return FilterSeenRecommender(DeepMFRecommender(users_per_sample, items_per_sample, loss, steps=3000))
 
 USERS_FRACTIONS = [1.]
 
@@ -115,21 +126,9 @@ def mlp_historical_embedding(loss, activation_override=None):
                                                               output_layer_activation=activation, target_decay=0.8))
 
 recommenders_raw = {
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:2500-bce_weight:0.975":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=2500, loss_bce_weight=0.975),
-
-
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:2500-bce_weight:0.0":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=2500, loss_bce_weight=0.0),
-
-
-    "Transformer-BCE-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True":
-        lambda: salrec('binary_crossentropy', 3, 0.001, 50, 100, True),
-
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True),
-
-
+    "DeepMF-BCE": lambda:deepmf(1000, 1000, BinaryCrossentropy(from_logits=True)),
+    "DeepMF-Lambdarank_Trucation:None_bce_weight:0.0": lambda: deepmf(1000, 1000, 'lambdarank'),
+    "DeepMF-Lambdarank_Trucation:None_bce_weight:0.975": lambda: deepmf(1000, 1000, 'lambdarank', bce_weight=0.975),
 }
 
 all_recommenders = list(recommenders_raw.keys())
