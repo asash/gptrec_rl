@@ -52,6 +52,10 @@ class DeepMFRecommender(Recommender):
     def rebuild_model(self):
         self.user_item_matrix = csr_matrix((self.vals, (self.rows, self.cols)))
         self.item_user_matrix = csr_matrix((self.vals, (self.cols, self.rows)))
+        item_cnt = np.asarray(np.sum(self.item_user_matrix, axis = 1)).reshape(self.items.size())
+        full_sum = np.sum(item_cnt)
+        item_prob = item_cnt/full_sum
+        
         self.model, self.pred_model = self.get_model()
 
         all_users = np.array(range(self.users.size()))
@@ -59,7 +63,7 @@ class DeepMFRecommender(Recommender):
         pbar = trange(self.steps, ascii=True)
         for step in pbar:
             users = np.random.choice(all_users, self.num_users_per_sample)
-            items = np.random.choice(all_items, self.num_items_per_sample)
+            items = np.random.choice(all_items, self.num_items_per_sample, p=item_prob)
             users_input = np.asarray(self.user_item_matrix[users]\
                                      .todense()).reshape(1, self.num_users_per_sample, self.items.size())
             items_input = np.asarray(self.item_user_matrix[items]\
