@@ -1,3 +1,6 @@
+from tqdm import tqdm
+
+
 class Recommender():
     def name(self):
         raise NotImplementedError
@@ -14,7 +17,7 @@ class Recommender():
     #recommendation request = tuple(user_id, features)
     def recommend_batch(self, recommendation_requests, limit):
         results = []
-        for user_id, features in recommendation_requests:
+        for user_id, features in tqdm(recommendation_requests, ascii=True):
             results.append(self.get_next_items(user_id, limit, features))
         return results
 
