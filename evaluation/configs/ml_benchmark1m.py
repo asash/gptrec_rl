@@ -28,7 +28,7 @@ def deepmf(users_per_sample, items_per_sample, loss, truncation_level=None, bce_
         loss = LambdaRankLoss(items_per_sample, users_per_sample,
                               ndcg_at=50, pred_truncate_at=truncation_level,
                               bce_grad_weight=bce_weight, remove_batch_dim=True)
-    return FilterSeenRecommender(DeepMFRecommender(users_per_sample, items_per_sample, loss, steps=3000))
+    return FilterSeenRecommender(DeepMFRecommender(users_per_sample, items_per_sample, loss, steps=1500))
 
 USERS_FRACTIONS = [1.]
 
@@ -142,7 +142,7 @@ for model in all_recommenders:
 print(f"evaluating {len(RECOMMENDERS)} models")
 
 N_VAL_USERS=256
-MAX_TEST_USERS=4096
+MAX_TEST_USERS=1024
 
 METRICS = [NDCG(10),  NDCG(2), NDCG(5), NDCG(20), NDCG(40), Precision(10), Recall(10), SPS(1), SPS(10), MRR(), MAP(10)]
 
