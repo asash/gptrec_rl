@@ -19,10 +19,20 @@ class Action(object):
        return result
 
     def to_json(self):
+        try:
+            #check if data is json serializable
+            json.dumps(self.data)
+            data = self.data
+
+        except:
+            #fallback to just string representation
+            #TODO: restore may work incorrectly with some datasets
+            data = str(self.data)
+
         return json.dumps({
             "user_id": self.user_id,
             "item_id": self.item_id,
-            "data": self.data,
+            "data": data,
             "timestamp": self.timestamp
         })
 

@@ -1,5 +1,6 @@
 from aprec.api.action import Action
 import requests
+import time
 from aprec.utils.os_utils import mkdir_p_local, get_dir
 from datetime import datetime
 import logging
@@ -36,7 +37,7 @@ def split_csv_string(string):
 
 
 
-def get_booking_dataset_one_file(filename, is_testset=False, max_actions=None):
+def get_booking_dataset_one_file(filename, is_testset=False, max_actions=None, unix_timestamps=False):
     actions = []
     submit_actions = []
     with open(filename) as input_file:
@@ -58,6 +59,9 @@ def get_booking_dataset_one_file(filename, is_testset=False, max_actions=None):
             date_format = "%Y-%m-%d"
             checkin = datetime.strptime(checkin_str, date_format)
             checkout = datetime.strptime(checkout_str, date_format)
+            if unix_timestamps:
+                checkin = time.mktime(checkin.timetuple()) 
+                checkout = time.mktime(checkout.timetuple()) 
             action = Action(user_id = utrip_id, item_id = city_id, timestamp=checkin, data = {'user_id': user_id,
                                                                           'device_class': device_class,
                                                                           'affiliate_id': affiliate_id,
@@ -76,11 +80,15 @@ def get_booking_dataset_one_file(filename, is_testset=False, max_actions=None):
             next_line = input_file.readline()
     return actions, submit_actions
 
-def get_booking_dataset_internal(train_filename, test_filename, max_actions_per_file=None):
+def get_booking_dataset_internal(train_filename, test_filename,
+                                    max_actions_per_file=None, unix_timestamps=False):
+
     train_actions, _ = get_booking_dataset_one_file(train_filename, is_testset=False,
-                                                 max_actions=max_actions_per_file)
+                                                 max_actions=max_actions_per_file,
+                                                 unix_timestamps=unix_timestamps)
     test_actions, submit_actions = get_booking_dataset_one_file(test_filename, is_testset=True,
-                                                 max_actions=max_actions_per_file)
+                                                 max_actions=max_actions_per_file,
+                                                 unix_timestamps=unix_timestamps)
     return train_actions + test_actions, submit_actions
 
 def download_booking_file(url, filename):
@@ -107,8 +115,8 @@ def download_booking_test():
 
 
 
-def get_booking_dataset(max_actions_per_file=None):
+def get_booking_dataset(max_actions_per_file=None, unix_timestamps=False):
     train_filename = download_booking_train()
     test_filename = download_booking_test()
-    return get_booking_dataset_internal(train_filename, test_filename, max_actions_per_file)
+    return get_booking_dataset_internal(train_filename, test_filename, max_actions_per_file, unix_timestamps)
 
