@@ -1,7 +1,7 @@
 import os
 import unittest
 
-from aprec.datasets.booking import get_booking_dataset
+from aprec.datasets.booking import get_booking_dataset_internal
 from aprec.recommenders.booking_recommender.booking_recommender import BookingRecommender
 
 
@@ -10,8 +10,8 @@ class TestBookingRecommender(unittest.TestCase):
         current_dir = os.path.dirname(__file__)
         booking_train_file = os.path.join(current_dir, "booking_train_dataset.csv")
         booking_test_file = os.path.join(current_dir, "booking_test_dataset.csv")
-        dataset, submit = get_booking_dataset(booking_train_file, booking_test_file)
-        recommender = BookingRecommender(train_epochs=10, n_val_users=73, batch_size=2, max_history_len=15,
+        dataset, submit = get_booking_dataset_internal(booking_train_file, booking_test_file)
+        recommender = BookingRecommender(train_epochs=2, n_val_users=73, batch_size=2, max_history_len=15,
                                          loss='lambdarank', output_layer_activation='linear', val_epoch_size=50,
                                          epoch_size=10)
         for action in dataset:

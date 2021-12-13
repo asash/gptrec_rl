@@ -9,8 +9,7 @@ from aprec.datasets.booking import get_booking_dataset
 from tqdm import tqdm
 
 
-DATASET, SUBMIT_ACTIONS = get_booking_dataset('./booking_data/booking_train_set.csv',
-                              './booking_data/booking_test_set.csv')
+DATASET, SUBMIT_ACTIONS = get_booking_dataset()
 
 GENERATE_SUBMIT_THRESHOLD = 0.54175
 

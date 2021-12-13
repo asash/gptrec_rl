@@ -2,7 +2,7 @@ import os
 import unittest
 from copy import deepcopy
 
-from aprec.datasets.booking import get_booking_dataset
+from aprec.datasets.booking import get_booking_dataset_internal
 from aprec.recommenders.booking_recommender.booking_recommender_ltr import BookingRecommenderLTR
 
 
@@ -18,11 +18,10 @@ class TestBookingLtrRecommender(unittest.TestCase):
         current_dir = os.path.dirname(__file__)
         booking_train_file = os.path.join(current_dir, "booking_train_dataset.csv")
         booking_test_file = os.path.join(current_dir, "booking_test_dataset.csv")
-        dataset, submit = get_booking_dataset(booking_train_file, booking_test_file)
+        dataset, submit = get_booking_dataset_internal(booking_train_file, booking_test_file)
         recommenders = {}
-        for boosting_type in ('rf', 'gbdt', 'dart', 'goss'):
-            for objective in ('regression', 'lambdarank', 'rank_xendcg', 'regression_l1', 'huber',
-                              'fair', 'poisson', 'quantile', 'mape', 'tweedie'):
+        for boosting_type in (('gbdt', )):
+            for objective in (('lambdarank', )):
                 recommenders[f"Lightgbm-{boosting_type}-{objective}"] = lambda boosting_type=boosting_type, objective=objective: LTR('lightgbm', False,
                                                                                     lgbm_boosting_type=boosting_type,
                                                                                     lgbm_objecitve=objective)

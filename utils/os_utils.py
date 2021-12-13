@@ -2,6 +2,7 @@ import os
 import subprocess
 import shlex
 import logging
+import hashlib
 
 def get_dir():
     utils_dirname = os.path.dirname(os.path.abspath(__file__))
@@ -20,6 +21,14 @@ def mkdir_p_local(relative_dir_path):
     local_dir = get_dir()
     abspath = os.path.join(local_dir, relative_dir_path)
     mkdir_p(abspath)
+
+
+def file_md5(fname):
+    hash_md5 = hashlib.md5()
+    with open(fname, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_md5.update(chunk)
+    return hash_md5.hexdigest()
 
 def console_logging():
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s')

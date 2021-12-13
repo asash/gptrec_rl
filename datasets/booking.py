@@ -1,5 +1,16 @@
 from aprec.api.action import Action
+import requests
+from aprec.utils.os_utils import mkdir_p_local, get_dir
 from datetime import datetime
+import logging
+import os
+
+
+BOOKING_DIR = "data/booking"
+BOOKING_TRAIN_URL = "https://raw.githubusercontent.com/bookingcom/ml-dataset-mdt/main/train_set.csv"
+BOOKING_TEST_URL = "https://raw.githubusercontent.com/bookingcom/ml-dataset-mdt/main/test_set.csv"
+BOOKING_TRAIN_FILE = "booking_train_set.csv"
+BOOKING_TEST_FILE = "booking_test_set.csv"
 
 def split_csv_string(string):
     parts = []
@@ -35,12 +46,12 @@ def get_booking_dataset_one_file(filename, is_testset=False, max_actions=None):
             parts = split_csv_string(next_line)
             try:
                 if not is_testset:
-                    _, user_id, checkin_str, checkout_str, city_id,\
+                    user_id, checkin_str, checkout_str, city_id,\
                             device_class, affiliate_id,\
                             booker_country, hotel_country, utrip_id = parts
                 else:
-                    user_id, checkin_str, checkout_str, device_class, affiliate_id,booker_country,utrip_id,row_num,\
-                                total_rows,city_id,hotel_country = parts
+                    user_id, checkin_str, checkout_str, device_class, affiliate_id,booker_country,utrip_id,\
+                                city_id,hotel_country = parts
 
             except Exception as ex:
                 raise Exception(f"incorrect line: {next_line}")
@@ -65,11 +76,39 @@ def get_booking_dataset_one_file(filename, is_testset=False, max_actions=None):
             next_line = input_file.readline()
     return actions, submit_actions
 
-def get_booking_dataset(train_filename, test_filename, max_actions_per_file=None):
+def get_booking_dataset_internal(train_filename, test_filename, max_actions_per_file=None):
     train_actions, _ = get_booking_dataset_one_file(train_filename, is_testset=False,
                                                  max_actions=max_actions_per_file)
     test_actions, submit_actions = get_booking_dataset_one_file(test_filename, is_testset=True,
                                                  max_actions=max_actions_per_file)
     return train_actions + test_actions, submit_actions
 
+def download_booking_file(url, filename):
+    mkdir_p_local(BOOKING_DIR)
+    full_filename = os.path.join(get_dir(), BOOKING_DIR, filename) 
+    if not os.path.isfile(full_filename):
+        logging.info(f"downloading booking {filename} file")
+        response = requests.get(url)
+        with open(full_filename, 'wb') as out_file:
+            out_file.write(response.content)
+        logging.info(f"{filename} dataset downloaded")
+        full_name = get_dir()
+    else:
+        logging.info(f"booking {filename} file already exists, skipping")
+    return full_filename 
+
+
+
+def download_booking_train():
+    return download_booking_file(BOOKING_TRAIN_URL, BOOKING_TRAIN_FILE)
+
+def download_booking_test():
+    return download_booking_file(BOOKING_TEST_URL, BOOKING_TEST_FILE)
+
+
+
+def get_booking_dataset(max_actions_per_file=None):
+    train_filename = download_booking_train()
+    test_filename = download_booking_test()
+    return get_booking_dataset_internal(train_filename, test_filename, max_actions_per_file)
 
