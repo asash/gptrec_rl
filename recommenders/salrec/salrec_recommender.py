@@ -213,7 +213,10 @@ class SalrecRecommender(Recommender):
         return model
 
     def get_next_items(self, user_id, limit, features=None):
-        actions = self.user_actions[self.users.get_id(user_id)]
+        if user_id in self.user_actions:
+            actions = self.user_actions[self.users.get_id(user_id)]
+        else:
+           actions = []
         items = [action[1] for action in actions]
         return self.get_model_predictions(items, limit)
 

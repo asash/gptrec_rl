@@ -1,6 +1,9 @@
+import os
 import random
 
-from aprec.datasets.mts_kion import get_mts_kion_dataset
+from tqdm import tqdm
+
+from aprec.datasets.mts_kion import get_mts_kion_dataset, get_submission_users
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.salrec.salrec_recommender import SalrecRecommender
@@ -19,7 +22,25 @@ from aprec.losses.lambdarank import LambdaRankLoss
 from aprec.recommenders.deep_mf import DeepMFRecommender
 
 DATASET = get_mts_kion_dataset()
+SUBMIT_USER_IDS = get_submission_users()
 
+GENERATE_SUBMIT_THRESHOLD = 0.10
+
+def generate_submit(recommender, recommender_name, evaluation_result, config):
+    if evaluation_result["MAP@10"] <= config.GENERATE_SUBMIT_THRESHOLD:
+        print("SPS@4 is less than threshold, not generating the submit")
+        return
+
+    print("generating submit...")
+    with open(os.path.join(config.out_dir, recommender_name + "_submit_" + ".csv"), 'w') as out_file:
+        out_file.write("user_id,item_id\n")
+        for user_id in tqdm(config.SUBMIT_USER_IDS, ascii=True):
+            recommendations = recommender.get_next_items(user_id, limit=10)
+            content_ids = [recommendation[0] for recommendation in recommendations]
+            line = user_id + ",\"["  +  ", ".join(content_ids) + "]\"\n"
+            out_file.write(line)
+
+CALLBACKS = (generate_submit, )
 
 def deepmf(users_per_sample, items_per_sample, loss, truncation_level=None, bce_weight=0.0):
     if loss == 'lambdarank':
@@ -97,7 +118,7 @@ def salrec(loss, num_blocks, learning_rate, ndcg_at,
                                                    batch_size=128, sigma=1.0, ndcg_at=ndcg_at,
                                                    max_history_len=session_len,
                                                    output_layer_activation=activation,
-                                                   training_time_limit = 3600,
+                                                   training_time_limit = 3600*12,
                                                    num_blocks=num_blocks,
                                                    num_target_predictions=5,
                                                    eval_ndcg_at=40,
@@ -129,7 +150,7 @@ random.shuffle(all_recommenders)
 
 
 RECOMMENDERS = {
-        "svd_recommender": lambda: svd_recommender(30),
+#        "svd_recommender": lambda: svd_recommender(30),
         "top_recommender": top_recommender,
 
     }

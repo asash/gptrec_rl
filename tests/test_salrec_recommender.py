@@ -28,6 +28,9 @@ class TestSalrecRecommender(unittest.TestCase):
         metadata = recommender.get_metadata()
         print(metadata)
 
+        recs = recommender.get_next_items('aadfadsf', 10)
+        print(recs)
+
     def test_salrec_recommender_unordered(self):
         batch_size = 10
         val_users = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
