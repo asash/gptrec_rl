@@ -5,7 +5,7 @@ import time
 
 import requests
 
-from api.action import Action
+from aprec.api.action import Action
 from aprec.utils.os_utils import mkdir_p_local, get_dir
 
 MTS_KION_DIR = "data/mts_kion"
