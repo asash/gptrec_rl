@@ -30,6 +30,14 @@ def get_control_users(actions):
             result.add(action.user_id)
     return result
 
+
+def get_single_action_users(users):
+    result = set()
+    for user in users:
+        if len(users[user]) == 1:
+            result.add(user)
+    return result
+
 def leave_one_out(actions, max_test_users=4000):
     sorted_actions = sorted(actions, key=lambda x: x.timestamp)
     users = defaultdict(list)
@@ -38,7 +46,8 @@ def leave_one_out(actions, max_test_users=4000):
     train = []
     test = []
     control_users = get_control_users(actions)
-    valid_user_selection = users.keys() - control_users
+    single_action_users = get_single_action_users(users)
+    valid_user_selection = users.keys() - control_users - single_action_users
     test_user_ids = set(np.random.choice(list(valid_user_selection), max_test_users, replace=False))
     for user_id in users:
         if user_id in test_user_ids:
