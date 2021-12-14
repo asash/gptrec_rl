@@ -1,8 +1,10 @@
+import pytz
+
 from aprec.api.action import Action
 import requests
-import time
+import calendar
 from aprec.utils.os_utils import mkdir_p_local, get_dir
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 import os
 
@@ -57,11 +59,11 @@ def get_booking_dataset_one_file(filename, is_testset=False, max_actions=None, u
             except Exception as ex:
                 raise Exception(f"incorrect line: {next_line}")
             date_format = "%Y-%m-%d"
-            checkin = datetime.strptime(checkin_str, date_format)
-            checkout = datetime.strptime(checkout_str, date_format)
+            checkin = datetime.strptime(checkin_str, date_format).replace(tzinfo=timezone.utc)
+            checkout = datetime.strptime(checkout_str, date_format).replace(tzinfo=timezone.utc)
             if unix_timestamps:
-                checkin = time.mktime(checkin.timetuple()) 
-                checkout = time.mktime(checkout.timetuple()) 
+                checkin = calendar.timegm(checkin.timetuple())
+                checkout = calendar.timegm(checkout.timetuple())
             action = Action(user_id = utrip_id, item_id = city_id, timestamp=checkin, data = {'user_id': user_id,
                                                                           'device_class': device_class,
                                                                           'affiliate_id': affiliate_id,
