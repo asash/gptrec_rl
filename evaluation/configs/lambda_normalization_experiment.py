@@ -117,7 +117,7 @@ recommenders_raw = {
     "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:2500-bce_weight:0.975":
         lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=2500, loss_bce_weight=0.975),
 
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:2500-bce_weight:0.975":
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:False-truncate:2500-bce_weight:0.975":
         lambda: salrec('lambdarank', 3, 0.001, 50, 100, False, loss_pred_truncate=2500, loss_bce_weight=0.975),
 
 }
