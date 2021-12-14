@@ -54,7 +54,7 @@ class LambdaRankLoss(object):
     def __call__(self, y_true_raw, y_pred_raw):
         if self.remove_batch_dim:
             y_true = tf.reshape(y_true_raw, (self.batch_size, self.n_items))
-            y_pred = tf.reshape(y_true_raw, (self.batch_size, self.n_items))
+            y_pred = tf.reshape(y_pred_raw, (self.batch_size, self.n_items))
         else:
             y_true = y_true_raw
             y_pred = y_pred_raw
@@ -97,12 +97,13 @@ class LambdaRankLoss(object):
         pairwise_diffs = self.get_pairwise_diff_batch(pred_ordered) * S
 
         #normalize dcg gaps - inspired by lightbm
-        best_score = pred_ordered[:, 0]
-        worst_score = pred_ordered[:, -1]
+        if self.lambda_normalization:
+            best_score = pred_ordered[:, 0]
+            worst_score = pred_ordered[:, -1]
 
-        range_is_zero = tf.reshape(tf.cast(tf.math.equal(best_score, worst_score), self.dtype), (self.batch_size, 1, 1))
-        norms = (1 - range_is_zero) * (tf.abs(pairwise_diffs) + 0.01) + (range_is_zero)
-        delta_ndcg = tf.math.divide_no_nan(delta_ndcg, norms)
+            range_is_zero = tf.reshape(tf.cast(tf.math.equal(best_score, worst_score), self.dtype), (self.batch_size, 1, 1))
+            norms = (1 - range_is_zero) * (tf.abs(pairwise_diffs) + 0.01) + (range_is_zero)
+            delta_ndcg = tf.math.divide_no_nan(delta_ndcg, norms)
 
         sigmoid = -self.sigma / (1 + tf.exp(self.sigma * (pairwise_diffs)))
         lambda_matrix =  delta_ndcg * sigmoid
