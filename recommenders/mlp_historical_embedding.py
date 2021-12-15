@@ -20,7 +20,7 @@ import numpy as np
 
 class GreedyMLPHistoricalEmbedding(Recommender):
     def __init__(self, bottleneck_size=32, train_epochs=300,
-                 max_history_len=1000,
+                 max_history_len=100,
                  loss='binary_crossentropy',
                  output_layer_activation='sigmoid',
                  optimizer='adam',
@@ -173,18 +173,20 @@ class GreedyMLPHistoricalEmbedding(Recommender):
         model.add(layers.Dropout(0.5, name="dropout"))
         model.add(layers.Dense(128, name="dense3", activation="relu"))
         model.add(layers.Dense(256, name="dense4", activation="relu"))
-        model.add(layers.Dense(self.items, name="output", activation=self.output_layer_activation))
+        model.add(layers.Dense(self.items.size(), name="output", activation=self.output_layer_activation))
+        return model
 
 
     def get_gru_model(self):
-
         input = layers.Input(shape=(self.max_history_length))
         x = layers.Embedding(self.items.size() + 1, self.embedding_size)(input)
         for i in range(self.num_main_layers - 1):
             x = layers.GRU(self.embedding_size, activation='relu', return_sequences=True)(x)
+        x = layers.GRU(self.embedding_size, activation='relu')(x)
+
         for i in range(self.num_dense_layers):
             x = layers.Dense(self.embedding_size, activation='relu')(x)
-        output = layers.Dense(self.items, name="output", activation=self.output_layer_activation)(x)
+        output = layers.Dense(self.items.size(), name="output", activation=self.output_layer_activation)(x)
         model = Model(inputs=[input], outputs=[output], name='GRU')
         return model
 
