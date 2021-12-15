@@ -3,10 +3,8 @@ import random
 from keras.losses import BinaryCrossentropy
 
 from aprec.datasets.movielens20m import get_movielens20m_actions
-from aprec.datasets.movielens100k import get_movielens100k_actions
+from aprec.datasets.bert4rec_datasets import get_bert4rec_dataset
 from aprec.recommenders.top_recommender import TopRecommender
-from aprec.recommenders.transition_chain_recommender import TransitionsChainRecommender
-from aprec.recommenders.deep_mf import DeepMFRecommender
 from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.salrec.salrec_recommender import SalrecRecommender
 from aprec.recommenders.lightfm import LightFMRecommender
@@ -18,12 +16,20 @@ from aprec.evaluation.metrics.recall import Recall
 from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.evaluation.metrics.mrr import MRR
 from aprec.evaluation.metrics.map import MAP
-from aprec.losses.lambdarank import LambdaRankLoss
 from tensorflow.keras.optimizers import Adam
 from aprec.evaluation.metrics.sps import SPS
+from aprec.losses.lambdarank import LambdaRankLoss
+from aprec.recommenders.deep_mf import DeepMFRecommender
 
 DATASET = get_movielens20m_actions(min_rating=1.0)
 
+
+def deepmf(users_per_sample, items_per_sample, loss, truncation_level=None, bce_weight=0.0):
+    if loss == 'lambdarank':
+        loss = LambdaRankLoss(items_per_sample, users_per_sample,
+                              ndcg_at=50, pred_truncate_at=truncation_level,
+                              bce_grad_weight=bce_weight, remove_batch_dim=True)
+    return FilterSeenRecommender(DeepMFRecommender(users_per_sample, items_per_sample, loss, steps=1500))
 
 USERS_FRACTIONS = [1.]
 
@@ -79,16 +85,6 @@ def vanilla_bert4rec(num_steps):
                                   learning_rate=learning_rate)
     return FilterSeenRecommender(recommender)
 
-def deepmf(users_per_sample, items_per_sample, loss, truncation_level=None, bce_weight=0.0):
-    if loss == 'lambdarank':
-        loss = LambdaRankLoss(items_per_sample, users_per_sample,
-                              ndcg_at=50, pred_truncate_at=truncation_level,
-                              bce_grad_weight=bce_weight, remove_batch_dim=True)
-    return FilterSeenRecommender(DeepMFRecommender(users_per_sample, items_per_sample, loss, steps=3000))
-
-def transitions_chain():
-    return FilterSeenRecommender(TransitionsChainRecommender())
-
 def salrec(loss, num_blocks, learning_rate, ndcg_at,
                 session_len,  lambdas_normalization, activation_override=None,
                 loss_pred_truncate=None,
@@ -100,11 +96,11 @@ def salrec(loss, num_blocks, learning_rate, ndcg_at,
         activation = activation_override
     return FilterSeenRecommender(SalrecRecommender(train_epochs=10000, loss=loss,
                                                    optimizer=Adam(learning_rate), 
-                                                   early_stop_epochs=300,
+                                                   early_stop_epochs=10000,
                                                    batch_size=128, sigma=1.0, ndcg_at=ndcg_at,
                                                    max_history_len=session_len,
                                                    output_layer_activation=activation,
-                                                   training_time_limit = 3600*12,
+                                                   training_time_limit = 3600,
                                                    num_blocks=num_blocks,
                                                    num_target_predictions=5,
                                                    eval_ndcg_at=40,
@@ -113,6 +109,41 @@ def salrec(loss, num_blocks, learning_rate, ndcg_at,
                                                    loss_pred_truncate=loss_pred_truncate,
                                                    loss_bce_weight=loss_bce_weight, 
                                                    log_lambdas_len=log_lambdas
+                                                   ))
+
+
+
+def dnn(model_arch, loss,
+           session_len=50,
+           ndcg_at = 50,
+           activation_override=None,
+           lambdas_normalization = True,
+           learning_rate=0.001,
+           num_main_layers=2,
+           num_dense_layers=1,
+           loss_pred_truncate=None,
+           loss_bce_weight=0.0,
+           log_lambdas=False
+           ):
+    activation = 'linear' if loss == 'lambdarank' else 'sigmoid'
+    if activation_override is not None:
+        activation = activation_override
+    return FilterSeenRecommender(DNNRecommender(train_epochs=10000, loss=loss,
+                                                   model_arch=model_arch,
+                                                   optimizer=Adam(learning_rate),
+                                                   early_stop_epochs=10000,
+                                                   batch_size=128, sigma=1.0, ndcg_at=ndcg_at,
+                                                   max_history_len=session_len,
+                                                   output_layer_activation=activation,
+                                                   training_time_limit = 3600,
+                                                   eval_ndcg_at=40,
+                                                   target_decay=1.0,
+                                                   loss_lambda_normalization=lambdas_normalization,
+                                                   loss_pred_truncate=loss_pred_truncate,
+                                                   loss_bce_weight=loss_bce_weight,
+                                                   log_lambdas_len=log_lambdas,
+                                                   num_main_layers=num_main_layers,
+                                                   num_dense_layers=num_dense_layers
                                                    ))
 
 def mlp_historical_embedding(loss, activation_override=None):
@@ -127,9 +158,10 @@ def mlp_historical_embedding(loss, activation_override=None):
                                                 output_layer_activation=activation, target_decay=0.8))
 
 recommenders_raw = {
-    "DeepMF-BCE": lambda:deepmf(1000, 1000, BinaryCrossentropy(from_logits=True)),
-    "DeepMF-Lambdarank_Trucation:None_bce_weight:0.0": lambda: deepmf(1000, 1000, 'lambdarank'),
-    "DeepMF-Lambdarank_Trucation:None_bce_weight:0.975": lambda: deepmf(1000, 1000, 'lambdarank', bce_weight=0.975),
+    "GRU4rec-BCE": lambda: dnn("gru", "binary_crossentropy"),
+    "GRU4rec-Lambdarank-Vanilla": lambda: dnn("gru", "lambdarank"),
+    "GRU4rec-Lambdarank-Truncated:2500": lambda: dnn("gru", "lambdarank", loss_pred_truncate=2500),
+    "GRU4rec-Lambdarank-Truncated:2500-bce-weight:0.975": lambda: dnn("gru", "lambdarank", loss_pred_truncate=2500, loss_bce_weight=0.975),
 }
 
 all_recommenders = list(recommenders_raw.keys())
@@ -137,14 +169,17 @@ random.shuffle(all_recommenders)
 
 
 RECOMMENDERS = {
-}
+        "svd_recommender": lambda: svd_recommender(30), 
+        "top_recommender": top_recommender, 
+
+    }
 for model in all_recommenders:
     RECOMMENDERS[model] = recommenders_raw[model]
 
 print(f"evaluating {len(RECOMMENDERS)} models")
 
-N_VAL_USERS=1024
-MAX_TEST_USERS=65536
+VAL_USERS=1024
+MAX_TEST_USERS=32768
 
 METRICS = [NDCG(10),  NDCG(2), NDCG(5), NDCG(20), NDCG(40), Precision(10), Recall(10), SPS(1), SPS(10), MRR(), MAP(10)]
 
