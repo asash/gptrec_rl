@@ -123,12 +123,9 @@ class DNNRecommender(Recommender):
             print(f"epoch: {epoch}")
             train_history = self.model.fit(generator, validation_data=val_generator)
             total_trainig_time = time.time() - start_time
-            try:
-                val_ndcg = train_history.history[f"val_ndcg_at_{self.ndcg_at}"][-1]
-                val_ndcg_history.append((total_trainig_time, val_ndcg))
-            except:
-                print(f"self.ndcgg_at: {self.ndcg_at}")
-                val_ndcg = 0
+            val_ndcg = train_history.history[f"val_ndcg_at_{self.eval_ndcg_at}"][-1]
+            val_ndcg_history.append((total_trainig_time, val_ndcg))
+
             steps_since_improved += 1
             if val_ndcg > best_ndcg:
                 steps_since_improved = 0
