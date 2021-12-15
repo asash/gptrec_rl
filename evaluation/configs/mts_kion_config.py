@@ -3,7 +3,7 @@ import random
 
 from tqdm import tqdm
 
-from aprec.datasets.mts_kion import get_mts_kion_dataset, get_submission_users
+from aprec.datasets.mts_kion import get_mts_kion_dataset, get_submission_user_ids
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.salrec.salrec_recommender import SalrecRecommender
@@ -22,7 +22,7 @@ from aprec.losses.lambdarank import LambdaRankLoss
 from aprec.recommenders.deep_mf import DeepMFRecommender
 
 DATASET = get_mts_kion_dataset()
-SUBMIT_USER_IDS = get_submission_users()
+SUBMIT_USER_IDS = get_submission_user_ids()
 
 GENERATE_SUBMIT_THRESHOLD = 0.10
 

@@ -1,7 +1,7 @@
 import os
 import unittest
 import json
-from aprec.datasets.mts_kion import get_mts_kion_dataset, get_submission_users
+from aprec.datasets.mts_kion import get_mts_kion_dataset, get_submission_user_ids, get_users
 
 
 class TestMtsKionDataset(unittest.TestCase):
@@ -13,13 +13,14 @@ class TestMtsKionDataset(unittest.TestCase):
         self.assertEqual(reference_data, data)
 
 
-    def test_get_users(self):
-        submission_users = set(get_submission_users())
-        dataset = get_mts_kion_dataset()
-        user_ids = set([action.user_id for action in dataset])
-        print(f"num_submission_users:{len(submission_users)}")
-        print(f"num_submission_cold_start_users:{len(submission_users - user_ids)}")
+    def test_get_submission_user_ids(self):
+        submission_users = get_submission_user_ids()
+        self.assertEqual(submission_users[:10],
+                         ['3', '11', '29', '30', '33', '39', '46', '47', '51', '61'])
 
+    def test_get_users(selfs):
+        users = get_users()
+        pass
 
 
 

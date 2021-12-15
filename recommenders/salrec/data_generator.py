@@ -8,32 +8,59 @@ from tensorflow.python.keras.utils.data_utils import Sequence
 
 
 class DataGenerator(Sequence):
-    def __init__(self, user_actions, history_size, n_items, positional=True, batch_size=1000, validation=False, target_decay=0.8,
-                min_target_val=0.1, num_actions_to_predict=5):
+    def __init__(self, user_actions, history_size, n_items,
+                 user_feature_hashes,
+                 max_user_features_hashes,
+                 positional=True,
+                 batch_size=1000, validation=False, target_decay=0.8,
+                 min_target_val=0.1, num_actions_to_predict=5,
+
+                 ):
         self.user_actions = user_actions
         self.history_size= history_size
         self.n_items = n_items
         self.batch_size = batch_size
-        self.features_matrix = None
+        self.history_matrix = None
         self.target_matrix = None
         self.validation = validation
         self.target_decay = target_decay
         self.min_target_val = min_target_val
         self.num_actions_to_predict = num_actions_to_predict
         self.positional = positional
+        self.user_feature_hashes = user_feature_hashes
+        self.max_user_features_hashes = max_user_features_hashes
         self.reset()
 
 
     def reset(self):
-        random.shuffle(self.user_actions)
+        self.shuffle_data()
         history, history_positions, target, target_positions = self.split_actions(self.user_actions)
-        self.features_matrix = self.matrix_for_embedding(history, self.history_size, self.n_items)
+        self.history_matrix = self.matrix_for_embedding(history, self.history_size, self.n_items)
+        if self.max_user_features_hashes > 0:
+            self.user_features_matrix = self.get_user_features_matrix(self.user_feature_hashes,
+                                                                  self.max_user_features_hashes)
         self.history_positions = np.array(history_positions)
         self.target_positions = np.array(target_positions)
         self.target_matrix = self.get_target_matrix(target, self.n_items)
         self.current_position = 0
         self.max = self.__len__()
 
+    @staticmethod
+    def get_user_features_matrix(user_features,  max_hashes):
+        result = []
+        for features in user_features:
+            take_features = min(max_hashes, len(features))
+            pad_features = max_hashes - take_features
+            result.append([0]*pad_features  + list(features[-take_features:]))
+        return np.array(result)
+
+
+    def shuffle_data(self):
+        actions_with_features = list(zip(self.user_actions, self.user_feature_hashes))
+        random.shuffle(actions_with_features)
+        user_actions, user_feature_hashes = zip(*actions_with_features)
+        self.user_actions = user_actions
+        self.user_feature_hashes = user_feature_hashes
 
     @staticmethod
     def matrix_for_embedding(user_actions, history_size, n_items):
@@ -127,13 +154,16 @@ class DataGenerator(Sequence):
         return  np.array(result_reverse)
 
     def __len__(self):
-        return self.features_matrix.shape[0] // self.batch_size
+        return self.history_matrix.shape[0] // self.batch_size
 
     def __getitem__(self, idx):
         start = idx * self.batch_size
         end = (idx + 1) * self.batch_size
-        history = self.features_matrix[start:end]
+        history = self.history_matrix[start:end]
         model_inputs = [history]
+        if self.max_user_features_hashes > 0:
+            user_features = self.user_features_matrix[start:end]
+            model_inputs.append(user_features)
         target = self.target_matrix[start:end].todense()
 
         if self.positional:

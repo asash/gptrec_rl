@@ -5,6 +5,7 @@ import time
 
 import requests
 
+from aprec.api.user import User
 from aprec.api.action import Action
 from aprec.utils.os_utils import mkdir_p_local, get_dir
 
@@ -52,7 +53,7 @@ def get_actions(actions_file, max_actions=None):
         return actions
 
 
-def get_submission_users():
+def get_submission_user_ids():
     sample_submission_file = download_mts_file(MTS_KION_SAMPLE_SUBMISSION_URL, MTS_KION_SAMPLE_SUBMISSION_FILE)
     result = []
     with open(sample_submission_file) as input:
@@ -61,6 +62,20 @@ def get_submission_users():
         while(len(line) > 0):
             user_id = line.split(",")[0]
             result.append(user_id)
+            line = input.readline()
+    return result
+
+
+def get_users():
+    users_file = download_mts_file(MTS_KION_USERS_URL, MTS_KION_USERS_FILE)
+    result = []
+    with open(users_file) as input:
+        header = input.readline()
+        line = input.readline()
+        while (len(line) > 0):
+            user_id,age,income,sex,kids_flg = line.strip().split(",")
+            cat_features = {"income": income, "sex": sex, "age": age, "kids_flg": kids_flg}
+            result.append(User(user_id, cat_features=cat_features))
             line = input.readline()
     return result
 
