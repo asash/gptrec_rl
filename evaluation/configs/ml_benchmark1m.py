@@ -113,13 +113,13 @@ def salrec(loss, num_blocks, learning_rate, ndcg_at,
 
 
 def dnn(model_arch, loss,
-           session_len=100,
+           session_len=50,
            ndcg_at = 50,
            activation_override=None,
            lambdas_normalization = True,
            learning_rate=0.001,
-           num_main_layers=3,
-           num_dense_layers=2,
+           num_main_layers=2,
+           num_dense_layers=1,
            loss_pred_truncate=None,
            loss_bce_weight=0.0,
            log_lambdas=False
