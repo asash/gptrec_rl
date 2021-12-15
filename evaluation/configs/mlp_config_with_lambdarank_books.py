@@ -1,6 +1,6 @@
 from aprec.datasets.amazon_books import get_amazon_books_dataset
 from aprec.recommenders.top_recommender import TopRecommender
-from aprec.recommenders.mlp_historical_embedding import GreedyMLPHistoricalEmbedding
+from aprec.recommenders.dnn_recommender import DNNRecommender
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.evaluation.metrics.precision import Precision
 from aprec.evaluation.metrics.recall import Recall
@@ -29,11 +29,11 @@ def mlp_historical_embedding(loss, activation_override=None):
     activation = 'linear' if loss == 'lambdarank' else 'sigmoid'
     if activation_override is not None:
         activation = activation_override
-    return FilterSeenRecommender(GreedyMLPHistoricalEmbedding(train_epochs=10000, loss=loss,
-                                                              optimizer=Adam(), early_stop_epochs=100,
-                                                              batch_size=150, sigma=1.0, ndcg_at=40,
-                                                              bottleneck_size=64,
-                                                              output_layer_activation=activation))
+    return FilterSeenRecommender(DNNRecommender(train_epochs=10000, loss=loss,
+                                                optimizer=Adam(), early_stop_epochs=100,
+                                                batch_size=150, sigma=1.0, ndcg_at=40,
+                                                bottleneck_size=64,
+                                                output_layer_activation=activation))
 def lightfm_recommender(k, loss):
     return FilterSeenRecommender(LightFMRecommender(k, loss))
 

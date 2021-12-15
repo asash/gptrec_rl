@@ -18,7 +18,7 @@ import tensorflow.keras.layers as layers
 import numpy as np
 
 
-class GreedyMLPHistoricalEmbedding(Recommender):
+class DNNRecommender(Recommender):
     def __init__(self, bottleneck_size=32, train_epochs=300,
                  max_history_len=100,
                  loss='binary_crossentropy',
