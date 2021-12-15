@@ -158,9 +158,9 @@ def mlp_historical_embedding(loss, activation_override=None):
 
 recommenders_raw = {
     "GRU4rec-BCE": lambda: dnn("gru", "binary-crossentropy"),
-    "GRU4rec-Lambdarank-Vanilla": lambda: dnn("gru", "Lambdarank"),
-    "GRU4rec-Lambdarank-Truncated:2500": lambda: dnn("gru", "Lambdarank", loss_pred_truncate=2500),
-    "GRU4rec-Lambdarank-Truncated:2500-bce-weight:0.975": lambda: dnn("gru", "Lambdarank", loss_pred_truncate=2500, loss_bce_weight=0.975),
+    "GRU4rec-Lambdarank-Vanilla": lambda: dnn("gru", "lambdarank"),
+    "GRU4rec-Lambdarank-Truncated:2500": lambda: dnn("gru", "lambdarank", loss_pred_truncate=2500),
+    "GRU4rec-Lambdarank-Truncated:2500-bce-weight:0.975": lambda: dnn("gru", "lambdarank", loss_pred_truncate=2500, loss_bce_weight=0.975),
 }
 
 all_recommenders = list(recommenders_raw.keys())
