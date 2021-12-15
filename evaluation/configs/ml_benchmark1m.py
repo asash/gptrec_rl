@@ -110,6 +110,41 @@ def salrec(loss, num_blocks, learning_rate, ndcg_at,
                                                    log_lambdas_len=log_lambdas
                                                    ))
 
+
+
+def dnn(model_arch, loss,
+           session_len=100,
+           ndcg_at = 50,
+           activation_override=None,
+           lambdas_normalization = True,
+           learning_rate=0.001,
+           num_main_layers=3,
+           num_dense_layers=2,
+           loss_pred_truncate=None,
+           loss_bce_weight=0.0,
+           log_lambdas=False
+           ):
+    activation = 'linear' if loss == 'lambdarank' else 'sigmoid'
+    if activation_override is not None:
+        activation = activation_override
+    return FilterSeenRecommender(DNNRecommender(train_epochs=10000, loss=loss,
+                                                   model_arch=model_arch,
+                                                   optimizer=Adam(learning_rate),
+                                                   early_stop_epochs=10000,
+                                                   batch_size=128, sigma=1.0, ndcg_at=ndcg_at,
+                                                   max_history_len=session_len,
+                                                   output_layer_activation=activation,
+                                                   training_time_limit = 3600,
+                                                   eval_ndcg_at=40,
+                                                   target_decay=1.0,
+                                                   loss_lambda_normalization=lambdas_normalization,
+                                                   loss_pred_truncate=loss_pred_truncate,
+                                                   loss_bce_weight=loss_bce_weight,
+                                                   log_lambdas_len=log_lambdas,
+                                                   num_main_layers=num_main_layers,
+                                                   num_dense_layers=num_dense_layers
+                                                   ))
+
 def mlp_historical_embedding(loss, activation_override=None):
     activation = 'linear' if loss == 'lambdarank' else 'sigmoid'
     if activation_override is not None:
@@ -122,9 +157,10 @@ def mlp_historical_embedding(loss, activation_override=None):
                                                 output_layer_activation=activation, target_decay=0.8))
 
 recommenders_raw = {
-    "DeepMF-BCE": lambda:deepmf(1000, 1000, BinaryCrossentropy(from_logits=True)),
-    "DeepMF-Lambdarank_Trucation:None_bce_weight:0.0": lambda: deepmf(1000, 1000, 'lambdarank'),
-    "DeepMF-Lambdarank_Trucation:None_bce_weight:0.975": lambda: deepmf(1000, 1000, 'lambdarank', bce_weight=0.975),
+    "GRU4rec-BCE": lambda: dnn("gru", "binary-crossentropy"),
+    "GRU4rec-Lambdarank-Vanilla": lambda: dnn("gru", "Lambdarank"),
+    "GRU4rec-Lambdarank-Truncated:2500": lambda: dnn("gru", "Lambdarank", loss_pred_truncate=2500),
+    "GRU4rec-Lambdarank-Truncated:2500-bce-weight:0.975": lambda: dnn("gru", "Lambdarank", loss_pred_truncate=2500, loss_bce_weight=0.975),
 }
 
 all_recommenders = list(recommenders_raw.keys())
