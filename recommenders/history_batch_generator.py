@@ -8,8 +8,11 @@ from tensorflow.python.keras.utils.data_utils import Sequence
 
 
 class HistoryBatchGenerator(Sequence):
-    def __init__(self, user_actions, history_size, n_items, batch_size=1000, validation=False, target_decay=0.8,
-                min_target_val=0.1, return_drect_positions=False, return_reverse_positions=False):
+    def __init__(self, user_actions, user_ids, history_size, n_items, batch_size=1000, validation=False, target_decay=0.8,
+                min_target_val=0.1, return_drect_positions=False, return_reverse_positions=False,
+                user_id_required=False
+                 ):
+        self.user_ids = [[id] for id in user_ids]
         self.user_actions = user_actions
         self.history_size= history_size
         self.n_items = n_items
@@ -21,11 +24,12 @@ class HistoryBatchGenerator(Sequence):
         self.min_target_val = min_target_val
         self.return_direct_positions = return_drect_positions
         self.return_reverse_positions = return_reverse_positions
+        self.user_id_required = user_id_required
         self.reset()
 
 
     def reset(self):
-        random.shuffle(self.user_actions)
+        self.shuffle_data()
         history, target = self.split_actions(self.user_actions)
         self.features_matrix = self.matrix_for_embedding(history, self.history_size, self.n_items)
         if self.return_direct_positions or self.return_reverse_positions:
@@ -34,6 +38,14 @@ class HistoryBatchGenerator(Sequence):
         self.target_matrix = self.get_target_matrix(target, self.n_items)
         self.current_position = 0
         self.max = self.__len__()
+
+
+    def shuffle_data(self):
+        actions_with_ids = list(zip(self.user_actions, self.user_ids))
+        random.shuffle(actions_with_ids)
+        user_actions, user_ids = zip(*actions_with_ids)
+        self.user_actions = user_actions
+        self.user_ids = user_ids
 
 
     @staticmethod
@@ -103,6 +115,11 @@ class HistoryBatchGenerator(Sequence):
         if self.return_reverse_positions:
             reverse_pos = self.reverse_position[start:end]
             model_inputs.append(reverse_pos)
+
+        if self.user_id_required:
+            user_ids = np.array(self.user_ids[start:end])
+            model_inputs.append(user_ids)
+
         return model_inputs, target
 
     def __next__(self):

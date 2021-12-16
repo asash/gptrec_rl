@@ -1,6 +1,7 @@
 import gc
 import time
 
+import keras.layers
 
 from aprec.losses.get_loss import get_loss
 import tensorflow.keras.backend as K
@@ -40,7 +41,11 @@ class DNNRecommender(Recommender):
                  num_dense_layers = 1,
                  log_lambdas_len = False,
                  eval_ndcg_at=None,
-    ):
+                 caser_n_vertical_filters = 4,
+                 caser_n_horizontal_filters = 16,
+                 caser_dropout_ratio = 0.5
+
+                 ):
         self.users = ItemId()
         self.items = ItemId()
         self.user_actions = defaultdict(lambda: [])
@@ -72,6 +77,12 @@ class DNNRecommender(Recommender):
         self.eval_ndcg_at=40
         self.training_time_limit = training_time_limit
         self.eval_ndcg_at = eval_ndcg_at if eval_ndcg_at is not None else self.ndcg_at
+        self.caser_n_vertical_filters = caser_n_vertical_filters
+        self.caser_n_horizontal_filters = caser_n_horizontal_filters
+        self.caser_dropout_ratio = caser_dropout_ratio
+        self.model_uses_user_id = False
+        if model_arch in ['caser']:
+            self.model_uses_user_id = True
 
         if log_lambdas_len and loss != 'lambdarank':
             raise Exception("logging lambdas len is only possible with lambdarank loss")
@@ -91,10 +102,17 @@ class DNNRecommender(Recommender):
         action_id_internal = self.items.get_id(action.item_id)
         self.user_actions[user_id_internal].append((action.timestamp, action_id_internal))
 
-    def user_actions_by_id_list(self, id_list):
+    #exclude last action for val_users
+    def user_actions_by_id_list(self, id_list, val_user_ids=None):
+        val_users = set()
+        if val_user_ids is not None:
+            val_users = set(val_user_ids)
         result = []
         for user_id in id_list:
-            result.append(self.user_actions[user_id])
+            if user_id not in val_users:
+                result.append(self.user_actions[user_id])
+            else:
+                result.append(self.user_actions[user_id][:-1])
         return result
 
     def sort_actions(self):
@@ -103,12 +121,14 @@ class DNNRecommender(Recommender):
 
     def rebuild_model(self):
         self.sort_actions()
-        train_users, val_users = self.train_val_split()
+        train_users, train_user_ids, val_users, val_user_ids = self.train_val_split()
 
         print("train_users: {}, val_users:{}, items:{}".format(len(train_users), len(val_users), self.items.size()))
-        val_generator = HistoryBatchGenerator(val_users, self.max_history_length, self.items.size(),
+        val_generator = HistoryBatchGenerator(val_users, val_user_ids, self.max_history_length, self.items.size(),
                                               batch_size=self.batch_size, validation=True,
-                                              target_decay=self.target_decay)
+                                              target_decay=self.target_decay,
+                                              user_id_required = self.model_uses_user_id
+                                              )
         self.model = self.get_model()
         best_ndcg = 0
         steps_since_improved = 0
@@ -118,8 +138,10 @@ class DNNRecommender(Recommender):
         start_time = time.time()
         for epoch in range(self.train_epochs):
             val_generator.reset()
-            generator = HistoryBatchGenerator(train_users, self.max_history_length, self.items.size(),
-                                              batch_size=self.batch_size, target_decay=self.target_decay)
+            generator = HistoryBatchGenerator(train_users, train_user_ids,self.max_history_length, self.items.size(),
+                                              batch_size=self.batch_size, target_decay=self.target_decay,
+                                              user_id_required = self.model_uses_user_id
+                                              )
             print(f"epoch: {epoch}")
             train_history = self.model.fit(generator, validation_data=val_generator)
             total_trainig_time = time.time() - start_time
@@ -153,10 +175,10 @@ class DNNRecommender(Recommender):
     def train_val_split(self):
         all_user_ids = set(range(0, self.users.size()))
         val_user_ids = [self.users.get_id(val_user) for val_user in self.val_users]
-        train_user_ids = list(all_user_ids - set(val_user_ids))
+        train_user_ids = list(all_user_ids)
         val_users = self.user_actions_by_id_list(val_user_ids)
-        train_users = self.user_actions_by_id_list(train_user_ids)
-        return train_users, val_users
+        train_users = self.user_actions_by_id_list(train_user_ids, val_user_ids)
+        return train_users, train_user_ids, val_users, val_user_ids
 
 
     def get_mlp_model(self):
@@ -188,12 +210,43 @@ class DNNRecommender(Recommender):
         return model
 
 
+    def get_caser_model(self):
+        input = layers.Input(shape=(self.max_history_length))
+        x = layers.Embedding(self.items.size() + 1, self.embedding_size)(input)
+        x = layers.Reshape(target_shape=(self.max_history_length, self.embedding_size, 1))(x)
+        vertical = layers.Convolution2D(self.caser_n_vertical_filters, kernel_size=(self.max_history_length, 1), activation='relu')(x)
+        vertical = layers.Flatten() (vertical)
+        horizontals = []
+        for i in range(self.max_history_length):
+            horizontal_conv_size = i + 1
+            horizontal_convolution = layers.Convolution2D(self.caser_n_horizontal_filters, kernel_size=(horizontal_conv_size,
+                                                                           self.embedding_size), strides=(1, 1), activation='relu')(x)
+            pooled_convolution = layers.MaxPool2D(pool_size=(self.max_history_length - horizontal_conv_size + 1, 1))\
+                                                                                            (horizontal_convolution)
+            pooled_convolution = layers.Flatten()(pooled_convolution)
+            horizontals.append(pooled_convolution)
+        x = layers.Concatenate()([vertical] + horizontals)
+        x = layers.Dropout(self.caser_dropout_ratio)(x)
+        session_repr = layers.Dense(self.embedding_size, activation='relu')(x)
+        user_id_input = layers.Input(shape=(1, ))
+        user_embedding = layers.Embedding(self.users.size(), self.embedding_size)(user_id_input)
+        user_embedding = layers.Flatten()(user_embedding)
+        x = layers.Concatenate()([session_repr, user_embedding])
+        output = layers.Dense(self.items.size(), activation=self.output_layer_activation)(x)
+        model = Model(inputs=[input, user_id_input], outputs=output)
+        return model
+
 
     def get_model(self):
         if self.model_arch == "mlp_embedding":
             model = self.get_mlp_model()
+
         elif self.model_arch == "gru":
             model = self.get_gru_model()
+
+        elif self.model_arch == "caser":
+            model = self.get_caser_model()
+
         else:
             raise Exception(f"unknown model arch {self.model_arch}")
 
@@ -216,31 +269,16 @@ class DNNRecommender(Recommender):
 
     def get_next_items(self, user_id, limit, features=None):
         actions = self.user_actions[self.users.get_id(user_id)]
-        items = [action[1] for action in actions]
-        return self.get_model_predictions(items, limit)
-
-    def get_model_predictions(self, items_list, limit):
-        actions = [(0, action) for action in items_list]
-        vector = actions_to_vector(actions, self.max_history_length, self.items.size())
-        scores = self.model.predict(vector.reshape(1, self.max_history_length))[0]
+        items_list = [action[1] for action in actions]
+        model_actions = [(0, action) for action in items_list]
+        session = actions_to_vector(model_actions, self.max_history_length, self.items.size())
+        session = session.reshape(1, self.max_history_length)
+        model_inputs = [session]
+        if (self.model_uses_user_id):
+            model_inputs.append(np.array([[self.users.get_id(user_id)]]))
+        scores = self.model.predict(model_inputs)[0]
         best_ids = np.argsort(scores)[::-1][:limit]
         result = [(self.items.reverse_id(id), scores[id]) for id in best_ids]
         return result
-
-    def recommend_by_items(self, items_list, limit):
-        items_iternal = []
-        for item in items_list:
-            item_id = self.items.get_id(item)
-            items_iternal.append(item_id)
-        return self.get_model_predictions(items_iternal, limit)
-
-    def get_similar_items(self, item_id, limit):
-        raise (NotImplementedError)
-
-    def to_str(self):
-        raise (NotImplementedError)
-
-    def from_str(self):
-        raise (NotImplementedError)
 
 
