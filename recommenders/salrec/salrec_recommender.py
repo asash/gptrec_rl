@@ -14,8 +14,7 @@ from aprec.utils.item_id import ItemId
 from aprec.recommenders.metrics.ndcg import KerasNDCG
 from aprec.recommenders.recommender import Recommender
 from aprec.recommenders.salrec.data_generator import DataGenerator,  reverse_positions
-from aprec \
-    .recommenders.history_batch_generator import actions_to_vector
+from aprec.recommenders.dnn_sequential_recommender.data_generator import actions_to_vector
 import tensorflow.keras.layers as layers
 import tensorflow as tf
 import numpy as np

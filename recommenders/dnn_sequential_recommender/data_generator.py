@@ -1,16 +1,14 @@
-import math
 import random
-import sys
 
 import numpy as np
 from scipy.sparse import csr_matrix
 from tensorflow.python.keras.utils.data_utils import Sequence
 
 
-class HistoryBatchGenerator(Sequence):
-    def __init__(self, user_actions, user_ids, history_size, n_items, batch_size=1000, validation=False, target_decay=0.8,
-                min_target_val=0.1, return_drect_positions=False, return_reverse_positions=False,
-                user_id_required=False
+class DataGenerator(Sequence):
+    def __init__(self, user_actions, user_ids, history_size, n_items, batch_size=1000, last_item_only=False, target_decay=0.8,
+                 min_target_val=0.1, return_drect_positions=False, return_reverse_positions=False,
+                 user_id_required=False
                  ):
         self.user_ids = [[id] for id in user_ids]
         self.user_actions = user_actions
@@ -19,7 +17,7 @@ class HistoryBatchGenerator(Sequence):
         self.batch_size = batch_size
         self.features_matrix = None
         self.target_matrix = None
-        self.validation = validation
+        self.last_item_only = last_item_only
         self.target_decay = target_decay
         self.min_target_val = min_target_val
         self.return_direct_positions = return_drect_positions
@@ -83,7 +81,7 @@ class HistoryBatchGenerator(Sequence):
         return history, target
 
     def split_user(self, user):
-        if not self.validation:
+        if not self.last_item_only:
             history_fraction = random.random()
             n_history_actions = int(len(user) * history_fraction)
         else:

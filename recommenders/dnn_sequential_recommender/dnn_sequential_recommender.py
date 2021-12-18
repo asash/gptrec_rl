@@ -1,8 +1,6 @@
 import gc
 import time
 
-import keras.layers
-
 from aprec.losses.get_loss import get_loss
 import tensorflow.keras.backend as K
 from collections import defaultdict
@@ -11,15 +9,14 @@ from aprec.utils.item_id import ItemId
 from aprec.recommenders.metrics.ndcg import KerasNDCG
 from aprec.losses.lambdarank import  LambdarankLambdasSum, BCELambdasSum
 from aprec.recommenders.recommender import Recommender
-from aprec.recommenders.history_batch_generator import HistoryBatchGenerator
-from aprec \
-    .recommenders.history_batch_generator import actions_to_vector
+from aprec.recommenders.dnn_sequential_recommender.data_generator import DataGenerator
+from aprec.recommenders.dnn_sequential_recommender.data_generator import actions_to_vector
 from tensorflow.keras.models import Sequential, Model
 import tensorflow.keras.layers as layers
 import numpy as np
 
 
-class DNNRecommender(Recommender):
+class DNNSequentialRecommender(Recommender):
     def __init__(self, bottleneck_size=32, train_epochs=300,
                  max_history_len=100,
                  loss='binary_crossentropy',
@@ -28,6 +25,7 @@ class DNNRecommender(Recommender):
                  batch_size=1000,
                  early_stop_epochs=100,
                  target_decay = 1.0,
+                 train_on_last_item_only = False,
                  sigma=1,
                  ndcg_at=30,
                  model_arch='mlp_embedding',
@@ -43,8 +41,8 @@ class DNNRecommender(Recommender):
                  eval_ndcg_at=None,
                  caser_n_vertical_filters = 4,
                  caser_n_horizontal_filters = 16,
-                 caser_dropout_ratio = 0.5
-
+                 caser_dropout_ratio = 0.5,
+                 caser_use_user_id = True,
                  ):
         self.users = ItemId()
         self.items = ItemId()
@@ -80,8 +78,11 @@ class DNNRecommender(Recommender):
         self.caser_n_vertical_filters = caser_n_vertical_filters
         self.caser_n_horizontal_filters = caser_n_horizontal_filters
         self.caser_dropout_ratio = caser_dropout_ratio
+        self.caser_use_user_id = caser_use_user_id
         self.model_uses_user_id = False
-        if model_arch in ['caser']:
+        self.train_on_last_item_only = train_on_last_item_only
+
+        if model_arch in ['caser'] and self.caser_use_user_id:
             self.model_uses_user_id = True
 
         if log_lambdas_len and loss != 'lambdarank':
@@ -124,11 +125,11 @@ class DNNRecommender(Recommender):
         train_users, train_user_ids, val_users, val_user_ids = self.train_val_split()
 
         print("train_users: {}, val_users:{}, items:{}".format(len(train_users), len(val_users), self.items.size()))
-        val_generator = HistoryBatchGenerator(val_users, val_user_ids, self.max_history_length, self.items.size(),
-                                              batch_size=self.batch_size, validation=True,
-                                              target_decay=self.target_decay,
-                                              user_id_required = self.model_uses_user_id
-                                              )
+        val_generator = DataGenerator(val_users, val_user_ids, self.max_history_length, self.items.size(),
+                                      batch_size=self.batch_size, last_item_only=True,
+                                      target_decay=self.target_decay,
+                                      user_id_required = self.model_uses_user_id
+                                      )
         self.model = self.get_model()
         best_ndcg = 0
         steps_since_improved = 0
@@ -138,10 +139,11 @@ class DNNRecommender(Recommender):
         start_time = time.time()
         for epoch in range(self.train_epochs):
             val_generator.reset()
-            generator = HistoryBatchGenerator(train_users, train_user_ids,self.max_history_length, self.items.size(),
-                                              batch_size=self.batch_size, target_decay=self.target_decay,
-                                              user_id_required = self.model_uses_user_id
-                                              )
+            generator = DataGenerator(train_users, train_user_ids, self.max_history_length, self.items.size(),
+                                      batch_size=self.batch_size, target_decay=self.target_decay,
+                                      user_id_required = self.model_uses_user_id,
+                                      last_item_only=self.train_on_last_item_only
+                                      )
             print(f"epoch: {epoch}")
             train_history = self.model.fit(generator, validation_data=val_generator)
             total_trainig_time = time.time() - start_time
@@ -212,6 +214,7 @@ class DNNRecommender(Recommender):
 
     def get_caser_model(self):
         input = layers.Input(shape=(self.max_history_length))
+        model_inputs = [input]
         x = layers.Embedding(self.items.size() + 1, self.embedding_size)(input)
         x = layers.Reshape(target_shape=(self.max_history_length, self.embedding_size, 1))(x)
         vertical = layers.Convolution2D(self.caser_n_vertical_filters, kernel_size=(self.max_history_length, 1), activation='relu')(x)
@@ -227,13 +230,17 @@ class DNNRecommender(Recommender):
             horizontals.append(pooled_convolution)
         x = layers.Concatenate()([vertical] + horizontals)
         x = layers.Dropout(self.caser_dropout_ratio)(x)
-        session_repr = layers.Dense(self.embedding_size, activation='relu')(x)
-        user_id_input = layers.Input(shape=(1, ))
-        user_embedding = layers.Embedding(self.users.size(), self.embedding_size)(user_id_input)
-        user_embedding = layers.Flatten()(user_embedding)
-        x = layers.Concatenate()([session_repr, user_embedding])
+        x = layers.Dense(self.embedding_size, activation='relu')(x)
+
+        if self.caser_use_user_id:
+            user_id_input = layers.Input(shape=(1, ))
+            model_inputs.append(user_id_input)
+            user_embedding = layers.Embedding(self.users.size(), self.embedding_size)(user_id_input)
+            user_embedding = layers.Flatten()(user_embedding)
+            x = layers.Concatenate()([x, user_embedding])
+
         output = layers.Dense(self.items.size(), activation=self.output_layer_activation)(x)
-        model = Model(inputs=[input, user_id_input], outputs=output)
+        model = Model(model_inputs, outputs=output)
         return model
 
 
