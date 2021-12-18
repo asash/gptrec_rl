@@ -1,60 +1,70 @@
 import tensorflow as tf
-import tensorflow.keras.backend as K
 
-def print_tensor(name, tensor):
-    print(name)
-    K.print_tensor(tensor)
+from aprec.losses.loss import Loss
 
+class LambdaGammaRankLoss(Loss):
+    #num items and batch size need to be specified before usage.
+    #some models can do it automatically, therefore they are set to None by default
+    def __init__(self, num_items=None, batch_size=None, sigma=1.0, ndcg_at=30, dtype=tf.float32, lambda_normalization=True,
+                 pred_truncate_at=None, bce_grad_weight=0.0, remove_batch_dim=False):
+        super().__init__(num_items, batch_size)
 
-class LambdaRankLoss(object):
+        self.__name__ = 'lambdarank'
+        self.sigma = sigma
+        self.dtype = dtype
+        self.bce_grad_weight = bce_grad_weight
+        self.remove_batch_dim = remove_batch_dim
+        self.params_truncate_at = pred_truncate_at
+
+        self.params_ndcg_at = ndcg_at
+        self.lambda_normalization = lambda_normalization
+        self.setup()
+
+    def set_num_items(self, num_items):
+        super().set_num_items(num_items)
+        self.setup()
+
+    def set_batch_size(self, batch_size):
+        super().set_batch_size(batch_size)
+        self.setup()
+
     def get_pairwise_diffs_for_vector(self, x):
         a, b = tf.meshgrid(x[:self.ndcg_at], tf.transpose(x))
         result = tf.subtract(b, a)
-        return  result
+        return result
 
     def get_pairwise_diff_batch(self, x):
-        x_top_tile = tf.tile(tf.expand_dims(x[:,:self.ndcg_at], 1), [1, self.pred_truncate_at, 1])
+        x_top_tile = tf.tile(tf.expand_dims(x[:, :self.ndcg_at], 1), [1, self.pred_truncate_at, 1])
         x_tile = tf.tile(tf.expand_dims(x, 2), [1, 1, self.ndcg_at])
         result = x_tile - x_top_tile
         return result
 
-    def __init__(self, n_items, batch_size, sigma=1.0,
-                 ndcg_at = 30, dtype=tf.float32, lambda_normalization=True,
-                 pred_truncate_at = None,
-                 bce_grad_weight = 0.0,
-                 remove_batch_dim = False
-                 ):
-        self.__name__ = 'lambdarank'
-        self.batch_size = batch_size
-        self.sigma = sigma
-        self.n_items = n_items
-        self.ndcg_at = min(ndcg_at, n_items)
-        self.dtype = dtype
-        self.bce_grad_weight = bce_grad_weight
-        self.remove_batch_dim = remove_batch_dim
+    def setup(self):
+        if self.batch_size is None or self.num_items is None:
+            return
 
-        if pred_truncate_at == None:
-            self.pred_truncate_at = n_items
+        if self.params_truncate_at == None:
+            self.pred_truncate_at = self.num_items
         else:
-            self.pred_truncate_at = pred_truncate_at
+            self.pred_truncate_at = self.params_truncate_at
 
+        self.ndcg_at = min(self.params_ndcg_at, self.num_items)
         self.dcg_position_discounts = 1. / tf.experimental.numpy.log2(
                         tf.cast(tf.range(self.pred_truncate_at) + 2, self.dtype))
         self.top_position_discounts = tf.reshape(self.dcg_position_discounts[:self.ndcg_at], (self.ndcg_at, 1))
         self.swap_importance = tf.abs(self.get_pairwise_diffs_for_vector(self.dcg_position_discounts))
         self.batch_indices = tf.reshape(tf.tile(tf.expand_dims(tf.range(self.batch_size), 1), [1, self.pred_truncate_at]),
-                                        (self.pred_truncate_at * batch_size, 1))
+                                        (self.pred_truncate_at * self.batch_size, 1))
         self.mask = tf.cast(tf.reshape(1 - tf.pad(tf.ones(self.ndcg_at),
                                                   [[0, self.pred_truncate_at - self.ndcg_at]]),
                                        (1, self.pred_truncate_at)), self.dtype)
 
-        self.lambda_normalization = lambda_normalization
 
     @tf.custom_gradient
     def __call__(self, y_true_raw, y_pred_raw):
         if self.remove_batch_dim:
-            y_true = tf.reshape(y_true_raw, (self.batch_size, self.n_items))
-            y_pred = tf.reshape(y_pred_raw, (self.batch_size, self.n_items))
+            y_true = tf.reshape(y_true_raw, (self.batch_size, self.num_items))
+            y_pred = tf.reshape(y_pred_raw, (self.batch_size, self.num_items))
         else:
             y_true = y_true_raw
             y_pred = y_pred_raw
@@ -72,16 +82,13 @@ class LambdaRankLoss(object):
         with tf.GradientTape() as g:
             g.watch(y_pred)
             bce_loss = tf.nn.sigmoid_cross_entropy_with_logits(y_true, y_pred)
-            logits_loss_lambdas = g.gradient(bce_loss, y_pred) / self.n_items
+            logits_loss_lambdas = g.gradient(bce_loss, y_pred) / self.num_items
         return  logits_loss_lambdas
 
     def bce_lambdas_len(self, y_true, y_pred):
         bce_lambdas = self.get_bce_lambdas(y_true, y_pred)
         norms = tf.norm(bce_lambdas , axis=1)
         return self.bce_grad_weight * tf.reduce_mean(norms)
-
-
-
 
     @tf.function
     def get_lambdas(self, y_true, y_pred):
@@ -126,7 +133,7 @@ class LambdaRankLoss(object):
 
         indices = tf.concat([self.batch_indices, col_indices_reshaped], axis=1)
         result_lambdas = tf.scatter_nd(indices, tf.reshape(lambda_sum, [self.pred_truncate_at * self.batch_size]),
-                                       tf.constant([self.batch_size, self.n_items]))
+                                       tf.constant([self.batch_size, self.num_items]))
         return tf.cast(result_lambdas, tf.float32)
 
     def get_inverse_idcg(self, true_ordered):

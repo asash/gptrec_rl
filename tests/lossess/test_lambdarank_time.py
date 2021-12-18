@@ -2,7 +2,7 @@ import random
 
 import numpy as np
 
-from aprec.losses.lambdarank import LambdaRankLoss
+from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
 import tensorflow as tf
 from tqdm import tqdm
 import unittest
@@ -24,8 +24,8 @@ class TestLambdaranTime(unittest.TestCase):
                 y_true[sample_num][positive] = random.random()
        y_true = tf.constant(y_true)
 
-       loss = LambdaRankLoss(n_items, batch_size, 1, ndcg_at=40, dtype=tf.float32,
-                             pred_truncate_at=pred_truncate_at, bce_grad_weight=0.1)
+       loss = LambdaGammaRankLoss(n_items, batch_size, 1, ndcg_at=40, dtype=tf.float32,
+                                  pred_truncate_at=pred_truncate_at, bce_grad_weight=0.1)
        for i in tqdm(range(dataset_size // batch_size)):
            y_pred =  tf.random.uniform((batch_size, n_items))
            #tf.keras.losses.binary_crossentropy(y_true, y_pred)

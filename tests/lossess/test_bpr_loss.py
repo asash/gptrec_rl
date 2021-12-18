@@ -6,7 +6,7 @@ from aprec.losses.bpr import BPRLoss
 
 class TestBPRLoss(unittest.TestCase):
         def test_bpr_loss(self):
-            bpr_loss = BPRLoss(3)
+            bpr_loss = BPRLoss(max_positives=3)
             val = bpr_loss(K.constant([[0, 0, 1, 1],
                                  [0, 0, 1, 1]]),
                      K.constant([[0.1, 0.3, 1, 0], [0, 0, 1, 1]]))

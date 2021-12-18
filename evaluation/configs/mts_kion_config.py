@@ -18,7 +18,7 @@ from aprec.evaluation.metrics.mrr import MRR
 from aprec.evaluation.metrics.map import MAP
 from tensorflow.keras.optimizers import Adam
 from aprec.evaluation.metrics.sps import SPS
-from aprec.losses.lambdarank import LambdaRankLoss
+from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
 from aprec.recommenders.deep_mf import DeepMFRecommender
 
 DATASET = get_mts_kion_dataset()
@@ -44,9 +44,9 @@ CALLBACKS = (generate_submit, )
 
 def deepmf(users_per_sample, items_per_sample, loss, truncation_level=None, bce_weight=0.0):
     if loss == 'lambdarank':
-        loss = LambdaRankLoss(items_per_sample, users_per_sample,
-                              ndcg_at=50, pred_truncate_at=truncation_level,
-                              bce_grad_weight=bce_weight, remove_batch_dim=True)
+        loss = LambdaGammaRankLoss(items_per_sample, users_per_sample,
+                                   ndcg_at=50, pred_truncate_at=truncation_level,
+                                   bce_grad_weight=bce_weight, remove_batch_dim=True)
     return FilterSeenRecommender(DeepMFRecommender(users_per_sample, items_per_sample, loss, steps=1500))
 
 USERS_FRACTIONS = [1.]

@@ -1,7 +1,6 @@
 import copy
 import os
 
-from aprec.evaluation.split_actions import get_control_users
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.conditional_top_recommender import ConditionalTopRecommender
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender

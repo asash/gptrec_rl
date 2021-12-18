@@ -9,7 +9,7 @@ from collections import defaultdict
 from keras.regularizers import l2
 
 from aprec.losses.get_loss import get_loss
-from aprec.losses.lambdarank import LambdarankLambdasSum, BCELambdasSum
+from aprec.losses.lambda_gamma_rank import LambdarankLambdasSum, BCELambdasSum
 from aprec.utils.item_id import ItemId
 from aprec.recommenders.metrics.ndcg import KerasNDCG
 from aprec.recommenders.recommender import Recommender

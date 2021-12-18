@@ -7,7 +7,7 @@ from aprec.recommenders.booking_recommender.candidates_recommender import Bookin
 from aprec.utils.item_id import ItemId
 from aprec.recommenders.metrics.ndcg import KerasNDCG
 from aprec.recommenders.metrics.success import KerasSuccess
-from aprec.losses.lambdarank import LambdaRankLoss
+from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
 from aprec.losses.xendcg import XENDCGLoss
 from aprec.recommenders.recommender import Recommender
 from aprec.recommenders.booking_recommender.booking_history_batch_generator import BookingHistoryBatchGenerator, \
@@ -267,7 +267,7 @@ class BookingRecommender(Recommender):
         return model
 
     def get_lambdarank_loss(self):
-        return LambdaRankLoss(self.candidates_cnt, self.batch_size, self.sigma, ndcg_at=self.ndcg_at)
+        return LambdaGammaRankLoss(self.candidates_cnt, self.batch_size, self.sigma, ndcg_at=self.ndcg_at)
 
     def get_xendcg_loss(self):
         return XENDCGLoss(self.items.size(), self.batch_size)

@@ -5,13 +5,13 @@
 import tensorflow as tf
 
 from aprec.losses.loss_utils import my_map
+from aprec.losses.loss import Loss
 
 
-class CLIMFLoss(object):
-    def __init__(self,  batch_size, num_items, max_positives=10,):
+class CLIMFLoss(Loss):
+    def __init__(self, num_items=None, batch_size=None, max_positives=10):
+        super().__init__(num_items, batch_size)
         self.max_positives = max_positives
-        self.batch_size = batch_size
-        self.num_items = num_items
 
 
     def get_pairwise_diffs_matrix(self, x, y):

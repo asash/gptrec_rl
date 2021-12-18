@@ -1,4 +1,4 @@
-from aprec.losses.lambdarank import  LambdaRankLoss
+from aprec.losses.lambda_gamma_rank import  LambdaGammaRankLoss
 import tensorflow.keras.backend as K
 from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Dense
@@ -14,8 +14,8 @@ class TestLambdarankLoss(unittest.TestCase):
             shape = len(y_true[0][0]), len(y_true[0])
         else:
             shape = len(y_true[0]), len(y_true)
-        loss = LambdaRankLoss(shape[0], shape[1], 1, ndcg_at,
-                              bce_grad_weight=bce_weight, remove_batch_dim=remove_batch_dim)
+        loss = LambdaGammaRankLoss(shape[0], shape[1], 1, ndcg_at,
+                                   bce_grad_weight=bce_weight, remove_batch_dim=remove_batch_dim)
         #lambdas = loss.get_lambdas(y_true, y_pred)
         with tf.GradientTape() as g:
             g.watch(y_pred)
@@ -72,11 +72,11 @@ class TestLambdarankLoss(unittest.TestCase):
 
 
     def test_dcg(self):
-        loss = LambdaRankLoss(4, 1, ndcg_at=1)
+        loss = LambdaGammaRankLoss(4, 1, ndcg_at=1)
         res = loss.get_inverse_idcg(K.constant([[0, 0, 1, 1]]))
         assert res == 1
 
-        loss = LambdaRankLoss(4, 1)
+        loss = LambdaGammaRankLoss(4, 1)
         res = loss.get_inverse_idcg(K.constant([[0, 0, 0, 1]]))
         assert res == 1
 
@@ -87,7 +87,7 @@ class TestLambdarankLoss(unittest.TestCase):
         model.add(Dense(2, activation='sigmoid'))
         model.add(Dense(2, activation='sigmoid'))
         model.add(Dense(2, activation='sigmoid'))
-        loss = LambdaRankLoss(2, 2, sigma=1)
+        loss = LambdaGammaRankLoss(2, 2, sigma=1)
         model.compile(optimizer='adam', loss=loss)
         X = K.constant([[0, 0], [1, 0]])
         Y = K.constant([[1, 0],  [0, 1]])

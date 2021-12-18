@@ -1,13 +1,16 @@
 import tensorflow as tf
-class XENDCGLoss(object):
-    def __init__(self, n_items, batch_size):
+
+from aprec.losses.loss import Loss
+
+
+class XENDCGLoss(Loss):
+    def __init__(self, num_items=None, batch_size=None):
+        super().__init__(num_items, batch_size)
         self.__name__ = 'xendcg'
-        self.batch_size = batch_size
-        self.n_items = n_items
 
     def __call__(self, true, pred):
         eps = 1e-5
-        gamma = tf.random.uniform(shape=(self.batch_size, self.n_items))
+        gamma = tf.random.uniform(shape=(self.batch_size, self.num_items))
         true_transformed = (2 ** true) - gamma
         true_transformed_sum = tf.expand_dims(tf.math.reduce_sum(true_transformed, axis=1),1)
         true_probs = true_transformed / (true_transformed_sum + eps)

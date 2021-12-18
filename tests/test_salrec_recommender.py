@@ -4,7 +4,7 @@ from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.datasets import mts_kion
 from aprec.datasets.movielens20m import get_movielens20m_actions
 from aprec.utils.generator_limit import generator_limit
-from aprec.losses.lambdarank import LambdaRankLoss
+from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
 import tensorflow as tf
 import unittest
 
@@ -46,7 +46,7 @@ class TestSalrecRecommender(unittest.TestCase):
         batch_size = salrec_recommender.batch_size
         n_items = salrec_recommender.items.size()
         n_users = salrec_recommender.users.size()
-        loss = LambdaRankLoss(n_items, min(batch_size, n_users - len(val_users)), ndcg_at=10)
+        loss = LambdaGammaRankLoss(n_items, min(batch_size, n_users - len(val_users)), ndcg_at=10)
         salrec_recommender.set_loss(loss)
         recommender.rebuild_model()
         recs = recommender.get_next_items(USER_ID, 10)
@@ -67,7 +67,7 @@ class TestSalrecRecommender(unittest.TestCase):
         batch_size = salrec_recommender.batch_size
         n_items = salrec_recommender.items.size()
         n_users = salrec_recommender.users.size()
-        loss = LambdaRankLoss(n_items, min(batch_size, n_users - len(val_users)), ndcg_at=10)
+        loss = LambdaGammaRankLoss(n_items, min(batch_size, n_users - len(val_users)), ndcg_at=10)
         salrec_recommender.set_loss(loss)
         recommender.rebuild_model()
         recs = recommender.get_next_items(USER_ID, 10)

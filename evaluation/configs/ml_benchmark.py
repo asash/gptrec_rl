@@ -2,9 +2,7 @@ from aprec.datasets.movielens100k import get_movielens100k_actions
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.salrec.salrec_recommender import SalrecRecommender
-from aprec.recommenders.lightfm import LightFMRecommender
 from aprec.recommenders.constant_recommender import ConstantRecommender
-from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.recommenders.vanilla_bert4rec import VanillaBERT4Rec
 from aprec.evaluation.metrics.precision import Precision
@@ -26,9 +24,6 @@ def top_recommender():
 
 def svd_recommender(k):
     return FilterSeenRecommender(SvdRecommender(k))
-
-def lightfm_recommender(k, loss):
-    return FilterSeenRecommender(LightFMRecommender(k, loss))
 
 def vanilla_bert4rec(num_steps):
     max_seq_length = 50
@@ -86,17 +81,6 @@ def salrec(loss, activation_override=None):
                                                    num_target_predictions=1
                                                    ))
 
-def mlp_historical_embedding(loss, activation_override=None):
-    activation = 'linear' if loss == 'lambdarank' else 'sigmoid'
-    if activation_override is not None:
-        activation = activation_override
-    return FilterSeenRecommender(DNNSequentialRecommender(train_epochs=10000, loss=loss,
-                                                          optimizer=Adam(), early_stop_epochs=100,
-                                                          batch_size=64, sigma=1.0, ndcg_at=40,
-                                                          bottleneck_size=64,
-                                                          max_history_len=150,
-                                                          output_layer_activation=activation, target_decay=0.8))
-
 def constant_recommender():
     return ConstantRecommender([('457', 0.45),
                                 ('380', 0.414),
@@ -116,9 +100,6 @@ def constant_recommender():
 
 RECOMMENDERS = {
     "Salrec-Lambdarank": lambda: salrec('lambdarank'),
-    "APREC-GMLPHE-Lambdarank": lambda: mlp_historical_embedding('lambdarank'),
-    "APREC-GMLPHE-BCE": lambda: mlp_historical_embedding('binary_crossentropy'),
-    "APREC-GMLPHE-BPR": lambda: mlp_historical_embedding('bpr', 'linear'),
     "top_recommender": top_recommender,
     "svd_recommender_30": lambda: svd_recommender(30),
     "Salrec-BCE": lambda: salrec('binary_crossentropy'),
