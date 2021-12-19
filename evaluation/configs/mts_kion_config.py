@@ -29,7 +29,7 @@ DATASET = get_mts_kion_dataset()
 SUBMIT_USER_IDS = get_submission_user_ids()
 USERS = get_users()
 
-GENERATE_SUBMIT_THRESHOLD = 0.10
+GENERATE_SUBMIT_THRESHOLD =  0.173928
 
 def generate_submit(recommender, recommender_name, evaluation_result, config):
     if evaluation_result["MAP@10"] <= config.GENERATE_SUBMIT_THRESHOLD:
