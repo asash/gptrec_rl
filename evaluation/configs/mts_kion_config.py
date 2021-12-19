@@ -19,11 +19,11 @@ from tensorflow.keras.optimizers import Adam
 from aprec.evaluation.metrics.sps import SPS
 from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
 from aprec.recommenders.deep_mf import DeepMFRecommender
-from losses.bce import BCELoss
-from recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
-from recommenders.dnn_sequential_recommender.models.caser import Caser
-from recommenders.dnn_sequential_recommender.models.gru4rec import GRU4Rec
-from recommenders.dnn_sequential_recommender.models.mlp_sequential import SequentialMLPModel
+from aprec.losses.bce import BCELoss
+from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
+from aprec.recommenders.dnn_sequential_recommender.models.caser import Caser
+from aprec.recommenders.dnn_sequential_recommender.models.gru4rec import GRU4Rec
+from aprec.recommenders.dnn_sequential_recommender.models.mlp_sequential import SequentialMLPModel
 
 DATASET = get_mts_kion_dataset()
 SUBMIT_USER_IDS = get_submission_user_ids()
