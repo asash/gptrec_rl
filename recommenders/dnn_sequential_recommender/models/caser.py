@@ -7,14 +7,19 @@ class Caser(SequentialRecsysModel):
     def __init__(self,
                  output_layer_activation='linear', embedding_size=64, max_history_len=64,
                  n_vertical_filters=4, n_horizontal_filters=16,
-                 dropout_ratio=0.5, activation='relu', requires_user_id = True):
+                 dropout_ratio=0.5, activation='relu', requires_user_id = True,
+                 user_extra_features=False,
+                 user_features_attention_heads=4,
+                 ):
         super().__init__(output_layer_activation, embedding_size, max_history_len)
         self.n_vertical_filters = n_vertical_filters
         self.n_horizontal_filters = n_horizontal_filters
         self.dropout_ratio = dropout_ratio
         self.activation = activation
         self.requires_user_id = requires_user_id
-        self.model_type = "GRU4rec"
+        self.model_type = "Caser"
+        self.user_extra_features = user_extra_features
+        self.user_features_attention_heads = user_features_attention_heads
 
     def get_model(self):
         input = layers.Input(shape=(self.max_history_length))
@@ -45,6 +50,18 @@ class Caser(SequentialRecsysModel):
             user_embedding = layers.Embedding(self.num_users, self.embedding_size)(user_id_input)
             user_embedding = layers.Flatten()(user_embedding)
             x = layers.Concatenate()([x, user_embedding])
+
+        if self.user_extra_features:
+            user_features_input = layers.Input(shape=(self.max_user_features))
+            model_inputs.append(user_features_input)
+            user_features = layers.Embedding(self.user_feature_max_val + 1, self.embedding_size)(user_features_input)
+            user_features = layers.MultiHeadAttention(self.user_features_attention_heads, key_dim=self.embedding_size)(user_features, user_features)
+            user_features = layers.Dense(self.embedding_size, activation=self.activation)(user_features)
+            user_features = layers.MaxPool1D(self.max_user_features)(user_features)
+            user_features = layers.Flatten()(user_features)
+            x = layers.Concatenate()([x, user_features])
+
+
 
         output = layers.Dense(self.num_items, activation=self.output_layer_activation)(x)
         model = Model(model_inputs, outputs=output)

@@ -36,7 +36,10 @@ def config():
 
 
 class RecommendersEvaluator(object):
-    def __init__(self, actions, recommenders, metrics, out_dir, data_splitter,  n_val_users, recommendations_limit, callbacks=()):
+    def __init__(self, actions, recommenders, metrics, out_dir, data_splitter,
+                 n_val_users, recommendations_limit, callbacks=(),
+                 users=None
+                 ):
         self.actions = actions
         self.metrics = metrics
         self.recommenders = recommenders
@@ -48,6 +51,7 @@ class RecommendersEvaluator(object):
         self.train, self.test = self.data_splitter(actions)
         self.save_split(self.train, self.test)
         self.test = filter_cold_start(self.train, self.test)
+        self.users = users
         all_train_user_ids = list(set([action.user_id for action in self.train]))
         self.recommendations_limit = recommendations_limit
         random.shuffle(all_train_user_ids)
@@ -68,6 +72,12 @@ class RecommendersEvaluator(object):
                 recommender.add_action(action)
             recommender.set_val_users(self.val_user_ids)
             print("rebuilding model...")
+
+            if self.users is not None:
+                print("adding_users")
+                for user in self.users:
+                    recommender.add_user(user)
+
             build_time_start = time.time()
             recommender.rebuild_model()
             build_time_end = time.time()
@@ -128,6 +138,12 @@ def run_experiment(config):
         else:
             n_val_users = len(user_id_set) // 10
 
+        if hasattr(config, 'USERS'):
+            users = config.USERS
+        else:
+            users = None
+
+
         if hasattr(config, 'RECOMMENDATIONS_LIMIT'):
             recommendations_limit = config.RECOMMENDATIONS_LIMIT
         else:
@@ -147,7 +163,9 @@ def run_experiment(config):
                                      data_splitter,
                                      n_val_users,
                                      recommendations_limit,
-                                     callbacks)
+                                     callbacks,
+                                     users=users)
+
         if  hasattr(config, 'FEATURES_FROM_TEST'):
             recommender_evaluator.set_features_from_test(config.FEATURES_FROM_TEST)
         result_for_fraction = recommender_evaluator()

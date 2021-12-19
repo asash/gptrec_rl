@@ -4,11 +4,13 @@ from aprec.datasets.movielens20m import get_movielens20m_actions
 from aprec.utils.generator_limit import generator_limit
 from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
 from aprec.losses.xendcg import XENDCGLoss
+import aprec.datasets.mts_kion as kion
 import unittest
 
 from aprec.recommenders.dnn_sequential_recommender.models.caser import Caser
 from aprec.recommenders.dnn_sequential_recommender.models.gru4rec import GRU4Rec
 from aprec.recommenders.dnn_sequential_recommender.models.mlp_sequential import SequentialMLPModel
+from recommenders.dnn_sequential_recommender.user_featurizers.hashing_featurizer import HashingUserFeaturizer
 
 USER_ID = '120'
 
@@ -50,6 +52,25 @@ class TestDnnSequentialRecommender(unittest.TestCase):
         recommender = FilterSeenRecommender(recommender)
         for action in generator_limit(get_movielens20m_actions(), 10000):
             recommender.add_action(action)
+        recommender.rebuild_model()
+        recs = recommender.get_next_items(USER_ID, 10)
+        print(recs)
+
+    def test_caser_extra_features(self):
+        val_users = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
+        user_featurizer = HashingUserFeaturizer()
+        model = Caser(user_extra_features=True, requires_user_id=False)
+        recommender = DNNSequentialRecommender(model, train_epochs=10, early_stop_epochs=5,
+                                               batch_size=5, training_time_limit=10,
+                                               users_featurizer=user_featurizer
+                                               )
+        recommender.set_val_users(val_users)
+        recommender = FilterSeenRecommender(recommender)
+        users = kion.get_users()
+        for action in kion.get_mts_kion_dataset(1000):
+            recommender.add_action(action)
+        for user in users:
+            recommender.add_user(user)
         recommender.rebuild_model()
         recs = recommender.get_next_items(USER_ID, 10)
         print(recs)

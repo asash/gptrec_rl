@@ -4,6 +4,7 @@ import time
 import tensorflow.keras.backend as K
 from collections import defaultdict
 
+from aprec.api.user import User
 from aprec.utils.item_id import ItemId
 from aprec.recommenders.metrics.ndcg import KerasNDCG
 from aprec.recommenders.recommender import Recommender
@@ -21,6 +22,7 @@ class DNNSequentialRecommender(Recommender):
     def __init__(self,
                  model_arch: SequentialRecsysModel,
                  loss: Loss=BCELoss(),
+                 users_featurizer = None,
                  train_epochs=300,
                  optimizer='adam',
                  batch_size=1000,
@@ -52,6 +54,18 @@ class DNNSequentialRecommender(Recommender):
         self.eval_ndcg_at = eval_ndcg_at
         self.train_on_last_item_only = train_on_last_item_only
         self.training_time_limit = training_time_limit
+        self.users_featurizer = users_featurizer
+        self.user_features = {}
+        self.users_with_actions = set()
+        self.max_user_features = 0
+        self.max_user_feature_val = 0
+
+    def add_user(self, user):
+        if self.users_featurizer is None:
+            pass
+        else:
+            self.user_features[self.users.get_id(user.user_id)] = self.users_featurizer(user)
+
 
     def get_metadata(self):
         return self.metadata
@@ -65,6 +79,7 @@ class DNNSequentialRecommender(Recommender):
     def add_action(self, action):
         user_id_internal = self.users.get_id(action.user_id)
         action_id_internal = self.items.get_id(action.item_id)
+        self.users_with_actions.add(user_id_internal)
         self.user_actions[user_id_internal].append((action.timestamp, action_id_internal))
 
     #exclude last action for val_users
@@ -88,14 +103,17 @@ class DNNSequentialRecommender(Recommender):
         self.sort_actions()
         self.loss.set_num_items(self.items.size())
         self.loss.set_batch_size(self.batch_size)
+        self.max_user_features, self.max_user_feature_val = self.get_max_user_features()
 
-        train_users, train_user_ids, val_users, val_user_ids = self.train_val_split()
+        train_users, train_user_ids, train_features, val_users, val_user_ids, val_features = self.train_val_split()
 
         print("train_users: {}, val_users:{}, items:{}".format(len(train_users), len(val_users), self.items.size()))
-        val_generator = DataGenerator(val_users, val_user_ids, self.model_arch.max_history_length, self.items.size(),
+        val_generator = DataGenerator(val_users, val_user_ids, val_features, self.model_arch.max_history_length, self.items.size(),
                                       batch_size=self.batch_size, last_item_only=True,
                                       target_decay=self.target_decay,
-                                      user_id_required = self.model_arch.requires_user_id
+                                      user_id_required = self.model_arch.requires_user_id,
+                                      max_user_features = self.max_user_features,
+                                      user_features_required = not(self.users_featurizer is None)
                                       )
         self.model = self.get_model()
         best_ndcg = 0
@@ -106,11 +124,13 @@ class DNNSequentialRecommender(Recommender):
         start_time = time.time()
         for epoch in range(self.train_epochs):
             val_generator.reset()
-            generator = DataGenerator(train_users, train_user_ids, self.model_arch.max_history_length, self.items.size(),
+            generator = DataGenerator(train_users, train_user_ids, train_features, self.model_arch.max_history_length, self.items.size(),
                                       batch_size=self.batch_size, target_decay=self.target_decay,
                                       user_id_required = self.model_arch.requires_user_id,
-                                      last_item_only=self.train_on_last_item_only
-                                      )
+                                      last_item_only=self.train_on_last_item_only,
+                                      max_user_features = self.max_user_features,
+                                      user_features_required = not(self.users_featurizer is None)
+            )
             print(f"epoch: {epoch}")
             train_history = self.model.fit(generator, validation_data=val_generator)
             total_trainig_time = time.time() - start_time
@@ -142,15 +162,21 @@ class DNNSequentialRecommender(Recommender):
         print(f"taken best model from epoch{best_epoch}. best_val_ndcg: {best_ndcg}")
 
     def train_val_split(self):
-        all_user_ids = set(range(0, self.users.size()))
+        all_user_ids = self.users_with_actions
         val_user_ids = [self.users.get_id(val_user) for val_user in self.val_users]
         train_user_ids = list(all_user_ids)
         val_users = self.user_actions_by_id_list(val_user_ids)
         train_users = self.user_actions_by_id_list(train_user_ids, val_user_ids)
-        return train_users, train_user_ids, val_users, val_user_ids
+        train_features = [self.user_features.get(id, list()) for id in train_user_ids]
+        val_features = [self.user_features.get(id, list()) for id in val_user_ids]
+        return train_users, train_user_ids, train_features, val_users, val_user_ids, val_features
 
     def get_model(self):
-        self.model_arch.set_common_params(num_items=self.items.size(), num_users=self.users.size())
+        self.max_user_features, self.max_user_feature_val = self.get_max_user_features()
+        self.model_arch.set_common_params(num_items=self.items.size(),
+                                          num_users=self.users.size(),
+                                          max_user_features=self.max_user_features,
+                                          user_feature_max_val= self.max_user_feature_val)
         model = self.model_arch.get_model()
         ndcg_metric = KerasNDCG(self.eval_ndcg_at)
         metrics = [ndcg_metric]
@@ -166,9 +192,26 @@ class DNNSequentialRecommender(Recommender):
         model_inputs = [session]
         if (self.model_arch.requires_user_id):
             model_inputs.append(np.array([[self.users.get_id(user_id)]]))
+
+        if self.users_featurizer is not None:
+            user_features = self.user_features.get(self.users.get_id(user_id), list())
+            features_vector = DataGenerator.get_features_matrix([user_features], self.max_user_features)
+            model_inputs.append(features_vector)
+
         scores = self.model.predict(model_inputs)[0]
         best_ids = np.argsort(scores)[::-1][:limit]
         result = [(self.items.reverse_id(id), scores[id]) for id in best_ids]
         return result
+
+    def get_max_user_features(self):
+        result = 0
+        max_val = 0
+        for user_id in self.user_features:
+            features = self.user_features[user_id]
+            result = max(result, len(features))
+            for feature in features:
+                max_val = max(feature, max_val)
+        return result, max_val
+
 
 

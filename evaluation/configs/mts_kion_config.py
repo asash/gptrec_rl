@@ -24,6 +24,7 @@ from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender im
 from aprec.recommenders.dnn_sequential_recommender.models.caser import Caser
 from aprec.recommenders.dnn_sequential_recommender.models.gru4rec import GRU4Rec
 from aprec.recommenders.dnn_sequential_recommender.models.mlp_sequential import SequentialMLPModel
+from recommenders.dnn_sequential_recommender.user_featurizers.hashing_featurizer import HashingUserFeaturizer
 
 DATASET = get_mts_kion_dataset()
 SUBMIT_USER_IDS = get_submission_user_ids()
@@ -134,7 +135,7 @@ def salrec(loss, num_blocks, learning_rate, ndcg_at,
                                                    log_lambdas_len=log_lambdas
                                                    ))
 
-def dnn(model_arch, loss,learning_rate=0.001, last_only=False):
+def dnn(model_arch, loss,learning_rate=0.001, last_only=False, user_hasher=None):
     return FilterSeenRecommender(DNNSequentialRecommender(train_epochs=10000, loss=loss,
                                                           model_arch=model_arch,
                                                           optimizer=Adam(learning_rate),
@@ -147,46 +148,15 @@ def dnn(model_arch, loss,learning_rate=0.001, last_only=False):
                                                           ))
 
 recommenders_raw = {
-    "CASER-nouid-BCE": lambda: dnn(Caser(requires_user_id=False), BCELoss()),
-    "CASER-nouid-BCE-lastonly": lambda: dnn(Caser(requires_user_id=False), BCELoss(), last_only=True),
-    "CASER-lastonly": lambda: dnn(Caser(requires_user_id=False), BCELoss(), last_only=True),
-    "CASER-nouid-Lambdarank-Vanilla": lambda: dnn(Caser(requires_user_id=False), LambdaGammaRankLoss()),
-    "CASER-nouid-Lambdarank-Truncated:2500": lambda: dnn(Caser(requires_user_id=False), LambdaGammaRankLoss(pred_truncate_at=2500)),
-    "CASER-nouid-Lambdarank-Truncated:2500-bce-weight:0.975": lambda: dnn(Caser(requires_user_id=False),
-                                                     LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975)),
-
-    "GRU": lambda: dnn(GRU4Rec(), BCELoss()),
-    "GRU-Lambdarank-Vanilla": lambda: dnn(GRU4Rec(), LambdaGammaRankLoss()),
-    "GRU-Lambdarank-Truncated:2500": lambda: dnn(GRU4Rec(),
-                                                         LambdaGammaRankLoss(pred_truncate_at=2500)),
-    "GRU-Lambdarank-Truncated:2500-bce-weight:0.975": lambda: dnn(GRU4Rec(),
-                                                                          LambdaGammaRankLoss(pred_truncate_at=2500,
-                                                                                              bce_grad_weight=0.975)),
-
-
-
-    "MLPSeq": lambda: dnn(SequentialMLPModel(), BCELoss()),
-    "MLPSeq-Lambdarank-Vanilla": lambda: dnn(GRU4Rec(), LambdaGammaRankLoss()),
-    "MLPSeq-Truncated:2500": lambda: dnn(SequentialMLPModel(),
-                                                 LambdaGammaRankLoss(pred_truncate_at=2500)),
-    "MLPSeq-Truncated:2500-bce-weight:0.975": lambda: dnn(SequentialMLPModel(),
-                                                                  LambdaGammaRankLoss(pred_truncate_at=2500,
-                                                                                      bce_grad_weight=0.975)),
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:2500-bce_weight:0.975":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 10, True, loss_pred_truncate=2500, loss_bce_weight=0.975),
-
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:2500":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 10, True, loss_pred_truncate=2500),
-
-    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 10, True),
-
-    "lightfm_recommender": lightfm_recommender(64, 'bpr'),
-
-    "BERT4rec":
-        lambda: vanilla_bert4rec(2000000),
-
-    "svd_recommender": lambda: svd_recommender(30),
+    "CASER-hashes-BCE-lastonly": lambda: dnn(Caser(requires_user_id=False, user_extra_features=True), BCELoss(),
+                                             last_only=True, user_hasher=HashingUserFeaturizer()),
+    "CASER-hashes-Larmbdarank-truncated-weighted-lastonly": lambda: dnn(Caser(requires_user_id=False,
+                                                                              user_extra_features=True),
+                                                                        LambdaGammaRankLoss(2500, 0.975),
+                                                     last_only=True, user_hasher=HashingUserFeaturizer()),
+    "CASER-hashes-Larmbdarank-truncated-weighted": lambda: dnn(Caser(requires_user_id=False, user_extra_features=True),
+                                                                        LambdaGammaRankLoss(2500, 0.975),
+                                                                        user_hasher=HashingUserFeaturizer()),
 }
 
 

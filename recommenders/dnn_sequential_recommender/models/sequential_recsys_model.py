@@ -8,10 +8,14 @@ class SequentialRecsysModel(object):
         self.requires_user_id = False
         self.num_items = None
         self.num_users = None
+        self.max_user_features = None
+        self.user_feature_max_val = None
 
-    def set_common_params(self, num_items, num_users):
+    def set_common_params(self, num_items, num_users, max_user_features, user_feature_max_val):
         self.num_items = num_items
         self.num_users = num_users
+        self.max_user_features = max_user_features
+        self.user_feature_max_val = user_feature_max_val
 
     def get_model(self):
         raise NotImplementedError

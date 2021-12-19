@@ -6,16 +6,19 @@ from tensorflow.python.keras.utils.data_utils import Sequence
 
 
 class DataGenerator(Sequence):
-    def __init__(self, user_actions, user_ids, history_size, n_items, batch_size=1000, last_item_only=False, target_decay=0.8,
+    def __init__(self, user_actions, user_ids,  user_features, history_size,
+                 n_items, batch_size=1000, last_item_only=False, target_decay=0.8,
                  min_target_val=0.1, return_drect_positions=False, return_reverse_positions=False,
-                 user_id_required=False
+                 user_id_required=False,
+                 max_user_features=0,
+                 user_features_required=False
                  ):
         self.user_ids = [[id] for id in user_ids]
         self.user_actions = user_actions
         self.history_size= history_size
         self.n_items = n_items
         self.batch_size = batch_size
-        self.features_matrix = None
+        self.sequences_matrix = None
         self.target_matrix = None
         self.last_item_only = last_item_only
         self.target_decay = target_decay
@@ -23,27 +26,41 @@ class DataGenerator(Sequence):
         self.return_direct_positions = return_drect_positions
         self.return_reverse_positions = return_reverse_positions
         self.user_id_required = user_id_required
+        self.user_features = user_features
+        self.max_user_features = max_user_features
+        self.user_features_required = user_features_required
         self.reset()
 
 
     def reset(self):
         self.shuffle_data()
         history, target = self.split_actions(self.user_actions)
-        self.features_matrix = self.matrix_for_embedding(history, self.history_size, self.n_items)
+        self.sequences_matrix = self.matrix_for_embedding(history, self.history_size, self.n_items)
         if self.return_direct_positions or self.return_reverse_positions:
             self.direct_position, self.reverse_position = self.positions(history, self.history_size)
+
+        if self.user_features_required:
+            self.user_features_matrix = self.get_features_matrix(self.user_features, self.max_user_features)
 
         self.target_matrix = self.get_target_matrix(target, self.n_items)
         self.current_position = 0
         self.max = self.__len__()
 
-
     def shuffle_data(self):
-        actions_with_ids = list(zip(self.user_actions, self.user_ids))
-        random.shuffle(actions_with_ids)
-        user_actions, user_ids = zip(*actions_with_ids)
+        actions_with_ids_and_features = list(zip(self.user_actions, self.user_ids, self.user_features))
+        random.shuffle(actions_with_ids_and_features)
+        user_actions, user_ids, user_features = zip(*actions_with_ids_and_features)
+
         self.user_actions = user_actions
         self.user_ids = user_ids
+        self.user_features = user_features
+
+    @staticmethod
+    def get_features_matrix(user_features, max_user_features):
+        result = []
+        for features in user_features:
+            result.append([0] * (max_user_features - len(features)) + features)
+        return np.array(result)
 
 
     @staticmethod
@@ -99,12 +116,12 @@ class DataGenerator(Sequence):
         return np.array(result_direct), np.array(result_reverse)
 
     def __len__(self):
-        return self.features_matrix.shape[0] // self.batch_size
+        return self.sequences_matrix.shape[0] // self.batch_size
 
     def __getitem__(self, idx):
         start = idx * self.batch_size
         end = (idx + 1) * self.batch_size
-        history = self.features_matrix[start:end]
+        history = self.sequences_matrix[start:end]
         model_inputs = [history]
         target = self.target_matrix[start:end].todense()
         if self.return_direct_positions:
@@ -117,6 +134,10 @@ class DataGenerator(Sequence):
         if self.user_id_required:
             user_ids = np.array(self.user_ids[start:end])
             model_inputs.append(user_ids)
+
+        if self.user_features_required:
+            features = self.user_features_matrix[start:end]
+            model_inputs.append(features)
 
         return model_inputs, target
 
