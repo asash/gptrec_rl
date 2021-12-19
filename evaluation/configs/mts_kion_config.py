@@ -22,9 +22,7 @@ from aprec.recommenders.deep_mf import DeepMFRecommender
 from aprec.losses.bce import BCELoss
 from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
 from aprec.recommenders.dnn_sequential_recommender.models.caser import Caser
-from aprec.recommenders.dnn_sequential_recommender.models.gru4rec import GRU4Rec
-from aprec.recommenders.dnn_sequential_recommender.models.mlp_sequential import SequentialMLPModel
-from recommenders.dnn_sequential_recommender.user_featurizers.hashing_featurizer import HashingUserFeaturizer
+from aprec.recommenders.dnn_sequential_recommender.user_featurizers.hashing_featurizer import HashingUserFeaturizer
 
 DATASET = get_mts_kion_dataset()
 SUBMIT_USER_IDS = get_submission_user_ids()
