@@ -3,12 +3,11 @@ import random
 
 from tqdm import tqdm
 
-from aprec.datasets.mts_kion import get_mts_kion_dataset, get_submission_user_ids
+from aprec.datasets.mts_kion import get_mts_kion_dataset, get_submission_user_ids, get_users
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.salrec.salrec_recommender import SalrecRecommender
 from aprec.recommenders.lightfm import LightFMRecommender
-from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.recommenders.vanilla_bert4rec import VanillaBERT4Rec
 from aprec.evaluation.metrics.precision import Precision
@@ -20,9 +19,14 @@ from tensorflow.keras.optimizers import Adam
 from aprec.evaluation.metrics.sps import SPS
 from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
 from aprec.recommenders.deep_mf import DeepMFRecommender
+from losses.bce import BCELoss
+from recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
+from recommenders.dnn_sequential_recommender.models.caser import Caser
+from recommenders.dnn_sequential_recommender.models.gru4rec import GRU4Rec
 
 DATASET = get_mts_kion_dataset()
 SUBMIT_USER_IDS = get_submission_user_ids()
+USERS = get_users()
 
 GENERATE_SUBMIT_THRESHOLD = 0.10
 
@@ -114,7 +118,7 @@ def salrec(loss, num_blocks, learning_rate, ndcg_at,
         activation = activation_override
     return FilterSeenRecommender(SalrecRecommender(train_epochs=10000, loss=loss,
                                                    optimizer=Adam(learning_rate),
-                                                   early_stop_epochs=10000,
+                                                   early_stop_epochs=100,
                                                    batch_size=128, sigma=1.0, ndcg_at=ndcg_at,
                                                    max_history_len=session_len,
                                                    output_layer_activation=activation,
@@ -129,21 +133,45 @@ def salrec(loss, num_blocks, learning_rate, ndcg_at,
                                                    log_lambdas_len=log_lambdas
                                                    ))
 
-def mlp_historical_embedding(loss, activation_override=None):
-    activation = 'linear' if loss == 'lambdarank' else 'sigmoid'
-    if activation_override is not None:
-        activation = activation_override
+def dnn(model_arch, loss,learning_rate=0.001):
     return FilterSeenRecommender(DNNSequentialRecommender(train_epochs=10000, loss=loss,
-                                                          optimizer=Adam(), early_stop_epochs=100,
-                                                          batch_size=64, sigma=1.0, ndcg_at=40,
-                                                          bottleneck_size=64,
-                                                          max_history_len=150,
-                                                          output_layer_activation=activation, target_decay=0.8))
+                                                          model_arch=model_arch,
+                                                          optimizer=Adam(learning_rate),
+                                                          early_stop_epochs=100,
+                                                          batch_size=128,
+                                                          training_time_limit = 3600,
+                                                          eval_ndcg_at=40,
+                                                          target_decay=1.0,
+                                                          ))
 
 recommenders_raw = {
+    "CASER-nouid-BCE": lambda: dnn(Caser(requires_user_id=False), BCELoss()),
+    "CASER-nouid-Lambdarank-Vanilla": lambda: dnn(Caser(requires_user_id=False), LambdaGammaRankLoss()),
+    "CASER-nouid-Lambdarank-Truncated:2500": lambda: dnn(Caser(requires_user_id=False), LambdaGammaRankLoss(pred_truncate_at=2500)),
+    "CASER-nouid-Lambdarank-Truncated:2500-bce-weight:0.975": lambda: dnn(Caser(requires_user_id=False),
+                                                     LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975)),
+
+    "BCE": lambda: dnn(GRU4Rec(), BCELoss()),
+    "GRU-Lambdarank-Vanilla": lambda: dnn(GRU4Rec(), LambdaGammaRankLoss()),
+    "GRU-Lambdarank-Truncated:2500": lambda: dnn(GRU4Rec(),
+                                                         LambdaGammaRankLoss(pred_truncate_at=2500)),
+    "GRU-Lambdarank-Truncated:2500-bce-weight:0.975": lambda: dnn(GRU4Rec(),
+                                                                          LambdaGammaRankLoss(pred_truncate_at=2500,
+                                                                                              bce_grad_weight=0.975)),
+
     "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:2500-bce_weight:0.975":
         lambda: salrec('lambdarank', 3, 0.001, 50, 10, True, loss_pred_truncate=2500, loss_bce_weight=0.975),
+
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:2500":
+        lambda: salrec('lambdarank', 3, 0.001, 50, 10, True, loss_pred_truncate=2500),
+
+    "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True":
+        lambda: salrec('lambdarank', 3, 0.001, 50, 10, True),
+
+    "BERT4rec":
+        lambda: vanilla_bert4rec(2000000),
 }
+
 
 all_recommenders = list(recommenders_raw.keys())
 random.shuffle(all_recommenders)
