@@ -149,10 +149,13 @@ def dnn(model_arch, loss,learning_rate=0.001, last_only=False, user_hasher=None)
 recommenders_raw = {
     "CASER-hashes-BCE-lastonly": lambda: dnn(Caser(requires_user_id=False, user_extra_features=True), BCELoss(),
                                              last_only=True, user_hasher=HashingUserFeaturizer()),
-    "CASER-hashes-Larmbdarank-truncated-weighted-lastonly": lambda: dnn(Caser(requires_user_id=False,
-                                                                              user_extra_features=True),
-                                                                        LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975),
-                                                                        last_only=True, user_hasher=HashingUserFeaturizer()),
+     "CASER-hashes-Larmbdarank-truncated-weighted-lastonly": lambda: dnn(Caser(requires_user_id=False,
+                                                                               user_extra_features=True),
+                                                                         LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975),
+                                                      last_only=True, user_hasher=HashingUserFeaturizer()),
+     "CASER-hashes-Larmbdarank-truncated-weighted": lambda: dnn(Caser(requires_user_id=False, user_extra_features=True),
+                                                                         LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975),
+                                                                         user_hasher=HashingUserFeaturizer()),
 }
 
 
