@@ -142,19 +142,20 @@ def dnn(model_arch, loss,learning_rate=0.001, last_only=False, user_hasher=None)
                                                           training_time_limit = 3600,
                                                           eval_ndcg_at=40,
                                                           target_decay=1.0,
-                                                          train_on_last_item_only=last_only
+                                                          train_on_last_item_only=last_only,
+                                                          users_featurizer=user_hasher
                                                           ))
 
 recommenders_raw = {
     "CASER-hashes-BCE-lastonly": lambda: dnn(Caser(requires_user_id=False, user_extra_features=True), BCELoss(),
                                              last_only=True, user_hasher=HashingUserFeaturizer()),
-    "CASER-hashes-Larmbdarank-truncated-weighted-lastonly": lambda: dnn(Caser(requires_user_id=False,
-                                                                              user_extra_features=True),
-                                                                        LambdaGammaRankLoss(2500, 0.975),
-                                                     last_only=True, user_hasher=HashingUserFeaturizer()),
-    "CASER-hashes-Larmbdarank-truncated-weighted": lambda: dnn(Caser(requires_user_id=False, user_extra_features=True),
-                                                                        LambdaGammaRankLoss(2500, 0.975),
-                                                                        user_hasher=HashingUserFeaturizer()),
+     "CASER-hashes-Larmbdarank-truncated-weighted-lastonly": lambda: dnn(Caser(requires_user_id=False,
+                                                                               user_extra_features=True),
+                                                                         LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975),
+                                                      last_only=True, user_hasher=HashingUserFeaturizer()),
+     "CASER-hashes-Larmbdarank-truncated-weighted": lambda: dnn(Caser(requires_user_id=False, user_extra_features=True),
+                                                                         LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975),
+                                                                         user_hasher=HashingUserFeaturizer()),
 }
 
 
