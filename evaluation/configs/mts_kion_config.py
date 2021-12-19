@@ -23,6 +23,7 @@ from losses.bce import BCELoss
 from recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
 from recommenders.dnn_sequential_recommender.models.caser import Caser
 from recommenders.dnn_sequential_recommender.models.gru4rec import GRU4Rec
+from recommenders.dnn_sequential_recommender.models.mlp_sequential import SequentialMLPModel
 
 DATASET = get_mts_kion_dataset()
 SUBMIT_USER_IDS = get_submission_user_ids()
@@ -62,7 +63,7 @@ def svd_recommender(k):
     return FilterSeenRecommender(SvdRecommender(k))
 
 def lightfm_recommender(k, loss):
-    return FilterSeenRecommender(LightFMRecommender(k, loss))
+    return FilterSeenRecommender(LightFMRecommender(k, loss, n_epochs=100))
 
 def vanilla_bert4rec(num_steps):
     max_seq_length = 50
@@ -133,7 +134,7 @@ def salrec(loss, num_blocks, learning_rate, ndcg_at,
                                                    log_lambdas_len=log_lambdas
                                                    ))
 
-def dnn(model_arch, loss,learning_rate=0.001):
+def dnn(model_arch, loss,learning_rate=0.001, last_only=False):
     return FilterSeenRecommender(DNNSequentialRecommender(train_epochs=10000, loss=loss,
                                                           model_arch=model_arch,
                                                           optimizer=Adam(learning_rate),
@@ -142,16 +143,19 @@ def dnn(model_arch, loss,learning_rate=0.001):
                                                           training_time_limit = 3600,
                                                           eval_ndcg_at=40,
                                                           target_decay=1.0,
+                                                          train_on_last_item_only=last_only
                                                           ))
 
 recommenders_raw = {
     "CASER-nouid-BCE": lambda: dnn(Caser(requires_user_id=False), BCELoss()),
+    "CASER-nouid-BCE-lastonly": lambda: dnn(Caser(requires_user_id=False), BCELoss(), last_only=True),
+    "CASER-lastonly": lambda: dnn(Caser(requires_user_id=False), BCELoss(), last_only=True),
     "CASER-nouid-Lambdarank-Vanilla": lambda: dnn(Caser(requires_user_id=False), LambdaGammaRankLoss()),
     "CASER-nouid-Lambdarank-Truncated:2500": lambda: dnn(Caser(requires_user_id=False), LambdaGammaRankLoss(pred_truncate_at=2500)),
     "CASER-nouid-Lambdarank-Truncated:2500-bce-weight:0.975": lambda: dnn(Caser(requires_user_id=False),
                                                      LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975)),
 
-    "BCE": lambda: dnn(GRU4Rec(), BCELoss()),
+    "GRU": lambda: dnn(GRU4Rec(), BCELoss()),
     "GRU-Lambdarank-Vanilla": lambda: dnn(GRU4Rec(), LambdaGammaRankLoss()),
     "GRU-Lambdarank-Truncated:2500": lambda: dnn(GRU4Rec(),
                                                          LambdaGammaRankLoss(pred_truncate_at=2500)),
@@ -159,6 +163,15 @@ recommenders_raw = {
                                                                           LambdaGammaRankLoss(pred_truncate_at=2500,
                                                                                               bce_grad_weight=0.975)),
 
+
+
+    "MLPSeq": lambda: dnn(SequentialMLPModel(), BCELoss()),
+    "MLPSeq-Lambdarank-Vanilla": lambda: dnn(GRU4Rec(), LambdaGammaRankLoss()),
+    "MLPSeq-Truncated:2500": lambda: dnn(SequentialMLPModel(),
+                                                 LambdaGammaRankLoss(pred_truncate_at=2500)),
+    "MLPSeq-Truncated:2500-bce-weight:0.975": lambda: dnn(SequentialMLPModel(),
+                                                                  LambdaGammaRankLoss(pred_truncate_at=2500,
+                                                                                      bce_grad_weight=0.975)),
     "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:2500-bce_weight:0.975":
         lambda: salrec('lambdarank', 3, 0.001, 50, 10, True, loss_pred_truncate=2500, loss_bce_weight=0.975),
 
@@ -168,8 +181,12 @@ recommenders_raw = {
     "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True":
         lambda: salrec('lambdarank', 3, 0.001, 50, 10, True),
 
+    "lightfm_recommender": lightfm_recommender(64, 'bpr'),
+
     "BERT4rec":
         lambda: vanilla_bert4rec(2000000),
+
+    "svd_recommender": lambda: svd_recommender(30),
 }
 
 
@@ -178,7 +195,6 @@ random.shuffle(all_recommenders)
 
 
 RECOMMENDERS = {
-#        "svd_recommender": lambda: svd_recommender(30),
         "top_recommender": top_recommender,
 
     }
@@ -190,7 +206,7 @@ print(f"evaluating {len(RECOMMENDERS)} models")
 N_VAL_USERS=256
 MAX_TEST_USERS=4096
 
-METRICS = [NDCG(10),  NDCG(2), NDCG(5), NDCG(20), NDCG(40), Precision(10), Recall(10), SPS(1), SPS(10), MRR(), MAP(10)]
+METRICS = [MAP(10), NDCG(10),  NDCG(2), NDCG(5), NDCG(20), NDCG(40), Precision(10), Recall(10), SPS(1), SPS(10), MRR()]
 
 
 SPLIT_STRATEGY = "LEAVE_ONE_OUT"
