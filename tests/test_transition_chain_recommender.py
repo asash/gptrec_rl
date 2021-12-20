@@ -25,7 +25,7 @@ class TestTransitionsChainRecommender(unittest.TestCase):
         for action in actions:
             recommender.add_action(action)
         recommender.rebuild_model()
-        recommendations = recommender.get_next_items(4, 2)
+        recommendations = recommender.recommend(4, 2)
         self.assertEqual(recommendations, [(2, 2), (3, 1)])
 
 if __name__ == "__main__":

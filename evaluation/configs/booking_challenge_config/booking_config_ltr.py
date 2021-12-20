@@ -27,7 +27,7 @@ def generate_submit(recommender, recommender_name, evaluation_result, config):
     with open(os.path.join(config.out_dir, recommender_name + "_submit_" + ".csv"), 'w') as out_file:
         out_file.write("utrip_id,city_id_1,city_id_2,city_id_3,city_id_4\n")
         for action in tqdm(config.SUBMIT_ACTIONS, ascii=True):
-            recommendations = recommender.get_next_items(action.user_id, limit=4, features=action)
+            recommendations = recommender.recommend(action.user_id, limit=4, features=action)
             city_ids = [recommendation[0] for recommendation in recommendations]
             line = ",".join([action.user_id] + city_ids ) + "\n"
             out_file.write(line)

@@ -115,7 +115,7 @@ class DeepMFRecommender(Recommender):
         pred_repr = output_layer(pred_repr)
         return input, pred_input, repr, pred_repr
 
-    def get_next_items(self, user_id, limit, features=None):
+    def recommend(self, user_id, limit, features=None):
         users_input = np.asarray(self.user_item_matrix[self.users.get_id(user_id)] \
                                  .todense()).reshape(1, 1, self.items.size())
         num_items_left = self.items.size()

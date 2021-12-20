@@ -26,12 +26,12 @@ class TestSalrecRecommender(unittest.TestCase):
         for action in generator_limit(get_movielens20m_actions(), 10000):
             recommender.add_action(action)
         recommender.rebuild_model()
-        recs = recommender.get_next_items(USER_ID, 10)
+        recs = recommender.recommend(USER_ID, 10)
         print(recs)
         metadata = recommender.get_metadata()
         print(metadata)
 
-        recs = recommender.get_next_items('aadfadsf', 10)
+        recs = recommender.recommend('aadfadsf', 10)
         print(recs)
 
     def test_salrec_recommender_unordered(self):
@@ -49,7 +49,7 @@ class TestSalrecRecommender(unittest.TestCase):
         loss = LambdaGammaRankLoss(n_items, min(batch_size, n_users - len(val_users)), ndcg_at=10)
         salrec_recommender.set_loss(loss)
         recommender.rebuild_model()
-        recs = recommender.get_next_items(USER_ID, 10)
+        recs = recommender.recommend(USER_ID, 10)
         print(recs)
         metadata = recommender.get_metadata()
         print(metadata)
@@ -70,7 +70,7 @@ class TestSalrecRecommender(unittest.TestCase):
         loss = LambdaGammaRankLoss(n_items, min(batch_size, n_users - len(val_users)), ndcg_at=10)
         salrec_recommender.set_loss(loss)
         recommender.rebuild_model()
-        recs = recommender.get_next_items(USER_ID, 10)
+        recs = recommender.recommend(USER_ID, 10)
         print(recs)
         metadata = recommender.get_metadata()
         print(metadata)

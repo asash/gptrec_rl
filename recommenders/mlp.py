@@ -57,7 +57,7 @@ class GreedyMLP(Recommender):
         model.compile(optimizer='adam', loss='binary_crossentropy')
         return model
 
-    def get_next_items(self, user_id, limit, features=None):
+    def recommend(self, user_id, limit, features=None):
         if self.users.has_item(user_id):
             user_vec = self.matrix[self.users.get_id(user_id)].todense()
         scores = self.model.predict(user_vec)[0]

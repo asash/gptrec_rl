@@ -49,7 +49,7 @@ class TestVanillaBert4rec(unittest.TestCase):
         for action in generator_limit(get_movielens20m_actions(), 100000):
             recommender.add_action(action)
         recommender.rebuild_model()
-        print(recommender.get_next_items('120', 10))
+        print(recommender.recommend('120', 10))
 
 if __name__ == "__main__":
     unittest.main()

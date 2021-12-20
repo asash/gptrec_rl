@@ -256,7 +256,7 @@ class BookingCandidatesRecommender(Recommender):
             result.append((city, candidate_vector))
         return result
 
-    def get_next_items(self, user_id, limit, features=None):
+    def recommend(self, user_id, limit, features=None):
         trip = self.user_actions[user_id]
         return self.recommend_items_by_trip(trip, limit)
 

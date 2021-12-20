@@ -12,7 +12,7 @@ class RandomRecommender(Recommender):
     def rebuild_model(self):
         self.items = list(self.items_set)
 
-    def get_next_items(self, user_id, limit, features=None):
+    def recommend(self, user_id, limit, features=None):
         recommended_items = np.random.choice(self.items, limit, replace=False)
         result = []
         current_score = 1.0

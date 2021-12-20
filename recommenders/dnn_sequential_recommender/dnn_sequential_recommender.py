@@ -17,22 +17,11 @@ from aprec.losses.bce import BCELoss
 import numpy as np
 
 
-
 class DNNSequentialRecommender(Recommender):
-    def __init__(self,
-                 model_arch: SequentialRecsysModel,
-                 loss: Loss=BCELoss(),
-                 users_featurizer = None,
-                 train_epochs=300,
-                 optimizer='adam',
-                 batch_size=1000,
-                 early_stop_epochs=100,
-                 target_decay = 1.0,
-                 train_on_last_item_only = False,
-                 training_time_limit = None,
-                 sigma=1,
-                 eval_ndcg_at=40,
-                 ):
+    def __init__(self, model_arch: SequentialRecsysModel, loss: Loss = BCELoss(), users_featurizer=None,
+                 train_epochs=300, optimizer='adam', batch_size=1000, early_stop_epochs=100, target_decay=1.0,
+                 train_on_last_item_only=False, training_time_limit=None, sigma=1, eval_ndcg_at=40):
+        super().__init__()
         self.model_arch = model_arch
         self.users = ItemId()
         self.items = ItemId()
@@ -50,7 +39,7 @@ class DNNSequentialRecommender(Recommender):
         self.sigma = sigma
         self.target_decay = target_decay
         self.val_users = None
-        self.eval_ndcg_at=40
+        self.eval_ndcg_at = 40
         self.eval_ndcg_at = eval_ndcg_at
         self.train_on_last_item_only = train_on_last_item_only
         self.training_time_limit = training_time_limit
@@ -65,7 +54,6 @@ class DNNSequentialRecommender(Recommender):
             pass
         else:
             self.user_features[self.users.get_id(user.user_id)] = self.users_featurizer(user)
-
 
     def get_metadata(self):
         return self.metadata
@@ -82,7 +70,7 @@ class DNNSequentialRecommender(Recommender):
         self.users_with_actions.add(user_id_internal)
         self.user_actions[user_id_internal].append((action.timestamp, action_id_internal))
 
-    #exclude last action for val_users
+    # exclude last action for val_users
     def user_actions_by_id_list(self, id_list, val_user_ids=None):
         val_users = set()
         if val_user_ids is not None:
@@ -108,12 +96,13 @@ class DNNSequentialRecommender(Recommender):
         train_users, train_user_ids, train_features, val_users, val_user_ids, val_features = self.train_val_split()
 
         print("train_users: {}, val_users:{}, items:{}".format(len(train_users), len(val_users), self.items.size()))
-        val_generator = DataGenerator(val_users, val_user_ids, val_features, self.model_arch.max_history_length, self.items.size(),
+        val_generator = DataGenerator(val_users, val_user_ids, val_features, self.model_arch.max_history_length,
+                                      self.items.size(),
                                       batch_size=self.batch_size, last_item_only=True,
                                       target_decay=self.target_decay,
-                                      user_id_required = self.model_arch.requires_user_id,
-                                      max_user_features = self.max_user_features,
-                                      user_features_required = not(self.users_featurizer is None)
+                                      user_id_required=self.model_arch.requires_user_id,
+                                      max_user_features=self.max_user_features,
+                                      user_features_required=not (self.users_featurizer is None)
                                       )
         self.model = self.get_model()
         best_ndcg = 0
@@ -124,13 +113,14 @@ class DNNSequentialRecommender(Recommender):
         start_time = time.time()
         for epoch in range(self.train_epochs):
             val_generator.reset()
-            generator = DataGenerator(train_users, train_user_ids, train_features, self.model_arch.max_history_length, self.items.size(),
+            generator = DataGenerator(train_users, train_user_ids, train_features, self.model_arch.max_history_length,
+                                      self.items.size(),
                                       batch_size=self.batch_size, target_decay=self.target_decay,
-                                      user_id_required = self.model_arch.requires_user_id,
+                                      user_id_required=self.model_arch.requires_user_id,
                                       last_item_only=self.train_on_last_item_only,
-                                      max_user_features = self.max_user_features,
-                                      user_features_required = not(self.users_featurizer is None)
-            )
+                                      max_user_features=self.max_user_features,
+                                      user_features_required=not (self.users_featurizer is None)
+                                      )
             print(f"epoch: {epoch}")
             train_history = self.model.fit(generator, validation_data=val_generator)
             total_trainig_time = time.time() - start_time
@@ -176,14 +166,32 @@ class DNNSequentialRecommender(Recommender):
         self.model_arch.set_common_params(num_items=self.items.size(),
                                           num_users=self.users.size(),
                                           max_user_features=self.max_user_features,
-                                          user_feature_max_val= self.max_user_feature_val)
+                                          user_feature_max_val=self.max_user_feature_val)
         model = self.model_arch.get_model()
         ndcg_metric = KerasNDCG(self.eval_ndcg_at)
         metrics = [ndcg_metric]
         model.compile(optimizer=self.optimizer, loss=self.loss, metrics=metrics)
         return model
 
-    def get_next_items(self, user_id, limit, features=None):
+    def recommend(self, user_id, limit, features=None):
+        scores = self.get_all_item_scores(user_id)
+        best_ids = np.argsort(scores)[::-1][:limit]
+        result = [(self.items.reverse_id(id), scores[id]) for id in best_ids]
+        return result
+
+    def get_item_rankings(self):
+        result = {}
+        for request in self.items_ranking_requests:
+            user_id = request.user_id
+            scores = self.get_all_item_scores(user_id)
+            user_result = []
+            for item_id in request.item_ids:
+                user_result.append((item_id, scores[self.items.get_id(item_id)]))
+            user_result.sort(key = lambda x: -x[1])
+            result[user_id] = user_result
+        return result
+
+    def get_all_item_scores(self, user_id):
         actions = self.user_actions[self.users.get_id(user_id)]
         items_list = [action[1] for action in actions]
         model_actions = [(0, action) for action in items_list]
@@ -199,9 +207,7 @@ class DNNSequentialRecommender(Recommender):
             model_inputs.append(features_vector)
 
         scores = self.model.predict(model_inputs)[0]
-        best_ids = np.argsort(scores)[::-1][:limit]
-        result = [(self.items.reverse_id(id), scores[id]) for id in best_ids]
-        return result
+        return scores
 
     def get_max_user_features(self):
         result = 0
@@ -212,6 +218,3 @@ class DNNSequentialRecommender(Recommender):
             for feature in features:
                 max_val = max(feature, max_val)
         return result, max_val
-
-
-

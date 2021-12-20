@@ -48,7 +48,7 @@ class MatrixFactorizationRecommender(Recommender):
             data_generator.shuffle()
             self.model.fit(data_generator)
 
-    def get_next_items(self, user_id, limit, features=None):
+    def recommend(self, user_id, limit, features=None):
        with tf.device('/cpu:0'):
             model_input = np.array([[self.users.get_id(user_id)]])
             predictions = tf.nn.top_k(self.model.predict(model_input), limit)

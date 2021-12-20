@@ -64,7 +64,7 @@ class TransitionsChainRecommender(Recommender):
                 self.graph[start].append(stop)
         pass
 
-    def get_next_items(self, user_id, limit, features=None):
+    def recommend(self, user_id, limit, features=None):
         if user_id not in self.user_to_items:
             raise Exception("New user without history")
         return self.recommend_by_items(self.user_to_items[user_id], limit)
@@ -85,7 +85,7 @@ class TransitionsChainRecommender(Recommender):
             result.append((item, score))
 
         if len(recommended) < limit:
-            for item, score in self.top_recommender.get_next_items(0, 2*limit):
+            for item, score in self.top_recommender.recommend(0, 2 * limit):
                 if item in recommended:
                     continue
                 result.append((item, 0))

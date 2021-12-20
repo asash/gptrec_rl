@@ -11,7 +11,7 @@ class TestTopRecommender(unittest.TestCase):
         for action in generator_limit(get_movielens20m_actions(), 1000):
             recommender.add_action(action)
         recommender.rebuild_model()
-        recommendations = recommender.get_next_items(1, 5) 
+        recommendations = recommender.recommend(1, 5)
         self.assertEqual(recommendations, [('260', 10), ('589', 9), ('1196', 8), ('480', 8), ('1', 8)])
 
     def test_top_recommender_ranking_request(self):

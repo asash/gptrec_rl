@@ -5,16 +5,17 @@ import unittest
 
 from aprec.datasets.movielens20m import get_movielens20m_actions
 from aprec.utils.generator_limit import generator_limit
-from aprec.evaluation.split_actions import leave_one_out
+from aprec.evaluation.split_actions import LeaveOneOut
 from aprec.evaluation.metrics.precision import Precision
-from recommenders.top_recommender import TopRecommender
+from aprec.recommenders.top_recommender import TopRecommender
 
 
 class TestRecommenderEvaluator(unittest.TestCase):
     def test_recommender_evaluator(self):
         actions = [action for action in generator_limit(get_movielens20m_actions(), 100000)]
         recommenders= {"top_recommender": TopRecommender}
-        data_splitter = lambda actions: leave_one_out(actions, max_test_users=128)
+
+        data_splitter = LeaveOneOut(max_test_users=128)
         metrics = [Precision(5)]
         out_dir = tempfile.mkdtemp()
         n_val_users=10
@@ -27,3 +28,6 @@ class TestRecommenderEvaluator(unittest.TestCase):
         del(result["model_inference_time"])
         self.assertEqual(result,
               {'precision@5': 0.0078125, 'sampled_metrics': {'precision@5': 0.039062500000000014},'model_metadata': {}})
+        
+if __name__ == "__main__":
+    unittest.main()

@@ -15,7 +15,7 @@ class TestCandidatesRecommender(unittest.TestCase):
         for action in dataset:
             recommender.add_action(action)
         recommender.rebuild_model()
-        result = recommender.get_next_items(dataset[0].user_id, 10)
+        result = recommender.recommend(dataset[0].user_id, 10)
         trip = list(filter(lambda item: item.user_id == dataset[0].user_id, dataset))
         candidates = recommender.get_candidates_with_features(trip, 10)
         for vector in candidates:

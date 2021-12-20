@@ -10,7 +10,7 @@ import unittest
 from aprec.recommenders.dnn_sequential_recommender.models.caser import Caser
 from aprec.recommenders.dnn_sequential_recommender.models.gru4rec import GRU4Rec
 from aprec.recommenders.dnn_sequential_recommender.models.mlp_sequential import SequentialMLPModel
-from recommenders.dnn_sequential_recommender.user_featurizers.hashing_featurizer import HashingUserFeaturizer
+from aprec.recommenders.dnn_sequential_recommender.user_featurizers.hashing_featurizer import HashingUserFeaturizer
 
 USER_ID = '120'
 
@@ -25,7 +25,7 @@ class TestDnnSequentialRecommender(unittest.TestCase):
         for action in generator_limit(get_movielens20m_actions(), 10000):
             recommender.add_action(action)
         recommender.rebuild_model()
-        recs = recommender.get_next_items(USER_ID, 10)
+        recs = recommender.recommend(USER_ID, 10)
         print(recs)
 
 
@@ -39,7 +39,7 @@ class TestDnnSequentialRecommender(unittest.TestCase):
         for action in generator_limit(get_movielens20m_actions(), 10000):
             recommender.add_action(action)
         recommender.rebuild_model()
-        recs = recommender.get_next_items(USER_ID, 10)
+        recs = recommender.recommend(USER_ID, 10)
         print(recs)
 
 
@@ -53,7 +53,7 @@ class TestDnnSequentialRecommender(unittest.TestCase):
         for action in generator_limit(get_movielens20m_actions(), 10000):
             recommender.add_action(action)
         recommender.rebuild_model()
-        recs = recommender.get_next_items(USER_ID, 10)
+        recs = recommender.recommend(USER_ID, 10)
         print(recs)
 
     def test_caser_extra_features(self):
@@ -72,7 +72,7 @@ class TestDnnSequentialRecommender(unittest.TestCase):
         for user in users:
             recommender.add_user(user)
         recommender.rebuild_model()
-        recs = recommender.get_next_items(USER_ID, 10)
+        recs = recommender.recommend(USER_ID, 10)
         print(recs)
 
 
@@ -86,7 +86,7 @@ class TestDnnSequentialRecommender(unittest.TestCase):
         for action in generator_limit(get_movielens20m_actions(), 10000):
             recommender.add_action(action)
         recommender.rebuild_model()
-        recs = recommender.get_next_items(USER_ID, 10)
+        recs = recommender.recommend(USER_ID, 10)
         print(recs)
 
     def test_mlp_recommender_with_lambdarank(self):
@@ -102,7 +102,7 @@ class TestDnnSequentialRecommender(unittest.TestCase):
             recommender.add_action(action)
         mlp_recommender.set_loss(loss)
         recommender.rebuild_model()
-        recs = recommender.get_next_items(USER_ID, 10)
+        recs = recommender.recommend(USER_ID, 10)
         print(recs)
         metadata = recommender.get_metadata()
         print(metadata)
@@ -120,7 +120,7 @@ class TestDnnSequentialRecommender(unittest.TestCase):
         for action in generator_limit(get_movielens20m_actions(), 10000):
             recommender.add_action(action)
         recommender.rebuild_model()
-        recs = recommender.get_next_items(USER_ID, 10)
+        recs = recommender.recommend(USER_ID, 10)
         print(recs)
         metadata = recommender.get_metadata()
         print(metadata)

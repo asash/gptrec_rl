@@ -40,7 +40,7 @@ def generate_submit(recommender, recommender_name, evaluation_result, config):
     with open(os.path.join(config.out_dir, recommender_name + "_submit_" + ".csv"), 'w') as out_file:
         out_file.write("user_id,item_id\n")
         for user_id in tqdm(config.SUBMIT_USER_IDS, ascii=True):
-            recommendations = recommender.get_next_items(user_id, limit=10)
+            recommendations = recommender.recommend(user_id, limit=10)
             content_ids = [recommendation[0] for recommendation in recommendations]
             line = user_id + ",\"["  +  ", ".join(content_ids) + "]\"\n"
             out_file.write(line)

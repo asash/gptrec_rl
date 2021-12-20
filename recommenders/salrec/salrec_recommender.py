@@ -244,7 +244,7 @@ class SalrecRecommender(Recommender):
         model.compile(optimizer=self.optimizer, loss=loss, metrics=metrics)
         return model
 
-    def get_next_items(self, user_id, limit, features=None):
+    def recommend(self, user_id, limit, features=None):
         if user_id in self.user_actions:
             actions = self.user_actions[self.users.get_id(user_id)]
         else:

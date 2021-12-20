@@ -16,7 +16,7 @@ class TestTopRecommender(unittest.TestCase):
         for action in actions:
             recommender.add_action(action)
         recommender.rebuild_model()
-        recommendations = recommender.get_next_items(0, 1)
+        recommendations = recommender.recommend(0, 1)
         self.assertEqual(recommendations, [(0, 2)])
 
 if __name__ == "__main__":

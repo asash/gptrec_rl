@@ -15,7 +15,7 @@ class TopRecommender(Recommender):
         for item, score in self.most_common:
             self.item_scores[item] = score
 
-    def get_next_items(self, user_id, limit, features=None):
+    def recommend(self, user_id, limit, features=None):
         return self.most_common[:limit]
 
 

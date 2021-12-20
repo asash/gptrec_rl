@@ -17,7 +17,7 @@ class TestBookingRecommender(unittest.TestCase):
         for action in dataset:
             recommender.add_action(action)
         recommender.rebuild_model()
-        result = recommender.get_next_items(dataset[0].user_id, 10, dataset[0])
+        result = recommender.recommend(dataset[0].user_id, 10, dataset[0])
         print(result)
 
 if __name__ == "__main__":

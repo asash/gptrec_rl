@@ -13,7 +13,7 @@ class TestFilterSeenRecommender(unittest.TestCase):
         constant_recommender = ConstantRecommender(((1, 1),(2, 0.5), (3, 0.4)))
         recommender = FilterSeenRecommender(constant_recommender)
         recommender.add_action(Action(user_id=1, item_id=2, timestamp=1))
-        self.assertEqual(recommender.get_next_items(1, 2), [(1, 1), (3, 0.4)])
+        self.assertEqual(recommender.recommend(1, 2), [(1, 1), (3, 0.4)])
 
     def test_filte_seen_sampled_rankings(self):
         recommender = FilterSeenRecommender(TopRecommender())

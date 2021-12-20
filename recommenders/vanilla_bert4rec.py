@@ -154,7 +154,7 @@ class VanillaBERT4Rec(Recommender):
         with open(predictions_filename) as predictions:
             self.predictions_cache = json.load(predictions)
 
-    def get_next_items(self, user_id, limit, features=None):
+    def recommend(self, user_id, limit, features=None):
         internal_user_id = "user_" + str(self.user_ids.get_id(user_id))
         recs = self.predictions_cache[internal_user_id]
         result = []

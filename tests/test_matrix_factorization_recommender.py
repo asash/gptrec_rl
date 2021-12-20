@@ -15,7 +15,7 @@ class TestMatrixFactorizationRecommender(unittest.TestCase):
             for action in generator_limit(get_movielens20m_actions(), 10000):
                 recommender.add_action(action)
             recommender.rebuild_model()
-            recs = recommender.get_next_items(USER_ID, 10)
+            recs = recommender.recommend(USER_ID, 10)
             print(recs)
 
     def test_recommend_batch(self):

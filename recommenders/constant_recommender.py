@@ -13,7 +13,7 @@ class ConstantRecommender(Recommender):
     def rebuild_model(self):
         pass
 
-    def get_next_items(self, user_id, limit, features=None):
+    def recommend(self, user_id, limit, features=None):
         return self.recommendations[:limit]
 
     def get_similar_items(self, item_id, limit):

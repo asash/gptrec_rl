@@ -40,7 +40,7 @@ class SvdRecommender(Recommender):
         self.user_vectors = self.model.fit_transform(matrix)
         self.mean_user = np.mean(self.user_vectors, axis=0)
 
-    def get_next_items(self, user_id, limit, features=None):
+    def recommend(self, user_id, limit, features=None):
         scores = self.get_all_item_scores(user_id)
         best_ids = np.argsort(scores)[::-1][:limit]
         result = [(self.items.reverse_id(id), scores[id]) for id in best_ids]

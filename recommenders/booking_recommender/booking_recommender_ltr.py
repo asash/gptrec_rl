@@ -173,7 +173,7 @@ class BookingRecommenderLTR(Recommender):
             raise Exception(f"Unsupported Model Type {self.model_type}")
 
 
-    def get_next_items(self, user_id, limit, features=None):
+    def recommend(self, user_id, limit, features=None):
         actions = self.user_actions[self.users.get_id(user_id)]
         items = [action[1] for action in actions]
         return self.get_model_predictions(items, limit, target_action=features)

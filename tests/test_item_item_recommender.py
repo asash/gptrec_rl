@@ -30,9 +30,9 @@ class TestItemItemRecommender(unittest.TestCase):
         for action in generator_limit(get_movielens20m_actions(), 10000):
             recommender.add_action(action)
         recommender.rebuild_model()
-        recs_cold_start = recommender.get_next_items(12341324, 10)
+        recs_cold_start = recommender.recommend(12341324, 10)
         self.compare_recommendations(recs_cold_start, REFERENCE_COLD_START)
-        recs = recommender.get_next_items(USER_ID, 10)
+        recs = recommender.recommend(USER_ID, 10)
         self.compare_recommendations(recs, REFERENCE_USER_RECOMMENDATIONS)
 
         actions =  [Action('1', 1, 1), 
