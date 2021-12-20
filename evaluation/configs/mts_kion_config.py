@@ -28,7 +28,7 @@ DATASET = get_mts_kion_dataset()
 SUBMIT_USER_IDS = get_submission_user_ids()
 USERS = get_users()
 
-GENERATE_SUBMIT_THRESHOLD =  0.173928
+GENERATE_SUBMIT_THRESHOLD =  0.16
 
 def generate_submit(recommender, recommender_name, evaluation_result, config):
     if evaluation_result["MAP@10"] <= config.GENERATE_SUBMIT_THRESHOLD:
@@ -139,7 +139,7 @@ def dnn(model_arch, loss,learning_rate=0.001, last_only=False, user_hasher=None)
                                                           optimizer=Adam(learning_rate),
                                                           early_stop_epochs=100,
                                                           batch_size=128,
-                                                          training_time_limit = 3600,
+                                                          training_time_limit = 3600*2,
                                                           eval_ndcg_at=40,
                                                           target_decay=1.0,
                                                           train_on_last_item_only=last_only,
