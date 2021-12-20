@@ -4,7 +4,6 @@ import time
 import tensorflow.keras.backend as K
 from collections import defaultdict
 
-from aprec.api.user import User
 from aprec.utils.item_id import ItemId
 from aprec.recommenders.metrics.ndcg import KerasNDCG
 from aprec.recommenders.recommender import Recommender
