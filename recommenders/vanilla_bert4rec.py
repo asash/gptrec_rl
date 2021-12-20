@@ -17,15 +17,10 @@ from aprec.utils.item_id import ItemId
 
 
 class VanillaBERT4Rec(Recommender):
-    def __init__(self, max_seq_length, dupe_factor,  masked_lm_prob,
-            max_predictions_per_seq, random_seed,
-            mask_prob, prop_sliding_window,
-            pool_size,
-            bert_config,
-            batch_size,
-            num_warmup_steps,
-            num_train_steps,
-            learning_rate):
+    def __init__(self, max_seq_length, dupe_factor, masked_lm_prob, max_predictions_per_seq, random_seed, mask_prob,
+                 prop_sliding_window, pool_size, bert_config, batch_size, num_warmup_steps, num_train_steps,
+                 learning_rate):
+        super().__init__()
         self.user_actions = defaultdict(list)
         self.user_ids = ItemId()
         self.item_ids = ItemId()
@@ -42,7 +37,7 @@ class VanillaBERT4Rec(Recommender):
         self.learning_rate = learning_rate
         self.num_warmup_steps = num_warmup_steps
         self.num_train_steps = num_train_steps
-        self.predictions_cache = None
+        self.predictions_cache = {}
 
     def add_action(self, action):
         self.user_actions[action.user_id].append(action)
@@ -94,7 +89,7 @@ class VanillaBERT4Rec(Recommender):
             history_file = open(history_filename, "wb")
 
 
-            predictions_filename =  os.path.join(tmpdir, "predictions.json")
+            predictions_filename =  os.path.join(tmpdir, "predictions.csv")
 
             write_instance_to_example_file(train_instances,
                                        self.max_seq_length,
@@ -152,7 +147,14 @@ class VanillaBERT4Rec(Recommender):
             --learning_rate={self.learning_rate} "
         subprocess.check_call(shlex.split(cmd))
         with open(predictions_filename) as predictions:
-            self.predictions_cache = json.load(predictions)
+            for line in predictions:
+                splits = line.strip().split(';')
+                user_id = splits[0]
+                self.predictions_cache[user_id] = []
+                for item_with_score in  splits[1:]:
+                    item, score = item_with_score.split(":")
+                    score = float(score)
+                    self.predictions_cache[user_id].append((item, score))
 
     def recommend(self, user_id, limit, features=None):
         internal_user_id = "user_" + str(self.user_ids.get_id(user_id))
