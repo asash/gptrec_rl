@@ -1,9 +1,10 @@
 from aprec.recommenders.vanilla_bert4rec import VanillaBERT4Rec
 from aprec.evaluation.metrics.mrr import MRR
-from aprec.evaluation.metrics.sps import SPS
-from datasets.bert4rec_datasets import get_bert4rec_dataset
-from recommenders.filter_seen_recommender import FilterSeenRecommender
-from recommenders.top_recommender import TopRecommender
+from aprec.evaluation.metrics.hit import HIT
+from aprec.datasets.bert4rec_datasets import get_bert4rec_dataset
+from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
+from aprec.recommenders.top_recommender import TopRecommender
+from aprec.evaluation.split_actions import LeaveOneOut
 
 DATASET = get_bert4rec_dataset("ml-1m")
 
@@ -71,7 +72,7 @@ RECOMMENDERS = {
 
 MAX_TEST_USERS=943
 
-METRICS = [SPS(1), SPS(5), SPS(10), MRR()]
+METRICS = [HIT(1), HIT(5), HIT(10), MRR()]
 
 
-SPLIT_STRATEGY = "LEAVE_ONE_OUT"
+SPLIT_STRATEGY = LeaveOneOut(MAX_TEST_USERS)

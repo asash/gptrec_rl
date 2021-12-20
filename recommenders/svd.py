@@ -5,7 +5,8 @@ from sklearn.decomposition import TruncatedSVD
 import numpy as np
 
 class SvdRecommender(Recommender):
-    def __init__ (self, num_latent_components, random_seed=None):
+    def __init__(self, num_latent_components, random_seed=None):
+        super().__init__()
         self.latent_components = num_latent_components
         self.users = ItemId()
         self.items = ItemId()
@@ -40,13 +41,32 @@ class SvdRecommender(Recommender):
         self.mean_user = np.mean(self.user_vectors, axis=0)
 
     def get_next_items(self, user_id, limit, features=None):
+        scores = self.get_all_item_scores(user_id)
+        best_ids = np.argsort(scores)[::-1][:limit]
+        result = [(self.items.reverse_id(id), scores[id]) for id in best_ids]
+        return result
+
+    def get_item_rankings(self):
+        result = {}
+        for request in self.items_ranking_requests:
+            user_result = []
+            scores = self.get_all_item_scores(request.user_id)
+            for item_id in request.item_ids:
+                internal_id = self.items.get_id(item_id)
+                item_score = scores[internal_id]
+                user_result.append((item_id, item_score))
+            user_result.sort(key=lambda x: -x[1])
+            result[request.user_id] = user_result
+        return result
+
+
+    def get_all_item_scores(self, user_id):
         user_vec = self.mean_user
         if self.users.has_item(user_id):
             user_vec = self.user_vectors[self.users.get_id(user_id)]
         scores = self.model.inverse_transform([user_vec])[0] + self.biases
-        best_ids = np.argsort(scores)[::-1][:limit]
-        result = [(self.items.reverse_id(id), scores[id]) for id in best_ids]
-        return result
+        return scores
+
 
     def get_similar_items(self, item_id, limit):
         raise(NotImplementedError)

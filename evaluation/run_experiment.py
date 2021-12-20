@@ -1,19 +1,12 @@
 import os
-import random
 import sys
 import importlib.util
 import json
-import copy 
 import mmh3
-import gzip
 
 from aprec.utils.os_utils import shell
+from aprec.evaluation.evaluate_recommender import RecommendersEvaluator
 
-from split_actions import split_actions, leave_one_out, random_split
-from evaluate_recommender import evaluate_recommender
-from filter_cold_start import filter_cold_start
-from tqdm import tqdm
-import time
 import tensorflow as tf
 
 
@@ -34,82 +27,6 @@ def config():
 
     return config
 
-
-class RecommendersEvaluator(object):
-    def __init__(self, actions, recommenders, metrics, out_dir, data_splitter,
-                 n_val_users, recommendations_limit, callbacks=(),
-                 users=None
-                 ):
-        self.actions = actions
-        self.metrics = metrics
-        self.recommenders = recommenders
-        self.data_splitter = data_splitter
-        self.callbacks = callbacks
-        self.out_dir = out_dir
-        self.features_from_test = None
-        self.n_val_users = n_val_users
-        self.train, self.test = self.data_splitter(actions)
-        self.save_split(self.train, self.test)
-        self.test = filter_cold_start(self.train, self.test)
-        self.users = users
-        all_train_user_ids = list(set([action.user_id for action in self.train]))
-        self.recommendations_limit = recommendations_limit
-        random.shuffle(all_train_user_ids)
-        self.val_user_ids = all_train_user_ids[:self.n_val_users]
-
-    def set_features_from_test(self, features_from_test):
-        self.features_from_test = features_from_test
-
-    def __call__(self):
-        result = {"recommenders": {}}
-
-        for recommender_name in self.recommenders:
-            sys.stdout.write("!!!!!!!!!   ")
-            print("evaluating {}".format(recommender_name))
-            recommender = self.recommenders[recommender_name]()
-            print("adding train actions...")
-            for action in tqdm(self.train, ascii=True):
-                recommender.add_action(action)
-            recommender.set_val_users(self.val_user_ids)
-            print("rebuilding model...")
-
-            if self.users is not None:
-                print("adding_users")
-                for user in self.users:
-                    recommender.add_user(user)
-
-            build_time_start = time.time()
-            recommender.rebuild_model()
-            build_time_end = time.time()
-            print("done")
-
-            print("calculating metrics...")
-            evaluate_time_start = time.time()
-            evaluation_result = evaluate_recommender(recommender, self.test,
-                                                     self.metrics, self.out_dir,
-                                                     recommender_name, self.features_from_test, 
-                                                     recommendations_limit=self.recommendations_limit)
-            evaluate_time_end = time.time()
-            print("calculating metrics...")
-            evaluation_result['model_build_time'] =  build_time_end - build_time_start
-            evaluation_result['model_inference_time'] =  evaluate_time_end - evaluate_time_start
-            evaluation_result['model_metadata'] = copy.deepcopy(recommender.get_metadata())
-            print("done")
-            print(json.dumps(evaluation_result))
-            result['recommenders'][recommender_name] = evaluation_result
-            for callback in self.callbacks:
-                callback(recommender, recommender_name, evaluation_result, config)
-            del(recommender)
-        return result
-
-    def save_split(self, train, test):
-        self.save_actions(train, "train.json.gz")
-        self.save_actions(test, "test.json.gz")
-
-    def save_actions(self, actions, filename):
-        with gzip.open(os.path.join(self.out_dir, filename), 'w') as output:
-            for action in actions:
-                output.write(action.to_json().encode('utf-8') + b"\n")
 
 def real_hash(obj):
     str_val = str(obj)
@@ -154,17 +71,23 @@ def run_experiment(config):
         print("number of val_users: {}".format(n_val_users))
         print("evaluating...")
 
-        data_splitter = get_data_splitter(config)
+        data_splitter = config.SPLIT_STRATEGY
+        n_sampled_ranking = None
+        if hasattr(config, "SAMPLED_METRICS_ON"):
+            n_sampled_ranking = config.SAMPLED_METRICS_ON
 
         recommender_evaluator = RecommendersEvaluator(actions,
-                                     config.RECOMMENDERS,
-                                     config.METRICS,
-                                     config.out_dir,
-                                     data_splitter,
-                                     n_val_users,
-                                     recommendations_limit,
-                                     callbacks,
-                                     users=users)
+                                                      config.RECOMMENDERS,
+                                                      config.METRICS,
+                                                      config.out_dir,
+                                                      data_splitter,
+                                                      n_val_users,
+                                                      recommendations_limit,
+                                                      callbacks,
+                                                      users=users,
+                                                      experiment_config=config,
+                                                      n_sampled_ranking=n_sampled_ranking
+                                                      )
 
         if  hasattr(config, 'FEATURES_FROM_TEST'):
             recommender_evaluator.set_features_from_test(config.FEATURES_FROM_TEST)

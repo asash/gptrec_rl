@@ -7,7 +7,11 @@ from aprec.recommenders.item_item import ItemItemRecommender
 from aprec.evaluation.metrics.precision import Precision
 from aprec.evaluation.metrics.recall import Recall
 from aprec.evaluation.metrics.ndcg import NDCG
-from aprec.evaluation.metrics.sps import SPS
+from aprec.evaluation.metrics.hit import HIT
+from aprec.evaluation.split_actions import random_split
+from aprec.evaluation.split_actions import LeaveOneOut
+
+
 
 
 DATASET = get_movielens20m_actions(min_rating=3.5)
@@ -47,7 +51,8 @@ RECOMMENDERS = {
     "constant_recommender": constant_recommender,
 }
 
-FRACTIONS_TO_SPLIT = (0.75, )
-METRICS = [Precision(5), NDCG(40), Recall(5), SPS(10)]
+METRICS = [Precision(5), NDCG(40), Recall(5), HIT(10)]
+
+SPLIT_STRATEGY = lambda actions: random_split(actions),
 
 

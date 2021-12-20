@@ -16,13 +16,14 @@ from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.evaluation.metrics.mrr import MRR
 from aprec.evaluation.metrics.map import MAP
 from tensorflow.keras.optimizers import Adam
-from aprec.evaluation.metrics.sps import SPS
+from aprec.evaluation.metrics.hit import HIT
 from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
 from aprec.recommenders.deep_mf import DeepMFRecommender
 from aprec.losses.bce import BCELoss
 from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
 from aprec.recommenders.dnn_sequential_recommender.models.caser import Caser
 from aprec.recommenders.dnn_sequential_recommender.user_featurizers.hashing_featurizer import HashingUserFeaturizer
+from aprec.evaluation.split_actions import LeaveOneOut
 
 DATASET = get_mts_kion_dataset()
 SUBMIT_USER_IDS = get_submission_user_ids()
@@ -175,7 +176,7 @@ print(f"evaluating {len(RECOMMENDERS)} models")
 N_VAL_USERS=256
 MAX_TEST_USERS=4096
 
-METRICS = [MAP(10), NDCG(10),  NDCG(2), NDCG(5), NDCG(20), NDCG(40), Precision(10), Recall(10), SPS(1), SPS(10), MRR()]
+METRICS = [MAP(10), NDCG(10), NDCG(2), NDCG(5), NDCG(20), NDCG(40), Precision(10), Recall(10), HIT(1), HIT(10), MRR()]
 
 
-SPLIT_STRATEGY = "LEAVE_ONE_OUT"
+SPLIT_STRATEGY = LeaveOneOut(MAX_TEST_USERS)

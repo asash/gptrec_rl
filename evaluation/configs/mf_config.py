@@ -5,9 +5,10 @@ from aprec.recommenders.lightfm import LightFMRecommender
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.recommenders.matrix_factorization import MatrixFactorizationRecommender
 from aprec.evaluation.metrics.mrr import MRR
-from aprec.evaluation.metrics.sps import SPS
+from aprec.evaluation.metrics.hit import HIT
 from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.evaluation.metrics.sampled_proxy_metric import SampledProxy
+from aprec.evaluation.split_actions import LeaveOneOut
 import numpy as np
 
 
@@ -58,9 +59,9 @@ MAX_TEST_USERS=6040
 all_item_ids, probs = SampledProxy.all_item_ids_probs(DATASET)
 
 METRICS = [SampledProxy(all_item_ids, probs, 100, metric) for metric in
-                [SPS(1), SPS(5), SPS(10), NDCG(5), NDCG(10), MRR(),]]
+           [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), ]]
 
 
 RECOMMENDATIONS_LIMIT = 100
-SPLIT_STRATEGY = "LEAVE_ONE_OUT"
+SPLIT_STRATEGY = LeaveOneOut(MAX_TEST_USERS)
 

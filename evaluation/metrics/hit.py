@@ -1,12 +1,12 @@
 from .metric import Metric
 
-class SPS(Metric):
+class HIT(Metric):
     """
         Short-Term Prediction Success
         Equals 1 if recommender system was able to predict next item in sequence, 0 otherwise.  
     """
     def __init__(self, k):
-        self.name = "SPS@{}".format(k)
+        self.name = "HIT@{}".format(k)
         self.k = k
         
     def __call__(self, recommendations, actual_actions):

@@ -1,8 +1,11 @@
-from .recommender import Recommender
+from aprec.api.items_ranking_request import ItemsRankingRequest
+from aprec.recommenders.recommender import Recommender
 from collections import defaultdict
 
+INF = float('inf')
 class FilterSeenRecommender(Recommender):
     def __init__(self, recommender):
+        super().__init__()
         self.recommender = recommender
         self.user_seen = defaultdict(set)
 
@@ -15,6 +18,10 @@ class FilterSeenRecommender(Recommender):
     def add_action(self, action):
         self.user_seen[action.user_id].add(action.item_id) 
         self.recommender.add_action(action)
+
+    def add_test_items_ranking_request(self, request: ItemsRankingRequest):
+        self.recommender.add_test_items_ranking_request(request)
+
 
     def rebuild_model(self):
         self.recommender.rebuild_model()
@@ -43,6 +50,21 @@ class FilterSeenRecommender(Recommender):
         metadata = self.recommender.get_metadata()
         metadata['proxy_model'] = 'filter_seen_recommender'
         return metadata
+
+    def get_item_rankings(self):
+        base_rankings = self.recommender.get_item_rankings()
+        result = {}
+        for user_id in base_rankings:
+            request_result = []
+            for item, score in base_rankings[user_id]:
+                if item in self.user_seen[user_id]:
+                    request_result.append((item, -INF))
+                else:
+                    request_result.append((item, score))
+            request_result.sort(key = lambda x: -x[1])
+            result[user_id] = request_result
+        return result
+
 
     def set_val_users(self, val_users):
         self.recommender.set_val_users(val_users)

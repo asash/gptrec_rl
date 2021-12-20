@@ -6,7 +6,8 @@ import numpy as np
 
 
 class LightFMRecommender(Recommender):
-    def __init__(self, num_latent_components, random_seed=None, loss='bpr', n_epochs=20):
+    def __init__(self, num_latent_components, random_seed=None, loss='bpr', n_epochs=20, num_threads=4):
+        super().__init__()
         self.latent_components = num_latent_components
         self.users = ItemId()
         self.items = ItemId()
@@ -14,6 +15,7 @@ class LightFMRecommender(Recommender):
         self.cols = []
         self.vals = []
         self.model = None
+        self.num_threads = num_threads
         self.loss=loss
         self.n_epochs = n_epochs
 
@@ -30,7 +32,7 @@ class LightFMRecommender(Recommender):
     def rebuild_model(self):
         matrix_original = csr_matrix((self.vals, (self.rows, self.cols)))
         self.model = LightFM(no_components=self.latent_components, loss=self.loss)
-        self.model.fit_partial(matrix_original, epochs=self.n_epochs, verbose=True)
+        self.model.fit(matrix_original, epochs=self.n_epochs, verbose=True, num_threads=self.num_threads)
 
     def get_next_items(self, user_id_external, limit, features=None):
         if not(self.users.has_item(user_id_external)):
@@ -41,6 +43,20 @@ class LightFMRecommender(Recommender):
         best_ids = np.argpartition(scores, -limit)[-limit:]
         result = [(self.items.reverse_id(id), scores[id]) for id in best_ids]
         result.sort(key=lambda x: -x[1])
+        return result
+
+
+    def get_item_rankings(self):
+        result = {}
+        for request in self.items_ranking_requests:
+            user_result = []
+            user_id = self.users.get_id(request.user_id)
+            items_ids = [self.items.get_id(item_id) for item_id in request.item_ids]
+            scores = self.model.predict(user_id, items_ids)
+            for item_id, item_score in zip(request.item_ids, scores):
+                user_result.append((item_id, item_score))
+            user_result.sort(key=lambda x: -x[1])
+            result[request.user_id] = user_result
         return result
 
     def get_similar_items(self, item_id, limit):

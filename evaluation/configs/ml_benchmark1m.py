@@ -11,10 +11,12 @@ from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.evaluation.metrics.mrr import MRR
 from aprec.evaluation.metrics.map import MAP
 from tensorflow.keras.optimizers import Adam
-from aprec.evaluation.metrics.sps import SPS
+from aprec.evaluation.metrics.hit import HIT
 from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
 from aprec.losses.bce import BCELoss
 from aprec.recommenders.dnn_sequential_recommender.models.caser import Caser
+from aprec.evaluation.split_actions import LeaveOneOut
+
 
 DATASET = get_bert4rec_dataset("ml-1m")
 
@@ -62,7 +64,7 @@ print(f"evaluating {len(RECOMMENDERS)} models")
 N_VAL_USERS=256
 MAX_TEST_USERS=1024
 
-METRICS = [NDCG(10),  NDCG(2), NDCG(5), NDCG(20), NDCG(40), Precision(10), Recall(10), SPS(1), SPS(10), MRR(), MAP(10)]
+METRICS = [NDCG(10), NDCG(2), NDCG(5), NDCG(20), NDCG(40), Precision(10), Recall(10), HIT(1), HIT(10), MRR(), MAP(10)]
 
 
-SPLIT_STRATEGY = "LEAVE_ONE_OUT"
+SPLIT_STRATEGY = LeaveOneOut(MAX_TEST_USERS)

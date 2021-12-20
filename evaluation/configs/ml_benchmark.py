@@ -13,7 +13,8 @@ from aprec.evaluation.metrics.map import MAP
 from tensorflow.keras.optimizers import Adam
 from aprec.evaluation.metrics.average_popularity_rank import AveragePopularityRank
 from aprec.evaluation.metrics.pairwise_cos_sim import PairwiseCosSim
-from aprec.evaluation.metrics.sps import SPS
+from aprec.evaluation.metrics.hit import HIT
+from aprec.evaluation.split_actions import LeaveOneOut
 
 DATASET = get_movielens100k_actions(min_rating=1.0)
 
@@ -112,9 +113,9 @@ N_VAL_USERS=64
 MAX_TEST_USERS=943
 
 dataset_for_metric = [action for action in get_movielens100k_actions(min_rating=1.0)]
-METRICS = [NDCG(10), Precision(5), NDCG(40), Recall(5), SPS(10), MRR(), MAP(10), AveragePopularityRank(10, dataset_for_metric),
+METRICS = [NDCG(10), Precision(5), NDCG(40), Recall(5), HIT(10), MRR(), MAP(10), AveragePopularityRank(10, dataset_for_metric),
            PairwiseCosSim(dataset_for_metric, 10)]
 del(dataset_for_metric)
 
 
-SPLIT_STRATEGY = "LEAVE_ONE_OUT"
+SPLIT_STRATEGY = LeaveOneOut(MAX_TEST_USERS)

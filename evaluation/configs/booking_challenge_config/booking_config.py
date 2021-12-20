@@ -11,8 +11,10 @@ from aprec.evaluation.metrics.precision import Precision
 from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.recommenders.booking_recommender.booking_recommender import BookingRecommender
 from tensorflow.keras.optimizers import Adam
-from aprec.evaluation.metrics.sps import SPS
+from aprec.evaluation.metrics.hit import HIT
 from aprec.datasets.booking import get_booking_dataset
+from aprec.evaluation.split_actions import LeaveOneOut
+
 from tqdm import tqdm
 
 
@@ -82,6 +84,6 @@ RECOMMENDERS = {
     "APREC-GMLPHE-Lambdarank-256-0.5": lambda: mlp_historical_embedding('lambdarank', 'linear', 256, target_decay=0.5),
 }
 
-SPLIT_STRATEGY = "LEAVE_ONE_OUT"
+SPLIT_STRATEGY = LeaveOneOut()
 USERS_FRACTIONS = [1.0]
-METRICS = [Precision(4), SPS(4), NDCG(4), NDCG(40)]
+METRICS = [Precision(4), HIT(4), NDCG(4), NDCG(40)]

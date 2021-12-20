@@ -105,6 +105,24 @@ if __name__ == "__main__":
         del df['metrics_history']
     except:
         pass
-    print(df)
 
+
+    if 'sampled_metrics' in df.columns:
+        sampled_metrics_raw = list(df['sampled_metrics'])
+        sampled_metrics = []
+        for metrics in sampled_metrics_raw:
+            if type(metrics) == dict:
+                sampled_metrics.append(metrics)
+            else:
+                sampled_metrics.append(dict())
+
+        del(df['sampled_metrics'])
+        sampled_metrics_df = pd.DataFrame(sampled_metrics, index=df.index).sort_values(main_metric)
+        print("sampled metrics: ")
+        print(sampled_metrics_df)
+        print("\n\n\n")
+
+
+    print("unsampled metrics:")
+    print(df)
 

@@ -1,5 +1,6 @@
 from collections import defaultdict
 import numpy as np
+import mmh3
 
 def split_actions(actions, fractions):
     """split actions into n lists by timestamp in chronological order"""
@@ -38,24 +39,31 @@ def get_single_action_users(users):
             result.add(user)
     return result
 
-def leave_one_out(actions, max_test_users=4000):
-    sorted_actions = sorted(actions, key=lambda x: x.timestamp)
-    users = defaultdict(list)
-    for action in sorted_actions:
-        users[action.user_id].append(action)
-    train = []
-    test = []
-    control_users = get_control_users(actions)
-    single_action_users = get_single_action_users(users)
-    valid_user_selection = users.keys() - control_users - single_action_users
-    test_user_ids = set(np.random.choice(list(valid_user_selection), max_test_users, replace=False))
-    for user_id in users:
-        if user_id in test_user_ids:
-            train += users[user_id][:-1]
-            test.append(users[user_id][-1])
-        else:
-            train += users[user_id]
-    return sorted(train, key=lambda x: x.timestamp), sorted(test, key=lambda x: x.timestamp)
+class LeaveOneOut():
+    def __init__(self, max_test_users=4096, random_seed = 31337):
+        self.max_test_users=max_test_users
+        self.random_seed = random_seed
+
+    def __call__(self, actions):
+        sorted_actions = sorted(actions, key=lambda x: x.timestamp)
+        users = defaultdict(list)
+        for action in sorted_actions:
+            users[action.user_id].append(action)
+        train = []
+        test = []
+        control_users = get_control_users(actions)
+        single_action_users = get_single_action_users(users)
+        valid_user_selection = list(users.keys() - control_users - single_action_users)
+        valid_user_selection.sort()
+        np.random.seed(self.random_seed)
+        test_user_ids = set(np.random.choice(valid_user_selection, self.max_test_users, replace=False))
+        for user_id in users:
+            if user_id in test_user_ids:
+                train += users[user_id][:-1]
+                test.append(users[user_id][-1])
+            else:
+                train += users[user_id]
+        return sorted(train, key=lambda x: x.timestamp), sorted(test, key=lambda x: x.timestamp)
 
 def random_split(actions, test_fraction = 0.3, max_test_users=4000):
     sorted_actions = sorted(actions, key=lambda x: x.timestamp)

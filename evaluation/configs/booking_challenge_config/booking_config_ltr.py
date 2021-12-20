@@ -4,8 +4,13 @@ import os
 from aprec.evaluation.metrics.precision import Precision
 from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.recommenders.booking_recommender.booking_recommender_ltr import BookingRecommenderLTR
-from aprec.evaluation.metrics.sps import SPS
+from aprec.evaluation.metrics.hit import HIT
 from aprec.datasets.booking import get_booking_dataset
+from aprec.evaluation.split_actions import LeaveOneOut
+
+
+
+
 from tqdm import tqdm
 
 
@@ -55,6 +60,6 @@ for boosting_type in ('rf', 'gbdt', 'dart'):
         RECOMMENDERS[f"Lightgbm-{boosting_type}-{objective}"] = lambda boosting_type=boosting_type, objective=objective: LTR('lightgbm', False,
                                                              lgbm_boosting_type=boosting_type, lgbm_objecitve=objective)
 
-SPLIT_STRATEGY = "LEAVE_ONE_OUT"
+SPLIT_STRATEGY = LeaveOneOut()
 USERS_FRACTIONS = [1.0]
-METRICS = [Precision(4), SPS(4), NDCG(4), NDCG(40)]
+METRICS = [Precision(4), HIT(4), NDCG(4), NDCG(40)]

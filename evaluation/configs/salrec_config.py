@@ -11,8 +11,9 @@ from aprec.evaluation.metrics.recall import Recall
 from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.evaluation.metrics.mrr import MRR
 from aprec.evaluation.metrics.map import MAP
-from aprec.evaluation.metrics.sps import SPS
+from aprec.evaluation.metrics.hit import HIT
 from tensorflow.keras.optimizers import Adam
+from aprec.evaluation.split_actions import random_split
 import numpy as np
 
 
@@ -94,9 +95,9 @@ TEST_FRACTION = 0.25
 MAX_TEST_USERS=943
 N_VAL_USERS=64
 
-METRICS = [NDCG(40), Precision(5), Recall(5), SPS(10), MRR(), MAP(10)]
+METRICS = [NDCG(40), Precision(5), Recall(5), HIT(10), MRR(), MAP(10)]
 
 
 RECOMMENDATIONS_LIMIT = 100
-SPLIT_STRATEGY = "RANDOM_SPLIT"
+SPLIT_STRATEGY = lambda actions: random_split(actions),
 
