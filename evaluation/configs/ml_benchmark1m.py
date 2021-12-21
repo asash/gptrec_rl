@@ -12,7 +12,7 @@ from aprec.recommenders.dnn_sequential_recommender.models.caser import Caser
 from aprec.recommenders.dnn_sequential_recommender.models.gru4rec import GRU4Rec
 from aprec.evaluation.split_actions import LeaveOneOut
 from aprec.recommenders.lightfm import LightFMRecommender
-from recommenders.vanilla_bert4rec import VanillaBERT4Rec
+from aprec.recommenders.vanilla_bert4rec import VanillaBERT4Rec
 
 DATASET = get_bert4rec_dataset("ml-1m")
 
