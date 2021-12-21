@@ -12,7 +12,7 @@ USERS_FRACTIONS = [1]
 
 
 def vanilla_bert4rec(num_steps):
-    recommender = VanillaBERT4Rec()
+    recommender = VanillaBERT4Rec(num_train_steps=num_steps)
     return FilterSeenRecommender(recommender)
 
 def top_recommender():
