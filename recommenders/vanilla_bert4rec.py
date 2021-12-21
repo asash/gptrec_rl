@@ -72,12 +72,18 @@ class VanillaBERT4Rec(Recommender):
                                               self.max_predictions_per_seq, self.rng, vocab, self.mask_prob,
                                               -1, self.pool_size, True)
 
+
         with tempfile.TemporaryDirectory() as tmpdir:
             train_instances_filename = os.path.join(tmpdir, "train_instances.tfrecords")
             train_instances_file = open(train_instances_filename, "wb")
 
             pred_instances_filename = os.path.join(tmpdir, "pred_instances.tfrecords")
             pred_instances_file = open(pred_instances_filename, "wb")
+
+
+            sampled_instances_filename = os.path.join(tmpdir, "sampled_instances.csv")
+            self.write_sampled_instances(sampled_instances_filename)
+
 
             bert_config_filename = os.path.join(tmpdir, "bert_config_file.json")
             bert_config_file = open(bert_config_filename, "wb")
@@ -90,6 +96,7 @@ class VanillaBERT4Rec(Recommender):
 
 
             predictions_filename =  os.path.join(tmpdir, "predictions.csv")
+            sampled_predictions_filename = os.path.join(tmpdir, "sampled_predictions")
 
             write_instance_to_example_file(train_instances,
                                        self.max_seq_length,
@@ -110,8 +117,9 @@ class VanillaBERT4Rec(Recommender):
                                    history_filename,
                                    bert_config_filename,
                                    predictions_filename,
+                                   sampled_instances_filename,
+                                   sampled_predictions_filename,
                                    tmpdir)
-            pass
 
     def get_bert4rec_doc(self, user):
         user_id = self.user_ids.get_id(user)
@@ -124,6 +132,8 @@ class VanillaBERT4Rec(Recommender):
                           vocab_filename, user_history_filename,
                           bert_config_filename,
                           predictions_filename,
+                          sampled_instances_filename,
+                          sampled_predictions_file,
                           tmpdir):
 
         bert4rec_dir = os.path.dirname(BERT4rec.__file__)
@@ -145,21 +155,31 @@ class VanillaBERT4Rec(Recommender):
             --num_train_steps={self.num_train_steps} \
             --num_warmup_steps={self.num_warmup_steps} \
             --save_predictions_file={predictions_filename} \
+            --sampled_instances_file={sampled_instances_filename} \
+            --save_sampled_predictions_file={sampled_predictions_file}\
             --learning_rate={self.learning_rate} "
 
         if self.training_time_limit is not None:
-            cmd += f" --training-time-limit={self.training_time_limit}"
+            cmd += f" --training_time_limit={self.training_time_limit}"
 
         subprocess.check_call(shlex.split(cmd))
+        self.predictions_cache = self.read_predictions_cache(predictions_filename)
+        self.sampled_items_ranking_predictions_cache = self.read_predictions_cache(sampled_predictions_file)
+        pass
+
+
+    def read_predictions_cache(self, predictions_filename):
+        result = {}
         with open(predictions_filename) as predictions:
             for line in predictions:
                 splits = line.strip().split(';')
                 user_id = splits[0]
-                self.predictions_cache[user_id] = []
-                for item_with_score in  splits[1:]:
+                result[user_id] = []
+                for item_with_score in splits[1:]:
                     item, score = item_with_score.split(":")
                     score = float(score)
-                    self.predictions_cache[user_id].append((item, score))
+                    result[user_id].append((item, score))
+        return result
 
     def recommend(self, user_id, limit, features=None):
         internal_user_id = "user_" + str(self.user_ids.get_id(user_id))
@@ -171,4 +191,27 @@ class VanillaBERT4Rec(Recommender):
             item_id = self.item_ids.reverse_id(int(internal_item_id.split("_")[1]))
             result.append((item_id, score))
         return result
+
+    def write_sampled_instances(self, sampled_instances_filename):
+        sampled_instances_file = open(sampled_instances_filename, "w")
+        for request in self.items_ranking_requests:
+            user_id = "user_{}".format(self.user_ids.get_id(request.user_id))
+            item_ids = [f"item_{self.item_ids.get_id(item)}" for item in request.item_ids]
+            sampled_instances_file.write(";".join([user_id] + item_ids) + "\n")
+        sampled_instances_file.close()
+
+
+    def get_item_rankings(self):
+        result = {}
+        for request in self.items_ranking_requests:
+            internal_id = "user_{}".format(self.user_ids.get_id(request.user_id))
+            predictions = self.sampled_items_ranking_predictions_cache[internal_id]
+            user_result = []
+            for item, score in predictions:
+                item_id = int(item.split("_")[1])
+                external_item_id = self.item_ids.reverse_id(item_id)
+                user_result.append((external_item_id, score))
+            result[request.user_id] = user_result
+        return result
+
 
