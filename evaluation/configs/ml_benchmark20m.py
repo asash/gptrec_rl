@@ -51,7 +51,7 @@ def vanilla_bert4rec(time_limit):
     return FilterSeenRecommender(recommender)
 
 recommenders_raw = {
-    "BERT4rec-1h": vanilla_bert4rec(3600),
+    "BERT4rec-1h": lambda vanilla_bert4rec(3600),
     "svd_recommender": lambda: svd_recommender(128), 
     "top_recommender": top_recommender, 
     "lightfm_recommender": lambda: lightfm_recommender(128, 'bpr'), 
@@ -71,7 +71,7 @@ recommenders_raw = {
     "GRU4Rec-Lambdarank-Truncated:2500-bce-weight:0.975": lambda: dnn(GRU4Rec(), LambdaGammaRankLoss(
                                                                                         pred_truncate_at=2500,
                                                                                         bce_grad_weight=0.975)),
-    "BERT4rec-8h": vanilla_bert4rec(4*3600)
+    "BERT4rec-8h": lambda: vanilla_bert4rec(4*3600)
 }
 
 
