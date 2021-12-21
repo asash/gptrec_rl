@@ -16,9 +16,31 @@ from aprec.utils.item_id import ItemId
 
 
 class VanillaBERT4Rec(Recommender):
-    def __init__(self, max_seq_length, dupe_factor, masked_lm_prob, max_predictions_per_seq, random_seed, mask_prob,
-                 prop_sliding_window, pool_size, bert_config, batch_size, num_warmup_steps, num_train_steps,
-                 learning_rate, training_time_limit=None):
+    def __init__(self,
+                 max_seq_length = 50,
+                 masked_lm_prob = 0.2,
+                 max_predictions_per_seq = 20,
+                 batch_size = 256,
+                 num_train_steps = 400000,
+                 prop_sliding_window = 0.5,
+                 mask_prob = 1.0,
+                 dupe_factor = 10,
+                 pool_size = 10,
+                 num_warmup_steps = 100,
+                 learning_rate = 1e-4,
+                 random_seed = 31337,
+                 training_time_limit=None,
+
+                 attention_probs_dropout_prob = 0.2,
+                 hidden_act = "gelu",
+                 hidden_dropout_prob = 0.2,
+                 hidden_size = 64,
+                 initializer_range = 0.02,
+                 intermediate_size = 256,
+                 max_position_embeddings = 200,
+                 num_attention_heads = 2,
+                 num_hidden_layers = 2,
+                 type_vocab_size = 2):
         super().__init__()
         self.user_actions = defaultdict(list)
         self.user_ids = ItemId()
@@ -31,13 +53,26 @@ class VanillaBERT4Rec(Recommender):
         self.mask_prob = mask_prob
         self.prop_sliding_window = prop_sliding_window
         self.pool_size = pool_size
-        self.bert_config = bert_config
         self.batch_size = batch_size
         self.learning_rate = learning_rate
         self.num_warmup_steps = num_warmup_steps
         self.num_train_steps = num_train_steps
         self.training_time_limit = training_time_limit
         self.predictions_cache = {}
+
+        bert_config = {
+            "attention_probs_dropout_prob": attention_probs_dropout_prob,
+            "hidden_act": hidden_act,
+            "hidden_dropout_prob": hidden_dropout_prob,
+            "hidden_size": hidden_size,
+            "initializer_range": initializer_range,
+            "intermediate_size": intermediate_size,
+            "max_position_embeddings": max_position_embeddings,
+            "num_attention_heads": num_attention_heads,
+            "num_hidden_layers": num_hidden_layers,
+            "type_vocab_size": type_vocab_size,
+        }
+        self.bert_config = bert_config
 
     def add_action(self, action):
         self.user_actions[action.user_id].append(action)
