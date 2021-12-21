@@ -11,10 +11,5 @@ class TestBert4recDatasets(unittest.TestCase):
             dataset = get_bert4rec_dataset(dataset_name)
             print(json.dumps(dataset_stats(dataset), indent=4))
 
-
-
-
-
-
 if __name__ == "__main__":
     unittest.main()

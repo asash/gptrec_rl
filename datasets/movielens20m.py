@@ -1,12 +1,11 @@
 import os
-
-import requests
 import logging
 
 from aprec.utils.os_utils import mkdir_p_local, get_dir, console_logging, shell
 from aprec.api.action import Action
 from aprec.api.item import Item
 from aprec.api.catalog import Catalog
+from aprec.datasets.download_file import download_file
 
 DATASET_NAME = 'ml-20m'
 MOVIELENS_URL = "http://files.grouplens.org/datasets/movielens/{}.zip".format(DATASET_NAME)
@@ -16,18 +15,6 @@ MOVIELENS_FILE_ABSPATH = os.path.join(get_dir(), MOVIELENS_DIR, MOVIELENS_FILE)
 MOVIELENS_DIR_ABSPATH = os.path.join(get_dir(), MOVIELENS_DIR)
 RATINGS_FILE = os.path.join(MOVIELENS_DIR_ABSPATH, 'ratings.csv')
 MOVIES_FILE = os.path.join(MOVIELENS_DIR_ABSPATH, 'movies.csv')
-
-
-def download_movielens_dataset():
-    mkdir_p_local(MOVIELENS_DIR)
-    if os.path.isfile(MOVIELENS_FILE_ABSPATH):
-        logging.info("movielens_dataset already exists, skipping")
-        return
-    logging.info("downloading movielens dataset...")
-    response = requests.get(MOVIELENS_URL)
-    with open(MOVIELENS_FILE_ABSPATH, 'wb') as out_file:
-        out_file.write(response.content)
-    logging.info("movielens dataset downloaded")
 
 
 def extract_movielens_dataset():
@@ -42,7 +29,7 @@ def extract_movielens_dataset():
 
 
 def prepare_data():
-    download_movielens_dataset()
+    download_file(MOVIELENS_URL, MOVIELENS_FILE, MOVIELENS_DIR)
     extract_movielens_dataset()
 
 

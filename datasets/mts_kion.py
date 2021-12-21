@@ -1,13 +1,10 @@
 import datetime
-import logging
-import os
 import time
 
-import requests
 
 from aprec.api.user import User
 from aprec.api.action import Action
-from aprec.utils.os_utils import mkdir_p_local, get_dir
+from aprec.datasets.download_file import download_file
 
 MTS_KION_DIR = "data/mts_kion"
 
@@ -24,19 +21,6 @@ MTS_KION_USERS_FILE = "users.csv"
 MTS_KION_SAMPLE_SUBMISSION_URL = "https://storage.yandexcloud.net/datasouls-ods/materials/faa61a41/sample_submission.csv"
 MTS_KION_SAMPLE_SUBMISSION_FILE = "sample_submission.txt"
 
-def download_mts_file(url, filename):
-    mkdir_p_local(MTS_KION_DIR)
-    full_filename = os.path.join(get_dir(), MTS_KION_DIR, filename) 
-    if not os.path.isfile(full_filename):
-        logging.info(f"downloading  {filename} file")
-        response = requests.get(url)
-        with open(full_filename, 'wb') as out_file:
-            out_file.write(response.content)
-        logging.info(f"{filename} dataset downloaded")
-        full_name = get_dir()
-    else:
-        logging.info(f"booking {filename} file already exists, skipping")
-    return full_filename 
 
 def get_actions(actions_file, max_actions=None):
     actions = []
@@ -54,10 +38,11 @@ def get_actions(actions_file, max_actions=None):
 
 
 def get_submission_user_ids():
-    sample_submission_file = download_mts_file(MTS_KION_SAMPLE_SUBMISSION_URL, MTS_KION_SAMPLE_SUBMISSION_FILE)
+    sample_submission_file = download_file(MTS_KION_SAMPLE_SUBMISSION_URL,
+                                           MTS_KION_SAMPLE_SUBMISSION_FILE, MTS_KION_DIR)
     result = []
     with open(sample_submission_file) as input:
-        line = input.readline()
+        input.readline()
         line = input.readline()
         while(len(line) > 0):
             user_id = line.split(",")[0]
@@ -67,10 +52,10 @@ def get_submission_user_ids():
 
 
 def get_users():
-    users_file = download_mts_file(MTS_KION_USERS_URL, MTS_KION_USERS_FILE)
+    users_file = download_file(MTS_KION_USERS_URL, MTS_KION_USERS_FILE, MTS_KION_DIR)
     result = []
     with open(users_file) as input:
-        header = input.readline()
+        input.readline()
         line = input.readline()
         while (len(line) > 0):
             user_id,age,income,sex,kids_flg = line.strip().split(",")
@@ -81,10 +66,7 @@ def get_users():
 
 
 def get_mts_kion_dataset(max_actions=None):
-    interactions_file = download_mts_file(MTS_KION_INTERACTIONS_URL, MTS_KION_INTERACTIONS_FILE)
-    users_file = download_mts_file(MTS_KION_USERS_URL, MTS_KION_USERS_FILE)
-    items_file = download_mts_file(MTS_KION_ITEMS_URL, MTS_KION_ITEMS_FILE)
-    sample_submission_file = download_mts_file(MTS_KION_SAMPLE_SUBMISSION_URL, MTS_KION_SAMPLE_SUBMISSION_FILE)
+    interactions_file = download_file(MTS_KION_INTERACTIONS_URL, MTS_KION_INTERACTIONS_FILE, MTS_KION_DIR)
     actions = get_actions(interactions_file, max_actions)
     return actions
 
