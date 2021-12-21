@@ -15,7 +15,8 @@ class TestVanillaBert4rec(unittest.TestCase):
         pool_size = 10
         prop_sliding_window = 0.5
         num_warmup_steps = 100
-        num_train_steps = 200
+        num_train_steps = 200000
+        time_limit=5
         batch_size = 256
         learning_rate = 1e-4
         random_seed = 31337
@@ -45,7 +46,8 @@ class TestVanillaBert4rec(unittest.TestCase):
                                       num_warmup_steps=num_warmup_steps,
                                       num_train_steps=num_train_steps,
                                       batch_size=batch_size,
-                                      learning_rate=learning_rate)
+                                      learning_rate=learning_rate,
+                                      training_time_limit=time_limit)
         for action in generator_limit(get_movielens20m_actions(), 100000):
             recommender.add_action(action)
         recommender.rebuild_model()
