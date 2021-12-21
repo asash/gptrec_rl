@@ -8,11 +8,10 @@ import shlex
 import subprocess
 import tempfile
 from collections import defaultdict
-from BERT4rec.gen_data_fin import create_training_instances, write_instance_to_example_file
-from BERT4rec.vocab import FreqVocab
-import BERT4rec
-
+from aprec.recommenders.BERT4rec.gen_data_fin import create_training_instances, write_instance_to_example_file
+from aprec.recommenders.BERT4rec.vocab import FreqVocab
 from aprec.recommenders.recommender import Recommender
+from aprec.recommenders import BERT4rec
 from aprec.utils.item_id import ItemId
 
 
@@ -126,6 +125,7 @@ class VanillaBERT4Rec(Recommender):
                           bert_config_filename,
                           predictions_filename,
                           tmpdir):
+
         bert4rec_dir = os.path.dirname(BERT4rec.__file__)
         bert4rec_runner = os.path.join(bert4rec_dir, "run.py")
         signature = tmpdir.split("/")[-1]
