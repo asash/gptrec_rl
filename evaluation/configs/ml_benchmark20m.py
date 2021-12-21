@@ -32,7 +32,7 @@ def svd_recommender(k):
     return FilterSeenRecommender(SvdRecommender(k))
 
 def lightfm_recommender(k, loss):
-    return FilterSeenRecommender(LightFMRecommender(k, loss))
+    return FilterSeenRecommender(LightFMRecommender(k, loss, num_threads=32))
 
 def dnn(model_arch, loss,learning_rate=0.001, last_only=False):
     return FilterSeenRecommender(DNNSequentialRecommender(train_epochs=10000, loss=loss,
@@ -52,6 +52,11 @@ def vanilla_bert4rec(time_limit):
 
 recommenders_raw = {
     "BERT4rec-1h": vanilla_bert4rec(3600),
+    "svd_recommender": lambda: svd_recommender(128), 
+    "top_recommender": top_recommender, 
+    "lightfm_recommender": lambda: lightfm_recommender(128, 'bpr'), 
+
+
     "CASER-nouid-lastonly-BCE": lambda: dnn(Caser(requires_user_id=False), BCELoss(), last_only=True),
     "CASER-nouid-BCE": lambda: dnn(Caser(requires_user_id=False), BCELoss()),
     "CASER-nouid-Lambdarank-Truncated:2500": lambda: dnn(Caser(requires_user_id=False), LambdaGammaRankLoss(pred_truncate_at=2500)),
@@ -66,18 +71,14 @@ recommenders_raw = {
     "GRU4Rec-Lambdarank-Truncated:2500-bce-weight:0.975": lambda: dnn(GRU4Rec(), LambdaGammaRankLoss(
                                                                                         pred_truncate_at=2500,
                                                                                         bce_grad_weight=0.975)),
-    "BERT4rec-8h": vanilla_bert4rec(8*3600)
+    "BERT4rec-8h": vanilla_bert4rec(4*3600)
 }
 
 
 all_recommenders = list(recommenders_raw.keys())
-random.shuffle(all_recommenders)
 
 
 RECOMMENDERS = {
-        "svd_recommender": lambda: svd_recommender(30), 
-        "top_recommender": top_recommender, 
-
     }
 for model in all_recommenders:
     RECOMMENDERS[model] = recommenders_raw[model]
@@ -85,7 +86,7 @@ for model in all_recommenders:
 print(f"evaluating {len(RECOMMENDERS)} models")
 
 N_VAL_USERS=1024
-MAX_TEST_USERS=32768
+MAX_TEST_USERS=4096
 
 METRICS = [NDCG(10), NDCG(2), NDCG(5), NDCG(20), NDCG(40), Precision(10), Recall(10), HIT(1), HIT(10), MRR(), MAP(10)]
 
