@@ -5,7 +5,7 @@ from aprec.losses.loss import Loss
 class LambdaGammaRankLoss(Loss):
     #num items and batch size need to be specified before usage.
     #some models can do it automatically, therefore they are set to None by default
-    def __init__(self, num_items=None, batch_size=None, sigma=1.0, ndcg_at=30, dtype=tf.float32, lambda_normalization=True,
+    def __init__(self, num_items=None, batch_size=None, sigma=1.0, ndcg_at=50, dtype=tf.float32, lambda_normalization=True,
                  pred_truncate_at=None, bce_grad_weight=0.0, remove_batch_dim=False):
         super().__init__(num_items, batch_size)
 
