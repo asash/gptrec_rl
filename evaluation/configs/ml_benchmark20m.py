@@ -51,7 +51,7 @@ def vanilla_bert4rec(time_limit):
     return FilterSeenRecommender(recommender)
 
 recommenders_raw = {
-    "BERT4rec-1h": lambda vanilla_bert4rec(3600),
+    "BERT4rec-1h": lambda: vanilla_bert4rec(3600),
     "svd_recommender": lambda: svd_recommender(128), 
     "top_recommender": top_recommender, 
     "lightfm_recommender": lambda: lightfm_recommender(128, 'bpr'), 
