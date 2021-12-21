@@ -1,5 +1,3 @@
-import random
-
 from aprec.datasets.bert4rec_datasets import get_bert4rec_dataset
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.svd import SvdRecommender
@@ -10,11 +8,11 @@ from aprec.evaluation.metrics.mrr import MRR
 from tensorflow.keras.optimizers import Adam
 from aprec.evaluation.metrics.hit import HIT
 from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
-from aprec.losses.bce import BCELoss
 from aprec.recommenders.dnn_sequential_recommender.models.caser import Caser
 from aprec.recommenders.dnn_sequential_recommender.models.gru4rec import GRU4Rec
 from aprec.evaluation.split_actions import LeaveOneOut
 from aprec.recommenders.lightfm import LightFMRecommender
+from recommenders.vanilla_bert4rec import VanillaBERT4Rec
 
 DATASET = get_bert4rec_dataset("ml-1m")
 
@@ -42,57 +40,26 @@ def dnn(model_arch, loss,learning_rate=0.001, last_only=False):
                                                           train_on_last_item_only=last_only
                                                           ))
 
+def vanilla_bert4rec(time_limit):
+    recommender = VanillaBERT4Rec(training_time_limit=time_limit, num_train_steps=10000000),
+    return FilterSeenRecommender(recommender)
+
 recommenders_raw = {
-    "CASER-nouid-BCE": lambda: dnn(Caser(requires_user_id=False), BCELoss()),
-    "CASER-nouid-Lambdarank-Vanilla": lambda: dnn(Caser(requires_user_id=False), LambdaGammaRankLoss()),
+    "BERT4rec-1h": vanilla_bert4rec(3600),
     "CASER-nouid-Lambdarank-Truncated:2500": lambda: dnn(Caser(requires_user_id=False), LambdaGammaRankLoss(pred_truncate_at=2500)),
-    "CASER-nouid-Lambdarank-Truncated:2500-bce-weight:0.975": lambda: dnn(Caser(requires_user_id=False),
-                                                     LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975)),
 
-    "CASER-lastonly-nouid-BCE": lambda: dnn(Caser(requires_user_id=False), BCELoss(), last_only=True),
-    "CASER-lastonly-nouid-Lambdarank-Vanilla": lambda: dnn(Caser(requires_user_id=False), LambdaGammaRankLoss(), last_only=True),
-    "CASER-lastonly-nouid-Lambdarank-Truncated:2500": lambda: dnn(Caser(requires_user_id=False),
-                                                         LambdaGammaRankLoss(pred_truncate_at=2500), last_only=True),
-    "CASER-lastonly-nouid-Lambdarank-Truncated:2500-bce-weight:0.975": lambda: dnn(Caser(requires_user_id=False),
-                                                                          LambdaGammaRankLoss(pred_truncate_at=2500,
-                                                                                              bce_grad_weight=0.975), last_only=True),
-
-    "CASER-lastonly-BCE": lambda: dnn(Caser(), BCELoss(), last_only=True),
-    "CASER-lastonly-Lambdarank-Vanilla": lambda: dnn(Caser(), LambdaGammaRankLoss(),
-                                                           last_only=True),
-    "CASER-lastonly-Lambdarank-Truncated:2500": lambda: dnn(Caser(),
-                                                                  LambdaGammaRankLoss(pred_truncate_at=2500),
-                                                                  last_only=True),
-    "CASER-lastonly-Lambdarank-Truncated:2500-bce-weight:0.975": lambda: dnn(Caser(),
-                                                                                   LambdaGammaRankLoss(
-                                                                                       pred_truncate_at=2500,
-                                                                                       bce_grad_weight=0.975),
-                                                                                   last_only=True),
+    "CASER-nouid-Lambdarank-Truncated:2500-bce-weight:0.975": lambda: dnn(
+        Caser(requires_user_id=False), LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975)),
 
 
-    "GRU4Rec-lastonly-BCE": lambda: dnn(GRU4Rec(), BCELoss(), last_only=True),
-    "GRU4Rec-lastonly-Lambdarank-Vanilla": lambda: dnn(GRU4Rec(), LambdaGammaRankLoss(), last_only=True),
-    "GRU4Rec-lastonly-Lambdarank-Truncated:2500": lambda: dnn(GRU4Rec(),
-                                                            LambdaGammaRankLoss(pred_truncate_at=2500),
-                                                            last_only=True),
-    "GRU4Rec-lastonly-Lambdarank-Truncated:2500-bce-weight:0.975": lambda: dnn(GRU4Rec(),
-                                                                             LambdaGammaRankLoss(
-                                                                                 pred_truncate_at=2500,
-                                                                                 bce_grad_weight=0.975),
-                                                                             last_only=True),
-
-
-    "GRU4Rec-BCE": lambda: dnn(GRU4Rec(), BCELoss()),
-    "GRU4Rec-Lambdarank-Vanilla": lambda: dnn(GRU4Rec(), LambdaGammaRankLoss()),
     "GRU4Rec-Lambdarank-Truncated:2500": lambda: dnn(GRU4Rec(), LambdaGammaRankLoss(pred_truncate_at=2500)),
-    "GRU4Rec-Lambdarank-Truncated:2500-bce-weight:0.975": lambda: dnn(GRU4Rec(),
-                                                                               LambdaGammaRankLoss(
-                                                                                   pred_truncate_at=2500,
-                                                                                   bce_grad_weight=0.975))
+    "GRU4Rec-Lambdarank-Truncated:2500-bce-weight:0.975": lambda: dnn(GRU4Rec(), LambdaGammaRankLoss(
+                                                                                        pred_truncate_at=2500,
+                                                                                        bce_grad_weight=0.975)),
+    "BERT4rec-8h": vanilla_bert4rec(8*3600)
 }
 
 all_recommenders = list(recommenders_raw.keys())
-random.shuffle(all_recommenders)
 
 
 RECOMMENDERS = {
