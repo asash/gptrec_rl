@@ -19,7 +19,7 @@ from aprec.utils.item_id import ItemId
 class VanillaBERT4Rec(Recommender):
     def __init__(self, max_seq_length, dupe_factor, masked_lm_prob, max_predictions_per_seq, random_seed, mask_prob,
                  prop_sliding_window, pool_size, bert_config, batch_size, num_warmup_steps, num_train_steps,
-                 learning_rate):
+                 learning_rate, training_time_limit=None):
         super().__init__()
         self.user_actions = defaultdict(list)
         self.user_ids = ItemId()
@@ -37,6 +37,7 @@ class VanillaBERT4Rec(Recommender):
         self.learning_rate = learning_rate
         self.num_warmup_steps = num_warmup_steps
         self.num_train_steps = num_train_steps
+        self.training_time_limit = training_time_limit
         self.predictions_cache = {}
 
     def add_action(self, action):
@@ -145,6 +146,10 @@ class VanillaBERT4Rec(Recommender):
             --num_warmup_steps={self.num_warmup_steps} \
             --save_predictions_file={predictions_filename} \
             --learning_rate={self.learning_rate} "
+
+        if self.training_time_limit is not None:
+            cmd += f" --training-time-limit={self.training_time_limit}"
+
         subprocess.check_call(shlex.split(cmd))
         with open(predictions_filename) as predictions:
             for line in predictions:
