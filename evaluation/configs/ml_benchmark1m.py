@@ -54,15 +54,20 @@ recommenders_raw = {
     "SASRec-lastonly-BCE": lambda: dnn(
         SASRec(), BCELoss(), last_only=True),
     "SASRec-Lambdarank-Truncated:2500": lambda: dnn(SASRec(),
-                                                         LambdaGammaRankLoss(pred_truncate_at=2500)),
+            LambdaGammaRankLoss(pred_truncate_at=2500)),
 
-    "CASER-nouid-Lambdarank-Truncated:2500": lambda: dnn(Caser(requires_user_id=False), LambdaGammaRankLoss(pred_truncate_at=2500)),
+    "top_recommender": top_recommender,
+    "svd_recommender": lambda: svd_recommender(128),
+    "lightfm_recommender": lambda: lightfm_recommender(128, 'bpr'),
+
+
+        "CASER-nouid-Lambdarank-Truncated:2500": lambda: dnn(Caser(requires_user_id=False), LambdaGammaRankLoss(pred_truncate_at=2500)),
     "CASER-nouid-Lambdarank-Truncated:2500-bce-weight:0.975": lambda: dnn(
-        Caser(requires_user_id=False), LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975)),
+            Caser(requires_user_id=False), LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975)),
 
     "GRU4Rec-Lambdarank-Truncated:2500": lambda: dnn(GRU4Rec(), LambdaGammaRankLoss(pred_truncate_at=2500)),
     "GRU4Rec-Lambdarank-Truncated:2500-bce-weight:0.975": lambda: dnn(GRU4Rec(), LambdaGammaRankLoss(
-                                                                                        pred_truncate_at=2500,
+                pred_truncate_at=2500,
                                                                                         bce_grad_weight=0.975)),
 
 }
@@ -71,10 +76,7 @@ all_recommenders = list(recommenders_raw.keys())
 
 
 RECOMMENDERS = {
-        "top_recommender": top_recommender,
-        "svd_recommender": lambda: svd_recommender(128),
-        "lightfm_recommender": lambda: lightfm_recommender(128, 'bpr')
-
+        
 }
 for model in all_recommenders:
     RECOMMENDERS[model] = recommenders_raw[model]
