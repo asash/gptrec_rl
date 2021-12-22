@@ -9,6 +9,7 @@ import unittest
 
 from aprec.recommenders.dnn_sequential_recommender.models.caser import Caser
 from aprec.recommenders.dnn_sequential_recommender.models.gru4rec import GRU4Rec
+from aprec.recommenders.dnn_sequential_recommender.models.sasrec import SASRec
 from aprec.recommenders.dnn_sequential_recommender.models.mlp_sequential import SequentialMLPModel
 from aprec.recommenders.dnn_sequential_recommender.user_featurizers.hashing_featurizer import HashingUserFeaturizer
 
@@ -45,7 +46,7 @@ class TestDnnSequentialRecommender(unittest.TestCase):
 
     def test_sasrec_model(self):
         val_users = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
-        model = GRU4Rec()
+        model = SASRec()
         recommender = DNNSequentialRecommender(model, train_epochs=10, early_stop_epochs=5,
                                                batch_size=5, training_time_limit=10)
         recommender.set_val_users(val_users)

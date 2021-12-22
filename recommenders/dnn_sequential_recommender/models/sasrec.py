@@ -25,6 +25,6 @@ class SASRec(SequentialRecsysModel):
                                    num_heads=self.num_heads,
                                    activation=self.output_layer_activation
                                    )
-        input = layers.Input(shape=(self.max_history_length))
+        input = layers.Input(shape=(self.max_history_length), dtype='int32')
         output = sasrec_layer(input)
         return Model([input], output)

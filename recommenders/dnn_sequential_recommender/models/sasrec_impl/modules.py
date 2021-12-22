@@ -41,8 +41,8 @@ def normalize(inputs,
         params_shape = inputs_shape[-1:]
 
         mean, variance = tf.nn.moments(x=inputs, axes=[-1], keepdims=True)
-        beta = tf.Variable(tf.zeros(params_shape))
-        gamma = tf.Variable(tf.ones(params_shape))
+        beta = tf.zeros(params_shape)
+        gamma = tf.ones(params_shape)
         normalized = (inputs - mean) / ((variance + epsilon) ** (.5))
         outputs = gamma * normalized + beta
 

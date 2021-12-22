@@ -49,6 +49,7 @@ class SASRecLayer(layers.Layer):
                                                  scale=True,
                                                  l2_reg=self.l2_emb,
                                                  scope="input_embeddings",
+                                                 reuse=tf.compat.v1.AUTO_REUSE,
                                                  with_t=True,
                                                  )
 
@@ -61,6 +62,7 @@ class SASRecLayer(layers.Layer):
                 scale=False,
                 l2_reg=self.l2_emb,
                 scope="dec_pos",
+                reuse=tf.compat.v1.AUTO_REUSE,
                 with_t=True
             )
             seq += t
@@ -84,11 +86,14 @@ class SASRecLayer(layers.Layer):
                                                    dropout_rate=self.dropout_rate,
                                                    is_training=is_training,
                                                    causality=True,
+                                                   reuse=tf.compat.v1.AUTO_REUSE,
                                                    scope="self_attention")
 
                     # Feed forward
                     seq = feedforward(normalize(seq), num_units=[self.hidden_units, self.hidden_units],
-                                           dropout_rate=self.dropout_rate, is_training=is_training)
+                                           dropout_rate=self.dropout_rate, is_training=is_training,
+                                           reuse=tf.compat.v1.AUTO_REUSE
+                                      )
                     seq *= mask
             seq = normalize(seq)
             seq = tf.reduce_sum(seq, axis=1)

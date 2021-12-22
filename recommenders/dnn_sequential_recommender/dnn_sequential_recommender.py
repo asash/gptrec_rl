@@ -121,6 +121,7 @@ class DNNSequentialRecommender(Recommender):
                                       user_features_required=not (self.users_featurizer is None)
                                       )
             print(f"epoch: {epoch}")
+            X, y = generator[0]
             train_history = self.model.fit(generator, validation_data=val_generator)
             total_trainig_time = time.time() - start_time
             val_ndcg = train_history.history[f"val_ndcg_at_{self.eval_ndcg_at}"][-1]
