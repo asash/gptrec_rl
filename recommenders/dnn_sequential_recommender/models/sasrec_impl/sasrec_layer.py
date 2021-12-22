@@ -94,4 +94,5 @@ class SASRecLayer(layers.Layer):
             seq = tf.reduce_sum(seq, axis=1)
             seq = normalize(seq)
             output = seq @ tf.transpose(item_emb_table)
+            output = self.activation(output)
             return output[:,1:]
