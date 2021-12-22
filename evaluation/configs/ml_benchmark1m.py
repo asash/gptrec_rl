@@ -13,6 +13,8 @@ from aprec.recommenders.dnn_sequential_recommender.models.gru4rec import GRU4Rec
 from aprec.evaluation.split_actions import LeaveOneOut
 from aprec.recommenders.lightfm import LightFMRecommender
 from aprec.recommenders.vanilla_bert4rec import VanillaBERT4Rec
+from aprec.losses.bce import BCELoss
+from aprec.recommenders.dnn_sequential_recommender.models.sasrec import SASRec
 
 DATASET = get_bert4rec_dataset("ml-1m")
 
@@ -45,18 +47,24 @@ def vanilla_bert4rec(time_limit):
     return FilterSeenRecommender(recommender)
 
 recommenders_raw = {
-    "BERT4rec-1h": vanilla_bert4rec(3600),
-    "CASER-nouid-Lambdarank-Truncated:2500": lambda: dnn(Caser(requires_user_id=False), LambdaGammaRankLoss(pred_truncate_at=2500)),
+   "SASRec-Lambdarank-Truncated:2500-bce-weight:0.975": lambda: dnn(
+        SASRec(), LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975)),
+    "SASRec-BCE": lambda: dnn(
+        SASRec(), BCELoss()),
+    "SASRec-lastonly-BCE": lambda: dnn(
+        SASRec(), BCELoss(), last_only=True),
+    "SASRec-Lambdarank-Truncated:2500": lambda: dnn(SASRec(),
+                                                         LambdaGammaRankLoss(pred_truncate_at=2500)),
 
+    "CASER-nouid-Lambdarank-Truncated:2500": lambda: dnn(Caser(requires_user_id=False), LambdaGammaRankLoss(pred_truncate_at=2500)),
     "CASER-nouid-Lambdarank-Truncated:2500-bce-weight:0.975": lambda: dnn(
         Caser(requires_user_id=False), LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975)),
-
 
     "GRU4Rec-Lambdarank-Truncated:2500": lambda: dnn(GRU4Rec(), LambdaGammaRankLoss(pred_truncate_at=2500)),
     "GRU4Rec-Lambdarank-Truncated:2500-bce-weight:0.975": lambda: dnn(GRU4Rec(), LambdaGammaRankLoss(
                                                                                         pred_truncate_at=2500,
                                                                                         bce_grad_weight=0.975)),
-    "BERT4rec-8h": vanilla_bert4rec(8*3600)
+
 }
 
 all_recommenders = list(recommenders_raw.keys())
