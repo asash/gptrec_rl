@@ -1,6 +1,6 @@
 from tensorflow.keras import layers
-from .sasrec_layer import SASRecLayer
-from ..sequential_recsys_model import SequentialRecsysModel
+from recommenders.dnn_sequential_recommender.models.sasrec_impl.sasrec_layer import SASRecLayer
+from recommenders.dnn_sequential_recommender.models.sequential_recsys_model import SequentialRecsysModel
 from keras.models import Model
 
 #https://ieeexplore.ieee.org/abstract/document/8594844

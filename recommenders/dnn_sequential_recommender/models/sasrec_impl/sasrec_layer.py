@@ -1,8 +1,14 @@
+#This is a port of original SASRec code
+#Taken from https://github.com/kang205/SASRec,
+#Ported to python3/tensorflow2
+#Converted to Keras layer.
+
+
 import tensorflow as tf
 from tensorflow.keras import layers, backend as K
 from tensorflow.python.keras import activations
 
-from recommenders.dnn_sequential_recommender.models.sasrec.modules import embedding, multihead_attention, normalize, \
+from .modules import embedding, multihead_attention, normalize, \
     feedforward
 
 
