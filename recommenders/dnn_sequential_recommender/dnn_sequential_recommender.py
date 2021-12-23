@@ -170,25 +170,34 @@ class DNNSequentialRecommender(Recommender):
     def train_epoch_debug(self, generator, ndcg_metric, val_generator):
         pbar = tqdm(generator, ascii=True)
         variables = self.model.variables
+        loss_sum = 0
+        ndcg_sum = 0
+        num_batches = 0
         for X, y_true in pbar:
+            num_batches += 1
             with tf.GradientTape() as tape:
                 y_pred = self.model(X)
                 loss_val = tf.reduce_mean(self.loss(y_true, y_pred))
             grad = tape.gradient(loss_val, variables)
             self.optimizer.apply_gradients(zip(grad, variables))
             ndcg = ndcg_metric(y_true=y_true, y_pred=y_pred)
-            pbar.set_description(f"loss: {loss_val:.5f},  ndcg_at_{self.eval_ndcg_at}: {ndcg:.5f}")
+            loss_sum += loss_val
+            ndcg_sum += ndcg
+            pbar.set_description(f"loss: {loss_sum/num_batches:.5f}, "
+                                 f"ndcg_at_{self.eval_ndcg_at}: {ndcg_sum/num_batches:.5f}")
         val_loss_sum = 0
         val_ndcg_sum = 0
         num_val_samples = 0
+        num_batches = 0
         for X, y_true in val_generator:
+            num_batches += 1
             y_pred = self.model(X)
             loss_val = self.loss(y_true, y_pred)
             ndcg = ndcg_metric(y_true, y_pred)
             val_ndcg_sum += ndcg
             val_loss_sum += loss_val
             num_val_samples += y_true.shape[0]
-        val_ndcg = val_ndcg_sum / num_val_samples
+        val_ndcg = val_ndcg_sum / num_batches
         return val_ndcg
 
     def train_epoch_prod(self, generator, val_generator):
