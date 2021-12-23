@@ -84,7 +84,7 @@ class DataGenerator(Sequence):
                 cur_val *= self.target_decay
                 if cur_val < self.min_target_val:
                     cur_val = self.min_target_val
-        result =  csr_matrix((vals, (rows, cols)), shape=(len(user_actions), n_items))
+        result =  csr_matrix((vals, (rows, cols)), shape=(len(user_actions), n_items), dtype='float32')
         return result
 
 
@@ -123,7 +123,7 @@ class DataGenerator(Sequence):
         end = (idx + 1) * self.batch_size
         history = self.sequences_matrix[start:end]
         model_inputs = [history]
-        target = self.target_matrix[start:end].todense()
+        target = np.asarray(self.target_matrix[start:end].todense())
         if self.return_direct_positions:
             direct_pos = self.direct_position[start:end]
             model_inputs.append(direct_pos)

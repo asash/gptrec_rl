@@ -3,6 +3,9 @@ import time
 
 import tensorflow.keras.backend as K
 from collections import defaultdict
+import tensorflow as tf
+
+from tqdm import tqdm
 
 from aprec.utils.item_id import ItemId
 from aprec.recommenders.metrics.ndcg import KerasNDCG
@@ -13,13 +16,15 @@ from aprec.recommenders.dnn_sequential_recommender.models.sequential_recsys_mode
 from aprec.losses.loss import Loss
 from aprec.losses.bce import BCELoss
 
+from tensorflow.keras.optimizers import Adam
+
 import numpy as np
 
 
 class DNNSequentialRecommender(Recommender):
     def __init__(self, model_arch: SequentialRecsysModel, loss: Loss = BCELoss(), users_featurizer=None,
-                 train_epochs=300, optimizer='adam', batch_size=1000, early_stop_epochs=100, target_decay=1.0,
-                 train_on_last_item_only=False, training_time_limit=None, sigma=1, eval_ndcg_at=40):
+                 train_epochs=300, optimizer=Adam(), batch_size=1000, early_stop_epochs=100, target_decay=1.0,
+                 train_on_last_item_only=False, training_time_limit=None, sigma=1, eval_ndcg_at=40, debug=False):
         super().__init__()
         self.model_arch = model_arch
         self.users = ItemId()
@@ -47,6 +52,7 @@ class DNNSequentialRecommender(Recommender):
         self.users_with_actions = set()
         self.max_user_features = 0
         self.max_user_feature_val = 0
+        self.debug = debug
 
     def add_user(self, user):
         if self.users_featurizer is None:
@@ -103,13 +109,18 @@ class DNNSequentialRecommender(Recommender):
                                       max_user_features=self.max_user_features,
                                       user_features_required=not (self.users_featurizer is None)
                                       )
-        self.model = self.get_model()
+        self.model = self.get_model(val_generator)
         best_ndcg = 0
         steps_since_improved = 0
         best_epoch = -1
         best_weights = self.model.get_weights()
         val_ndcg_history = []
         start_time = time.time()
+
+        ndcg_metric = KerasNDCG(self.eval_ndcg_at)
+        if not self.debug:
+            self.model.compile(optimizer=self.optimizer, loss=self.loss, metrics=[ndcg_metric])
+
         for epoch in range(self.train_epochs):
             val_generator.reset()
             generator = DataGenerator(train_users, train_user_ids, train_features, self.model_arch.max_history_length,
@@ -121,10 +132,9 @@ class DNNSequentialRecommender(Recommender):
                                       user_features_required=not (self.users_featurizer is None)
                                       )
             print(f"epoch: {epoch}")
-            X, y = generator[0]
-            train_history = self.model.fit(generator, validation_data=val_generator)
+            val_ndcg = self.train_epoch(generator, val_generator, ndcg_metric)
+
             total_trainig_time = time.time() - start_time
-            val_ndcg = train_history.history[f"val_ndcg_at_{self.eval_ndcg_at}"][-1]
             val_ndcg_history.append((total_trainig_time, val_ndcg))
 
             steps_since_improved += 1
@@ -133,7 +143,7 @@ class DNNSequentialRecommender(Recommender):
                 best_ndcg = val_ndcg
                 best_epoch = epoch
                 best_weights = self.model.get_weights()
-            print(f"val_ndcg: {val_ndcg}, best_ndcg: {best_ndcg}, steps_since_improved: {steps_since_improved},"
+            print(f"val_ndcg: {val_ndcg:.5f}, best_ndcg: {best_ndcg:.5f}, steps_since_improved: {steps_since_improved},"
                   f" total_training_time: {total_trainig_time}")
             if steps_since_improved >= self.early_stop_epochs:
                 print(f"early stopped at epoch {epoch}")
@@ -151,6 +161,40 @@ class DNNSequentialRecommender(Recommender):
         print(self.get_metadata())
         print(f"taken best model from epoch{best_epoch}. best_val_ndcg: {best_ndcg}")
 
+    def train_epoch(self, generator, val_generator, ndcg_metric):
+        if not self.debug:
+            return self.train_epoch_prod(generator, val_generator)
+        else:
+            return self.train_epoch_debug(generator, ndcg_metric, val_generator)
+
+    def train_epoch_debug(self, generator, ndcg_metric, val_generator):
+        pbar = tqdm(generator, ascii=True)
+        variables = self.model.variables
+        for X, y_true in pbar:
+            with tf.GradientTape() as tape:
+                y_pred = self.model(X)
+                loss_val = tf.reduce_mean(self.loss(y_true, y_pred))
+            grad = tape.gradient(loss_val, variables)
+            self.optimizer.apply_gradients(zip(grad, variables))
+            ndcg = ndcg_metric(y_true=y_true, y_pred=y_pred)
+            pbar.set_description(f"loss: {loss_val:.5f},  ndcg_at_{self.eval_ndcg_at}: {ndcg:.5f}")
+        val_loss_sum = 0
+        val_ndcg_sum = 0
+        num_val_samples = 0
+        for X, y_true in val_generator:
+            y_pred = self.model(X)
+            loss_val = self.loss(y_true, y_pred)
+            ndcg = ndcg_metric(y_true, y_pred)
+            val_ndcg_sum += ndcg
+            val_loss_sum += loss_val
+            num_val_samples += y_true.shape[0]
+        val_ndcg = val_ndcg_sum / num_val_samples
+        return val_ndcg
+
+    def train_epoch_prod(self, generator, val_generator):
+        train_history = self.model.fit(generator, validation_data=val_generator)
+        return train_history.history[f"val_ndcg_at_{self.eval_ndcg_at}"][-1]
+
     def train_val_split(self):
         all_user_ids = self.users_with_actions
         val_user_ids = [self.users.get_id(val_user) for val_user in self.val_users]
@@ -161,16 +205,18 @@ class DNNSequentialRecommender(Recommender):
         val_features = [self.user_features.get(id, list()) for id in val_user_ids]
         return train_users, train_user_ids, train_features, val_users, val_user_ids, val_features
 
-    def get_model(self):
+    def get_model(self, val_generator):
         self.max_user_features, self.max_user_feature_val = self.get_max_user_features()
         self.model_arch.set_common_params(num_items=self.items.size(),
                                           num_users=self.users.size(),
                                           max_user_features=self.max_user_features,
-                                          user_feature_max_val=self.max_user_feature_val)
+                                          user_feature_max_val=self.max_user_feature_val,
+                                          batch_size=self.batch_size)
         model = self.model_arch.get_model()
-        ndcg_metric = KerasNDCG(self.eval_ndcg_at)
-        metrics = [ndcg_metric]
-        model.compile(optimizer=self.optimizer, loss=self.loss, metrics=metrics)
+
+        #call the model first time in order to build it
+        X, y = val_generator[0]
+        model(X)
         return model
 
     def recommend(self, user_id, limit, features=None):
@@ -206,7 +252,7 @@ class DNNSequentialRecommender(Recommender):
             features_vector = DataGenerator.get_features_matrix([user_features], self.max_user_features)
             model_inputs.append(features_vector)
 
-        scores = self.model.predict(model_inputs)[0]
+        scores = self.model(model_inputs)[0].numpy()
         return scores
 
     def get_max_user_features(self):

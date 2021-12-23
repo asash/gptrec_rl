@@ -46,9 +46,10 @@ class TestDnnSequentialRecommender(unittest.TestCase):
 
     def test_sasrec_model(self):
         val_users = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
-        model = SASRec()
-        recommender = DNNSequentialRecommender(model, train_epochs=10, early_stop_epochs=5,
-                                               batch_size=5, training_time_limit=10)
+        model = SASRec(vanilla_sasrec=False)
+        recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=50000,
+                                               batch_size=5,
+                                               training_time_limit=10, debug=False, train_on_last_item_only=True)
         recommender.set_val_users(val_users)
         recommender = FilterSeenRecommender(recommender)
         for action in generator_limit(get_movielens20m_actions(), 10000):
@@ -130,7 +131,7 @@ class TestDnnSequentialRecommender(unittest.TestCase):
         model = SequentialMLPModel()
         loss = XENDCGLoss()
         mlp_recommender = DNNSequentialRecommender(model, loss, train_epochs=10,
-                                                   batch_size=batch_size)
+                                                   batch_size=batch_size, debug=True)
         mlp_recommender.set_val_users(val_users)
         recommender = FilterSeenRecommender(mlp_recommender)
         for action in generator_limit(get_movielens20m_actions(), 10000):

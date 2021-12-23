@@ -24,7 +24,7 @@ class Caser(SequentialRecsysModel):
     def get_model(self):
         input = layers.Input(shape=(self.max_history_length))
         model_inputs = [input]
-        x = layers.Embedding(self.num_items + 1, self.embedding_size)(input)
+        x = layers.Embedding(self.num_items + 1, self.embedding_size, dtype='float32')(input)
         x = layers.Reshape(target_shape=(self.max_history_length, self.embedding_size, 1))(x)
         vertical = layers.Convolution2D(self.n_vertical_filters, kernel_size=(self.max_history_length, 1),
                                         activation=self.activation)(x)
@@ -47,14 +47,14 @@ class Caser(SequentialRecsysModel):
         if self.requires_user_id:
             user_id_input = layers.Input(shape=(1,))
             model_inputs.append(user_id_input)
-            user_embedding = layers.Embedding(self.num_users, self.embedding_size)(user_id_input)
+            user_embedding = layers.Embedding(self.num_users, self.embedding_size, dtype='float32')(user_id_input)
             user_embedding = layers.Flatten()(user_embedding)
             x = layers.Concatenate()([x, user_embedding])
 
         if self.user_extra_features:
             user_features_input = layers.Input(shape=(self.max_user_features))
             model_inputs.append(user_features_input)
-            user_features = layers.Embedding(self.user_feature_max_val + 1, self.embedding_size)(user_features_input)
+            user_features = layers.Embedding(self.user_feature_max_val + 1, self.embedding_size, dtype='float32')(user_features_input)
             user_features = layers.MultiHeadAttention(self.user_features_attention_heads, key_dim=self.embedding_size)(user_features, user_features)
             user_features = layers.Dense(self.embedding_size, activation=self.activation)(user_features)
             user_features = layers.MaxPool1D(self.max_user_features)(user_features)

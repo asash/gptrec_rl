@@ -21,7 +21,7 @@ class SequentialMLPModel(SequentialRecsysModel):
 
     def get_model(self):
         model = Sequential(name='MLP')
-        model.add(layers.Embedding(self.num_items + 1, 32, input_length=self.max_history_length))
+        model.add(layers.Embedding(self.num_items + 1, 32, input_length=self.max_history_length, dtype='float32'))
         model.add(layers.Flatten())
         for dim in self.layers_before_bottleneck:
             model.add(layers.Dense(dim, activation=self.activation))
