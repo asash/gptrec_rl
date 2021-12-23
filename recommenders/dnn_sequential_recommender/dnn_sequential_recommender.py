@@ -241,7 +241,10 @@ class DNNSequentialRecommender(Recommender):
             scores = self.get_all_item_scores(user_id)
             user_result = []
             for item_id in request.item_ids:
-                user_result.append((item_id, scores[self.items.get_id(item_id)]))
+                if self.items.has_item(item_id):
+                    user_result.append((item_id, scores[self.items.get_id(item_id)]))
+                else:
+                    user_result.append((item_id, float("-inf")))
             user_result.sort(key = lambda x: -x[1])
             result[user_id] = user_result
         return result
