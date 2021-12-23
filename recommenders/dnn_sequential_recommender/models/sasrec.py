@@ -11,7 +11,7 @@ import tensorflow as tf
 #https://github.com/kang205/SASRec
 class SASRec(SequentialRecsysModel):
     def __init__(self, output_layer_activation='linear', embedding_size=64,
-                 max_history_len=64, l2_emb=0.0, dropout_rate=0.2, num_blocks=3, num_heads=5):
+                 max_history_len=64, l2_emb=0.0, dropout_rate=0.2, num_blocks=3, num_heads=8):
         super().__init__(output_layer_activation, embedding_size, max_history_len)
         self.l2_emb = l2_emb
         self.dropout_rate = dropout_rate
