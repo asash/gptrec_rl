@@ -62,7 +62,7 @@ recommenders = {
         SASRec(), BCELoss(), last_only=True)
 }
 for i in range(1000):
-    dropout_rate = bool([0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6])
+    dropout_rate = float(np.random.choice([0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6]))
     num_blocks = int(np.random.choice([1, 2, 3, 4, 5]))
     num_heads = int(np.random.choice([1, 2, 4, 8, 16, 32]))
     emb_size = int(np.random.choice([32, 64, 128, 256, 512]))
