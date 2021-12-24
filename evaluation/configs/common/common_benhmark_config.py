@@ -7,6 +7,8 @@ from aprec.recommenders.lightfm import LightFMRecommender
 from aprec.recommenders.vanilla_bert4rec import VanillaBERT4Rec
 from aprec.losses.bce import BCELoss
 from aprec.recommenders.dnn_sequential_recommender.models.sasrec import SASRec
+from aprec.recommenders.dnn_sequential_recommender.models.gru4rec import GRU4Rec
+from aprec.recommenders.dnn_sequential_recommender.models.caser import Caser
 
 from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
 
@@ -33,7 +35,7 @@ def lightfm_recommender(k, loss):
     return LightFMRecommender(k, loss, num_threads=32)
 
 
-def dnn(model_arch, loss, learning_rate=0.001, last_only=False, training_time_limit=600):
+def dnn(model_arch, loss, learning_rate=0.001, last_only=False, training_time_limit=3600):
     return DNNSequentialRecommender(train_epochs=10000, loss=loss,
                                                           model_arch=model_arch,
                                                           optimizer=Adam(learning_rate),
@@ -52,13 +54,38 @@ def vanilla_bert4rec(time_limit):
 
 
 recommenders = {
-   "SasRec-BCE-TimeLimit:10m-lastonly:False": lambda: dnn(
-        SASRec(), BCELoss(), last_only=False),
+    "SASRec-BCE-TimeLimit:1h-lastonly:True": lambda: dnn(
+            SASRec(), BCELoss(), last_only=True),
+    "SASRec-Lambdarank-Full-TimeLimit:1h-lastonly:True": lambda: dnn(
+        SASRec(), LambdaGammaRankLoss(), last_only=True),
+    "SASRec-Lambdarank-Truncated:2500-TimeLimit:1h-lastonly:True": lambda: dnn(
+        SASRec(), LambdaGammaRankLoss(pred_truncate_at=2500), last_only=True),
+    "SASRec-Lambdarank-Truncated:2500-bce_weight:0.975-TimeLimit:1h-lastonly:True": lambda: dnn(
+        SASRec(), LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975), last_only=True),
 
-    "SasRec-BCE-TimeLimit:10m-lastonly:True": lambda: dnn(
-        SASRec(), BCELoss(), last_only=True),
+    "GRU4Rec-BCE-TimeLimit:1h-lastonly:True": lambda: dnn(
+        GRU4Rec(), BCELoss(), last_only=True),
+    "GRU4Rec-Lambdarank-Full-TimeLimit:1h-lastonly:True": lambda: dnn(
+        GRU4Rec(), LambdaGammaRankLoss(), last_only=True),
+    "GRU4Rec-Lambdarank-Truncated:2500-TimeLimit:1h-lastonly:True": lambda: dnn(
+        GRU4Rec(), LambdaGammaRankLoss(pred_truncate_at=2500), last_only=True),
+    "GRU4Rec-Lambdarank-Truncated:2500-bce_weight:0.975-TimeLimit:1h-lastonly:True": lambda: dnn(
+        GRU4Rec(), LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975), last_only=True),
+
+    "Caser-BCE-TimeLimit:1h-lastonly:True": lambda: dnn(
+        Caser(), BCELoss(), last_only=True),
+    "Caser-Lambdarank-Full-TimeLimit:1h-lastonly:True": lambda: dnn(
+        Caser(), LambdaGammaRankLoss(), last_only=True),
+    "Caser-Lambdarank-Truncated:2500-TimeLimit:1h-lastonly:True": lambda: dnn(
+        Caser(), LambdaGammaRankLoss(pred_truncate_at=2500), last_only=True),
+    "Caser-Lambdarank-Truncated:2500-bce_weight:0.975-TimeLimit:1h-lastonly:True": lambda: dnn(
+        Caser(), LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975), last_only=True),
+    "bert4rec-1h": lambda: vanilla_bert4rec(3600),
+    "top": top_recommender,
+    "svd": lambda: svd_recommender(128),
+    "MF-bpr": lambda: lightfm_recommender(128, 'bpr')
 }
-for i in range(1000):
+for i in range(0):
     dropout_rate = float(np.random.choice([0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6]))
     num_blocks = int(np.random.choice([1, 2, 3, 4, 5]))
     num_heads = int(np.random.choice([1, 2, 4, 8, 16, 32]))
