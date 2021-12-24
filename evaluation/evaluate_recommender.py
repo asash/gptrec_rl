@@ -127,47 +127,55 @@ class RecommendersEvaluator(object):
     def __call__(self):
         result = {"recommenders": {}}
         for recommender_name in self.recommenders:
-            sys.stdout.write("!!!!!!!!!   ")
-            print("evaluating {}".format(recommender_name))
-            recommender = self.recommenders[recommender_name]()
-            print("adding train actions...")
-            for action in tqdm(self.train, ascii=True):
-                recommender.add_action(action)
-            recommender.set_val_users(self.val_user_ids)
-            print("rebuilding model...")
+            try:
+                sys.stdout.write("!!!!!!!!!   ")
+                print("evaluating {}".format(recommender_name))
+                recommender = self.recommenders[recommender_name]()
+                print("adding train actions...")
+                for action in tqdm(self.train, ascii=True):
+                    recommender.add_action(action)
+                recommender.set_val_users(self.val_user_ids)
+                print("rebuilding model...")
 
-            if self.users is not None:
-                print("adding_users")
-                for user in self.users:
-                    recommender.add_user(user)
+                if self.users is not None:
+                    print("adding_users")
+                    for user in self.users:
+                        recommender.add_user(user)
 
-            build_time_start = time.time()
-            if self.sampled_requests is not None:
-                for request in self.sampled_requests:
-                    recommender.add_test_items_ranking_request(request)
+                build_time_start = time.time()
+                if self.sampled_requests is not None:
+                    for request in self.sampled_requests:
+                        recommender.add_test_items_ranking_request(request)
 
-            recommender.rebuild_model()
-            build_time_end = time.time()
-            print("done")
+                recommender.rebuild_model()
+                build_time_end = time.time()
+                print("done")
 
-            print("calculating metrics...")
-            evaluate_time_start = time.time()
-            evaluation_result = evaluate_recommender(recommender, self.test,
-                                                     self.metrics, self.out_dir,
-                                                     recommender_name, self.features_from_test,
-                                                     recommendations_limit=self.recommendations_limit,
-                                                     evaluate_on_samples=self.sampled_requests is not None)
-            evaluate_time_end = time.time()
-            print("calculating metrics...")
-            evaluation_result['model_build_time'] =  build_time_end - build_time_start
-            evaluation_result['model_inference_time'] =  evaluate_time_end - evaluate_time_start
-            evaluation_result['model_metadata'] = copy.deepcopy(recommender.get_metadata())
-            print("done")
-            print(json.dumps(evaluation_result))
-            result['recommenders'][recommender_name] = evaluation_result
-            for callback in self.callbacks:
-                callback(recommender, recommender_name, evaluation_result, self.experiment_config)
-            del(recommender)
+                print("calculating metrics...")
+                evaluate_time_start = time.time()
+                evaluation_result = evaluate_recommender(recommender, self.test,
+                                                         self.metrics, self.out_dir,
+                                                         recommender_name, self.features_from_test,
+                                                         recommendations_limit=self.recommendations_limit,
+                                                         evaluate_on_samples=self.sampled_requests is not None)
+                evaluate_time_end = time.time()
+                print("calculating metrics...")
+                evaluation_result['model_build_time'] =  build_time_end - build_time_start
+                evaluation_result['model_inference_time'] =  evaluate_time_end - evaluate_time_start
+                evaluation_result['model_metadata'] = copy.deepcopy(recommender.get_metadata())
+                print("done")
+                print(json.dumps(evaluation_result))
+                result['recommenders'][recommender_name] = evaluation_result
+                for callback in self.callbacks:
+                    callback(recommender, recommender_name, evaluation_result, self.experiment_config)
+                del(recommender)
+            except Exception as ex:
+                print(f"ERROR: exception during evaluating {recommender_name}")
+                print(ex)
+                try:
+                    del(recommender)
+                except:
+                    continue
         return result
 
     def save_split(self, train, test):

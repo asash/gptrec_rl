@@ -127,7 +127,8 @@ def get_recommenders(filter_seen: bool):
     result = {}
     for recommender_name in recommenders:
         if filter_seen:
-            result[recommender_name] = lambda: FilterSeenRecommender(recommenders[recommender_name]())
+            result[recommender_name] =\
+                lambda recommender_name=recommender_name: FilterSeenRecommender(recommenders[recommender_name]())
         else:
             result[recommender_name] = recommenders[recommender_name]
     return result

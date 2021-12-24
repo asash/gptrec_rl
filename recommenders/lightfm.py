@@ -51,11 +51,10 @@ class LightFMRecommender(Recommender):
         for request in self.items_ranking_requests:
             user_result = []
             user_id = self.users.get_id(request.user_id)
-            items_ids = [self.items.get_id(item_id) for item_id in request.item_ids]
-            scores = self.model.predict(user_id, items_ids)
             for item_id in request.item_ids:
                 if self.items.has_item(item_id):
-                    user_result.append((item_id, scores[self.items.get_id(item_id)]))
+                    score = self.model.predict(user_id, [self.items.get_id(item_id)])
+                    user_result.append((item_id, score))
                 else:
                     user_result.append((item_id, float("-inf")))
             user_result.sort(key=lambda x: -x[1])
