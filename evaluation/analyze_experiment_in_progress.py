@@ -85,7 +85,10 @@ def get_data_from_logs(logfile, experiment_num):
         return parse_experiment(experiment_log)
 
 if __name__ == "__main__":
-    experiment_logs_file = sys.argv[1]
+    if len(sys.argv) <= 1:
+        experiment_logs_file = "results/latest_experiment/stdout"
+    else:
+        experiment_logs_file = sys.argv[1]
     data = get_data_from_logs(experiment_logs_file, 0)
     df = pd.DataFrame(data).set_index('model_name')
     if len(sys.argv) > 2:
