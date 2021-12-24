@@ -37,7 +37,7 @@ def real_hash(obj):
 def run_experiment(config):
     result = []
     print("reading  data...")
-    all_actions = DatasetsRegister()[config.DATASET]()
+    all_actions = [action for action in DatasetsRegister()[config.DATASET]()]
     print("done")
     callbacks = ()
     if hasattr(config, 'CALLBACKS'):
