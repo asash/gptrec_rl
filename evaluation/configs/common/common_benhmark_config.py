@@ -44,7 +44,7 @@ def dnn(model_arch, loss, learning_rate=0.001, last_only=False, training_time_li
                                                           early_stop_epochs=100,
                                                           batch_size=128,
                                                           training_time_limit=training_time_limit,
-                                                          eval_ndcg_at=40,
+                                                          eval_ndcg_at=10,
                                                           target_decay=1.0,
                                                           train_on_last_item_only=last_only
                                                           )
