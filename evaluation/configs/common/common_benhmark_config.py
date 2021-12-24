@@ -54,6 +54,7 @@ def vanilla_bert4rec(time_limit):
 
 
 recommenders = {
+    "lightfm-bpr": lambda: lightfm_recommender(128, 'bpr'),
     "SASRec-BCE-TimeLimit:1h-lastonly:True": lambda: dnn(
             SASRec(), BCELoss(), last_only=True),
     "SASRec-Lambdarank-Full-TimeLimit:1h-lastonly:True": lambda: dnn(
@@ -83,7 +84,6 @@ recommenders = {
     "bert4rec-1h": lambda: vanilla_bert4rec(3600),
     "top": top_recommender,
     "svd": lambda: svd_recommender(128),
-    "MF-bpr": lambda: lightfm_recommender(128, 'bpr')
 }
 for i in range(0):
     dropout_rate = float(np.random.choice([0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6]))
