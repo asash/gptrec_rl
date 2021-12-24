@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 import numpy as np
 
-from datasets.datasets_register import DatasetsRegister
+from aprec.datasets.datasets_register import DatasetsRegister
 
 pd.set_option("display.max_rows", None, "display.max_columns", None)
 pd.set_option('display.expand_frame_repr', False)
@@ -59,7 +59,7 @@ all_metrics = {
 }
 
 
-def dataset_stats(dataset, metric, dataset_name=None):
+def dataset_stats(dataset, metrics, dataset_name=None):
     users = defaultdict(list)
     item_ids = set()
     for action in dataset:

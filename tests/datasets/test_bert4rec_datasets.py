@@ -9,7 +9,8 @@ class TestBert4recDatasets(unittest.TestCase):
         for dataset_name in ["beauty", "steam", "ml-1m"]:
             print(f"analyzing dataset {dataset_name}")
             dataset = get_bert4rec_dataset(dataset_name)
-            print(json.dumps(dataset_stats(dataset), indent=4))
+            stats = dataset_stats(dataset, metrics=['num_users', 'num_items', 'num_interactions'])
+            print(json.dumps(stats, indent=4))
 
 if __name__ == "__main__":
     unittest.main()
