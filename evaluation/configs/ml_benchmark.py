@@ -1,4 +1,3 @@
-from aprec.datasets.movielens100k import get_movielens100k_actions
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.salrec.salrec_recommender import SalrecRecommender
@@ -11,8 +10,6 @@ from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.evaluation.metrics.mrr import MRR
 from aprec.evaluation.metrics.map import MAP
 from tensorflow.keras.optimizers import Adam
-from aprec.evaluation.metrics.average_popularity_rank import AveragePopularityRank
-from aprec.evaluation.metrics.pairwise_cos_sim import PairwiseCosSim
 from aprec.evaluation.metrics.hit import HIT
 from aprec.evaluation.split_actions import LeaveOneOut
 
