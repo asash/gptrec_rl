@@ -44,7 +44,6 @@ def dnn(model_arch, loss, learning_rate=0.001, last_only=False, training_time_li
                                                           training_time_limit=training_time_limit,
                                                           eval_ndcg_at=40,
                                                           target_decay=1.0,
-
                                                           train_on_last_item_only=last_only
                                                           )
 
@@ -84,14 +83,16 @@ for i in range(1000):
     loss = LambdaGammaRankLoss(pred_truncate_at=truncation, bce_grad_weight=bce_weight)
     loss_name=f"Lambdarank-trunc:{truncation}-bce_weight:{bce_weight}"
 
-    trainig_time_minutes = int(np.random.choice([ 5, 10, 15]))
+    training_time_minutes = int(np.random.choice([5, 10, 15]))
     last_only = bool(np.random.choice([True, False]))
-    training_properties=f"TimeLimit:{trainig_time_minutes}m-lastonly:{last_only}`"
+    training_properties=f"TimeLimit:{training_time_minutes}m-lastonly:{last_only}`"
     recommender_name = "-".join([model_name, loss_name, training_properties])
 
-    recommenders[recommender_name] = lambda: dnn(model_arch=model,
-                                                 loss=loss, last_only=last_only,
-                                                 training_time_limit=trainig_time_minutes*60)
+    recommenders[recommender_name] = lambda model=model, loss=loss, \
+                                            last_only=last_only, \
+                                            training_time_minutes=training_time_minutes: dnn(model_arch=model,
+                                                                     loss=loss, last_only=last_only,
+                                                                     training_time_limit=training_time_minutes*60)
 
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR()]
