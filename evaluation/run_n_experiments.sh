@@ -22,6 +22,11 @@ experiment_commit=$root_dir/commit
 
 mkdir $root_dir
 
+latest_experiment_link=./results/latest_experiment
+
+rm -f $latest_experiment_link
+ln -s `pwd`/$root_dir $latest_experiment_link
+
 echo experement resutls are saved at $root_dir
 
 cp $config $root_dir
