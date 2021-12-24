@@ -1,3 +1,5 @@
+from aprec.evaluation.configs.top_recommender_config import TARGET_ITEMS_SAMPLER
+from aprec.evaluation.samplers.pop_sampler import PopTargetItemsSampler
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.lightfm import LightFMRecommender
@@ -28,7 +30,7 @@ RECOMMENDERS = {
     "lightfm_recommeder_30":lambda: lightfm_recommender(128, 'bpr')
 }
 
-SAMPLED_METRICS_ON=101
+TARGET_ITEMS_SAMPLER = PopTargetItemsSampler(101)
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR()]
 SPLIT_STRATEGY = LeaveOneOut(max_test_users=6040, random_seed=2)
 

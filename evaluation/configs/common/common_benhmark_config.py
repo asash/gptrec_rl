@@ -1,4 +1,6 @@
 import numpy as np
+from aprec.evaluation.configs.top_recommender_config import TARGET_ITEMS_SAMPLER
+from aprec.evaluation.samplers.pop_sampler import PopTargetItemsSampler
 
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.svd import SvdRecommender
@@ -54,6 +56,7 @@ def vanilla_bert4rec(time_limit):
 
 
 recommenders = {
+    "top": top_recommender,
     "lightfm-bpr": lambda: lightfm_recommender(128, 'bpr'),
     "SASRec-BCE-TimeLimit:1h-lastonly:True": lambda: dnn(
             SASRec(), BCELoss(), last_only=True),
@@ -82,7 +85,7 @@ recommenders = {
     "Caser-Lambdarank-Truncated:2500-bce_weight:0.975-TimeLimit:1h-lastonly:True": lambda: dnn(
         Caser(), LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975), last_only=True),
     "bert4rec-1h": lambda: vanilla_bert4rec(3600),
-    "top": top_recommender,
+
     "svd": lambda: svd_recommender(128),
 }
 for i in range(0):
@@ -121,7 +124,7 @@ for i in range(0):
 
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR()]
-SAMPLED_METRICS_ON=101
+TARGET_ITEMS_SAMPLER = PopTargetItemsSampler(101)
 
 def get_recommenders(filter_seen: bool):
     result = {}

@@ -1,3 +1,5 @@
+from aprec.evaluation.samplers.pop_sampler import PopTargetItemsSampler
+from aprec.evaluation.samplers.sampler import TargetItemSampler
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.evaluation.metrics.hit import HIT
@@ -20,7 +22,7 @@ RECOMMENDERS = {
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR()]
 
-SAMPLED_METRICS_ON=101
+TARGET_ITEMS_SAMPLER = PopTargetItemsSampler(101)
 RECOMMENDATIONS_LIMIT = 900
 SPLIT_STRATEGY = LeaveOneOut(max_test_users=6040, random_seed=2)
-
+ 

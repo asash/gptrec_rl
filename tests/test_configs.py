@@ -2,6 +2,7 @@ import importlib.util
 import os
 import unittest
 from aprec.datasets.datasets_register import DatasetsRegister
+from aprec.evaluation.samplers.sampler import TargetItemSampler
 
 from aprec.utils.os_utils import get_dir, recursive_listdir
 from aprec.evaluation.split_actions import ActionsSplitter
@@ -56,6 +57,11 @@ class TestConfigs(unittest.TestCase):
 
         if hasattr(config, "USERS"):
             self.assertTrue(callable(config.USERS), "USERS should be callable")
+
+        if hasattr(config, "SAMPLED_METRICS_ON"):
+            raise Exception("SAMPLED_METRICS_ON field is obsolete. Please use  TARGET_ITEMS_SAMPLER")
+        if hasattr(config, "TARGET_ITEMS_SAMPLER"):
+            self.assertTrue(isinstance(config.TARGET_ITEMS_SAMPLER, TargetItemSampler))
 
 
 if __name__ == "__main__":

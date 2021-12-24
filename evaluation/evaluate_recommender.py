@@ -11,17 +11,11 @@ import numpy as np
 from tqdm import tqdm
 
 from aprec.api.items_ranking_request import ItemsRankingRequest
+from aprec.evaluation.samplers.sampler import TargetItemSampler
 from aprec.utils.os_utils import mkdir_p
 from aprec.evaluation.filter_cold_start import filter_cold_start
 from aprec.evaluation.metrics.sampled_proxy_metric import SampledProxy
-
-
-def group_by_user(actions):
-    result = defaultdict(list)
-    for action in actions:
-        result[action.user_id].append(action)
-    return result
-
+from aprec.evaluation.evaluation_utils import group_by_user
 
 def evaluate_recommender(recommender, test_actions,
                          metrics, out_dir, recommender_name,
@@ -95,10 +89,8 @@ class RecommendersEvaluator(object):
     def __init__(self, actions, recommenders, metrics, out_dir, data_splitter,
                  n_val_users, recommendations_limit, callbacks=(),
                  users=None,
-                 n_sampled_ranking = None,  #If n_sampled is not none, the evaluator will calulate pop-biased sampled metrics.
-                                   #This is not a right method and we are keeping it in order to be able to compare with other papers.
-                                   #This will be removed in the future.
                  experiment_config=None,
+                 target_items_sampler: TargetItemSampler = None,
                  ):
         self.actions = actions
         self.metrics = metrics
@@ -117,8 +109,9 @@ class RecommendersEvaluator(object):
         random.shuffle(all_train_user_ids)
         self.val_user_ids = all_train_user_ids[:self.n_val_users]
         self.sampled_requests = None
-        if n_sampled_ranking is not None:
-            self.sampled_requests = self.get_sampled_ranking_requests(n_sampled_ranking)
+        if target_items_sampler is not None:
+            target_items_sampler.set_actions(self.actions, self.test)
+            self.sampled_requests = target_items_sampler.get_sampled_ranking_requests() 
         self.experiment_config = experiment_config
 
     def set_features_from_test(self, features_from_test):
@@ -186,17 +179,3 @@ class RecommendersEvaluator(object):
         with gzip.open(os.path.join(self.out_dir, filename), 'w') as output:
             for action in actions:
                 output.write(action.to_json().encode('utf-8') + b"\n")
-
-    def get_sampled_ranking_requests(self, target_size):
-        items, probs = SampledProxy.all_item_ids_probs(self.actions)
-        by_user_test = group_by_user(self.test)
-        result = []
-        for user_id in by_user_test:
-            target_items = set(action.item_id for action in by_user_test[user_id])
-            while(len(target_items) < target_size):
-                item_ids = np.random.choice(items,  target_size - len(target_items), p=probs, replace=False)
-                for item_id in item_ids:
-                    if item_id not in target_items:
-                        target_items.add(item_id)
-            result.append(ItemsRankingRequest(user_id=user_id, item_ids=list(target_items)))
-        return result

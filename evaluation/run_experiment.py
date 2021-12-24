@@ -74,9 +74,9 @@ def run_experiment(config):
         print("evaluating...")
 
         data_splitter = config.SPLIT_STRATEGY
-        n_sampled_ranking = None
-        if hasattr(config, "SAMPLED_METRICS_ON"):
-            n_sampled_ranking = config.SAMPLED_METRICS_ON
+        target_items_sampler = None
+        if hasattr(config, "TARGET_ITEMS_SAMPLER"):
+            target_items_sampler = config.TARGET_ITEMS_SAMPLER
 
         recommender_evaluator = RecommendersEvaluator(actions,
                                                       config.RECOMMENDERS,
@@ -88,7 +88,7 @@ def run_experiment(config):
                                                       callbacks,
                                                       users=users,
                                                       experiment_config=config,
-                                                      n_sampled_ranking=n_sampled_ranking
+                                                      target_items_sampler=target_items_sampler
                                                       )
 
         if  hasattr(config, 'FEATURES_FROM_TEST'):
