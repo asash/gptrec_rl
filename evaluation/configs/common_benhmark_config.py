@@ -55,11 +55,11 @@ def vanilla_bert4rec(time_limit):
 
 
 recommenders = {
-   "SASRec-lastonly:True-BCE": lambda: dnn(
-        SASRec(), BCELoss(), last_only=True),
+   "SasRec-BCE-TimeLimit:10m-lastonly:False": lambda: dnn(
+        SASRec(), BCELoss(), last_only=False),
 
-    "SASRec-lastonly:False-BCE": lambda: dnn(
-        SASRec(), BCELoss(), last_only=True)
+    "SasRec-BCE-TimeLimit:10m-lastonly:True": lambda: dnn(
+        SASRec(), BCELoss(), last_only=True),
 }
 for i in range(1000):
     dropout_rate = float(np.random.choice([0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6]))
@@ -84,9 +84,9 @@ for i in range(1000):
     loss = LambdaGammaRankLoss(pred_truncate_at=truncation, bce_grad_weight=bce_weight)
     loss_name=f"Lambdarank-trunc:{truncation}-bce_weight:{bce_weight}"
 
-    trainig_time_minutes = int(np.random.choice([1, 2, 5, 10, 15]))
+    trainig_time_minutes = int(np.random.choice([ 5, 10, 15]))
     last_only = bool(np.random.choice([True, False]))
-    training_properties=f"TimeLimit:{trainig_time_minutes}-lastonly:{last_only}`"
+    training_properties=f"TimeLimit:{trainig_time_minutes}m-lastonly:{last_only}`"
     recommender_name = "-".join([model_name, loss_name, training_properties])
 
     recommenders[recommender_name] = lambda: dnn(model_arch=model,
