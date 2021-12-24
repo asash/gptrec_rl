@@ -57,3 +57,7 @@ class TestConfigs(unittest.TestCase):
         if hasattr(config, "USERS"):
             self.assertTrue(callable(config.USERS), "USERS should be callable")
 
+
+if __name__ == "__main__":
+    unittest.main()
+
