@@ -36,14 +36,15 @@ def real_hash(obj):
 
 def run_experiment(config):
     result = []
+    print("reading  data...")
     all_actions = DatasetsRegister()[config.DATASET]()
+    print("done")
     callbacks = ()
     if hasattr(config, 'CALLBACKS'):
         callbacks = config.CALLBACKS
 
     for users_fraction in config.USERS_FRACTIONS:
         every_user = 1/users_fraction
-        print("read data...")
         print("use one out of every {} users ({}% fraction)".format(every_user, users_fraction*100))
         actions = list(filter( lambda action: real_hash(action.user_id)  < users_fraction,
                          all_actions))
