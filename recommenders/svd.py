@@ -56,7 +56,6 @@ class SvdRecommender(Recommender):
                     user_result.append((item_id, scores[self.items.get_id(item_id)]))
                 else:
                     user_result.append((item_id, float("-inf")))
-                user_result.append((item_id, item_score))
             user_result.sort(key=lambda x: -x[1])
             result[request.user_id] = user_result
         return result
