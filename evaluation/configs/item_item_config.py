@@ -1,4 +1,3 @@
-from aprec.datasets.movielens20m import get_movielens20m_actions
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.constant_recommender import ConstantRecommender
@@ -8,14 +7,13 @@ from aprec.evaluation.metrics.precision import Precision
 from aprec.evaluation.metrics.recall import Recall
 from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.evaluation.metrics.hit import HIT
-from aprec.evaluation.split_actions import random_split
-from aprec.evaluation.split_actions import LeaveOneOut
+from aprec.evaluation.split_actions import RandomSplit
 
 
 
 
-DATASET = get_movielens20m_actions(min_rating=3.5)
-USERS_FRACTION = 0.01 
+DATASET = "ml-20m"
+USERS_FRACTIONS = [0.01]
 
 def top_recommender():
     return FilterSeenRecommender(TopRecommender())
@@ -53,6 +51,6 @@ RECOMMENDERS = {
 
 METRICS = [Precision(5), NDCG(40), Recall(5), HIT(10)]
 
-SPLIT_STRATEGY = lambda actions: random_split(actions),
+SPLIT_STRATEGY = RandomSplit()
 
 

@@ -1,4 +1,3 @@
-from aprec.datasets.bert4rec_datasets import get_bert4rec_dataset
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.lightfm import LightFMRecommender
@@ -12,7 +11,7 @@ from aprec.evaluation.split_actions import LeaveOneOut
 import numpy as np
 
 
-DATASET = get_bert4rec_dataset("ml-1m")
+DATASET = "BERT4rec.ml-1m"
 
 USERS_FRACTIONS = [1]
 
@@ -56,11 +55,7 @@ for i in range(0):
 TEST_FRACTION = 0.25
 MAX_TEST_USERS=6040
 
-all_item_ids, probs = SampledProxy.all_item_ids_probs(DATASET)
-
-METRICS = [SampledProxy(all_item_ids, probs, 100, metric) for metric in
-           [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), ]]
-
+METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR()]
 
 RECOMMENDATIONS_LIMIT = 100
 SPLIT_STRATEGY = LeaveOneOut(MAX_TEST_USERS)

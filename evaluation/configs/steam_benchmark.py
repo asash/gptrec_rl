@@ -1,6 +1,5 @@
 import random
 
-from aprec.datasets.bert4rec_datasets import get_bert4rec_dataset
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.salrec.salrec_recommender import SalrecRecommender
@@ -16,7 +15,7 @@ from tensorflow.keras.optimizers import Adam
 from aprec.evaluation.metrics.hit import HIT
 from aprec.evaluation.split_actions import LeaveOneOut
 
-DATASET = get_bert4rec_dataset("steam")
+DATASET = "BERT4rec.steam"
 
 
 USERS_FRACTIONS = [1.]

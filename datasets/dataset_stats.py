@@ -1,33 +1,17 @@
-import sys
 from collections import defaultdict
 from argparse import ArgumentParser
 
 import pandas as pd
 from tqdm import tqdm
 
-from aprec.datasets.bert4rec_datasets import get_bert4rec_dataset
-from aprec.datasets.movielens20m import get_movielens20m_actions
-from aprec.datasets.movielens100k import get_movielens100k_actions
-from aprec.datasets.mts_kion import get_mts_kion_dataset
-from aprec.datasets.booking import get_booking_dataset
-
 import numpy as np
+
+from datasets.datasets_register import DatasetsRegister
 
 pd.set_option("display.max_rows", None, "display.max_columns", None)
 pd.set_option('display.expand_frame_repr', False)
 pd.set_option('display.max_colwidth', 256)
 
-
-all_datasets =  {
-    "BERT4rec.ml-1m": lambda: get_bert4rec_dataset("ml-1m"),
-    "BERT4rec.steam": lambda: get_bert4rec_dataset("steam"),
-    "BERT4rec.beauty": lambda: get_bert4rec_dataset("beauty"),
-    "ml-20m": lambda: get_movielens20m_actions(min_rating=0.0),
-    "ml-100k": lambda: get_movielens100k_actions(min_rating=0.0),
-    "booking": lambda: get_booking_dataset()[0],
-    "mts_kion": lambda: get_mts_kion_dataset()
-
-}
 
 def num_users(users, items, session_lens):
     return len(users)
@@ -96,7 +80,7 @@ def dataset_stats(dataset, metric, dataset_name=None):
 if __name__ == "__main__":
 
     parser = ArgumentParser()
-    parser.add_argument("--datasets", required=True, help=f"Available Datasets: {','.join(all_datasets.keys())}")
+    parser.add_argument("--datasets", required=True, help=f"Available Datasets: {','.join(DatasetsRegister().all_datasets())}")
     parser.add_argument("--metrics", required=False, help=f"Available Columns: {','.join(all_metrics.keys())}", default=','.join(all_metrics.keys()))
     parser.add_argument("--latex_table", required=False, default=False)
     args = parser.parse_args()
@@ -104,12 +88,12 @@ if __name__ == "__main__":
     metrics = args.metrics.split(",")
     datasets = args.datasets.split(",")
     for dataset in datasets:
-        if dataset not in all_datasets:
+        if dataset not in DatasetsRegister().all_datasets():
             print(f"unknown dataset {dataset}")
             exit(1)
     docs = []
     for dataset_name in tqdm(datasets):
-        dataset = all_datasets[dataset_name]()
+        dataset = DatasetsRegister()[dataset_name]()
         stats = dataset_stats(dataset, metrics, dataset_name=dataset_name)
         docs.append(stats)
         del(dataset)

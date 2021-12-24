@@ -14,11 +14,12 @@ from aprec.evaluation.split_actions import LeaveOneOut
 from tqdm import tqdm
 
 
-DATASET, SUBMIT_ACTIONS = get_booking_dataset()
+DATASET = "booking"
 
 GENERATE_SUBMIT_THRESHOLD = 0.54175
 
 def generate_submit(recommender, recommender_name, evaluation_result, config):
+    SUBMIT_ACTIONS = get_booking_dataset()[1]
     if evaluation_result["SPS@4"] < config.GENERATE_SUBMIT_THRESHOLD:
         print("SPS@4 is less than threshold, not generating the submit")
         return

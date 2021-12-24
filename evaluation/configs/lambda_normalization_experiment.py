@@ -1,6 +1,5 @@
 import random
 
-from aprec.datasets.movielens20m import get_movielens20m_actions
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.salrec.salrec_recommender import SalrecRecommender
@@ -16,7 +15,7 @@ from tensorflow.keras.optimizers import Adam
 from aprec.evaluation.metrics.hit import HIT
 from aprec.evaluation.split_actions import LeaveOneOut
 
-DATASET = get_movielens20m_actions(min_rating=1.0)
+DATASET = "ml-20m"
 
 
 USERS_FRACTIONS = [1.]

@@ -1,6 +1,3 @@
-import random
-
-from aprec.datasets.movielens20m import get_movielens20m_actions
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.lightfm import LightFMRecommender
@@ -20,7 +17,7 @@ from aprec.evaluation.split_actions import LeaveOneOut
 from aprec.recommenders.dnn_sequential_recommender.models.caser import Caser
 from aprec.recommenders.vanilla_bert4rec import VanillaBERT4Rec
 
-DATASET = get_movielens20m_actions(min_rating=1.0)
+DATASET = "ml-20m"
 
 
 USERS_FRACTIONS = [1.]

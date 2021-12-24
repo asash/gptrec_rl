@@ -36,16 +36,10 @@ def process_batch(candidate_features, target_features, target_batch):
 
 
 class BookingRecommenderLTR(Recommender):
-    def __init__(self,n_val_users=1000,
-                 batch_size = 1000,
-                 candidates_cnt = 50, epoch_size=20000,
-                 val_epoch_size=2000,
-                 num_training_samples = 1000000,
-                 num_epochs = 10000,
-                 early_stop_epochs=40,
-                 model_type = 'lightgbm', attention=False, lgbm_boosting_type='gbdt', lgbm_objective='lambdarank'):
-        print(f"Creating LTR recommender. Model_type{model_type}, "
-              f"Lgbm_boosting_type:{lgbm_boosting_type}, lgbm_objective:{lgbm_objective}")
+    def __init__(self, n_val_users=1000, batch_size=1000, candidates_cnt=50, epoch_size=20000, val_epoch_size=2000,
+                 num_training_samples=1000000, num_epochs=10000, early_stop_epochs=40, model_type='lightgbm',
+                 attention=False, lgbm_boosting_type='gbdt', lgbm_objective='lambdarank'):
+        super().__init__()
         self.users = ItemId()
         self.items = ItemId()
         self.countries = ItemId()

@@ -6,6 +6,7 @@ import mmh3
 
 from aprec.utils.os_utils import shell
 from aprec.evaluation.evaluate_recommender import RecommendersEvaluator
+from aprec.datasets.datasets_register import DatasetsRegister
 
 import tensorflow as tf
 
@@ -35,7 +36,7 @@ def real_hash(obj):
 
 def run_experiment(config):
     result = []
-    all_actions = list(config.DATASET)
+    all_actions = DatasetsRegister()[config.DATASET]()
     callbacks = ()
     if hasattr(config, 'CALLBACKS'):
         callbacks = config.CALLBACKS
@@ -56,7 +57,7 @@ def run_experiment(config):
             n_val_users = len(user_id_set) // 10
 
         if hasattr(config, 'USERS'):
-            users = config.USERS
+            users = config.USERS()
         else:
             users = None
 
@@ -99,19 +100,6 @@ def run_experiment(config):
         write_result(config, result)
         shell(f"python3 statistical_signifficance_test.py --predictions-dir={config.out_dir}/predictions/ "
               f"--output-file={config.out_dir}/statistical_signifficance.json")
-
-def get_data_splitter(config):
-    if config.SPLIT_STRATEGY == "TEMPORAL_GLOBAL":
-        split_fraction = config.FRACTION_TO_SPLIT
-        return lambda actions: split_actions(actions, (split_fraction, 1 - split_fraction))
-
-    elif config.SPLIT_STRATEGY == "LEAVE_ONE_OUT":
-        return lambda actions: leave_one_out(actions, get_max_test_users(config))
-
-    elif config.SPLIT_STRATEGY == "RANDOM_SPLIT":
-        test_fraction = config.TEST_FRACTION
-        return lambda actions: random_split(actions, test_fraction=test_fraction,
-                                            max_test_users=get_max_test_users(config))
 
 def get_max_test_users(config):
     if hasattr(config, 'MAX_TEST_USERS'):

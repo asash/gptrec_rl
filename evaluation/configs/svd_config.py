@@ -1,4 +1,3 @@
-from aprec.datasets.bert4rec_datasets import get_bert4rec_dataset
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.lightfm import LightFMRecommender
@@ -10,7 +9,7 @@ from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.evaluation.metrics.mrr import MRR
 
 
-DATASET = get_bert4rec_dataset("ml-1m")
+DATASET = "BERT4rec.steam"
 
 USERS_FRACTIONS = [1]
 

@@ -1,5 +1,5 @@
 import unittest
-from aprec.evaluation.split_actions import split_actions,random_split
+from aprec.evaluation.split_actions import TemporalGlobal, RandomSplit
 from aprec.datasets.movielens20m import get_movielens20m_actions
 from generate_actions import generate_actions
 from aprec.utils.generator_limit import generator_limit
@@ -10,7 +10,8 @@ class TestSplitActions(unittest.TestCase):
 
     def test_split_actions(self):
         actions =  generate_actions(100)
-        splitted = split_actions(actions, (7, 1, 2))
+        split_actions = TemporalGlobal((7, 1, 2))
+        splitted = split_actions(actions)
         self.assertEqual(len(splitted), 3)
         self.assertEqual(len(splitted[0]), 70)
         self.assertEqual(len(splitted[1]), 10)
@@ -25,7 +26,8 @@ class TestSplitActions(unittest.TestCase):
         for action in generator_limit(get_movielens20m_actions(), 10000):
             actions.append(action)
             user_ids.add(action.user_id)
-        train, test = random_split(actions, 0.5, 10)
+        random_split = RandomSplit(0.5, 10)
+        train, test = random_split(actions)
         train_users =  group_by_user(train)
         test_users = group_by_user(test)
         self.assertEqual(len(test_users), 10)

@@ -25,13 +25,13 @@ from aprec.recommenders.dnn_sequential_recommender.models.caser import Caser
 from aprec.recommenders.dnn_sequential_recommender.user_featurizers.hashing_featurizer import HashingUserFeaturizer
 from aprec.evaluation.split_actions import LeaveOneOut
 
-DATASET = get_mts_kion_dataset()
-SUBMIT_USER_IDS = get_submission_user_ids()
-USERS = get_users()
+DATASET = "mts_kion"
+USERS = get_users
 
 GENERATE_SUBMIT_THRESHOLD =  0.16
 
 def generate_submit(recommender, recommender_name, evaluation_result, config):
+    submit_user_ids = get_submission_user_ids()
     if evaluation_result["MAP@10"] <= config.GENERATE_SUBMIT_THRESHOLD:
         print("SPS@4 is less than threshold, not generating the submit")
         return
@@ -39,7 +39,7 @@ def generate_submit(recommender, recommender_name, evaluation_result, config):
     print("generating submit...")
     with open(os.path.join(config.out_dir, recommender_name + "_submit_" + ".csv"), 'w') as out_file:
         out_file.write("user_id,item_id\n")
-        for user_id in tqdm(config.SUBMIT_USER_IDS, ascii=True):
+        for user_id in tqdm(submit_user_ids, ascii=True):
             recommendations = recommender.recommend(user_id, limit=10)
             content_ids = [recommendation[0] for recommendation in recommendations]
             line = user_id + ",\"["  +  ", ".join(content_ids) + "]\"\n"

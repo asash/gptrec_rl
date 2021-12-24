@@ -1,4 +1,3 @@
-from aprec.datasets.movielens100k import get_movielens100k_actions
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.lightfm import LightFMRecommender
@@ -13,11 +12,11 @@ from aprec.evaluation.metrics.mrr import MRR
 from aprec.evaluation.metrics.map import MAP
 from aprec.evaluation.metrics.hit import HIT
 from tensorflow.keras.optimizers import Adam
-from aprec.evaluation.split_actions import random_split
+from aprec.evaluation.split_actions import RandomSplit
 import numpy as np
 
 
-DATASET = get_movielens100k_actions(min_rating=1.0)
+DATASET = "ml-100k"
 
 USERS_FRACTIONS = [1]
 
@@ -99,5 +98,5 @@ METRICS = [NDCG(40), Precision(5), Recall(5), HIT(10), MRR(), MAP(10)]
 
 
 RECOMMENDATIONS_LIMIT = 100
-SPLIT_STRATEGY = lambda actions: random_split(actions),
+SPLIT_STRATEGY = RandomSplit()
 

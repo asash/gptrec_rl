@@ -1,5 +1,3 @@
-import random
-
 import numpy as np
 
 from aprec.recommenders.top_recommender import TopRecommender

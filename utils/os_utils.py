@@ -9,6 +9,16 @@ def get_dir():
     lib_dirname = os.path.abspath(os.path.join(utils_dirname, ".."))
     return lib_dirname
 
+def recursive_listdir(dir_name):
+    result = []
+    for name in os.listdir(dir_name):
+        full_name = os.path.join(dir_name, name)
+        if(os.path.isdir(full_name)):
+            result += recursive_listdir(full_name)
+        else:
+            result.append(full_name)
+    return result
+
 def shell(cmd):
     logging.info("running shell command: \n {}".format(cmd))
     subprocess.check_call(shlex.split(cmd))

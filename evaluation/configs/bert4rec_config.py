@@ -1,12 +1,11 @@
 from aprec.recommenders.vanilla_bert4rec import VanillaBERT4Rec
 from aprec.evaluation.metrics.mrr import MRR
 from aprec.evaluation.metrics.hit import HIT
-from aprec.datasets.bert4rec_datasets import get_bert4rec_dataset
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.evaluation.split_actions import LeaveOneOut
 
-DATASET = get_bert4rec_dataset("ml-1m")
+DATASET = "BERT4rec.ml-1m"
 
 USERS_FRACTIONS = [1]
 
