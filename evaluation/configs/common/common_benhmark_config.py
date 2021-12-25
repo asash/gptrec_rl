@@ -50,7 +50,8 @@ def dnn(model_arch, loss, learning_rate=0.001, last_only=False, training_time_li
                                                           )
 
 def salrec(loss, training_time_limit=3600):
-    return SalrecRecommender(loss, training_time_limit=training_time_limit)
+    return SalrecRecommender(loss=loss, training_time_limit=training_time_limit,
+                             train_epochs=10000, early_stop_epochs=1000)
 
 
 def vanilla_bert4rec(time_limit):
