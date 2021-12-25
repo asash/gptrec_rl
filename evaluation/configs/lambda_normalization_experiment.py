@@ -44,7 +44,7 @@ def salrec(loss, num_blocks, learning_rate,
     return FilterSeenRecommender(SalrecRecommender(train_epochs=10000, loss=loss,
                                                    optimizer=Adam(learning_rate), 
                                                    early_stop_epochs=300,
-                                                   batch_size=128, sigma=1.0,
+                                                   batch_size=128,
                                                    max_history_len=session_len,
                                                    output_layer_activation=activation,
                                                    training_time_limit = 3600,
@@ -57,10 +57,10 @@ def salrec(loss, num_blocks, learning_rate,
 
 recommenders_raw = {
     "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:2500-bce_weight:0.975":
-        lambda: salrec(LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975, lambda_normalization=True), 3, 0.001, 50, 100, True),
+        lambda: salrec(LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975, lambda_normalization=True), 3, 0.001, 100, True),
 
     "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:False-truncate:2500-bce_weight:0.975":
-        lambda: salrec(LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975, lambda_normalization=False), 3, 0.001, 50, 100, True),
+        lambda: salrec(LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975, lambda_normalization=False), 3, 0.001, 100, True),
 
 }
 

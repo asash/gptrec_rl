@@ -8,7 +8,6 @@ from collections import defaultdict
 
 from keras.regularizers import l2
 
-from aprec.losses.get_loss import get_loss
 from aprec.losses.lambda_gamma_rank import LambdarankLambdasSum, BCELambdasSum, LambdaGammaRankLoss
 from aprec.losses.loss import Loss
 from aprec.utils.item_id import ItemId
@@ -21,13 +20,13 @@ import numpy as np
 
 
 class SalrecRecommender(Recommender):
-    def __init__(self, train_epochs=300, max_history_len=64,
+    def __init__(self, train_epochs=300, max_history_len=200,
                                   loss=LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975),
-                 output_layer_activation='linear', optimizer='adam', batch_size=64, early_stop_epochs=100,
+                 output_layer_activation='linear', optimizer='adam', batch_size=128, early_stop_epochs=100,
                  target_decay=1.0, num_blocks=3, num_heads=5, num_target_predictions=5,
                  positional=True, embedding_size=64, bottleneck_size=256, num_bottlenecks=2, regularization=0.0,
                  training_time_limit=None,  log_lambdas_len=False,
-                 eval_ndcg_at=30,
+                 eval_ndcg_at=10,
                  num_user_cat_hashes=3, user_cat_features_space=1000, max_user_features_hashes=None):
         super().__init__()
         self.embedding_size = embedding_size
