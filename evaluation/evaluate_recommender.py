@@ -5,6 +5,7 @@ import os
 import random
 import sys
 import time
+import traceback
 from collections import defaultdict
 
 import numpy as np
@@ -165,6 +166,10 @@ class RecommendersEvaluator(object):
             except Exception as ex:
                 print(f"ERROR: exception during evaluating {recommender_name}")
                 print(ex)
+
+                print(traceback.format_exc())
+
+
                 try:
                     del(recommender)
                 except:
