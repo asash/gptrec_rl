@@ -60,30 +60,30 @@ recommenders = {
     "lightfm-bpr": lambda: lightfm_recommender(128, 'bpr'),
     "SASRec-BCE-TimeLimit:1h-lastonly:True": lambda: dnn(
             SASRec(), BCELoss(), last_only=True),
-    "SASRec-Lambdarank-Full-TimeLimit:1h-lastonly:True": lambda: dnn(
-        SASRec(), LambdaGammaRankLoss(), last_only=True),
-    "SASRec-Lambdarank-Truncated:2500-TimeLimit:1h-lastonly:True": lambda: dnn(
-        SASRec(), LambdaGammaRankLoss(pred_truncate_at=2500), last_only=True),
-    "SASRec-Lambdarank-Truncated:2500-bce_weight:0.975-TimeLimit:1h-lastonly:True": lambda: dnn(
-        SASRec(), LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975), last_only=True),
+    "SASRec-Lambdarank-Full-TimeLimit:1h-lastonly:False": lambda: dnn(
+        SASRec(), LambdaGammaRankLoss(), last_only=False),
+    "SASRec-Lambdarank-Truncated:2500-TimeLimit:1h-lastonly:False": lambda: dnn(
+        SASRec(), LambdaGammaRankLoss(pred_truncate_at=2500), last_only=False),
+    "SASRec-Lambdarank-Truncated:2500-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
+        SASRec(), LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975), last_only=False),
 
     "GRU4Rec-BCE-TimeLimit:1h-lastonly:True": lambda: dnn(
         GRU4Rec(), BCELoss(), last_only=True),
-    "GRU4Rec-Lambdarank-Full-TimeLimit:1h-lastonly:True": lambda: dnn(
-        GRU4Rec(), LambdaGammaRankLoss(), last_only=True),
-    "GRU4Rec-Lambdarank-Truncated:2500-TimeLimit:1h-lastonly:True": lambda: dnn(
-        GRU4Rec(), LambdaGammaRankLoss(pred_truncate_at=2500), last_only=True),
-    "GRU4Rec-Lambdarank-Truncated:2500-bce_weight:0.975-TimeLimit:1h-lastonly:True": lambda: dnn(
-        GRU4Rec(), LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975), last_only=True),
+    "GRU4Rec-Lambdarank-Full-TimeLimit:1h-lastonly:False": lambda: dnn(
+        GRU4Rec(), LambdaGammaRankLoss(), last_only=False),
+    "GRU4Rec-Lambdarank-Truncated:2500-TimeLimit:1h-lastonly:False": lambda: dnn(
+        GRU4Rec(), LambdaGammaRankLoss(pred_truncate_at=2500), last_only=False),
+    "GRU4Rec-Lambdarank-Truncated:2500-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
+        GRU4Rec(), LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975), last_only=False),
 
     "Caser-BCE-TimeLimit:1h-lastonly:True": lambda: dnn(
         Caser(), BCELoss(), last_only=True),
-    "Caser-Lambdarank-Full-TimeLimit:1h-lastonly:True": lambda: dnn(
-        Caser(), LambdaGammaRankLoss(), last_only=True),
-    "Caser-Lambdarank-Truncated:2500-TimeLimit:1h-lastonly:True": lambda: dnn(
-        Caser(), LambdaGammaRankLoss(pred_truncate_at=2500), last_only=True),
-    "Caser-Lambdarank-Truncated:2500-bce_weight:0.975-TimeLimit:1h-lastonly:True": lambda: dnn(
-        Caser(), LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975), last_only=True),
+    "Caser-Lambdarank-Full-TimeLimit:1h-lastonly:False": lambda: dnn(
+        Caser(), LambdaGammaRankLoss(), last_only=False),
+    "Caser-Lambdarank-Truncated:2500-TimeLimit:1h-lastonly:False": lambda: dnn(
+        Caser(), LambdaGammaRankLoss(pred_truncate_at=2500), last_only=False),
+    "Caser-Lambdarank-Truncated:2500-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
+        Caser(), LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975), last_only=False),
     "bert4rec-1h": lambda: vanilla_bert4rec(3600),
 
     "svd": lambda: svd_recommender(128),
