@@ -24,7 +24,7 @@ class SalrecRecommender(Recommender):
     def __init__(self, train_epochs=300, max_history_len=64,
                                   loss=LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975),
                  output_layer_activation='linear', optimizer='adam', batch_size=64, early_stop_epochs=100,
-                 target_decay=0.8, sigma=1, num_blocks=5, num_heads=5, num_target_predictions=5,
+                 target_decay=1.0, num_blocks=3, num_heads=5, num_target_predictions=5,
                  positional=True, embedding_size=64, bottleneck_size=256, num_bottlenecks=2, regularization=0.0,
                  training_time_limit=None,  log_lambdas_len=False,
                  eval_ndcg_at=30,
@@ -45,7 +45,6 @@ class SalrecRecommender(Recommender):
         self.optimizer = optimizer
         self.metadata = {}
         self.batch_size = batch_size
-        self.sigma = sigma
         self.output_layer_activation = output_layer_activation
         self.target_decay = target_decay
         self.num_blocks = num_blocks
