@@ -67,7 +67,7 @@ class OwnSasrecModel(tensorflow.keras.Model):
             self.attention_blocks.append(block_layers)
         self.output_activation = activations.get(self.output_layer_activation)
         self.seq_norm = layers.LayerNormalization()
-        self.all_items = tf.range(1, self.num_items+1)
+        self.all_items = tf.range(0, self.num_items)
 
     def block(self, seq, mask, i):
         x = self.attention_blocks[i]["first_norm"](seq)
@@ -88,7 +88,7 @@ class OwnSasrecModel(tensorflow.keras.Model):
         seq = self.item_embeddings_layer(input_ids)
         pos_embeddings = self.postion_embedding_layer(self.positions)
         seq += pos_embeddings
-        mask = tf.expand_dims(tf.cast(tf.not_equal(input_ids, 0), dtype=tf.float32), -1)
+        mask = tf.expand_dims(tf.cast(tf.not_equal(input_ids, self.num_items), dtype=tf.float32), -1)
         for i in range(self.num_blocks):
             seq = self.block(seq, mask, i)
 

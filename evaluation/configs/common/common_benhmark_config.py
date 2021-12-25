@@ -60,17 +60,17 @@ def vanilla_bert4rec(time_limit):
 
 
 recommenders = {
-    "Salrec-Lambdarank-Truncated:2500-bce_weight:0.975-TimeLimit:1h":#
-        lambda: salrec(LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975)),
-    "Salrec-Lambdarank-Truncated:2500-TimeLimit:1h":  #
-        lambda: salrec(LambdaGammaRankLoss(pred_truncate_at=2500)),
-    "Salrec-Lambdarank-Full-TimeLimit:1h":  #
-        lambda: salrec(LambdaGammaRankLoss()),
-    "Salrec-Lambdarank-BCE-TimeLimit:1h":  #
-        lambda: salrec(BCELoss()),
-
-    "top": top_recommender,
-    "lightfm-bpr": lambda: lightfm_recommender(128, 'bpr'),
+    # "Salrec-Lambdarank-Truncated:2500-bce_weight:0.975-TimeLimit:1h":#
+    #     lambda: salrec(LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975)),
+    # "Salrec-Lambdarank-Truncated:2500-TimeLimit:1h":  #
+    #     lambda: salrec(LambdaGammaRankLoss(pred_truncate_at=2500)),
+    # "Salrec-Lambdarank-Full-TimeLimit:1h":  #
+    #     lambda: salrec(LambdaGammaRankLoss()),
+    # "Salrec-Lambdarank-BCE-TimeLimit:1h":  #
+    #     lambda: salrec(BCELoss()),
+    #
+    # "top": top_recommender,
+    # "lightfm-bpr": lambda: lightfm_recommender(128, 'bpr'),
     "SASRec-BCE-TimeLimit:1h-lastonly:True": lambda: dnn(
             SASRec(), BCELoss(), last_only=True),
     "SASRec-Lambdarank-Full-TimeLimit:1h-lastonly:False": lambda: dnn(
