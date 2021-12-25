@@ -8,5 +8,5 @@ class TargetItemSampler(object):
         self.test = test_actions
 
 
-    def get_sampled_ranking_requests(self, target_size):
+    def get_sampled_ranking_requests(self):
         raise NotImplementedError()
