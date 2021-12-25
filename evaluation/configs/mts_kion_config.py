@@ -4,6 +4,7 @@ import random
 from tqdm import tqdm
 
 from aprec.datasets.mts_kion import get_mts_kion_dataset, get_submission_user_ids, get_users
+from aprec.recommenders.dnn_sequential_recommender.models.sasrec.sasrec_kion import KionSasrecModel
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.salrec.salrec_recommender import SalrecRecommender
@@ -109,6 +110,7 @@ def dnn(model_arch, loss,learning_rate=0.001, last_only=False, user_hasher=None)
                                                           ))
 
 recommenders_raw = {
+    "SASREC-kion": lambda: dnn(KionSasrecModel(), BCELoss(), last_only=True), 
     "CASER-hashes-BCE-lastonly": lambda: dnn(Caser(requires_user_id=False, user_extra_features=True), BCELoss(),
                                              last_only=True, user_hasher=HashingUserFeaturizer()),
      "CASER-hashes-Larmbdarank-truncated-weighted-lastonly": lambda: dnn(Caser(requires_user_id=False,
