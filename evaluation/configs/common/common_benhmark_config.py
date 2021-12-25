@@ -1,6 +1,7 @@
 import numpy as np
 from aprec.evaluation.configs.top_recommender_config import TARGET_ITEMS_SAMPLER
 from aprec.evaluation.samplers.pop_sampler import PopTargetItemsSampler
+from aprec.recommenders.dnn_sequential_recommender.models.sasrec.sasrec import SASRec
 
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.svd import SvdRecommender
@@ -8,7 +9,6 @@ from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender im
 from aprec.recommenders.lightfm import LightFMRecommender
 from aprec.recommenders.vanilla_bert4rec import VanillaBERT4Rec
 from aprec.losses.bce import BCELoss
-from aprec.recommenders.dnn_sequential_recommender.models.sasrec import SASRec
 from aprec.recommenders.dnn_sequential_recommender.models.gru4rec import GRU4Rec
 from aprec.recommenders.dnn_sequential_recommender.models.caser import Caser
 
