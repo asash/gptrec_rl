@@ -110,7 +110,7 @@ def dnn(model_arch, loss,learning_rate=0.001, last_only=False, user_hasher=None)
                                                           ))
 
 recommenders_raw = {
-    "SASREC-kion": lambda: dnn(KionChallengeSASRec(), BCELoss(), last_only=True)
+    "SASREC-kion": lambda: dnn(KionChallengeSASRec(), BCELoss(), last_only=True, user_hasher=HashingUserFeaturizer())
 }
 
 
