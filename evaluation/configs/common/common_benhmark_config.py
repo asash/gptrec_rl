@@ -51,7 +51,7 @@ def dnn(model_arch, loss, learning_rate=0.001, last_only=False, training_time_li
 
 def salrec(loss, training_time_limit=3600, target_decay=1.0):
     return SalrecRecommender(loss=loss, target_decay=target_decay, training_time_limit=training_time_limit,
-                             train_epochs=10000, early_stop_epochs=1000)
+                             train_epochs=10000, early_stop_epochs=1000, num_blocks=0, num_bottlenecks=1)
 
 
 def vanilla_bert4rec(time_limit):
@@ -64,10 +64,10 @@ recommenders = {
     #     lambda: salrec(LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975)),
     # "Salrec-Lambdarank-Truncated:2500-TimeLimit:1h":  #
     #     lambda: salrec(LambdaGammaRankLoss(pred_truncate_at=2500)),
-    # "Salrec-Lambdarank-Full-TimeLimit:1h":  #
-    #     lambda: salrec(LambdaGammaRankLoss()),
-    # "Salrec-Lambdarank-BCE-TimeLimit:1h":  #
-    #     lambda: salrec(BCELoss()),
+     "Salrec-Lambdarank-Full-TimeLimit:1h":  #
+         lambda: salrec(LambdaGammaRankLoss()),
+     "Salrec-Lambdarank-BCE-TimeLimit:1h":  #
+         lambda: salrec(BCELoss()),
     #
     # "top": top_recommender,
     # "lightfm-bpr": lambda: lightfm_recommender(128, 'bpr'),

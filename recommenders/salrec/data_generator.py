@@ -88,7 +88,7 @@ class DataGenerator(Sequence):
                 cur_val *= self.target_decay
                 if cur_val < self.min_target_val:
                     cur_val = self.min_target_val
-        result =  csr_matrix((vals, (rows, cols)), shape=(len(user_actions), n_items))
+        result =  csr_matrix((vals, (rows, cols)), shape=(len(user_actions), n_items), dtype='float32')
         return result
 
 

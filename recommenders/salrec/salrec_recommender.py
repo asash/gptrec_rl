@@ -1,32 +1,34 @@
 import gc
 import time
 
-import keras
 import mmh3
 import tensorflow.keras.backend as K
 from collections import defaultdict
 
-from keras.regularizers import l2
+from tqdm import tqdm
+import tensorflow as tf
+from tensorflow.keras.optimizers import Adam
 
 from aprec.losses.lambda_gamma_rank import LambdarankLambdasSum, BCELambdasSum, LambdaGammaRankLoss
 from aprec.losses.loss import Loss
+from aprec.recommenders.salrec.salrec_model import SalrecModel
 from aprec.utils.item_id import ItemId
 from aprec.recommenders.metrics.ndcg import KerasNDCG
 from aprec.recommenders.recommender import Recommender
 from aprec.recommenders.salrec.data_generator import DataGenerator, reverse_positions, actions_to_vector
-import tensorflow.keras.layers as layers
 import numpy as np
 
 
 class SalrecRecommender(Recommender):
     def __init__(self, train_epochs=300, max_history_len=200,
                                   loss=LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975),
-                 output_layer_activation='linear', optimizer='adam', batch_size=128, early_stop_epochs=100,
+                 output_layer_activation='linear', optimizer=Adam(), batch_size=128, early_stop_epochs=100,
                  target_decay=1.0, num_blocks=3, num_heads=5, num_target_predictions=5,
                  positional=True, embedding_size=64, bottleneck_size=256, num_bottlenecks=2, regularization=0.0,
                  training_time_limit=None,  log_lambdas_len=False,
                  eval_ndcg_at=10,
-                 num_user_cat_hashes=3, user_cat_features_space=1000, max_user_features_hashes=None):
+                 num_user_cat_hashes=3, user_cat_features_space=1000, max_user_features_hashes=None,
+                 debug = False):
         super().__init__()
         self.embedding_size = embedding_size
         self.users = ItemId()
@@ -60,6 +62,7 @@ class SalrecRecommender(Recommender):
         self.user_feature_hashes = {}
         self.max_user_feature_hashes = max_user_features_hashes
         self.eval_ndcg_at=eval_ndcg_at
+        self.debug = debug
         assert(isinstance(self.loss, Loss))
 
         if log_lambdas_len and not (isinstance(loss, LambdaGammaRankLoss)):
@@ -114,7 +117,32 @@ class SalrecRecommender(Recommender):
                                       target_decay=self.target_decay,
                                       num_actions_to_predict=self.num_target_predictions,
                                       positional=self.positional)
-        self.model = self.get_model(self.items.size())
+        self.model = SalrecModel(n_items=self.items.size(),
+                                 num_heads=self.num_heads,
+                                 num_blocks=self.num_blocks,
+                                 embedding_size=self.embedding_size,
+                                 num_bottlenecks=self.num_bottlenecks,
+                                 max_user_feature_hashes=self.max_user_feature_hashes,
+                                 output_layer_activation=self.output_layer_activation,
+                                 user_cat_features_space=self.user_cat_features_space,
+                                 max_history_length=self.max_history_length,
+                                 num_user_cat_hashes=self.num_user_cat_hashes,
+                                 bottleneck_size=self.bottleneck_size,
+                                 regularization=self.regularization,
+                                 positional=self.positional)
+
+        ndcg_metric = KerasNDCG(self.eval_ndcg_at)
+        metrics = [ndcg_metric]
+        if self.log_lambdas_len:
+            metrics.append(LambdarankLambdasSum(self.loss))
+            metrics.append(BCELambdasSum(self.loss))
+        if not self.debug:
+            self.model.compile(optimizer=self.optimizer, loss=self.loss, metrics=metrics)
+
+        #initialize model weights
+        X, y = val_generator[0]
+        self.model(X)
+
         best_ndcg = 0
         steps_since_improved = 0
         best_epoch = -1
@@ -130,11 +158,9 @@ class SalrecRecommender(Recommender):
                                               num_actions_to_predict=self.num_target_predictions,
                                               positional=self.positional)
             print(f"epoch: {epoch}")
-            X, y = generator[0]
-            train_history = self.model.fit(generator, validation_data=val_generator)
-            total_trainig_time = time.time() - start_time
-            val_ndcg = train_history.history[f"val_ndcg_at_{self.eval_ndcg_at}"][-1]
-            val_ndcg_history.append((total_trainig_time, val_ndcg))
+            val_ndcg = self.train_epoch(generator, val_generator, ndcg_metric)
+            total_training_time = time.time() - start_time
+            val_ndcg_history.append((total_training_time, val_ndcg))
             steps_since_improved += 1
             if val_ndcg > best_ndcg:
                 steps_since_improved = 0
@@ -142,12 +168,12 @@ class SalrecRecommender(Recommender):
                 best_epoch = epoch
                 best_weights = self.model.get_weights()
             print(f"val_ndcg: {val_ndcg}, best_ndcg: {best_ndcg}, steps_since_improved: "
-                  f"{steps_since_improved}, total_training_time: {total_trainig_time}")
+                  f"{steps_since_improved}, total_training_time: {total_training_time}")
             if steps_since_improved >= self.early_stop_epochs:
                 print(f"early stopped at epoch {epoch}")
                 break
 
-            if self.trainig_time_limit is not None and total_trainig_time > self.trainig_time_limit:
+            if self.trainig_time_limit is not None and total_training_time > self.trainig_time_limit:
                 print(f"time limit stop triggered at epoch {epoch}")
                 break
 
@@ -160,60 +186,6 @@ class SalrecRecommender(Recommender):
         print(self.get_metadata())
         print(f"taken best model from epoch{best_epoch}. best_val_ndcg: {best_ndcg}")
 
-    def get_model(self, n_items):
-        embedding_size = self.embedding_size
-        model_inputs = []
-
-        input = layers.Input(shape=(self.max_history_length))
-        model_inputs.append(input)
-        x = layers.Embedding(n_items + 1, embedding_size)(input)
-
-        if self.max_user_feature_hashes > 0:
-            features_input = layers.Input(shape=(self.max_user_feature_hashes))
-            model_inputs.append(features_input)
-            user_features_embedding = layers.Embedding(self.user_cat_features_space + 1, embedding_size)
-            user_features = user_features_embedding(features_input)
-            user_features = layers.AveragePooling1D(self.num_user_cat_hashes)(user_features)
-
-        if self.positional:
-            pos_input = layers.Input(shape=(self.max_history_length))
-            model_inputs.append(pos_input)
-            position_embedding_layer = layers.Embedding(2*self.max_history_length + 1, embedding_size )
-
-            position_embedding = position_embedding_layer(pos_input)
-            position_embedding = layers.Dense(embedding_size, activation='swish')(position_embedding)
-            x = layers.Multiply()([x, position_embedding])
-
-            target_pos_input = layers.Input(shape=(self.num_target_predictions))
-            model_inputs.append(target_pos_input)
-            target_pos_embedding = position_embedding_layer(target_pos_input)
-            target_pos_embedding = layers.Dense(embedding_size, activation='swish')(target_pos_embedding)
-
-        if self.max_user_feature_hashes > 0:
-            x = layers.concatenate([x, user_features], axis=1)
-
-        for block_num in range(self.num_blocks):
-             x = self.block(x)
-
-        if self.positional:
-            x = layers.MultiHeadAttention(self.num_heads, key_dim=x.shape[-1])(target_pos_embedding, x)
-            x = layers.LayerNormalization()(x)
-
-        x = layers.Flatten()(x)
-        for i in range(self.num_bottlenecks):
-            x = layers.Dense(self.bottleneck_size, activation='swish')(x)
-        output = layers.Dense(n_items, name="output", activation=self.output_layer_activation, bias_regularizer=l2(self.regularization),
-                              kernel_regularizer=l2(self.regularization))(x)
-        model = keras.Model(inputs = model_inputs, outputs=output)
-        ndcg_metric = KerasNDCG(self.eval_ndcg_at)
-        metrics = [ndcg_metric]
-        if self.log_lambdas_len:
-            metrics.append(LambdarankLambdasSum(self.loss))
-            metrics.append(BCELambdasSum(self.loss))
-
-
-        model.compile(optimizer=self.optimizer, loss=self.loss, metrics=metrics)
-        return model
 
     def recommend(self, user_id, limit, features=None):
         items, user_features = self.items_and_features_for_user(user_id)
@@ -278,13 +250,52 @@ class SalrecRecommender(Recommender):
         user_features = [[]]
         return self.get_model_predictions(items_iternal, user_features, limit)
 
-    def block(self, x):
-        shortcut = x
-        attention = layers.MultiHeadAttention(self.num_heads, key_dim=x.shape[-1])(x, x)
-        attention = layers.Convolution1D(x.shape[-1], 1, activation='swish')(attention)
-        output = layers.Multiply()([shortcut, attention])
-        output = layers.LayerNormalization()(output)
-        return output
+
+
+    def train_epoch(self, generator, val_generator, ndcg_metric):
+        if not self.debug:
+            return self.train_epoch_prod(generator, val_generator)
+        else:
+            return self.train_epoch_debug(generator, ndcg_metric, val_generator)
+
+
+    def train_epoch_prod(self, generator, val_generator):
+        train_history = self.model.fit(generator, validation_data=val_generator)
+        return train_history.history[f"val_ndcg_at_{self.eval_ndcg_at}"][-1]
+
+    def train_epoch_debug(self, generator, ndcg_metric, val_generator):
+        pbar = tqdm(generator, ascii=True)
+        variables = self.model.variables
+        loss_sum = 0
+        ndcg_sum = 0
+        num_batches = 0
+        for X, y_true in pbar:
+            num_batches += 1
+            with tf.GradientTape() as tape:
+                y_pred = self.model(X)
+                loss_val = tf.reduce_mean(self.loss(y_true, y_pred))
+            grad = tape.gradient(loss_val, variables)
+            self.optimizer.apply_gradients(zip(grad, variables))
+            ndcg = ndcg_metric(y_true=y_true, y_pred=y_pred)
+            loss_sum += loss_val
+            ndcg_sum += ndcg
+            pbar.set_description(f"loss: {loss_sum/num_batches:.5f}, "
+                                 f"ndcg_at_{self.eval_ndcg_at}: {ndcg_sum/num_batches:.5f}")
+        val_loss_sum = 0
+        val_ndcg_sum = 0
+        num_val_samples = 0
+        num_batches = 0
+        for X, y_true in val_generator:
+            num_batches += 1
+            y_pred = self.model(X)
+            loss_val = self.loss(y_true, y_pred)
+            ndcg = ndcg_metric(y_true, y_pred)
+            val_ndcg_sum += ndcg
+            val_loss_sum += loss_val
+            num_val_samples += y_true.shape[0]
+        val_ndcg = val_ndcg_sum / num_batches
+        return val_ndcg
+
 
     def get_similar_items(self, item_id, limit):
         raise (NotImplementedError)

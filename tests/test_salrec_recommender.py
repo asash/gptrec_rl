@@ -19,7 +19,7 @@ class TestSalrecRecommender(unittest.TestCase):
         salrec_recommender = SalrecRecommender(train_epochs=10, batch_size=batch_size,
                                                output_layer_activation='linear',
                                                max_history_len=50,
-                                               loss=LambdaGammaRankLoss())
+                                               loss=LambdaGammaRankLoss(), debug=False)
         salrec_recommender.set_val_users(val_users)
         recommender = FilterSeenRecommender(salrec_recommender)
         ranking_request = ItemsRankingRequest(user_id='1', item_ids=['1196', '589'])
