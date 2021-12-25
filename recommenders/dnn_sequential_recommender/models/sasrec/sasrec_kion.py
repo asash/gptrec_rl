@@ -135,7 +135,7 @@ class KionSasrecModel(tensorflow.keras.Model):
         seq += pos_embeddings
         seq = tf.concat([seq, user_embeddings], 1)
         mask = tf.expand_dims(tf.cast(tf.not_equal(input_ids, 0), dtype=tf.float32), -1)
-        user_emb_mask = tf.ones((mask.shape[0], self.max_user_features, 1))
+        user_emb_mask = tf.expand_dims(tf.fill(tf.shape(user_features_input), 1.0), -1)
         mask= tf.concat([mask, user_emb_mask], 1)
         for i in range(self.num_blocks):
             seq = self.block(seq, mask, i)
