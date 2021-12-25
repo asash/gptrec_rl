@@ -124,7 +124,6 @@ recommenders_raw = {
 
 
 all_recommenders = list(recommenders_raw.keys())
-random.shuffle(all_recommenders)
 
 
 RECOMMENDERS = {
