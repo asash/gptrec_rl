@@ -24,7 +24,7 @@ import numpy as np
 class DNNSequentialRecommender(Recommender):
     def __init__(self, model_arch: SequentialRecsysModel, loss: Loss = BCELoss(), users_featurizer=None,
                  train_epochs=300, optimizer=Adam(), batch_size=1000, early_stop_epochs=100, target_decay=1.0,
-                 train_on_last_item_only=False, training_time_limit=None, sigma=1, eval_ndcg_at=40, debug=False):
+                 train_on_last_item_only=False, training_time_limit=None,  eval_ndcg_at=40, debug=False):
         super().__init__()
         self.model_arch = model_arch
         self.users = ItemId()
@@ -40,7 +40,6 @@ class DNNSequentialRecommender(Recommender):
         self.optimizer = optimizer
         self.metadata = {}
         self.batch_size = batch_size
-        self.sigma = sigma
         self.target_decay = target_decay
         self.val_users = None
         self.eval_ndcg_at = 40

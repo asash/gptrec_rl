@@ -9,9 +9,10 @@ import unittest
 
 from aprec.recommenders.dnn_sequential_recommender.models.caser import Caser
 from aprec.recommenders.dnn_sequential_recommender.models.gru4rec import GRU4Rec
-from aprec.recommenders.dnn_sequential_recommender.models.sasrec import SASRec
+from aprec.recommenders.dnn_sequential_recommender.models.sasrec.sasrec import SASRec
 from aprec.recommenders.dnn_sequential_recommender.models.mlp_sequential import SequentialMLPModel
 from aprec.recommenders.dnn_sequential_recommender.user_featurizers.hashing_featurizer import HashingUserFeaturizer
+from aprec.recommenders.dnn_sequential_recommender.models.sasrec.sasrec_kion import KionChallengeSASRec
 
 USER_ID = '120'
 
@@ -49,7 +50,7 @@ class TestDnnSequentialRecommender(unittest.TestCase):
         model = SASRec(embedding_size=32)
         recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=50000,
                                                batch_size=5,
-                                               training_time_limit=10, debug=False, train_on_last_item_only=True)
+                                               training_time_limit=10, debug=True, train_on_last_item_only=True)
         recommender.set_val_users(val_users)
         recommender = FilterSeenRecommender(recommender)
         for action in generator_limit(get_movielens20m_actions(), 10000):
@@ -58,6 +59,26 @@ class TestDnnSequentialRecommender(unittest.TestCase):
         recs = recommender.recommend(USER_ID, 10)
         print(recs)
 
+
+    def test_sasrec_kion(self):
+        val_users = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
+        user_featurizer = HashingUserFeaturizer()
+        model = KionChallengeSASRec()
+        recommender = DNNSequentialRecommender(model, train_epochs=10, early_stop_epochs=5,
+                                               batch_size=5, training_time_limit=10,
+                                               users_featurizer=user_featurizer,
+                                               debug=True
+                                               )
+        recommender.set_val_users(val_users)
+        recommender = FilterSeenRecommender(recommender)
+        users = kion.get_users()
+        for action in kion.get_mts_kion_dataset(1000):
+            recommender.add_action(action)
+        for user in users:
+            recommender.add_user(user)
+        recommender.rebuild_model()
+        recs = recommender.recommend(USER_ID, 10)
+        print(recs)
 
 
     def test_caser_model(self):
