@@ -9,46 +9,27 @@ from collections import defaultdict
 from keras.regularizers import l2
 
 from aprec.losses.get_loss import get_loss
-from aprec.losses.lambda_gamma_rank import LambdarankLambdasSum, BCELambdasSum
+from aprec.losses.lambda_gamma_rank import LambdarankLambdasSum, BCELambdasSum, LambdaGammaRankLoss
+from aprec.losses.loss import Loss
 from aprec.utils.item_id import ItemId
 from aprec.recommenders.metrics.ndcg import KerasNDCG
 from aprec.recommenders.recommender import Recommender
 from aprec.recommenders.salrec.data_generator import DataGenerator,  reverse_positions
 from aprec.recommenders.dnn_sequential_recommender.data_generator import actions_to_vector
 import tensorflow.keras.layers as layers
-import tensorflow as tf
 import numpy as np
 
 
 class SalrecRecommender(Recommender):
-    def __init__(self, train_epochs=300,
-                 max_history_len=1000,
-                 loss='binary_crossentropy',
-                 output_layer_activation='sigmoid',
-                 optimizer='adam',
-                 batch_size=64,
-                 early_stop_epochs=100,
-                 target_decay = 0.8,
-                 sigma=1,
-                 ndcg_at=30,
-                 num_blocks=5,
-                 num_heads = 5,
-                 num_target_predictions=5,
-                 positional=True,
-                 embedding_size=64,
-                 bottleneck_size = 256,
-                 num_bottlenecks = 2,
-                 regularization = 0.0,
-                 training_time_limit = None,
-                 loss_internal_dtype = tf.float32,
-                 loss_lambda_normalization = True,
-                 loss_pred_truncate = None,
-                 loss_bce_weight = 0.0,
-                 eval_ndcg_at = None,
-                 log_lambdas_len = False,
-                 num_user_cat_hashes = 3,
-                 user_cat_features_space=1000,
-                 max_user_features_hashes = None):
+    def __init__(self, train_epochs=300, max_history_len=64,
+                                  loss=LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975),
+                 output_layer_activation='linear', optimizer='adam', batch_size=64, early_stop_epochs=100,
+                 target_decay=0.8, sigma=1, num_blocks=5, num_heads=5, num_target_predictions=5,
+                 positional=True, embedding_size=64, bottleneck_size=256, num_bottlenecks=2, regularization=0.0,
+                 training_time_limit=None,  log_lambdas_len=False,
+                 eval_ndcg_at=30,
+                 num_user_cat_hashes=3, user_cat_features_space=1000, max_user_features_hashes=None):
+        super().__init__()
         self.embedding_size = embedding_size
         self.users = ItemId()
         self.items = ItemId()
@@ -65,7 +46,6 @@ class SalrecRecommender(Recommender):
         self.metadata = {}
         self.batch_size = batch_size
         self.sigma = sigma
-        self.ndcg_at = ndcg_at
         self.output_layer_activation = output_layer_activation
         self.target_decay = target_decay
         self.num_blocks = num_blocks
@@ -78,17 +58,14 @@ class SalrecRecommender(Recommender):
         self.bottleneck_size = bottleneck_size
         self.num_bottlenecks = num_bottlenecks
         self.trainig_time_limit = training_time_limit
-        self.loss_internal_dtype = loss_internal_dtype
-        self.eval_ndcg_at = eval_ndcg_at if eval_ndcg_at is not None else self.ndcg_at
-        self.loss_lambda_normalization = loss_lambda_normalization
-        self.loss_pred_truncate = loss_pred_truncate
-        self.loss_bce_weight = loss_bce_weight
         self.num_user_cat_hashes = num_user_cat_hashes
         self.user_cat_features_space=user_cat_features_space
         self.user_feature_hashes = {}
         self.max_user_feature_hashes = max_user_features_hashes
+        self.eval_ndcg_at=eval_ndcg_at
+        assert(isinstance(self.loss, Loss))
 
-        if log_lambdas_len and loss != 'lambdarank':
+        if log_lambdas_len and not (isinstance(loss, LambdaGammaRankLoss)):
             raise Exception("logging lambdas len is only possible with lambdarank loss")
         self.log_lambdas_len = log_lambdas_len
 
@@ -123,6 +100,8 @@ class SalrecRecommender(Recommender):
 
     def rebuild_model(self):
         self.sort_actions()
+        self.loss.set_num_items(self.items.size())
+        self.loss.set_batch_size(self.batch_size)
         if len(self.user_feature_hashes) == 0:
             self.max_user_feature_hashes = 0
         if self.max_user_feature_hashes is None:
@@ -230,54 +209,69 @@ class SalrecRecommender(Recommender):
                               kernel_regularizer=l2(self.regularization))(x)
         model = keras.Model(inputs = model_inputs, outputs=output)
         ndcg_metric = KerasNDCG(self.eval_ndcg_at)
-        loss = get_loss(self.loss, self.items.size(),
-                        self.batch_size, self.ndcg_at,
-                        self.loss_internal_dtype, self.loss_lambda_normalization,
-                        lambdarank_pred_truncate=self.loss_pred_truncate,
-                        lambdarank_bce_weight=self.loss_bce_weight)
         metrics = [ndcg_metric]
         if self.log_lambdas_len:
-            metrics.append(LambdarankLambdasSum(loss))
-            metrics.append(BCELambdasSum(loss))
+            metrics.append(LambdarankLambdasSum(self.loss))
+            metrics.append(BCELambdasSum(self.loss))
 
 
-        model.compile(optimizer=self.optimizer, loss=loss, metrics=metrics)
+        model.compile(optimizer=self.optimizer, loss=self.loss, metrics=metrics)
         return model
 
     def recommend(self, user_id, limit, features=None):
+        items, user_features = self.items_and_features_for_user(user_id)
+        return self.get_model_predictions(items, user_features, limit)
+
+    def get_item_rankings(self):
+        result = {}
+        for request in self.items_ranking_requests:
+            user_id = request.user_id
+            items, user_features = self.items_and_features_for_user(user_id)
+            scores = self.get_all_scores(items, user_features)
+            user_result = []
+            for item_id in request.item_ids:
+                if self.items.has_item(item_id):
+                    user_result.append((item_id, scores[self.items.get_id(item_id)]))
+                else:
+                    user_result.append((item_id, float("-inf")))
+            user_result.sort(key = lambda x: -x[1])
+            result[user_id] = user_result
+        return result
+
+
+    def items_and_features_for_user(self, user_id):
         if user_id in self.user_actions:
             actions = self.user_actions[self.users.get_id(user_id)]
         else:
-           actions = []
+            actions = []
         items = [action[1] for action in actions]
         if self.max_user_feature_hashes > 0:
             user_features = [self.user_feature_hashes.get(self.users.get_id(user_id))]
         else:
             user_features = [[]]
-
-        return self.get_model_predictions(items, user_features, limit)
+        return items, user_features
 
     def get_model_predictions(self, items_list, user_features, limit):
+        scores = self.get_all_scores(items_list, user_features)
+        best_ids = np.argsort(scores)[::-1][:limit]
+        result = [(self.items.reverse_id(id), scores[id]) for id in best_ids]
+        return result
+
+    def get_all_scores(self, items_list, user_features):
         actions = [(0, action) for action in items_list]
-        history = actions_to_vector(actions, self.max_history_length, self.items.size())\
+        history = actions_to_vector(actions, self.max_history_length, self.items.size()) \
             .reshape(1, self.max_history_length)
         model_inputs = [history]
-
         if self.max_user_feature_hashes > 0:
             features = DataGenerator.get_user_features_matrix(user_features, self.max_user_feature_hashes)
             model_inputs.append(features)
-
         if self.positional:
             pos = np.array(reverse_positions(len(items_list), self.max_history_length)) \
                 .reshape(1, self.max_history_length)
             model_inputs.append(pos)
             model_inputs.append(self.target_request)
-
         scores = self.model.predict(model_inputs)[0]
-
-        best_ids = np.argsort(scores)[::-1][:limit]
-        result = [(self.items.reverse_id(id), scores[id]) for id in best_ids]
-        return result
+        return scores
 
     def recommend_by_items(self, items_list, limit):
         items_iternal = []

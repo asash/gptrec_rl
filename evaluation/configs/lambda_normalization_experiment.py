@@ -1,5 +1,6 @@
 import random
 
+from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.salrec.salrec_recommender import SalrecRecommender
@@ -33,10 +34,8 @@ def vanilla_bert4rec(num_steps):
     recommender = VanillaBERT4Rec(num_train_steps=num_steps)
     return FilterSeenRecommender(recommender)
 
-def salrec(loss, num_blocks, learning_rate, ndcg_at,
-                session_len,  lambdas_normalization, activation_override=None,
-                loss_pred_truncate=None,
-                loss_bce_weight=0.0,
+def salrec(loss, num_blocks, learning_rate,
+                session_len, activation_override=None,
                 log_lambdas=False
            ):
     activation = 'linear' if loss == 'lambdarank' else 'sigmoid'
@@ -45,7 +44,7 @@ def salrec(loss, num_blocks, learning_rate, ndcg_at,
     return FilterSeenRecommender(SalrecRecommender(train_epochs=10000, loss=loss,
                                                    optimizer=Adam(learning_rate), 
                                                    early_stop_epochs=300,
-                                                   batch_size=128, sigma=1.0, ndcg_at=ndcg_at,
+                                                   batch_size=128, sigma=1.0,
                                                    max_history_len=session_len,
                                                    output_layer_activation=activation,
                                                    training_time_limit = 3600,
@@ -53,18 +52,15 @@ def salrec(loss, num_blocks, learning_rate, ndcg_at,
                                                    num_target_predictions=5,
                                                    eval_ndcg_at=40,
                                                    target_decay=0.8, 
-                                                   loss_lambda_normalization=lambdas_normalization,
-                                                   loss_pred_truncate=loss_pred_truncate,
-                                                   loss_bce_weight=loss_bce_weight, 
                                                    log_lambdas_len=log_lambdas
                                                    ))
 
 recommenders_raw = {
     "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:True-truncate:2500-bce_weight:0.975":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, True, loss_pred_truncate=2500, loss_bce_weight=0.975),
+        lambda: salrec(LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975, lambda_normalization=True), 3, 0.001, 50, 100, True),
 
     "Transformer-Lambdarank-blocks:3-lr:0.001-ndcg:50-session_len:100-lambda_norm:False-truncate:2500-bce_weight:0.975":
-        lambda: salrec('lambdarank', 3, 0.001, 50, 100, False, loss_pred_truncate=2500, loss_bce_weight=0.975),
+        lambda: salrec(LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975, lambda_normalization=False), 3, 0.001, 50, 100, True),
 
 }
 

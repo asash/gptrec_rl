@@ -1,3 +1,4 @@
+from aprec.api.items_ranking_request import ItemsRankingRequest
 from aprec.api.user import User
 from aprec.recommenders.salrec.salrec_recommender import SalrecRecommender
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
@@ -18,16 +19,18 @@ class TestSalrecRecommender(unittest.TestCase):
         salrec_recommender = SalrecRecommender(train_epochs=10, batch_size=batch_size,
                                                output_layer_activation='linear',
                                                max_history_len=50,
-                                               loss='lambdarank',
-                                               loss_internal_dtype=tf.float16,
-                                               loss_lambda_normalization=False)
+                                               loss=LambdaGammaRankLoss())
         salrec_recommender.set_val_users(val_users)
         recommender = FilterSeenRecommender(salrec_recommender)
+        ranking_request = ItemsRankingRequest(user_id='1', item_ids=['1196', '589'])
+        recommender.add_test_items_ranking_request(ranking_request)
         for action in generator_limit(get_movielens20m_actions(), 10000):
             recommender.add_action(action)
         recommender.rebuild_model()
         recs = recommender.recommend(USER_ID, 10)
         print(recs)
+        all_item_rankings = recommender.get_item_rankings()
+        print(all_item_rankings)
         metadata = recommender.get_metadata()
         print(metadata)
 
