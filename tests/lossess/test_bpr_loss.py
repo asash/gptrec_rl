@@ -30,9 +30,9 @@ def naive_bpr_impl(y_true, y_pred):
 class TestBPRLoss(unittest.TestCase):
         def compare_with_naive(self, a, b, ordered=False):
             if not ordered:
-                bpr_loss = BPRLoss(max_positives=len(a))
+                bpr_loss = BPRLoss(max_positives=len(a), num_items=len(a), batch_size=1)
             else:
-                bpr_loss = BPRLoss(max_positives=len(a), pred_truncate=len(a))
+                bpr_loss = BPRLoss(max_positives=len(a), pred_truncate=len(a), num_items=len(a), batch_size=1)
             naive_bpr_los_val = naive_bpr_impl(a, b)
             computed_loss_val = float(bpr_loss(tf.constant([a]), tf.constant([b])))
             self.assertAlmostEquals(computed_loss_val, naive_bpr_los_val, places=4)
@@ -51,7 +51,7 @@ class TestBPRLoss(unittest.TestCase):
                     self.compare_with_naive(y_true, y_pred, ordered)
 
         def test_bpr_loss(self):
-            bpr_loss = BPRLoss(max_positives=3)
+            bpr_loss = BPRLoss(max_positives=3, batch_size=2, num_items=4)
             val = bpr_loss(K.constant([[0, 0, 1, 1],
                                  [0, 0, 1, 1]]),
                      K.constant([[0.1, 0.3, 1, 0], [0, 0, 1, 1]]))
@@ -63,7 +63,7 @@ class TestBPRLoss(unittest.TestCase):
             self.assertLess (good_pred_loss, avg_pred_loss)
 
         def test_bpr_truncate(self):
-            bpr_loss = BPRLoss(max_positives=3, pred_truncate=1)
+            bpr_loss = BPRLoss(max_positives=3, pred_truncate=1, num_items=4, batch_size=1)
             val = float(bpr_loss(tf.constant([[0, 0, 0, 1]]), tf.constant([[0.1, 0.3, 0, 0]])))
             self.assertAlmostEqual(val, 0.8543552444685271)
  

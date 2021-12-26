@@ -15,9 +15,10 @@ class BPRLoss(Loss):
         pred_ordered_by_true = tf.gather(y_pred, top_true.indices, batch_dims=1)
 
         pred, true_ordered_by_pred = get_truncated(y_true, y_pred, self.pred_truncate) 
+        pred_size = tf.shape(pred)[-1]
 
-        mask = tf.cast((get_pairwise_diff_batch(top_true.values, true_ordered_by_pred) > 0), tf.float32)
-        values = get_pairwise_diff_batch(pred_ordered_by_true, pred)
+        mask = tf.cast((get_pairwise_diff_batch(top_true.values, true_ordered_by_pred, self.max_positives, pred_size) > 0), tf.float32)
+        values = get_pairwise_diff_batch(pred_ordered_by_true, pred, self.max_positives, pred_size)
         sigmoid =  -tf.math.log_sigmoid(values) * mask
         result = tf.reduce_sum(sigmoid, axis=[1, 2]) / tf.reduce_sum(mask, axis=[1, 2])
         return tf.reduce_mean(result)
