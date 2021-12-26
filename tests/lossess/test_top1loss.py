@@ -25,7 +25,7 @@ def naive_top1_impl(y_true, y_pred, softmax_weighted=False):
                 n_pairs += 1
                 positive = y_pred[i]
                 negative = y_pred[j]
-                diff = positive - negative
+                diff = negative - positive
                 sigm = sigmoid(diff)
                 weight = 1
                 if softmax_weighted:
@@ -65,12 +65,12 @@ class TestTOP1Loss(unittest.TestCase):
             val = top1_loss(K.constant([[0, 0, 0, 1.0],
                                  [0, 0, 1., 0]]),
                      K.constant([[0.1, 0.3, 1, 0], [0, 0, 1, 1.0]]))
-            self.assertAlmostEqual(float(val), 0.8719395399093628, places=4)
+            self.assertAlmostEqual(float(val), 0.828060507774353, places=4)
 
         def test_top1_truncate(self):
             top1_loss = TOP1Loss(pred_truncate=1) 
             val = float(top1_loss(tf.constant([[0, 0, 0, 1]]), tf.constant([[0.1, 0.3, 0, 0]])))
-            self.assertAlmostEqual(val, 0.515557483188341)
+            self.assertAlmostEqual(val, 0.6644425392150879)
  
 
 

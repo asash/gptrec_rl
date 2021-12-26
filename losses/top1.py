@@ -20,7 +20,7 @@ class TOP1Loss(Loss):
         positive_true = top_true.values
         positive_pred = tf.gather(y_pred, top_true.indices, batch_dims=1)
         pred, true_ordered_by_pred = get_truncated(y_true, y_pred, self.pred_truncate)
-        diff = positive_pred - pred        
+        diff = pred - positive_pred        
         mask = tf.cast(true_ordered_by_pred < positive_true, 'float32')
         sigm = tf.sigmoid(diff) * mask
         square = pred * pred * mask
