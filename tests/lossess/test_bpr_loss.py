@@ -52,11 +52,10 @@ class TestBPRLoss(unittest.TestCase):
 
         def test_bpr_loss(self):
             bpr_loss = BPRLoss(max_positives=3)
-            
             val = bpr_loss(K.constant([[0, 0, 1, 1],
                                  [0, 0, 1, 1]]),
                      K.constant([[0.1, 0.3, 1, 0], [0, 0, 1, 1]]))
-            self.assertAlmostEqual(float(val), 0.22475868463516235, places=4)
+            self.assertAlmostEqual(float(val), 0.4495173692703247, places=4)
             poor_pred_loss = bpr_loss(K.constant([[0, 0, 1, 1]]), K.constant([[1, 0.5, 0, 0]]))
             avg_pred_loss = bpr_loss(K.constant([[0, 0, 1, 1]]), K.constant([[0.1, 0.3, 1, 0]]))
             good_pred_loss = bpr_loss(K.constant([[0, 0, 1, 1]]), K.constant([[0, 0, 1, 1]]))

@@ -14,3 +14,14 @@ def get_pairwise_diff_batch(a, b):
     b_tile = tf.tile(tf.expand_dims(b, 2), [1, 1, a.shape[-1]])
     result = a_tile - b_tile
     return result
+
+
+def get_truncated(y_true, y_pred, truncate_at):
+    if truncate_at is not None:
+        top_pred = tf.math.top_k(y_pred, truncate_at)
+        pred = top_pred.values
+        true_ordered_by_pred = tf.gather(y_true, top_pred.indices, batch_dims=1) 
+    else:
+        pred = y_pred
+        true_ordered_by_pred = y_true
+    return pred,true_ordered_by_pred
