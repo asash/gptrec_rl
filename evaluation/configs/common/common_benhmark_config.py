@@ -136,7 +136,7 @@ for i in range(0):
                                                                      training_time_limit=training_time_minutes*60)
 
 
-METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR()]
+METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40)]
 TARGET_ITEMS_SAMPLER = RandomTargetItemSampler(101)
 
 def get_recommenders(filter_seen: bool):
