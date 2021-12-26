@@ -13,7 +13,7 @@ class TOP1Loss(Loss):
     def __init__(self, num_items=None, batch_size=None, pred_truncate=None, softmax_weighted=False):
         super().__init__(num_items, batch_size)
         self.pred_truncate = pred_truncate
-        self.softmax_weighted = True
+        self.softmax_weighted = softmax_weighted 
 
     def __call__(self, y_true, y_pred):
         top_true = tf.math.top_k(y_true)

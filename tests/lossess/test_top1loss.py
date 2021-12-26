@@ -30,11 +30,10 @@ def naive_top1_impl(y_true, y_pred, softmax_weighted=False):
                 weight = 1
                 if softmax_weighted:
                     weight = math.exp(y_pred[j]) / exp_sum
-                loss += (sigm + negative ** 2)*weight
+                term = (sigm + negative ** 2)*weight
+                loss += term 
     return loss/n_pairs
 
-
-    
 
 class TestTOP1Loss(unittest.TestCase):
         def compare_with_naive(self, a, b, ordered=False, weighted=False):
@@ -42,17 +41,17 @@ class TestTOP1Loss(unittest.TestCase):
                 top1_loss = TOP1Loss(softmax_weighted=weighted)
             else:
                 top1_loss = TOP1Loss(pred_truncate=len(a), softmax_weighted=weighted)
-            naive_bpr_los_val = naive_top1_impl(a, b, softmax_weighted=weighted)
+            naive_loss_val = naive_top1_impl(a, b, softmax_weighted=weighted)
             computed_loss_val = float(top1_loss(tf.constant([a]), tf.constant([b])))
-            self.assertAlmostEquals(computed_loss_val, naive_bpr_los_val, places=4)
+            self.assertAlmostEquals(computed_loss_val, naive_loss_val, places=4)
             
         def test_compare_with_naive(self):
                 self.compare_with_naive([0.0, 1.], [0.2, 0.1])
-                random.seed(6)
+                random.seed(1)
                 for i in range(100):
                     ordered = bool(random.randint(0, 1))
                     weighted = bool(random.randint(0, 1))
-                    sample_len = random.randint(2, 100)
+                    sample_len = random.randint(2, 500)
                     y_pred = []
                     y_true = [0] * sample_len
                     y_true[random.randint(0, sample_len - 1)] = 1.0
