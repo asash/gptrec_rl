@@ -4,7 +4,11 @@ import tensorflow as tf
 from aprec.losses.loss_utils import get_pairwise_diff_batch, get_truncated, masked_softmax
 from aprec.losses.loss import Loss
 
-
+#BPR Loss as  described in orignial paper. 
+#https://arxiv.org/abs/1205.2618
+#This loss doesn't include regularization term as in tensorflow it should be done on the model side (e.g. include l2 regularization in embeddings)
+#Setting softmax_weighted into True will turn this loss into BPR-max loss, as described in the GRU4Rec+ paper
+##https://dl.acm.org/doi/abs/10.1145/3269206.3271761
 class BPRLoss(Loss):
     def __init__(self, num_items=None, batch_size=None, max_positives=10, pred_truncate=None, softmax_weighted=False):
         super().__init__(num_items, batch_size)
