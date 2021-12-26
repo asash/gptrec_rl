@@ -25,3 +25,9 @@ def get_truncated(y_true, y_pred, truncate_at):
         pred = y_pred
         true_ordered_by_pred = y_true
     return pred,true_ordered_by_pred
+
+def masked_softmax(x, mask):
+    exp = tf.math.exp(x) * mask
+    sum = tf.expand_dims(tf.reduce_sum(exp, -1), -1)
+    result = tf.math.divide_no_nan(exp, sum)
+    return result
