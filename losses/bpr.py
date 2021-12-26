@@ -23,5 +23,5 @@ class BPRLoss(Loss):
         mask = tf.cast((self.get_pairwise_diffs_matrices(top_true.values, y_true) > 0), tf.float32)
         values = self.get_pairwise_diffs_matrices(pred_ordered, y_pred)
         sigmoid =  -tf.math.log_sigmoid(values) * mask
-        result = tf.reduce_sum(sigmoid, axis=[1, 2])
+        result = tf.reduce_sum(sigmoid, axis=[1, 2]) / tf.reduce_sum(mask)
         return tf.reduce_mean(result)
