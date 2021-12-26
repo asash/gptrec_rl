@@ -62,15 +62,16 @@ def vanilla_bert4rec(time_limit):
 
 
 recommenders = {
-    "top": top_recommender,
-    "lightfm-bpr": lambda: lightfm_recommender(128, 'bpr'),
-
     "SASRec-Top1-max-TimeLimit:1h-lastonly:True": lambda: dnn(
         SASRec(), TOP1Loss(softmax_weighted=True), last_only=True),
 
     "SASRec-BPR-max-TimeLimit:1h-lastonly:Fasle": lambda: dnn(
         SASRec(), BPRLoss(max_positives=10, softmax_weighted=True), last_only=False),
 
+    "top": top_recommender,
+
+    "lightfm-bpr": lambda: lightfm_recommender(128, 'bpr'),
+    
     "SASRec-BCE-TimeLimit:1h-lastonly:True": lambda: dnn(
             SASRec(), BCELoss(), last_only=True),
     "SASRec-BCE-TimeLimit:1h-lastonly:False": lambda: dnn(
