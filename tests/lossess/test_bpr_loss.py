@@ -32,7 +32,7 @@ class TestBPRLoss(unittest.TestCase):
             bpr_loss = BPRLoss(max_positives=len(a))
             naive_bpr_los_val = naive_bpr_impl(a, b)
             computed_loss_val = float(bpr_loss(tf.constant([a]), tf.constant([b])))
-            self.assertAlmostEquals(computed_loss_val, naive_bpr_los_val)
+            self.assertAlmostEquals(computed_loss_val, naive_bpr_los_val, places=4)
             
         def test_compare_with_naive(self):
                 self.compare_with_naive([0.0, 1.], [0.1, 0])

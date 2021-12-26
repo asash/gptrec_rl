@@ -9,3 +9,8 @@ def my_map(fn, arrays, dtype=tf.float32):
     out = tf.map_fn(lambda ii: fn(*[array[ii] for array in arrays]), indices, dtype=dtype)
     return out
 
+def get_pairwise_diff_batch(a, b):
+    a_tile = tf.tile(tf.expand_dims(a, 1), [1, b.shape[-1], 1])
+    b_tile = tf.tile(tf.expand_dims(b, 2), [1, 1, a.shape[-1]])
+    result = a_tile - b_tile
+    return result
