@@ -27,7 +27,8 @@ class SalrecRecommender(Recommender):
                  positional=True, embedding_size=64, bottleneck_size=256, num_bottlenecks=2, regularization=0.0,
                  training_time_limit=None,  log_lambdas_len=False,
                  eval_ndcg_at=10,
-                 num_user_cat_hashes=3, user_cat_features_space=1000, max_user_features_hashes=None,
+                 users_featurizer=None,
+                 num_user_cat_hashes=3, user_cat_features_space=1000,
                  debug = False):
         super().__init__()
         self.embedding_size = embedding_size
@@ -59,20 +60,23 @@ class SalrecRecommender(Recommender):
         self.trainig_time_limit = training_time_limit
         self.num_user_cat_hashes = num_user_cat_hashes
         self.user_cat_features_space=user_cat_features_space
-        self.user_feature_hashes = {}
-        self.max_user_feature_hashes = max_user_features_hashes
+        self.users_featurizer = users_featurizer
+        self.user_features = {}
         self.eval_ndcg_at=eval_ndcg_at
         self.debug = debug
         assert(isinstance(self.loss, Loss))
+
+        self.users_with_actions = set()
 
         if log_lambdas_len and not (isinstance(loss, LambdaGammaRankLoss)):
             raise Exception("logging lambdas len is only possible with lambdarank loss")
         self.log_lambdas_len = log_lambdas_len
 
     def add_user(self, user):
-        user_id = self.users.get_id(user.user_id)
-        feature_hashes = self.get_feature_hashes(user.cat_features)
-        self.user_feature_hashes[user_id] = feature_hashes
+        if self.users_featurizer is None:
+            pass
+        else:
+            self.user_features[self.users.get_id(user.user_id)] = self.users_featurizer(user)
 
     def get_metadata(self):
         return self.metadata
@@ -86,13 +90,22 @@ class SalrecRecommender(Recommender):
     def add_action(self, action):
         user_id_internal = self.users.get_id(action.user_id)
         action_id_internal = self.items.get_id(action.item_id)
+        self.users_with_actions.add(user_id_internal)
         self.user_actions[user_id_internal].append((action.timestamp, action_id_internal))
 
-    def user_actions_by_id_list(self, id_list):
+    # exclude last action for val_users
+    def user_actions_by_id_list(self, id_list, val_user_ids=None):
+        val_users = set()
+        if val_user_ids is not None:
+            val_users = set(val_user_ids)
         result = []
         for user_id in id_list:
-            result.append(self.user_actions[user_id])
+            if user_id not in val_users:
+                result.append(self.user_actions[user_id])
+            else:
+                result.append(self.user_actions[user_id][:-1])
         return result
+
 
     def sort_actions(self):
         for user_id in self.user_actions:
@@ -102,13 +115,13 @@ class SalrecRecommender(Recommender):
         self.sort_actions()
         self.loss.set_num_items(self.items.size())
         self.loss.set_batch_size(self.batch_size)
-        if len(self.user_feature_hashes) == 0:
+        if len(self.user_features) == 0:
             self.max_user_feature_hashes = 0
         if self.max_user_feature_hashes is None:
-            self.max_user_feature_hashes = int(np.max([len(self.user_feature_hashes[user])
-                                                   for user in self.user_feature_hashes]))
+            self.max_user_feature_hashes = int(np.max([len(self.user_features[user])
+                                                   for user in self.user_features]))
 
-        train_users, train_user_features,  val_users, val_user_features = self.train_val_split()
+        train_users, train_ids, train_user_features,  val_users, fal_features,val_user_features = self.train_val_split()
         print("train_users: {}, val_users:{}, items:{}".format(len(train_users), len(val_users), self.items.size()))
         val_generator = DataGenerator(val_users, self.max_history_length, self.items.size(),
                                       val_user_features,
@@ -150,7 +163,7 @@ class SalrecRecommender(Recommender):
         val_ndcg_history = []
         start_time = time.time()
         for epoch in range(self.train_epochs):
-            val_generator.reset()
+            val_generator.current_position=0
             generator = DataGenerator(train_users, self.max_history_length, self.items.size(),
                                               val_user_features,
                                               self.max_user_feature_hashes,
@@ -215,7 +228,7 @@ class SalrecRecommender(Recommender):
             actions = []
         items = [action[1] for action in actions]
         if self.max_user_feature_hashes > 0:
-            user_features = [self.user_feature_hashes.get(self.users.get_id(user_id))]
+            user_features = [self.user_features.get(self.users.get_id(user_id))]
         else:
             user_features = [[]]
         return items, user_features
@@ -307,37 +320,12 @@ class SalrecRecommender(Recommender):
         raise (NotImplementedError)
 
     def train_val_split(self):
-        all_user_ids = set(self.user_actions.keys())
-        val_user_ids = []
-        for user in self.val_users:
-            val_user_id = self.users.get_id(user)
-            val_user_ids.append(val_user_id)
-
-
-        train_user_ids = list(all_user_ids - set(val_user_ids))
-
-
-        train_users = self.user_actions_by_id_list(train_user_ids)
-        train_user_features = self.user_features_by_id_list(train_user_ids)
-
+        all_user_ids = self.users_with_actions
+        val_user_ids = [self.users.get_id(val_user) for val_user in self.val_users]
+        train_user_ids = list(all_user_ids)
         val_users = self.user_actions_by_id_list(val_user_ids)
-        val_user_features = self.user_features_by_id_list(val_user_ids)
+        train_users = self.user_actions_by_id_list(train_user_ids, val_user_ids)
+        train_features = [self.user_features.get(id, list()) for id in train_user_ids]
+        val_features = [self.user_features.get(id, list()) for id in val_user_ids]
+        return train_users, train_user_ids, train_features, val_users, val_user_ids, val_features
 
-        return train_users, train_user_features, val_users, val_user_features
-
-    def user_features_by_id_list(self, id_list):
-        result = []
-        for user_id in id_list:
-            result.append(self.user_feature_hashes.get(user_id, ()))
-        return result
-
-
-
-    def get_feature_hashes(self, cat_features):
-        result = []
-        for feature in cat_features:
-            for hash_num in range(self.num_user_cat_hashes):
-                val = f"{feature}_" + str(cat_features[feature]) + f"_hash{hash_num}"
-                hash_val = mmh3.hash(val) % self.user_cat_features_space + 1
-                result.append(hash_val)
-        return result

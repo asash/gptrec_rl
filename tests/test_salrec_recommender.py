@@ -1,5 +1,6 @@
 from aprec.api.items_ranking_request import ItemsRankingRequest
 from aprec.api.user import User
+from aprec.losses.bce import BCELoss
 from aprec.recommenders.salrec.salrec_recommender import SalrecRecommender
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.datasets import mts_kion
@@ -16,15 +17,17 @@ class TestSalrecRecommender(unittest.TestCase):
     def test_salrec_recommender(self):
         batch_size = 1
         val_users = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
-        salrec_recommender = SalrecRecommender(train_epochs=10, batch_size=batch_size,
+        salrec_recommender = SalrecRecommender(train_epochs=1000, batch_size=batch_size,
                                                output_layer_activation='linear',
-                                               max_history_len=50,
-                                               loss=LambdaGammaRankLoss(), debug=False)
+                                               num_blocks=0,
+                                               max_history_len=20,
+                                               num_bottlenecks=0,
+                                               loss=BCELoss(), debug=True)
         salrec_recommender.set_val_users(val_users)
         recommender = FilterSeenRecommender(salrec_recommender)
         ranking_request = ItemsRankingRequest(user_id='1', item_ids=['1196', '589'])
         recommender.add_test_items_ranking_request(ranking_request)
-        for action in generator_limit(get_movielens20m_actions(), 10000):
+        for action in generator_limit(get_movielens20m_actions(), 1000):
             recommender.add_action(action)
         recommender.rebuild_model()
         recs = recommender.recommend(USER_ID, 10)
@@ -41,7 +44,8 @@ class TestSalrecRecommender(unittest.TestCase):
         batch_size = 10
         val_users = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
         salrec_recommender = SalrecRecommender(train_epochs=10, batch_size=batch_size,
-                                               output_layer_activation='linear', max_history_len=50, positional=False)
+                                               output_layer_activation='linear',
+                                                max_history_len=50, positional=False, debug=False)
         salrec_recommender.set_val_users(val_users)
         recommender = FilterSeenRecommender(salrec_recommender)
         for action in generator_limit(get_movielens20m_actions(), 10000):
@@ -77,12 +81,6 @@ class TestSalrecRecommender(unittest.TestCase):
         print(recs)
         metadata = recommender.get_metadata()
         print(metadata)
-
-    def test_user_feature_hashes(self):
-        user = User(user_id='1', cat_features={'age': 10, 'sex': 'F'})
-        recommender = SalrecRecommender()
-        recommender.add_user(user)
-        print(recommender.user_feature_hashes[0])
 
 
     def test_with_user_hashes(self):
