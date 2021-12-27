@@ -62,73 +62,40 @@ def vanilla_bert4rec(time_limit):
 
 
 recommenders = {
-    "SASRec-blocks:8-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
+    "SASRec-blocks:8-Lambdarank-Truncated:2500-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
             SASRec(max_history_len=100,  num_blocks=8),
-            LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975), last_only=False),
+            LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975), last_only=False),
 
     "SASRec-blocks:8-TimeLimit:1h-lastonly:False": lambda: dnn(
             SASRec(max_history_len=100,  num_blocks=8),
             BCELoss(), last_only=False),
 
-    "SASRec-blocks:6-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
+    "SASRec-blocks:6-Lambdarank-Truncated:2500-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
             SASRec(max_history_len=100,  num_blocks=6),
-            LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975), last_only=False),
+            LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975), last_only=False),
 
     "SASRec-blocks:6-TimeLimit:1h-lastonly:False": lambda: dnn(
             SASRec(max_history_len=100,  num_blocks=6),
             BCELoss(), last_only=False),
 
-    "SASRec-blocks:4-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
+    "SASRec-blocks:4-Lambdarank-Truncated:2500-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
             SASRec(max_history_len=100,  num_blocks=6),
-            LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975), last_only=False),
+            LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975), last_only=False),
 
     "SASRec-blocks:4-TimeLimit:1h-lastonly:False": lambda: dnn(
             SASRec(max_history_len=100,  num_blocks=6),
             BCELoss(), last_only=False),
 
-    "SASRec-blocks:10-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
+    "SASRec-blocks:10-Lambdarank-Truncated:2500-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
             SASRec(max_history_len=100,  num_blocks=6),
-            LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975), last_only=False),
+            LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975), last_only=False),
 
     "SASRec-blocks:10-TimeLimit:1h-lastonly:False": lambda: dnn(
             SASRec(max_history_len=100,  num_blocks=6),
             BCELoss(), last_only=False),
-
-
 }
 for i in range(0):
-    dropout_rate = float(np.random.choice([0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6]))
-    num_blocks = int(np.random.choice([1, 2, 3, 4, 5]))
-    num_heads = int(np.random.choice([1, 2, 4, 8, 16, 32]))
-    emb_size = int(np.random.choice([32, 64, 128, 256, 512]))
-    seq_len = int(np.random.choice([4, 6, 8, 16, 32, 64]))
-
-    model = SASRec(num_blocks=num_blocks,
-                   num_heads=num_heads,
-                   embedding_size=emb_size,
-                   dropout_rate=dropout_rate,
-                   max_history_len=seq_len)
-
-    model_name = f"SasRec-blocks:{num_blocks}" \
-                 f"-heads:{num_heads}-seq_len:{seq_len}-dropout:{dropout_rate}" \
-                 f"-dim:{emb_size}"
-
-    bce_weight = np.random.choice([0.0, 0.9, 0.95, 0.975, 0.99, 0.995, 0.999, 0.9995, 0.9999])
-    truncation = int(np.random.choice([100, 200, 400, 800, 1500, 2500, 5000, 10000]))
-    loss = LambdaGammaRankLoss(pred_truncate_at=truncation, bce_grad_weight=bce_weight)
-    loss_name=f"Lambdarank-trunc:{truncation}-bce_weight:{bce_weight}"
-
-    training_time_minutes = int(np.random.choice([5, 10, 15]))
-    last_only = bool(np.random.choice([True, False]))
-    training_properties=f"TimeLimit:{training_time_minutes}m-lastonly:{last_only}`"
-    recommender_name = "-".join([model_name, loss_name, training_properties])
-
-    recommenders[recommender_name] = lambda model=model, loss=loss, \
-                                            last_only=last_only, \
-                                            training_time_minutes=training_time_minutes: dnn(model_arch=model,
-                                                                     loss=loss, last_only=last_only,
-                                                                     training_time_limit=training_time_minutes*60)
-
+    loss_type = np.random.choice(["top1max", 'bce', 'lambdarank'])
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40)]
 TARGET_ITEMS_SAMPLER = RandomTargetItemSampler(101)
