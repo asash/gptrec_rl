@@ -63,12 +63,12 @@ def vanilla_bert4rec(time_limit):
 
 recommenders = {
     "SASRec-noreuse-blocks:8-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
-            SASRec(reuse_item_embeddings=False, max_history_len=100),
-            LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975, num_blocks=8), last_only=False),
+            SASRec(reuse_item_embeddings=False, max_history_len=100,  num_blocks=8),
+            LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975), last_only=False),
 
     "SASRec-noreuse-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
             SASRec(reuse_item_embeddings=False, max_history_len=100),
-            LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975, num_blocks=8), last_only=False),
+            LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975), last_only=False),
 
     "SASRec-encodeoutput-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
             SASRec(encode_output_embeddings=True, max_history_len=100),
