@@ -2,8 +2,17 @@ class Item(object):
     tags = None
     title = None
 
-    def __init__(self, item_id):
+    def __init__(self, item_id, cat_features=None, real_features=None):
+        if real_features is None:
+            real_features = dict()
+
+        if cat_features is None:
+            cat_features = dict()
+
         self.item_id = item_id
+        self.cat_features = cat_features
+        self.real_features = real_features
+
 
     def with_tags(self, tags):
         self.tags = tags
