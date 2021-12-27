@@ -62,7 +62,18 @@ def vanilla_bert4rec(time_limit):
 
 
 recommenders = {
-    "salrec": lambda:salrec(LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975))    
+    "SASRec-noreuse-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
+            SASRec(reuse_item_embeddings=False, max_history_len=100),
+            LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975), last_only=False),
+
+    "SASRec-encodeoutput-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
+            SASRec(encode_output_embeddings=True, max_history_len=100),
+            LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975), last_only=False),
+
+    "SASRec-TOP1max-TimeLimit:1h-lastonly:True": lambda: dnn(
+            SASRec(max_history_len=100),
+            TOP1Loss(softmax_weighted=True), last_only=True),
+
 }
 for i in range(0):
     dropout_rate = float(np.random.choice([0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6]))
@@ -70,7 +81,6 @@ for i in range(0):
     num_heads = int(np.random.choice([1, 2, 4, 8, 16, 32]))
     emb_size = int(np.random.choice([32, 64, 128, 256, 512]))
     seq_len = int(np.random.choice([4, 6, 8, 16, 32, 64]))
-
 
     model = SASRec(num_blocks=num_blocks,
                    num_heads=num_heads,
