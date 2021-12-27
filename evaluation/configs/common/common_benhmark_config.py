@@ -62,21 +62,38 @@ def vanilla_bert4rec(time_limit):
 
 
 recommenders = {
-    "SASRec-noreuse-blocks:8-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
-            SASRec(reuse_item_embeddings=False, max_history_len=100,  num_blocks=8),
+    "SASRec-blocks:8-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
+            SASRec(max_history_len=100,  num_blocks=8),
             LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975), last_only=False),
 
-    "SASRec-noreuse-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
-            SASRec(reuse_item_embeddings=False, max_history_len=100),
+    "SASRec-blocks:8-TimeLimit:1h-lastonly:False": lambda: dnn(
+            SASRec(max_history_len=100,  num_blocks=8),
+            BCELoss(), last_only=False),
+
+    "SASRec-blocks:6-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
+            SASRec(max_history_len=100,  num_blocks=6),
             LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975), last_only=False),
 
-    "SASRec-encodeoutput-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
-            SASRec(encode_output_embeddings=True, max_history_len=100),
+    "SASRec-blocks:6-TimeLimit:1h-lastonly:False": lambda: dnn(
+            SASRec(max_history_len=100,  num_blocks=6),
+            BCELoss(), last_only=False),
+
+    "SASRec-blocks:4-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
+            SASRec(max_history_len=100,  num_blocks=6),
             LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975), last_only=False),
 
-    "SASRec-TOP1max-TimeLimit:1h-lastonly:True": lambda: dnn(
-            SASRec(max_history_len=100),
-            TOP1Loss(softmax_weighted=True), last_only=True),
+    "SASRec-blocks:4-TimeLimit:1h-lastonly:False": lambda: dnn(
+            SASRec(max_history_len=100,  num_blocks=6),
+            BCELoss(), last_only=False),
+
+    "SASRec-blocks:10-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
+            SASRec(max_history_len=100,  num_blocks=6),
+            LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975), last_only=False),
+
+    "SASRec-blocks:10-TimeLimit:1h-lastonly:False": lambda: dnn(
+            SASRec(max_history_len=100,  num_blocks=6),
+            BCELoss(), last_only=False),
+
 
 }
 for i in range(0):
