@@ -4,10 +4,10 @@ class Item(object):
 
     def __init__(self, item_id, cat_features=None, real_features=None):
         if real_features is None:
-            real_features = dict()
+            real_features = []
 
         if cat_features is None:
-            cat_features = dict()
+            cat_features = []
 
         self.item_id = item_id
         self.cat_features = cat_features
