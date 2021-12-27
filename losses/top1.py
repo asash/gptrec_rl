@@ -23,7 +23,7 @@ class TOP1Loss(Loss):
         diff = pred - positive_pred        
         mask = tf.cast(true_ordered_by_pred < positive_true, 'float32')
         sigm = tf.sigmoid(diff) * mask
-        square = pred * pred * mask
+        square = tf.sigmoid(pred * pred) * mask
         result = (sigm + square)
         if self.softmax_weighted:
             pred_softmax = masked_softmax(pred, mask)
