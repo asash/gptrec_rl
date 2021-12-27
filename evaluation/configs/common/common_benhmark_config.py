@@ -51,9 +51,9 @@ def dnn(model_arch, loss, learning_rate=0.001, last_only=False, training_time_li
                                                           train_on_last_item_only=last_only
                                                           )
 
-def salrec(loss, training_time_limit=3600, target_decay=1.0):
-    return SalrecRecommender(loss=loss, target_decay=target_decay, training_time_limit=training_time_limit,
-                             train_epochs=10000, early_stop_epochs=1000, num_blocks=0, num_bottlenecks=1)
+def salrec(loss, training_time_limit=3600, target_decay=1.0, seq_len = 100):
+    return SalrecRecommender(loss=loss, target_decay=target_decay, max_history_len=seq_len, training_time_limit=training_time_limit,
+                             train_epochs=10000, early_stop_epochs=1000, num_blocks=3, num_bottlenecks=1)
 
 
 def vanilla_bert4rec(time_limit):
@@ -62,58 +62,7 @@ def vanilla_bert4rec(time_limit):
 
 
 recommenders = {
-    "SASRec-Top1-max-TimeLimit:1h-lastonly:True": lambda: dnn(
-        SASRec(), TOP1Loss(softmax_weighted=True), last_only=True),
-
-    "SASRec-BPR-max-TimeLimit:1h-lastonly:Fasle": lambda: dnn(
-        SASRec(), BPRLoss(max_positives=10, softmax_weighted=True), last_only=False),
-
-    "top": top_recommender,
-
-    "lightfm-bpr": lambda: lightfm_recommender(128, 'bpr'),
-    
-    "SASRec-BCE-TimeLimit:1h-lastonly:True": lambda: dnn(
-            SASRec(), BCELoss(), last_only=True),
-    "SASRec-BCE-TimeLimit:1h-lastonly:False": lambda: dnn(
-            SASRec(), BCELoss(), last_only=False),
-
-    "SASRec-Lambdarank-Full-TimeLimit:1h-lastonly:False": lambda: dnn(
-        SASRec(), LambdaGammaRankLoss(), last_only=False),
-    "SASRec-Lambdarank-Truncated:2500-TimeLimit:1h-lastonly:False": lambda: dnn(
-        SASRec(), LambdaGammaRankLoss(pred_truncate_at=2500), last_only=False),
-    "SASRec-Lambdarank-Truncated:2500-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
-        SASRec(), LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975), last_only=False),
-
-    "SASRec-Lambdarank-Full-TimeLimit:1h-lastonly:True": lambda: dnn(
-        SASRec(), LambdaGammaRankLoss(), last_only=True),
-    "SASRec-Lambdarank-Truncated:2500-TimeLimit:1h-lastonly:True": lambda: dnn(
-        SASRec(), LambdaGammaRankLoss(pred_truncate_at=2500), last_only=True),
-    "SASRec-Lambdarank-Truncated:2500-bce_weight:0.975-TimeLimit:1h-lastonly:True": lambda: dnn(
-        SASRec(), LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975), last_only=True),
-
-    "SASRec-Top1-TimeLimit:1h-lastonly:True": lambda: dnn(
-        SASRec(), TOP1Loss(), last_only=True),
-
-    "SASRec-BPR-TimeLimit:1h-lastonly:True": lambda: dnn(
-        SASRec(), BPRLoss(max_positives=1), last_only=True),
-
-    "SASRec-BPR-max-TimeLimit:1h-lastonly:True": lambda: dnn(
-        SASRec(), BPRLoss(max_positives=1, softmax_weighted=True), last_only=True),
-
-    "SASRec-BPR-TimeLimit:1h-lastonly:False": lambda: dnn(
-        SASRec(), BPRLoss(max_positives=10), last_only=False),
-
-    "SASRec-BPR-Truncated-TimeLimit:1h-lastonly:True": lambda: dnn(
-        SASRec(), BPRLoss(max_positives=1, pred_truncate=2500), last_only=True),
-
-    "SASRec-BPR-Truncated-max-TimeLimit:1h-lastonly:True": lambda: dnn(
-        SASRec(), BPRLoss(max_positives=1, softmax_weighted=True, pred_truncate=2500), last_only=True),
-
-    "SASRec-BPR-Truncated-TimeLimit:1h-lastonly:False": lambda: dnn(
-        SASRec(), BPRLoss(max_positives=10, pred_truncate=2500), last_only=False),
-
-    "SASRec-BPR-Truncated-max-TimeLimit:1h-lastonly:Fasle": lambda: dnn(
-        SASRec(), BPRLoss(max_positives=10, softmax_weighted=True, pred_truncate=2500), last_only=False),
+    "salrec": lambda:salrec(LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975))    
 }
 for i in range(0):
     dropout_rate = float(np.random.choice([0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6]))
