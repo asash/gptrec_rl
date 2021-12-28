@@ -83,7 +83,7 @@ class KionSasrecModel(tensorflow.keras.Model):
             self.attention_blocks.append(block_layers)
         self.output_activation = activations.get(self.output_layer_activation)
         self.seq_norm = layers.LayerNormalization()
-        self.all_items = tf.range(1, self.num_items+1)
+        self.all_items = tf.range(0, self.num_items)
 
         user_layers = {}
         user_layers['embedding'] = layers.Embedding(user_features_max_val + 1, self.embedding_size, dtype='float32')
