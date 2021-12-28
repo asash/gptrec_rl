@@ -124,8 +124,8 @@ class RecommendersEvaluator(object):
     def __call__(self):
         result = {"recommenders": {}}
         print(f"recommenders to evaluate:")
-        for i, recommender_name in self.recommenders:
-            print(f"{i}. {recommender_name}")
+        for i, recommender_name in enumerate(self.recommenders):
+            print(f"{i+1}. {recommender_name}")
         for recommender_name in self.recommenders:
             try:
                 sys.stdout.write("!!!!!!!!!   ")
