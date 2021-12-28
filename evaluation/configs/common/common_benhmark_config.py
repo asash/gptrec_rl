@@ -67,14 +67,14 @@ recommenders = {
     "top": top_recommender, 
     "svd": lambda: svd_recommender(128), 
     "mf-bpr": lambda: lightfm_recommender(128, 'bpr'),
-    "GRU4Rec-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-splitbias:0.8-splitpct:0.2": lambda: dnn(
+    "GRU4Rec-Lambdarank-Truncated:3000-bce_weight:0.975-TimeLimit:1h-splitbias:0.8-splitpct:0.2": lambda: dnn(
             GRU4Rec(),
-            LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975),
+            LambdaGammaRankLoss(pred_truncate_at=3000, bce_grad_weight=0.975),
             BiasedPercentageSplitter(0.2, 0.8)),
 
-    "GRU4Rec-Lambdarank-Truncated:4000-TimeLimit:1h-splitbias:0.8-splitpct:0.2": lambda: dnn(
+    "GRU4Rec-Lambdarank-Truncated:3000-TimeLimit:1h-splitbias:0.8-splitpct:0.2": lambda: dnn(
             GRU4Rec(),
-            LambdaGammaRankLoss(pred_truncate_at=4000),
+            LambdaGammaRankLoss(pred_truncate_at=3000),
             BiasedPercentageSplitter(0.2, 0.8)),
 
     "GRU4Rec-Lambdarank-TimeLimit:1h-splitbias:0.8-splitpct:0.2": lambda: dnn(
@@ -89,7 +89,7 @@ recommenders = {
             
     "GRU4Rec-BPR-TimeLimit:1h-splitbias:0.8-splitpct:0.2": lambda: dnn(
             GRU4Rec(),
-            BPRLoss(pred_truncate=4000),
+            BPRLoss(pred_truncate=3000),
             BiasedPercentageSplitter(0.2, 0.8)),
 
     "GRU4Rec-BCE-TimeLimit:1h-lastitem": lambda: dnn(
@@ -104,7 +104,7 @@ recommenders = {
 
     "GRU4Rec-BPR-TimeLimit:1h-lastitem": lambda: dnn(
             GRU4Rec(),
-            BPRLoss(pred_truncate=4000, max_positives=1),
+            BPRLoss(pred_truncate=3000, max_positives=1),
             LastItemSplitter()),
 
     "GRU4Rec-Top1-max-TimeLimit:1h-lastitem": lambda: dnn(
@@ -114,17 +114,17 @@ recommenders = {
 
     "GRU4Rec-BPR-max-TimeLimit:1h-lastitem": lambda: dnn(
             GRU4Rec(),
-            BPRLoss(softmax_weighted=True, pred_truncate=4000, max_positives=1),
+            BPRLoss(softmax_weighted=True, pred_truncate=3000, max_positives=1),
             LastItemSplitter()),           
 
-    "GRU4Rec-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-lastitem": lambda: dnn(
+    "GRU4Rec-Lambdarank-Truncated:3000-bce_weight:0.975-TimeLimit:1h-lastitem": lambda: dnn(
             GRU4Rec(),
-            LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975),
+            LambdaGammaRankLoss(pred_truncate_at=3000, bce_grad_weight=0.975),
             LastItemSplitter()),
 
-    "GRU4Rec-Lambdarank-Truncated:4000-TimeLimit:1h-lastitem": lambda: dnn(
+    "GRU4Rec-Lambdarank-Truncated:3000-TimeLimit:1h-lastitem": lambda: dnn(
             GRU4Rec(),
-            LambdaGammaRankLoss(pred_truncate_at=4000),
+            LambdaGammaRankLoss(pred_truncate_at=3000),
             LastItemSplitter()),
 
     "GRU4Rec-Lambdarank-TimeLimit:1h-splitbias:0.8-lastitem": lambda: dnn(
@@ -134,14 +134,14 @@ recommenders = {
 
 
 
-    "Caser-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-splitbias:0.8-splitpct:0.2": lambda: dnn(
+    "Caser-Lambdarank-Truncated:3000-bce_weight:0.975-TimeLimit:1h-splitbias:0.8-splitpct:0.2": lambda: dnn(
             Caser(),
-            LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975),
+            LambdaGammaRankLoss(pred_truncate_at=3000, bce_grad_weight=0.975),
             BiasedPercentageSplitter(0.2, 0.8)),
 
-    "Caser-Lambdarank-Truncated:4000-TimeLimit:1h-splitbias:0.8-splitpct:0.2": lambda: dnn(
+    "Caser-Lambdarank-Truncated:3000-TimeLimit:1h-splitbias:0.8-splitpct:0.2": lambda: dnn(
             Caser(),
-            LambdaGammaRankLoss(pred_truncate_at=4000),
+            LambdaGammaRankLoss(pred_truncate_at=3000),
             BiasedPercentageSplitter(0.2, 0.8)),
 
     "Caser-Lambdarank-TimeLimit:1h-splitbias:0.8-splitpct:0.2": lambda: dnn(
@@ -156,7 +156,7 @@ recommenders = {
             
     "Caser-BPR-TimeLimit:1h-splitbias:0.8-splitpct:0.2": lambda: dnn(
             Caser(),
-            BPRLoss(pred_truncate=4000),
+            BPRLoss(pred_truncate=3000),
             BiasedPercentageSplitter(0.2, 0.8)),
 
     "Caser-BCE-TimeLimit:1h-lastitem": lambda: dnn(
@@ -171,7 +171,7 @@ recommenders = {
 
     "Caser-BPR-TimeLimit:1h-lastitem": lambda: dnn(
             Caser(),
-            BPRLoss(pred_truncate=4000, max_positives=1),
+            BPRLoss(pred_truncate=3000, max_positives=1),
             LastItemSplitter()),
 
     "Caser-Top1-max-TimeLimit:1h-lastitem": lambda: dnn(
@@ -181,17 +181,17 @@ recommenders = {
 
     "Caser-BPR-max-TimeLimit:1h-lastitem": lambda: dnn(
             Caser(),
-            BPRLoss(softmax_weighted=True, pred_truncate=4000, max_positives=1),
+            BPRLoss(softmax_weighted=True, pred_truncate=3000, max_positives=1),
             LastItemSplitter()),           
 
-    "Caser-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-lastitem": lambda: dnn(
+    "Caser-Lambdarank-Truncated:3000-bce_weight:0.975-TimeLimit:1h-lastitem": lambda: dnn(
             Caser(),
-            LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975),
+            LambdaGammaRankLoss(pred_truncate_at=3000, bce_grad_weight=0.975),
             LastItemSplitter()),
 
-    "Caser-Lambdarank-Truncated:4000-TimeLimit:1h-lastitem": lambda: dnn(
+    "Caser-Lambdarank-Truncated:3000-TimeLimit:1h-lastitem": lambda: dnn(
             Caser(),
-            LambdaGammaRankLoss(pred_truncate_at=4000),
+            LambdaGammaRankLoss(pred_truncate_at=3000),
             LastItemSplitter()),
 
     "Caser-Lambdarank-TimeLimit:1h-splitbias:0.8-lastitem": lambda: dnn(
@@ -199,14 +199,14 @@ recommenders = {
             LambdaGammaRankLoss(),
             LastItemSplitter()),
 
-    "SASRec-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-splitbias:0.8-splitpct:0.2": lambda: dnn(
+    "SASRec-Lambdarank-Truncated:3000-bce_weight:0.975-TimeLimit:1h-splitbias:0.8-splitpct:0.2": lambda: dnn(
             SASRec(),
-            LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975),
+            LambdaGammaRankLoss(pred_truncate_at=3000, bce_grad_weight=0.975),
             BiasedPercentageSplitter(0.2, 0.8)),
 
-    "SASRec-Lambdarank-Truncated:4000-TimeLimit:1h-splitbias:0.8-splitpct:0.2": lambda: dnn(
+    "SASRec-Lambdarank-Truncated:3000-TimeLimit:1h-splitbias:0.8-splitpct:0.2": lambda: dnn(
             SASRec(),
-            LambdaGammaRankLoss(pred_truncate_at=4000),
+            LambdaGammaRankLoss(pred_truncate_at=3000),
             BiasedPercentageSplitter(0.2, 0.8)),
 
     "SASRec-Lambdarank-TimeLimit:1h-splitbias:0.8-splitpct:0.2": lambda: dnn(
@@ -221,7 +221,7 @@ recommenders = {
             
     "SASRec-BPR-TimeLimit:1h-splitbias:0.8-splitpct:0.2": lambda: dnn(
             SASRec(),
-            BPRLoss(pred_truncate=4000),
+            BPRLoss(pred_truncate=3000),
             BiasedPercentageSplitter(0.2, 0.8)),
 
     "SASRec-BCE-TimeLimit:1h-lastitem": lambda: dnn(
@@ -236,7 +236,7 @@ recommenders = {
 
     "SASRec-BPR-TimeLimit:1h-lastitem": lambda: dnn(
             SASRec(),
-            BPRLoss(pred_truncate=4000, max_positives=1),
+            BPRLoss(pred_truncate=3000, max_positives=1),
             LastItemSplitter()),
 
     "SASRec-Top1-max-TimeLimit:1h-lastitem": lambda: dnn(
@@ -246,17 +246,17 @@ recommenders = {
 
     "SASRec-BPR-max-TimeLimit:1h-lastitem": lambda: dnn(
             SASRec(),
-            BPRLoss(softmax_weighted=True, pred_truncate=4000, max_positives=1),
+            BPRLoss(softmax_weighted=True, pred_truncate=3000, max_positives=1),
             LastItemSplitter()),           
 
-    "SASRec-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-lastitem": lambda: dnn(
+    "SASRec-Lambdarank-Truncated:3000-bce_weight:0.975-TimeLimit:1h-lastitem": lambda: dnn(
             SASRec(),
-            LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975),
+            LambdaGammaRankLoss(pred_truncate_at=3000, bce_grad_weight=0.975),
             LastItemSplitter()),
 
-    "SASRec-Lambdarank-Truncated:4000-TimeLimit:1h-lastitem": lambda: dnn(
+    "SASRec-Lambdarank-Truncated:3000-TimeLimit:1h-lastitem": lambda: dnn(
             SASRec(),
-            LambdaGammaRankLoss(pred_truncate_at=4000),
+            LambdaGammaRankLoss(pred_truncate_at=3000),
             LastItemSplitter()),
 
     "SASRec-Lambdarank-TimeLimit:1h-splitbias:0.8-lastitem": lambda: dnn(
