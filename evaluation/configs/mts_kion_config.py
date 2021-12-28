@@ -5,6 +5,8 @@ from tqdm import tqdm
 
 from aprec.datasets.mts_kion import get_mts_kion_dataset, get_submission_user_ids, get_users, get_items
 from aprec.recommenders.dnn_sequential_recommender.models.sasrec.sasrec_kion import KionChallengeSASRec, KionSasrecModel
+from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import LastItemSplitter
+from aprec.recommenders.dnn_sequential_recommender.targetsplitters.random_fraction_splitter import RandomFractionSplitter
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.salrec.salrec_recommender import SalrecRecommender
@@ -98,6 +100,10 @@ def salrec(loss, num_blocks, learning_rate, ndcg_at,
                                                    ))
 
 def dnn(model_arch, loss,learning_rate=0.001, last_only=False, user_hasher=None):
+    if last_only:
+        splitter = LastItemSplitter()
+    else:
+        splitter = RandomFractionSplitter()
     return FilterSeenRecommender(DNNSequentialRecommender(train_epochs=10000, loss=loss,
                                                           model_arch=model_arch,
                                                           optimizer=Adam(learning_rate),
@@ -106,7 +112,7 @@ def dnn(model_arch, loss,learning_rate=0.001, last_only=False, user_hasher=None)
                                                           training_time_limit = 3600*2,
                                                           eval_ndcg_at=40,
                                                           target_decay=1.0,
-                                                          train_on_last_item_only=last_only,
+                                                          sequence_splitter=splitter,
                                                           users_featurizer=user_hasher
                                                           ))
 

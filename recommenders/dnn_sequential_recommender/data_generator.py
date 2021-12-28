@@ -4,14 +4,18 @@ import numpy as np
 from scipy.sparse import csr_matrix
 from tensorflow.python.keras.utils.data_utils import Sequence
 
+from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import LastItemSplitter
+from aprec.recommenders.dnn_sequential_recommender.targetsplitters.random_fraction_splitter import RandomFractionSplitter
+
 
 class DataGenerator(Sequence):
     def __init__(self, user_actions, user_ids,  user_features, history_size,
-                 n_items, batch_size=1000, last_item_only=False, target_decay=0.8,
+                 n_items, batch_size=1000, target_decay=0.8,
                  min_target_val=0.1, return_drect_positions=False, return_reverse_positions=False,
                  user_id_required=False,
                  max_user_features=0,
-                 user_features_required=False
+                 user_features_required=False, 
+                 sequence_splitter = RandomFractionSplitter()
                  ):
         self.user_ids = [[id] for id in user_ids]
         self.user_actions = user_actions
@@ -20,7 +24,6 @@ class DataGenerator(Sequence):
         self.batch_size = batch_size
         self.sequences_matrix = None
         self.target_matrix = None
-        self.last_item_only = last_item_only
         self.target_decay = target_decay
         self.min_target_val = min_target_val
         self.return_direct_positions = return_drect_positions
@@ -29,6 +32,8 @@ class DataGenerator(Sequence):
         self.user_features = user_features
         self.max_user_features = max_user_features
         self.user_features_required = user_features_required
+        self.sequence_splitter = sequence_splitter
+        self.max_target_pct = 0
         self.reset()
 
 
@@ -92,18 +97,15 @@ class DataGenerator(Sequence):
         history = []
         target = []
         for user in user_actions:
-            user_history, user_target = self.split_user(user)
+            user_history, user_target = self.sequence_splitter.split(user)
             history.append(user_history)
             target.append(user_target)
         return history, target
 
     def split_user(self, user):
-        if not self.last_item_only:
-            history_fraction = random.random()
-            n_history_actions = int(len(user) * history_fraction)
-        else:
-            n_history_actions = len(user) - 1
-        n_target_actions = len(user) - n_history_actions
+        target_fraction = random.random() * self.max_target_pct
+        n_target_actions = min(1, int(target_fraction))
+        n_history_actions = len(user) - n_target_actions
         history_actions =user[:n_history_actions]
         target_actions = user[-n_target_actions:]
         return history_actions, target_actions

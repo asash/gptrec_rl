@@ -6,6 +6,8 @@ from collections import defaultdict
 import tensorflow as tf
 
 from tqdm import tqdm
+from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import LastItemSplitter
+from aprec.recommenders.dnn_sequential_recommender.targetsplitters.random_fraction_splitter import RandomFractionSplitter
 
 from aprec.utils.item_id import ItemId
 from aprec.recommenders.metrics.ndcg import KerasNDCG
@@ -25,8 +27,10 @@ class DNNSequentialRecommender(Recommender):
     def __init__(self, model_arch: SequentialRecsysModel, loss: Loss = BCELoss(),
                  users_featurizer=None,
                  items_featurizer=None,
-                 train_epochs=300, optimizer=Adam(), batch_size=1000, early_stop_epochs=100, target_decay=1.0,
-                 train_on_last_item_only=False, training_time_limit=None,  eval_ndcg_at=40, debug=False):
+                 train_epochs=300, optimizer=Adam(),
+                 sequence_splitter = RandomFractionSplitter(), 
+                 batch_size=1000, early_stop_epochs=100, target_decay=1.0,
+                 training_time_limit=None,  eval_ndcg_at=40, debug=False):
         super().__init__()
         self.model_arch = model_arch
         self.users = ItemId()
@@ -46,13 +50,14 @@ class DNNSequentialRecommender(Recommender):
         self.val_users = None
         self.eval_ndcg_at = 40
         self.eval_ndcg_at = eval_ndcg_at
-        self.train_on_last_item_only = train_on_last_item_only
         self.training_time_limit = training_time_limit
         self.users_featurizer = users_featurizer
         self.items_featurizer = items_featurizer
         self.user_features = {}
+        self.item_features = {}
         self.users_with_actions = set()
         self.max_user_features = 0
+        self.sequence_splitter = sequence_splitter
         self.max_user_feature_val = 0
         self.debug = debug
 
@@ -112,7 +117,8 @@ class DNNSequentialRecommender(Recommender):
         print("train_users: {}, val_users:{}, items:{}".format(len(train_users), len(val_users), self.items.size()))
         val_generator = DataGenerator(val_users, val_user_ids, val_features, self.model_arch.max_history_length,
                                       self.items.size(),
-                                      batch_size=self.batch_size, last_item_only=True,
+                                      batch_size=self.batch_size,
+                                      sequence_splitter=LastItemSplitter(), 
                                       target_decay=self.target_decay,
                                       user_id_required=self.model_arch.requires_user_id,
                                       max_user_features=self.max_user_features,
@@ -136,7 +142,7 @@ class DNNSequentialRecommender(Recommender):
                                       self.items.size(),
                                       batch_size=self.batch_size, target_decay=self.target_decay,
                                       user_id_required=self.model_arch.requires_user_id,
-                                      last_item_only=self.train_on_last_item_only,
+                                      sequence_splitter=self.sequence_splitter,
                                       max_user_features=self.max_user_features,
                                       user_features_required=not (self.users_featurizer is None)
                                       )

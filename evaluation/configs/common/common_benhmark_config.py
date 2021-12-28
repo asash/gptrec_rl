@@ -3,6 +3,7 @@ from aprec.evaluation.samplers.random_sampler import RandomTargetItemSampler
 from aprec.losses.bpr import BPRLoss
 from aprec.losses.top1 import TOP1Loss
 from aprec.recommenders.dnn_sequential_recommender.models.sasrec.sasrec import SASRec
+from aprec.recommenders.dnn_sequential_recommender.targetsplitters.biased_percentage_splitter import BiasedPercentageSplitter
 from aprec.recommenders.salrec.salrec_recommender import SalrecRecommender
 
 from aprec.recommenders.top_recommender import TopRecommender
@@ -39,7 +40,7 @@ def lightfm_recommender(k, loss):
     return LightFMRecommender(k, loss, num_threads=32)
 
 
-def dnn(model_arch, loss, learning_rate=0.001, last_only=False, training_time_limit=3600):
+def dnn(model_arch, loss, sequence_splitter, learning_rate=0.001, training_time_limit=3600):
     return DNNSequentialRecommender(train_epochs=10000, loss=loss,
                                                           model_arch=model_arch,
                                                           optimizer=Adam(learning_rate),
@@ -48,7 +49,7 @@ def dnn(model_arch, loss, learning_rate=0.001, last_only=False, training_time_li
                                                           training_time_limit=training_time_limit,
                                                           eval_ndcg_at=10,
                                                           target_decay=1.0,
-                                                          train_on_last_item_only=last_only
+                                                          sequence_splitter=sequence_splitter
                                                           )
 
 def salrec(loss, training_time_limit=3600, target_decay=1.0, seq_len = 100):
@@ -62,72 +63,28 @@ def vanilla_bert4rec(time_limit):
 
 
 recommenders = {
-    "SASRec-blocks:8-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
-            SASRec(max_history_len=100,  num_blocks=8),
-            LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975), last_only=False),
+    "SASRec-blocks:4-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-splitbias:0.8-splitpct:0.2": lambda: dnn(
+            SASRec(max_history_len=100,  num_blocks=4),
+            LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975),
+            BiasedPercentageSplitter(0.2, 0.8)),
+    "SASRec-blocks:4-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-splitbias:0.5-splitpct:0.2": lambda: dnn(
+            SASRec(max_history_len=100,  num_blocks=4),
+            LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975),
+            BiasedPercentageSplitter(0.2, 0.5)),
+    "SASRec-blocks:4-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-splitbias:0.7-splitpct:0.2": lambda: dnn(
+            SASRec(max_history_len=100,  num_blocks=4),
+            LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975),
+            BiasedPercentageSplitter(0.2, 0.7)),
 
-    "SASRec-blocks:8-TimeLimit:1h-lastonly:False": lambda: dnn(
-            SASRec(max_history_len=100,  num_blocks=8),
-            BCELoss(), last_only=False),
+    "SASRec-blocks:4-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-splitbias:0.7-splitpct:0.3": lambda: dnn(
+                SASRec(max_history_len=100,  num_blocks=4),
+                LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975),
+                BiasedPercentageSplitter(0.3, 0.7)),
 
-    "SASRec-blocks:6-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
-            SASRec(max_history_len=100,  num_blocks=6),
-            LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975), last_only=False),
-
-    "SASRec-blocks:6-TimeLimit:1h-lastonly:False": lambda: dnn(
-            SASRec(max_history_len=100,  num_blocks=6),
-            BCELoss(), last_only=False),
-
-    "SASRec-blocks:4-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
-            SASRec(max_history_len=100,  num_blocks=6),
-            LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975), last_only=False),
-
-    "SASRec-blocks:4-TimeLimit:1h-lastonly:False": lambda: dnn(
-            SASRec(max_history_len=100,  num_blocks=6),
-            BCELoss(), last_only=False),
-
-    "SASRec-blocks:10-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
-            SASRec(max_history_len=100,  num_blocks=6),
-            LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975), last_only=False),
-
-    "SASRec-blocks:10-TimeLimit:1h-lastonly:False": lambda: dnn(
-            SASRec(max_history_len=100,  num_blocks=6),
-            BCELoss(), last_only=False),
-
-    "SASRec-blocks:8-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
-            SASRec(max_history_len=100,  num_blocks=8),
-            LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975), last_only=False),
-
-    "SASRec-blocks:8-TimeLimit:1h-lastonly:False": lambda: dnn(
-            SASRec(max_history_len=100,  num_blocks=8),
-            BCELoss(), last_only=False),
-
-    "SASRec-blocks:6-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
-            SASRec(max_history_len=100,  num_blocks=6),
-            LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975), last_only=False),
-
-    "SASRec-blocks:6-TimeLimit:1h-lastonly:False": lambda: dnn(
-            SASRec(max_history_len=100,  num_blocks=6),
-            BCELoss(), last_only=False),
-
-    "SASRec-blocks:4-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
-            SASRec(max_history_len=100,  num_blocks=6),
-            LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975), last_only=False),
-
-    "SASRec-blocks:4-TimeLimit:1h-lastonly:False": lambda: dnn(
-            SASRec(max_history_len=100,  num_blocks=6),
-            BCELoss(), last_only=False),
-
-    "SASRec-blocks:10-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
-            SASRec(max_history_len=100,  num_blocks=6),
-            LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975), last_only=False),
-
-    "SASRec-blocks:10-TimeLimit:1h-lastonly:False": lambda: dnn(
-            SASRec(max_history_len=100,  num_blocks=6),
-            BCELoss(), last_only=False),
-
-
-
+    "SASRec-blocks:4-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-splitbias:0.7-splitpct:0.1": lambda: dnn(
+                SASRec(max_history_len=100,  num_blocks=4),
+                LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975),
+                BiasedPercentageSplitter(0.1, 0.7))
 }
 for i in range(0):
     loss_type = np.random.choice(["top1max", 'bce', 'lambdarank'])
