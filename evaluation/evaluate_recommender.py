@@ -90,6 +90,7 @@ class RecommendersEvaluator(object):
     def __init__(self, actions, recommenders, metrics, out_dir, data_splitter,
                  n_val_users, recommendations_limit, callbacks=(),
                  users=None,
+                 items=None,
                  experiment_config=None,
                  target_items_sampler: TargetItemSampler = None,
                  ):
@@ -105,6 +106,7 @@ class RecommendersEvaluator(object):
         self.save_split(self.train, self.test)
         self.test = filter_cold_start(self.train, self.test)
         self.users = users
+        self.items = items
         all_train_user_ids = list(set([action.user_id for action in self.train]))
         self.recommendations_limit = recommendations_limit
         random.shuffle(all_train_user_ids)
@@ -135,6 +137,12 @@ class RecommendersEvaluator(object):
                     print("adding_users")
                     for user in self.users:
                         recommender.add_user(user)
+
+                if self.items is not None:
+                    print("adding items")
+                    for item in self.items:
+                        recommender.add_item(item)
+
 
                 build_time_start = time.time()
                 if self.sampled_requests is not None:

@@ -1,4 +1,5 @@
 from tqdm import tqdm
+from aprec.api.item import Item
 
 from aprec.api.items_ranking_request import ItemsRankingRequest
 from aprec.api.user import User
@@ -31,6 +32,12 @@ class Recommender():
     # many recommenders don't require users, so leave it doing nothing by default
     def add_user(self, user: User):
         pass
+
+    # many recommenders don't require items, so leave it doing nothing by default
+    def add_user(self, item: Item):
+        pass
+
+
 
     def recommend_by_items(self, items_list, limit: int):
         raise (NotImplementedError)

@@ -24,7 +24,8 @@ class TestMtsKionDataset(unittest.TestCase):
 
     def test_get_items(self):
         items = get_items()
-        print(items)
+        self.assertEquals(items[0].cat_features[:2], [('content_type', 'film'), ('age_rating', '16.0')])
+        self.assertEquals(len(items), 15963)
 
 
 

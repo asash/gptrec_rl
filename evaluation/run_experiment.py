@@ -62,6 +62,12 @@ def run_experiment(config):
         else:
             users = None
 
+        if hasattr(config, 'ITEMS'):
+            items = config.ITEMS()
+        else:
+            items=None
+
+
 
         if hasattr(config, 'RECOMMENDATIONS_LIMIT'):
             recommendations_limit = config.RECOMMENDATIONS_LIMIT
@@ -87,6 +93,7 @@ def run_experiment(config):
                                                       recommendations_limit,
                                                       callbacks,
                                                       users=users,
+                                                      items=items,
                                                       experiment_config=config,
                                                       target_items_sampler=target_items_sampler
                                                       )

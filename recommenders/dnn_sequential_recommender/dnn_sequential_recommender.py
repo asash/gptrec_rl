@@ -22,7 +22,9 @@ import numpy as np
 
 
 class DNNSequentialRecommender(Recommender):
-    def __init__(self, model_arch: SequentialRecsysModel, loss: Loss = BCELoss(), users_featurizer=None,
+    def __init__(self, model_arch: SequentialRecsysModel, loss: Loss = BCELoss(),
+                 users_featurizer=None,
+                 items_featurizer=None,
                  train_epochs=300, optimizer=Adam(), batch_size=1000, early_stop_epochs=100, target_decay=1.0,
                  train_on_last_item_only=False, training_time_limit=None,  eval_ndcg_at=40, debug=False):
         super().__init__()
@@ -47,6 +49,7 @@ class DNNSequentialRecommender(Recommender):
         self.train_on_last_item_only = train_on_last_item_only
         self.training_time_limit = training_time_limit
         self.users_featurizer = users_featurizer
+        self.items_featurizer = items_featurizer
         self.user_features = {}
         self.users_with_actions = set()
         self.max_user_features = 0
@@ -58,6 +61,13 @@ class DNNSequentialRecommender(Recommender):
             pass
         else:
             self.user_features[self.users.get_id(user.user_id)] = self.users_featurizer(user)
+
+    def add_item(self, item):
+        if self.items_featurizer is None:
+            pass
+        else:
+            self.item_features[self.items.get_id(item.item_id)] = self.items_featurizer(item)
+
 
     def get_metadata(self):
         return self.metadata

@@ -15,6 +15,10 @@ class FilterSeenRecommender(Recommender):
     def add_user(self, user):
         self.recommender.add_user(user)
 
+    def add_item(self, item):
+        self.recommender.add_item(item)
+
+
     def add_action(self, action):
         self.user_seen[action.user_id].add(action.item_id) 
         self.recommender.add_action(action)

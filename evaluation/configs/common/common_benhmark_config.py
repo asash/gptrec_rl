@@ -62,37 +62,72 @@ def vanilla_bert4rec(time_limit):
 
 
 recommenders = {
-    "SASRec-blocks:8-Lambdarank-Truncated:2500-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
+    "SASRec-blocks:8-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
             SASRec(max_history_len=100,  num_blocks=8),
-            LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975), last_only=False),
+            LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975), last_only=False),
 
     "SASRec-blocks:8-TimeLimit:1h-lastonly:False": lambda: dnn(
             SASRec(max_history_len=100,  num_blocks=8),
             BCELoss(), last_only=False),
 
-    "SASRec-blocks:6-Lambdarank-Truncated:2500-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
+    "SASRec-blocks:6-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
             SASRec(max_history_len=100,  num_blocks=6),
-            LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975), last_only=False),
+            LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975), last_only=False),
 
     "SASRec-blocks:6-TimeLimit:1h-lastonly:False": lambda: dnn(
             SASRec(max_history_len=100,  num_blocks=6),
             BCELoss(), last_only=False),
 
-    "SASRec-blocks:4-Lambdarank-Truncated:2500-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
+    "SASRec-blocks:4-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
             SASRec(max_history_len=100,  num_blocks=6),
-            LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975), last_only=False),
+            LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975), last_only=False),
 
     "SASRec-blocks:4-TimeLimit:1h-lastonly:False": lambda: dnn(
             SASRec(max_history_len=100,  num_blocks=6),
             BCELoss(), last_only=False),
 
-    "SASRec-blocks:10-Lambdarank-Truncated:2500-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
+    "SASRec-blocks:10-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
             SASRec(max_history_len=100,  num_blocks=6),
-            LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975), last_only=False),
+            LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975), last_only=False),
 
     "SASRec-blocks:10-TimeLimit:1h-lastonly:False": lambda: dnn(
             SASRec(max_history_len=100,  num_blocks=6),
             BCELoss(), last_only=False),
+
+    "SASRec-blocks:8-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
+            SASRec(max_history_len=100,  num_blocks=8),
+            LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975), last_only=False),
+
+    "SASRec-blocks:8-TimeLimit:1h-lastonly:False": lambda: dnn(
+            SASRec(max_history_len=100,  num_blocks=8),
+            BCELoss(), last_only=False),
+
+    "SASRec-blocks:6-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
+            SASRec(max_history_len=100,  num_blocks=6),
+            LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975), last_only=False),
+
+    "SASRec-blocks:6-TimeLimit:1h-lastonly:False": lambda: dnn(
+            SASRec(max_history_len=100,  num_blocks=6),
+            BCELoss(), last_only=False),
+
+    "SASRec-blocks:4-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
+            SASRec(max_history_len=100,  num_blocks=6),
+            LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975), last_only=False),
+
+    "SASRec-blocks:4-TimeLimit:1h-lastonly:False": lambda: dnn(
+            SASRec(max_history_len=100,  num_blocks=6),
+            BCELoss(), last_only=False),
+
+    "SASRec-blocks:10-Lambdarank-Truncated:4000-bce_weight:0.975-TimeLimit:1h-lastonly:False": lambda: dnn(
+            SASRec(max_history_len=100,  num_blocks=6),
+            LambdaGammaRankLoss(pred_truncate_at=4000, bce_grad_weight=0.975), last_only=False),
+
+    "SASRec-blocks:10-TimeLimit:1h-lastonly:False": lambda: dnn(
+            SASRec(max_history_len=100,  num_blocks=6),
+            BCELoss(), last_only=False),
+
+
+
 }
 for i in range(0):
     loss_type = np.random.choice(["top1max", 'bce', 'lambdarank'])

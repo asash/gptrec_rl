@@ -3,7 +3,7 @@ import random
 
 from tqdm import tqdm
 
-from aprec.datasets.mts_kion import get_mts_kion_dataset, get_submission_user_ids, get_users
+from aprec.datasets.mts_kion import get_mts_kion_dataset, get_submission_user_ids, get_users, get_items
 from aprec.recommenders.dnn_sequential_recommender.models.sasrec.sasrec_kion import KionChallengeSASRec, KionSasrecModel
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.svd import SvdRecommender
@@ -23,11 +23,12 @@ from aprec.recommenders.deep_mf import DeepMFRecommender
 from aprec.losses.bce import BCELoss
 from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
 from aprec.recommenders.dnn_sequential_recommender.models.caser import Caser
-from aprec.recommenders.dnn_sequential_recommender.user_featurizers.hashing_featurizer import HashingUserFeaturizer
+from aprec.recommenders.dnn_sequential_recommender.featurizers.hashing_featurizer import HashingFeaturizer
 from aprec.evaluation.split_actions import LeaveOneOut
 
 DATASET = "mts_kion"
 USERS = get_users
+ITEMS = get_items
 
 GENERATE_SUBMIT_THRESHOLD =  0.16
 
@@ -110,7 +111,7 @@ def dnn(model_arch, loss,learning_rate=0.001, last_only=False, user_hasher=None)
                                                           ))
 
 recommenders_raw = {
-    "SASREC-kion": lambda: dnn(KionChallengeSASRec(), BCELoss(), last_only=True, user_hasher=HashingUserFeaturizer())
+    "SASREC-kion": lambda: dnn(KionChallengeSASRec(), BCELoss(), last_only=True, user_hasher=HashingFeaturizer())
 }
 
 
