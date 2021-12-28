@@ -10,6 +10,7 @@ from collections import defaultdict
 
 import numpy as np
 from tqdm import tqdm
+from aprec import recommenders
 
 from aprec.api.items_ranking_request import ItemsRankingRequest
 from aprec.evaluation.samplers.sampler import TargetItemSampler
@@ -122,6 +123,9 @@ class RecommendersEvaluator(object):
 
     def __call__(self):
         result = {"recommenders": {}}
+        print(f"recommenders to evaluate:")
+        for i, recommender_name in self.recommenders:
+            print(f"{i}. {recommender_name}")
         for recommender_name in self.recommenders:
             try:
                 sys.stdout.write("!!!!!!!!!   ")
