@@ -17,6 +17,8 @@ class BiasedPercentageSplitter(TargetSplitter):
 
     
     def split(self, sequence):
+        if len(sequence) == 0: 
+            return [], []
         probs = self.biases[-len(sequence):]/np.sum(self.biases[-len(sequence):])
         indices = range(len(sequence))
         n_target_actions = max(1, int(len(sequence)*self.max_pct))

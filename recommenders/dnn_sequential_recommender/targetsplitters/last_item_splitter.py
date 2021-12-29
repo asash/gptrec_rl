@@ -6,6 +6,8 @@ class LastItemSplitter(TargetSplitter):
         super().__init__()
     
     def split(self, sequence):
+        if len(sequence) == 0:
+            return [], []
         train = sequence[:-1]
         target = sequence[-1:]
         return train, target

@@ -9,6 +9,8 @@ class RandomFractionSplitter(TargetSplitter):
         self.random = Random(random_seed)
     
     def split(self, sequence):
+        if(len(sequence) == 0):
+            return [], []
         target_actions = self.random.randint(1, max(len(sequence) -1, 1)) 
         train_actions = len(sequence) - target_actions
         return sequence[:train_actions], sequence[-target_actions:]

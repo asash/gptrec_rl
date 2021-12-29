@@ -34,7 +34,7 @@ class Recommender():
         pass
 
     # many recommenders don't require items, so leave it doing nothing by default
-    def add_user(self, item: Item):
+    def add_item(self, item: Item):
         pass
 
 

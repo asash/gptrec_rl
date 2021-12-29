@@ -38,7 +38,7 @@ GENERATE_SUBMIT_THRESHOLD =  0.16
 def generate_submit(recommender, recommender_name, evaluation_result, config):
     submit_user_ids = get_submission_user_ids()
     if evaluation_result["MAP@10"] <= config.GENERATE_SUBMIT_THRESHOLD:
-        print("SPS@4 is less than threshold, not generating the submit")
+        print("MAP@10 is less than threshold, not generating the submit")
         return
 
     print("generating submit...")
@@ -64,44 +64,7 @@ USERS_FRACTIONS = [1.]
 def top_recommender():
     return FilterSeenRecommender(TopRecommender())
 
-def svd_recommender(k):
-    return FilterSeenRecommender(SvdRecommender(k))
-
-def lightfm_recommender(k, loss):
-    return FilterSeenRecommender(LightFMRecommender(k, loss, n_epochs=100))
-
-def vanilla_bert4rec(num_steps):
-    recommender = VanillaBERT4Rec(num_train_steps=num_steps)
-    return FilterSeenRecommender(recommender)
-
-def salrec(loss, num_blocks, learning_rate, ndcg_at,
-                session_len,  lambdas_normalization, activation_override=None,
-                loss_pred_truncate=None,
-                loss_bce_weight=0.0,
-                log_lambdas=False
-           ):
-    activation = 'linear' if loss == 'lambdarank' else 'sigmoid'
-    if activation_override is not None:
-        activation = activation_override
-    return FilterSeenRecommender(SalrecRecommender(train_epochs=10000, loss=loss,
-                                                   optimizer=Adam(learning_rate),
-                                                   early_stop_epochs=100,
-                                                   batch_size=128, sigma=1.0, ndcg_at=ndcg_at,
-                                                   max_history_len=session_len,
-                                                   output_layer_activation=activation,
-                                                   training_time_limit = 3600,
-                                                   num_blocks=num_blocks,
-                                                   num_target_predictions=5,
-                                                   eval_ndcg_at=40,
-                                                   target_decay=0.8,
-                                                   loss_lambda_normalization=lambdas_normalization,
-                                                   loss_pred_truncate=loss_pred_truncate,
-                                                   loss_bce_weight=loss_bce_weight,
-                                                   log_lambdas_len=log_lambdas
-                                                   ))
-
-def dnn(model_arch, loss,learning_rate=0.001, last_only=False, user_hasher=None):
-    splitter = BiasedPercentageSplitter(0.2, 0.8)
+def dnn(model_arch, loss, splitter, learning_rate=0.001, user_hasher=None):
     return FilterSeenRecommender(DNNSequentialRecommender(train_epochs=10000, loss=loss,
                                                           model_arch=model_arch,
                                                           optimizer=Adam(learning_rate),
@@ -115,8 +78,10 @@ def dnn(model_arch, loss,learning_rate=0.001, last_only=False, user_hasher=None)
                                                           ))
 
 recommenders_raw = {
-    "SASREC-kion": lambda: dnn(Caser(user_extra_features=True),
-                 LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975), last_only=True, user_hasher=HashingFeaturizer())
+    "Caser-kion": lambda: dnn(Caser(user_extra_features=True),
+                 LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975), 
+                 BiasedPercentageSplitter(0.15, 0.8),
+                 user_hasher=HashingFeaturizer())
 }
 
 
