@@ -36,7 +36,7 @@ def real_hash(obj):
 
 def run_experiment(config):
     result = []
-    print("Dataset: f{config.DATASET}")
+    print(f"Dataset: {config.DATASET}")
     print("reading  data...")
     all_actions = [action for action in DatasetsRegister()[config.DATASET]()]
     print("done")
