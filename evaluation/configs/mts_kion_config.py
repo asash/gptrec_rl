@@ -5,6 +5,7 @@ from tqdm import tqdm
 
 from aprec.datasets.mts_kion import get_mts_kion_dataset, get_submission_user_ids, get_users, get_items
 from aprec.recommenders.dnn_sequential_recommender.models.sasrec.sasrec_kion import KionChallengeSASRec, KionSasrecModel
+from aprec.recommenders.dnn_sequential_recommender.targetsplitters.biased_percentage_splitter import BiasedPercentageSplitter
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import LastItemSplitter
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.random_fraction_splitter import RandomFractionSplitter
 from aprec.recommenders.top_recommender import TopRecommender
@@ -100,10 +101,7 @@ def salrec(loss, num_blocks, learning_rate, ndcg_at,
                                                    ))
 
 def dnn(model_arch, loss,learning_rate=0.001, last_only=False, user_hasher=None):
-    if last_only:
-        splitter = LastItemSplitter()
-    else:
-        splitter = RandomFractionSplitter()
+    splitter = BiasedPercentageSplitter(0.2, 0.8)
     return FilterSeenRecommender(DNNSequentialRecommender(train_epochs=10000, loss=loss,
                                                           model_arch=model_arch,
                                                           optimizer=Adam(learning_rate),
@@ -117,7 +115,8 @@ def dnn(model_arch, loss,learning_rate=0.001, last_only=False, user_hasher=None)
                                                           ))
 
 recommenders_raw = {
-    "SASREC-kion": lambda: dnn(KionChallengeSASRec(), BCELoss(), last_only=True, user_hasher=HashingFeaturizer())
+    "SASREC-kion": lambda: dnn(Caser(user_extra_features=True),
+                 LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975), last_only=True, user_hasher=HashingFeaturizer())
 }
 
 
