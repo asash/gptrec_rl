@@ -70,7 +70,7 @@ def dnn(model_arch, loss, splitter, learning_rate=0.001, user_hasher=None):
                                                           optimizer=Adam(learning_rate),
                                                           early_stop_epochs=100,
                                                           batch_size=128,
-                                                          training_time_limit = 3600*2,
+                                                          training_time_limit = 3600*4,
                                                           eval_ndcg_at=40,
                                                           target_decay=1.0,
                                                           sequence_splitter=splitter,
@@ -78,7 +78,7 @@ def dnn(model_arch, loss, splitter, learning_rate=0.001, user_hasher=None):
                                                           ))
 
 recommenders_raw = {
-    "Sasrec-Kion": lambda: dnn(KionChallengeSASRec(user_extra_features=True, requires_user_id=False),
+    "Sasrec-Kion": lambda: dnn(KionChallengeSASRec(),
                  LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975), 
                  BiasedPercentageSplitter(0.15, 0.8),
                  user_hasher=HashingFeaturizer())
