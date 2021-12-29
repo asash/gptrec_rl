@@ -125,6 +125,7 @@ class OwnSasrecModel(tensorflow.keras.Model):
 
         seq_emb = seq[:, -1, :]
         seq_emb = self.seq_norm(seq_emb)
+    
         if self.reuse_item_embeddings:
             all_item_embeddings = self.item_embeddings_layer(self.all_items)
         else:

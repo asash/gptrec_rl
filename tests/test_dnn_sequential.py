@@ -74,16 +74,17 @@ class TestDnnSequentialRecommender(unittest.TestCase):
         recs = recommender.recommend(USER_ID, 10)
         print(recs)
 
-
-
-    def test_sasrec_kion(self):
+    def test_kion_sasrec(self):
+        items = kion.get_items()
         val_users = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
         user_featurizer = HashingFeaturizer()
-        model = KionChallengeSASRec()
+        item_featurizer = HashingFeaturizer(cat_hashes_space=100000)
+        model = KionChallengeSASRec(embedding_size=32)
         recommender = DNNSequentialRecommender(model, train_epochs=10, early_stop_epochs=5,
                                                batch_size=5, training_time_limit=10,
                                                users_featurizer=user_featurizer,
-                                               debug=False
+                                               items_featurizer=item_featurizer,
+                                               debug=True,
                                                )
         recommender.set_val_users(val_users)
         recommender = FilterSeenRecommender(recommender)
@@ -92,6 +93,8 @@ class TestDnnSequentialRecommender(unittest.TestCase):
             recommender.add_action(action)
         for user in users:
             recommender.add_user(user)
+        for item in items:
+            recommender.add_item(item)
         recommender.rebuild_model()
         recs = recommender.recommend(USER_ID, 10)
         print(recs)

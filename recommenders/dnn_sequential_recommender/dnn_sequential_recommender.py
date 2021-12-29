@@ -235,7 +235,8 @@ class DNNSequentialRecommender(Recommender):
                                           num_users=self.users.size(),
                                           max_user_features=self.max_user_features,
                                           user_feature_max_val=self.max_user_feature_val,
-                                          batch_size=self.batch_size)
+                                          batch_size=self.batch_size,
+                                          item_features=self.item_features)
         model = self.model_arch.get_model()
 
         #call the model first time in order to build it

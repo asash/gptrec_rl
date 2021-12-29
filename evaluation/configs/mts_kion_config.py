@@ -78,7 +78,7 @@ def dnn(model_arch, loss, splitter, learning_rate=0.001, user_hasher=None):
                                                           ))
 
 recommenders_raw = {
-    "Caser-kion": lambda: dnn(Caser(user_extra_features=True, requires_user_id=False),
+    "Sasrec-Kion": lambda: dnn(KionChallengeSASRec(user_extra_features=True, requires_user_id=False),
                  LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975), 
                  BiasedPercentageSplitter(0.15, 0.8),
                  user_hasher=HashingFeaturizer())
