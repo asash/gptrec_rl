@@ -64,7 +64,7 @@ USERS_FRACTIONS = [1.]
 def top_recommender():
     return FilterSeenRecommender(TopRecommender())
 
-def dnn(model_arch, loss, splitter, learning_rate=0.001, user_hasher=None):
+def dnn(model_arch, loss, splitter, learning_rate=0.001, user_hasher=None, items_hasher=None):
     return FilterSeenRecommender(DNNSequentialRecommender(train_epochs=10000, loss=loss,
                                                           model_arch=model_arch,
                                                           optimizer=Adam(learning_rate),
@@ -74,14 +74,17 @@ def dnn(model_arch, loss, splitter, learning_rate=0.001, user_hasher=None):
                                                           eval_ndcg_at=40,
                                                           target_decay=1.0,
                                                           sequence_splitter=splitter,
-                                                          users_featurizer=user_hasher
+                                                          users_featurizer=user_hasher,
+                                                          items_featurizer=items_hasher
                                                           ))
 
 recommenders_raw = {
     "Sasrec-Kion": lambda: dnn(KionChallengeSASRec(),
                  LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975), 
                  BiasedPercentageSplitter(0.15, 0.8),
-                 user_hasher=HashingFeaturizer())
+                 user_hasher=HashingFeaturizer(),
+                 items_hasher=HashingFeaturizer(cat_hashes_space=100000)
+                 )
 }
 
 
