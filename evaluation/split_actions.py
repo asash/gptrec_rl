@@ -48,9 +48,10 @@ def get_single_action_users(users):
     return result
 
 class LeaveOneOut(ActionsSplitter):
-    def __init__(self, max_test_users=4096, random_seed = 31337):
+    def __init__(self, max_test_users=4096, random_seed = 31337, remove_single_action=True):
         self.max_test_users=max_test_users
         self.random_seed = random_seed
+        self.remove_single_actions =remove_single_action
 
     def __call__(self, actions):
         sorted_actions = sorted(actions, key=lambda x: x.timestamp)
@@ -60,8 +61,11 @@ class LeaveOneOut(ActionsSplitter):
         train = []
         test = []
         control_users = get_control_users(actions)
-        single_action_users = get_single_action_users(users)
-        valid_user_selection = list(users.keys() - control_users - single_action_users)
+        if self.remove_single_actions:
+            single_action_users = get_single_action_users(users)
+            valid_user_selection = list(users.keys() - control_users - single_action_users)
+        else:
+            valid_user_selection = list(users.keys() - control_users)
         valid_user_selection.sort()
         np.random.seed(self.random_seed)
         test_user_ids = set(np.random.choice(valid_user_selection, self.max_test_users, replace=False))
