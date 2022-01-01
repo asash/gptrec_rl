@@ -1,4 +1,5 @@
 from collections import Counter
+from aprec.api.user import User
 from aprec.recommenders.recommender import Recommender
 
 
@@ -12,9 +13,14 @@ class ConditionalTopRecommender(Recommender):
         self.items_counts: dict = dict()
         self.precalculated_top_items: dict = dict()
         self.user_field_values: dict = dict()
+    
+    def add_user(self, user: User):
+        if self.conditional_field in user.cat_features:
+            self.user_field_values[user.user_id] = user.cat_features[self.conditional_field]
+        
 
     def add_action(self, action):
-        if self.conditional_field not in action.data:
+        if action.user_id not in self.user_field_values and self.conditional_field not in action.data:
             raise Exception(f"this actions does not have required field: {self.conditional_field}")
 
         field_value: str = action.data[self.conditional_field]

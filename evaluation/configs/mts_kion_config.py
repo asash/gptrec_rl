@@ -80,10 +80,10 @@ def dnn(model_arch, loss, splitter, learning_rate=0.001, user_hasher=None, items
 
 recommenders_raw = {
     "Sasrec-Kion": lambda: dnn(KionChallengeSASRec(),
-                 LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975), 
-                 BiasedPercentageSplitter(0.15, 0.8),
-                 user_hasher=HashingFeaturizer(),
-                 items_hasher=HashingFeaturizer(cat_hashes_space=100000)
+                    LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975), 
+                    BiasedPercentageSplitter(0.15, 0.8),
+                    user_hasher=HashingFeaturizer(),
+                    items_hasher=HashingFeaturizer(cat_hashes_space=100000)
                  )
 }
 

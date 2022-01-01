@@ -75,6 +75,8 @@ class OwnSasrecModel(tensorflow.keras.Model):
                                                         self.embedding_size,
                                                         embeddings_regularizer=l2(self.l2_emb), dtype='float32')
 
+        self.embedding_dropout = layers.Dropout(self.dropout_rate)
+
         self.attention_blocks = []
         for i in range(self.num_blocks):
             block_layers = {
@@ -119,6 +121,8 @@ class OwnSasrecModel(tensorflow.keras.Model):
         seq = self.item_embeddings_layer(input_ids)
         pos_embeddings = self.postion_embedding_layer(self.positions)
         seq += pos_embeddings
+        seq = self.embedding_dropout(seq)
+
         mask = tf.expand_dims(tf.cast(tf.not_equal(input_ids, self.num_items), dtype=tf.float32), -1)
         for i in range(self.num_blocks):
             seq = self.block(seq, mask, i)
