@@ -42,7 +42,9 @@ def lightfm_recommender(k, loss):
     return LightFMRecommender(k, loss, num_threads=32)
 
 
-def dnn(model_arch, loss, sequence_splitter, learning_rate=0.001, training_time_limit=3600):
+def dnn(model_arch, loss, sequence_splitter,
+         learning_rate=0.001, training_time_limit=3600, 
+         sampled_target=None):
     return DNNSequentialRecommender(train_epochs=10000, loss=loss,
                                                           model_arch=model_arch,
                                                           optimizer=Adam(learning_rate),
@@ -51,7 +53,8 @@ def dnn(model_arch, loss, sequence_splitter, learning_rate=0.001, training_time_
                                                           training_time_limit=training_time_limit,
                                                           eval_ndcg_at=10,
                                                           target_decay=1.0,
-                                                          sequence_splitter=sequence_splitter
+                                                          sequence_splitter=sequence_splitter, 
+                                                          sampled_target=sampled_target
                                                           )
 
 def salrec(loss, training_time_limit=3600, target_decay=1.0, seq_len = 100):
@@ -68,7 +71,9 @@ recommenders = {
     "SASRec": lambda: dnn(
             SASRec(max_history_len=200, dropout_rate=0.2),
             BCELoss(),
-            LastItemSplitter()),
+            LastItemSplitter(),
+            sampled_target=101
+            ),
 }
 for i in range(0):
     loss_type = np.random.choice(["top1max", 'bce', 'lambdarank'])
