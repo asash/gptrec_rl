@@ -15,7 +15,8 @@ class DataGenerator(Sequence):
                  user_id_required=False,
                  max_user_features=0,
                  user_features_required=False, 
-                 sequence_splitter = RandomFractionSplitter()
+                 sequence_splitter = RandomFractionSplitter(), 
+                 sampled_target=None, 
                  ):
         self.user_ids = [[id] for id in user_ids]
         self.user_actions = user_actions
@@ -30,6 +31,7 @@ class DataGenerator(Sequence):
         self.return_reverse_positions = return_reverse_positions
         self.user_id_required = user_id_required
         self.user_features = user_features
+        self.sampled_target=sampled_target
         self.max_user_features = max_user_features
         self.user_features_required = user_features_required
         self.sequence_splitter = sequence_splitter
@@ -47,7 +49,7 @@ class DataGenerator(Sequence):
         if self.user_features_required:
             self.user_features_matrix = self.get_features_matrix(self.user_features, self.max_user_features)
 
-        self.target_matrix = self.get_target_matrix(target, self.n_items)
+        self.build_target_matrix(target)
         self.current_position = 0
         self.max = self.__len__()
 
@@ -75,22 +77,64 @@ class DataGenerator(Sequence):
             result.append(actions_to_vector(actions, history_size, n_items))
         return np.array(result)
 
-    def get_target_matrix(self, user_actions, n_items):
+    def build_target_matrix(self, user_targets):
+        if self.sampled_target is None:
+            self.build_full_target_matrix(user_targets)
+        else:
+            self.build_sampled_targets(user_targets)
+
+    def build_sampled_targets(self, user_targets):
+        all_items = list(range(self.n_items))
+        self.target_matrix = []
+        self.target_ids = []
+        for i in range(len(user_targets)): 
+            targets = []
+            target_ids =  []
+            sampled = set()
+            cur_val = 0.99
+            for action_num in range(len(user_targets[i])):
+                action = user_targets[i][action_num]           
+                targets.append(cur_val)
+                target_ids.append(action[1])
+                sampled.add(action[1])
+                cur_val *= self.target_decay
+                if cur_val < self.min_target_val:
+                    cur_val = self.min_target_val
+                sampled.add(action[1])
+            while(len(targets) < self.sampled_target):
+                negatives = np.random.choice(all_items, self.sampled_target - len(targets))
+                for item_id in negatives:
+                    if item_id not in sampled:
+                        sampled.add(item_id)
+                        target_ids.append(item_id)
+                        targets.append(0.0)
+            targets_with_ids = list(zip(targets, target_ids))
+            random.shuffle(targets_with_ids)
+            targets, target_ids = zip(*targets_with_ids)
+            self.target_matrix.append(targets)
+            self.target_ids.append(target_ids)
+        self.target_matrix = np.array(self.target_matrix)
+        self.target_ids = np.array(self.target_ids)
+
+
+            
+
+    def build_full_target_matrix(self, user_targets):
         rows = []
         cols = []
         vals = []
-        for i in range(len(user_actions)):
+        for i in range(len(user_targets)):
             cur_val = 0.99
-            for action_num in range(len(user_actions[i])):
-                action = user_actions[i][action_num]
+            for action_num in range(len(user_targets[i])):
+                action = user_targets[i][action_num]
                 rows.append(i)
                 cols.append(action[1])
                 vals.append(cur_val)
                 cur_val *= self.target_decay
                 if cur_val < self.min_target_val:
                     cur_val = self.min_target_val
-        result =  csr_matrix((vals, (rows, cols)), shape=(len(user_actions), n_items), dtype='float32')
-        return result
+        self.target_matrix = csr_matrix((vals, (rows, cols)), shape=(len(user_targets), self.n_items),
+                                                                                        dtype='float32')
 
 
     def split_actions(self, user_actions):
@@ -125,7 +169,6 @@ class DataGenerator(Sequence):
         end = (idx + 1) * self.batch_size
         history = self.sequences_matrix[start:end]
         model_inputs = [history]
-        target = np.asarray(self.target_matrix[start:end].todense())
         if self.return_direct_positions:
             direct_pos = self.direct_position[start:end]
             model_inputs.append(direct_pos)
@@ -141,6 +184,12 @@ class DataGenerator(Sequence):
             features = self.user_features_matrix[start:end]
             model_inputs.append(features)
 
+        if not self.sampled_target:
+            target = np.asarray(self.target_matrix[start:end].todense())
+        else:
+            target_ids = self.target_ids[start:end]
+            model_inputs.append(target_ids)
+            target = self.target_matrix[start:end]
         return model_inputs, target
 
     def __next__(self):

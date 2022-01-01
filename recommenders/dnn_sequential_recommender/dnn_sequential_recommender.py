@@ -30,7 +30,7 @@ class DNNSequentialRecommender(Recommender):
                  train_epochs=300, optimizer=Adam(),
                  sequence_splitter = RandomFractionSplitter(), 
                  batch_size=1000, early_stop_epochs=100, target_decay=1.0,
-                 training_time_limit=None,  eval_ndcg_at=40, debug=False):
+                 training_time_limit=None,  eval_ndcg_at=40, debug=False, sampled_target=None):
         super().__init__()
         self.model_arch = model_arch
         self.users = ItemId()
@@ -60,6 +60,7 @@ class DNNSequentialRecommender(Recommender):
         self.sequence_splitter = sequence_splitter
         self.max_user_feature_val = 0
         self.debug = debug
+        self.sampled_target = sampled_target
 
     def add_user(self, user):
         if self.users_featurizer is None:
@@ -122,7 +123,8 @@ class DNNSequentialRecommender(Recommender):
                                       target_decay=self.target_decay,
                                       user_id_required=self.model_arch.requires_user_id,
                                       max_user_features=self.max_user_features,
-                                      user_features_required=not (self.users_featurizer is None)
+                                      user_features_required=not (self.users_featurizer is None), 
+                                      sampled_target=self.sampled_target
                                       )
         self.model = self.get_model(val_generator)
         best_ndcg = 0
@@ -144,7 +146,8 @@ class DNNSequentialRecommender(Recommender):
                                       user_id_required=self.model_arch.requires_user_id,
                                       sequence_splitter=self.sequence_splitter,
                                       max_user_features=self.max_user_features,
-                                      user_features_required=not (self.users_featurizer is None)
+                                      user_features_required=not (self.users_featurizer is None), 
+                                      sampled_target=self.sampled_target
                                       )
             print(f"epoch: {epoch}")
             val_ndcg = self.train_epoch(generator, val_generator, ndcg_metric)
@@ -236,7 +239,9 @@ class DNNSequentialRecommender(Recommender):
                                           max_user_features=self.max_user_features,
                                           user_feature_max_val=self.max_user_feature_val,
                                           batch_size=self.batch_size,
-                                          item_features=self.item_features)
+                                          item_features=self.item_features,
+                                          sampled_target=self.sampled_target
+                                          )
         model = self.model_arch.get_model()
 
         #call the model first time in order to build it
@@ -279,8 +284,10 @@ class DNNSequentialRecommender(Recommender):
             user_features = self.user_features.get(self.users.get_id(user_id), list())
             features_vector = DataGenerator.get_features_matrix([user_features], self.max_user_features)
             model_inputs.append(features_vector)
-
-        scores = self.model(model_inputs)[0].numpy()
+        if self.sampled_target is not None:
+            scores = self.model.score_all_items(model_inputs)[0].numpy()
+        else: 
+            scores = self.model(model_inputs)[0].numpy()
         return scores
 
     def get_max_user_features(self):

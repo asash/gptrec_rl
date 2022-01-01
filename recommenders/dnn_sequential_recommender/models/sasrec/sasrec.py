@@ -40,7 +40,8 @@ class SASRec(SequentialRecsysModel):
                                self.num_blocks,
                                self.num_heads,
                                self.reuse_item_embeddings,
-                               self.encode_output_embeddings
+                               self.encode_output_embeddings,
+                               self.sampled_target
 
         )
         return model
@@ -52,6 +53,7 @@ class OwnSasrecModel(tensorflow.keras.Model):
                  max_history_length=64, l2_emb=0.0, dropout_rate=0.5, num_blocks=2, num_heads=1,
                  reuse_item_embeddings=False,
                  encode_output_embeddings=False,
+                 sampled_target=None,
                  *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.output_layer_activation = output_layer_activation
@@ -63,7 +65,7 @@ class OwnSasrecModel(tensorflow.keras.Model):
         self.num_heads = num_heads
         self.num_items = num_items
         self.batch_size = batch_size
-
+        self.sampled_target = sampled_target
         self.reuse_item_embeddings=reuse_item_embeddings
         self.encode_output_embeddings = encode_output_embeddings
 
@@ -118,6 +120,39 @@ class OwnSasrecModel(tensorflow.keras.Model):
 
     def call(self, inputs,  **kwargs):
         input_ids = inputs[0]
+        seq_emb = self.get_seq_embedding(input_ids)
+
+        if self.sampled_target is not None:
+            target_ids = inputs[1]
+        else:
+            target_ids = self.all_items
+        target_embeddings = self.get_target_embeddings(target_ids)
+        if self.sampled_target:
+            output = tf.einsum("ij,ikj ->ik", seq_emb, target_embeddings)
+        else:
+            output = seq_emb @ tf.transpose(target_embeddings)
+        output = self.output_activation(output)
+        return output
+    
+    def score_all_items(self, inputs):
+        input_ids = inputs[0]
+        seq_emb = self.get_seq_embedding(input_ids)
+        target_ids = self.all_items
+        target_embeddings = self.get_target_embeddings(target_ids)
+        output = seq_emb @ tf.transpose(target_embeddings)
+        output = self.output_activation(output)
+        return output
+
+    def get_target_embeddings(self, target_ids):
+        if self.reuse_item_embeddings:
+            target_embeddings = self.item_embeddings_layer(target_ids)
+        else:
+            target_embeddings = self.output_item_embeddings(target_ids)
+        if self.encode_output_embeddings:
+            target_embeddings = self.output_item_embeddings_encode(target_embeddings)
+        return target_embeddings
+
+    def get_seq_embedding(self, input_ids):
         seq = self.item_embeddings_layer(input_ids)
         pos_embeddings = self.postion_embedding_layer(self.positions)
         seq += pos_embeddings
@@ -129,15 +164,6 @@ class OwnSasrecModel(tensorflow.keras.Model):
 
         seq_emb = seq[:, -1, :]
         seq_emb = self.seq_norm(seq_emb)
-    
-        if self.reuse_item_embeddings:
-            all_item_embeddings = self.item_embeddings_layer(self.all_items)
-        else:
-            all_item_embeddings = self.output_item_embeddings(self.all_items)
-        if self.encode_output_embeddings:
-            all_item_embeddings = self.output_item_embeddings_encode(all_item_embeddings)
-        output = seq_emb @ tf.transpose(all_item_embeddings)
-        output = self.output_activation(output)
-        return output
+        return seq_emb
 
 

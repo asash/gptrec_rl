@@ -59,6 +59,22 @@ class TestDnnSequentialRecommender(unittest.TestCase):
         recommender.rebuild_model()
         recs = recommender.recommend(USER_ID, 10)
         print(recs)
+    
+    def test_sasrec_model_sampled_target(self):
+        val_users = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
+        model = SASRec(embedding_size=32)
+        recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=50000,
+                                               batch_size=5,
+                                               training_time_limit=10, 
+                                               debug=True, sequence_splitter=LastItemSplitter(), 
+                                               sampled_target=101)
+        recommender.set_val_users(val_users)
+        recommender = FilterSeenRecommender(recommender)
+        for action in generator_limit(get_movielens20m_actions(), 10000):
+            recommender.add_action(action)
+        recommender.rebuild_model()
+        recs = recommender.recommend(USER_ID, 10)
+        print(recs)
 
     def test_sasrec_model_no_reuse(self):
         val_users = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
