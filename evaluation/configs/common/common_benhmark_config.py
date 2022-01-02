@@ -69,10 +69,9 @@ def vanilla_bert4rec(time_limit):
 
 recommenders = {
     "SASRec": lambda: dnn(
-            SASRec(max_history_len=200, dropout_rate=0.2),
+            SASRec(max_history_len=200, dropout_rate=0.2, num_heads=2),
             BCELoss(),
             LastItemSplitter(),
-            sampled_target=101
             ),
 }
 for i in range(0):
