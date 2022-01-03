@@ -83,8 +83,8 @@ def dnn(model_arch, loss, splitter, learning_rate=0.001, user_hasher=None, items
 
 bert4rec = VanillaBERT4Rec(training_time_limit=16*3600)
 caser = dnn(Caser(requires_user_id=False, user_extra_features=True),
-                                                                         BiasedPercentageSplitter(0.15, 0.8),
                                                                          LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975),
+                                                                         BiasedPercentageSplitter(0.15, 0.8),
                                                                          user_hasher=HashingFeaturizer())
 
 recommenders_raw = {
