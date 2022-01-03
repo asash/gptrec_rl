@@ -114,7 +114,7 @@ for model in all_recommenders:
 
 print(f"evaluating {len(RECOMMENDERS)} models")
 
-N_VAL_USERS=256
+N_VAL_USERS=1024
 MAX_TEST_USERS=4096
 
 METRICS = [MAP(10), NDCG(10), NDCG(2), NDCG(5), NDCG(20), NDCG(40), Precision(10), Recall(10), HIT(1), HIT(10), MRR()]
