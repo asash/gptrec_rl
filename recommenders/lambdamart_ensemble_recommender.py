@@ -37,8 +37,9 @@ class LambdaMARTEnsembleRecommender(Recommender):
             self.user_actions[action.user_id].append(action)
 
     def rebuild_model(self):
-        all_users = list(self.user_actions.keys() - set(self.val_users))
-        ensemble_users = set(np.random.choice(all_users, self.n_ensemble_users))
+        all_users = list(self.user_actions.keys())
+        ensemble_users_selection = list(self.user_actions.keys() - set(self.val_users))
+        ensemble_users = set(np.random.choice(ensemble_users_selection, self.n_ensemble_users))
         for user in all_users:
             if user not in ensemble_users:
                 all_actions = self.user_actions[user]
