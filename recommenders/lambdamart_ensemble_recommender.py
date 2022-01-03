@@ -37,7 +37,7 @@ class LambdaMARTEnsembleRecommender(Recommender):
             self.user_actions[action.user_id].append(action)
 
     def rebuild_model(self):
-        all_users = list(self.user_actions.keys())
+        all_users = list(self.user_actions.keys() - set(self.val_users))
         ensemble_users = set(np.random.choice(all_users, self.n_ensemble_users))
         for user in all_users:
             if user not in ensemble_users:
@@ -103,4 +103,9 @@ class LambdaMARTEnsembleRecommender(Recommender):
                 if len(candidate_features[candidate]) < 2*cnt:
                     candidate_features[candidate] += [self.candidates_limit, -1000]
         return candidate_features
-
+    
+    def set_val_users(self, val_users):
+        self.val_users = val_users
+        self.candidates_selection_recommender.set_val_users(val_users=val_users)
+        for recommender in self.other_recommenders:
+            self.other_recommenders[recommender].set_val_users(val_users)
