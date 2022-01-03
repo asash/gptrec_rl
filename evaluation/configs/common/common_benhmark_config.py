@@ -43,8 +43,7 @@ def lightfm_recommender(k, loss):
 
 
 def dnn(model_arch, loss, sequence_splitter,
-         learning_rate=0.001, training_time_limit=3600, 
-         sampled_target=None):
+         learning_rate=0.001, training_time_limit=3600):
     return DNNSequentialRecommender(train_epochs=10000, loss=loss,
                                                           model_arch=model_arch,
                                                           optimizer=Adam(learning_rate),
@@ -54,7 +53,6 @@ def dnn(model_arch, loss, sequence_splitter,
                                                           eval_ndcg_at=10,
                                                           target_decay=1.0,
                                                           sequence_splitter=sequence_splitter, 
-                                                          sampled_target=sampled_target
                                                           )
 
 def salrec(loss, training_time_limit=3600, target_decay=1.0, seq_len = 100):

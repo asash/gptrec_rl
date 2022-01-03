@@ -11,7 +11,7 @@ class TestLambdaMartEnsembleRecommender(unittest.TestCase):
     def test_lambdamart_ensemble_recommender(self):
         candidates_selection = FilterSeenRecommender(TopRecommender())
         other_recommenders = {
-                                "svd_recommende": SvdRecommender(128)
+                                "svd_recommender": SvdRecommender(128)
                              }
         recommender = LambdaMARTEnsembleRecommender(
                             candidates_selection_recommender=candidates_selection, 

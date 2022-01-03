@@ -9,6 +9,7 @@ from aprec.api.action import Action
 class Recommender():
     def __init__(self):
         self.items_ranking_requests = []
+        self.val_users = set() 
 
     def name(self):
         raise NotImplementedError

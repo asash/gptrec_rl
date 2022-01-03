@@ -3,6 +3,7 @@ import random
 import numpy as np
 from scipy.sparse import csr_matrix
 from tensorflow.python.keras.utils.data_utils import Sequence
+from aprec.recommenders.dnn_sequential_recommender.data_generator.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
 
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import LastItemSplitter
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.random_fraction_splitter import RandomFractionSplitter
@@ -10,32 +11,28 @@ from aprec.recommenders.dnn_sequential_recommender.targetsplitters.random_fracti
 
 class DataGenerator(Sequence):
     def __init__(self, user_actions, user_ids,  user_features, history_size,
-                 n_items, batch_size=1000, target_decay=0.8,
-                 min_target_val=0.1, return_drect_positions=False, return_reverse_positions=False,
+                 n_items, batch_size=1000,
+                 return_drect_positions=False, return_reverse_positions=False,
                  user_id_required=False,
                  max_user_features=0,
                  user_features_required=False, 
                  sequence_splitter = RandomFractionSplitter(), 
-                 sampled_target=None, 
+                 targets_builder = FullMatrixTargetsBuilder(),
                  ):
         self.user_ids = [[id] for id in user_ids]
         self.user_actions = user_actions
-        self.history_size= history_size
+        self.history_size = history_size
         self.n_items = n_items
         self.batch_size = batch_size
         self.sequences_matrix = None
-        self.target_matrix = None
-        self.target_decay = target_decay
-        self.min_target_val = min_target_val
         self.return_direct_positions = return_drect_positions
         self.return_reverse_positions = return_reverse_positions
         self.user_id_required = user_id_required
         self.user_features = user_features
-        self.sampled_target=sampled_target
         self.max_user_features = max_user_features
         self.user_features_required = user_features_required
         self.sequence_splitter = sequence_splitter
-        self.max_target_pct = 0
+        self.targets_builder = targets_builder
         self.reset()
 
 
@@ -49,7 +46,8 @@ class DataGenerator(Sequence):
         if self.user_features_required:
             self.user_features_matrix = self.get_features_matrix(self.user_features, self.max_user_features)
 
-        self.build_target_matrix(target)
+        self.targets_builder.set_n_items(self.n_items)
+        self.targets_builder.build(target, self.sequences_matrix)
         self.current_position = 0
         self.max = self.__len__()
 
@@ -83,60 +81,6 @@ class DataGenerator(Sequence):
         else:
             self.build_sampled_targets(user_targets)
 
-    def build_sampled_targets(self, user_targets):
-        all_items = list(range(self.n_items))
-        self.target_matrix = []
-        self.target_ids = []
-        for i in range(len(user_targets)): 
-            targets = []
-            target_ids =  []
-            sampled = set()
-            cur_val = 0.99
-            for action_num in range(len(user_targets[i])):
-                action = user_targets[i][action_num]           
-                targets.append(cur_val)
-                target_ids.append(action[1])
-                sampled.add(action[1])
-                cur_val *= self.target_decay
-                if cur_val < self.min_target_val:
-                    cur_val = self.min_target_val
-                sampled.add(action[1])
-            while(len(targets) < self.sampled_target):
-                negatives = np.random.choice(all_items, self.sampled_target - len(targets))
-                for item_id in negatives:
-                    if item_id not in sampled:
-                        sampled.add(item_id)
-                        target_ids.append(item_id)
-                        targets.append(0.0)
-            targets_with_ids = list(zip(targets, target_ids))
-            random.shuffle(targets_with_ids)
-            targets, target_ids = zip(*targets_with_ids)
-            self.target_matrix.append(targets)
-            self.target_ids.append(target_ids)
-        self.target_matrix = np.array(self.target_matrix)
-        self.target_ids = np.array(self.target_ids)
-
-
-            
-
-    def build_full_target_matrix(self, user_targets):
-        rows = []
-        cols = []
-        vals = []
-        for i in range(len(user_targets)):
-            cur_val = 0.99
-            for action_num in range(len(user_targets[i])):
-                action = user_targets[i][action_num]
-                rows.append(i)
-                cols.append(action[1])
-                vals.append(cur_val)
-                cur_val *= self.target_decay
-                if cur_val < self.min_target_val:
-                    cur_val = self.min_target_val
-        self.target_matrix = csr_matrix((vals, (rows, cols)), shape=(len(user_targets), self.n_items),
-                                                                                        dtype='float32')
-
-
     def split_actions(self, user_actions):
         history = []
         target = []
@@ -145,14 +89,6 @@ class DataGenerator(Sequence):
             history.append(user_history)
             target.append(user_target)
         return history, target
-
-    def split_user(self, user):
-        target_fraction = random.random() * self.max_target_pct
-        n_target_actions = min(1, int(target_fraction))
-        n_history_actions = len(user) - n_target_actions
-        history_actions =user[:n_history_actions]
-        target_actions = user[-n_target_actions:]
-        return history_actions, target_actions
 
     def positions(self, sessions, history_size):
         result_direct, result_reverse = [], []
@@ -184,13 +120,10 @@ class DataGenerator(Sequence):
             features = self.user_features_matrix[start:end]
             model_inputs.append(features)
 
-        if not self.sampled_target:
-            target = np.asarray(self.target_matrix[start:end].todense())
-        else:
-            target_ids = self.target_ids[start:end]
-            model_inputs.append(target_ids)
-            target = self.target_matrix[start:end]
-        return model_inputs, target
+        target_inputs, target = self.targets_builder.get_targets(start, end)
+        model_inputs += target_inputs
+
+        return model_inputs, target 
 
     def __next__(self):
         if self.current_position >= self.max:

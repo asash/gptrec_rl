@@ -1,3 +1,4 @@
+from aprec.recommenders.dnn_sequential_recommender.data_generator.target_builders.sampled_matrix_target_builder import SampledMatrixBuilder
 from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import LastItemSplitter
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
@@ -62,12 +63,12 @@ class TestDnnSequentialRecommender(unittest.TestCase):
     
     def test_sasrec_model_sampled_target(self):
         val_users = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
-        model = SASRec(embedding_size=32)
+        model = SASRec(embedding_size=32, sampled_targets=101)
         recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=50000,
                                                batch_size=5,
                                                training_time_limit=10, 
                                                debug=True, sequence_splitter=LastItemSplitter(), 
-                                               sampled_target=101)
+                                               targets_builder=SampledMatrixBuilder())
         recommender.set_val_users(val_users)
         recommender = FilterSeenRecommender(recommender)
         for action in generator_limit(get_movielens20m_actions(), 10000):

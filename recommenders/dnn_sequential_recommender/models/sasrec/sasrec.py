@@ -20,6 +20,7 @@ class SASRec(SequentialRecsysModel):
                                              # sequence embedding and for the embedding matrix
                  encode_output_embeddings=False, #encode item embeddings with a dense layer
                                                           #may be useful if we reuse item embeddings
+                 sampled_targets=None,
                  ):
         super().__init__(output_layer_activation, embedding_size, max_history_len)
         self.l2_emb = l2_emb
@@ -28,6 +29,7 @@ class SASRec(SequentialRecsysModel):
         self.num_heads = num_heads
         self.reuse_item_embeddings=reuse_item_embeddings
         self.encode_output_embeddings = encode_output_embeddings
+        self.sampled_targets = sampled_targets
 
     encode_embedding_with_dense_layer = False,
 
@@ -41,7 +43,7 @@ class SASRec(SequentialRecsysModel):
                                self.num_heads,
                                self.reuse_item_embeddings,
                                self.encode_output_embeddings,
-                               self.sampled_target
+                               self.sampled_targets
 
         )
         return model
@@ -54,6 +56,8 @@ class OwnSasrecModel(tensorflow.keras.Model):
                  reuse_item_embeddings=False,
                  encode_output_embeddings=False,
                  sampled_target=None,
+                 vanilla = False, #vanilla implementation; 
+                                  #at the training time we calculate one positive and one negative per sequence element
                  *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.output_layer_activation = output_layer_activation
@@ -68,6 +72,7 @@ class OwnSasrecModel(tensorflow.keras.Model):
         self.sampled_target = sampled_target
         self.reuse_item_embeddings=reuse_item_embeddings
         self.encode_output_embeddings = encode_output_embeddings
+        self.vanilla = vanilla
 
         self.positions = tf.constant(tf.tile(tf.expand_dims(tf.range(self.max_history_length), 0), [self.batch_size, 1]))
 

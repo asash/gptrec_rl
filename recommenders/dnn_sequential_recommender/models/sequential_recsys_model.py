@@ -15,7 +15,6 @@ class SequentialRecsysModel(object):
     def set_common_params(self, num_items, num_users,
              max_user_features, user_feature_max_val, 
              batch_size, item_features=None, 
-             sampled_target=None,
              ):
         self.num_items = num_items
         self.num_users = num_users
@@ -23,7 +22,6 @@ class SequentialRecsysModel(object):
         self.user_feature_max_val = user_feature_max_val
         self.batch_size = batch_size
         self.item_features = item_features
-        self.sampled_target = sampled_target
 
     def get_model(self):
         raise NotImplementedError

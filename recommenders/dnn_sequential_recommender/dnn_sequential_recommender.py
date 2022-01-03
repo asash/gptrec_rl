@@ -6,14 +6,15 @@ from collections import defaultdict
 import tensorflow as tf
 
 from tqdm import tqdm
+from aprec.recommenders.dnn_sequential_recommender.data_generator.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import LastItemSplitter
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.random_fraction_splitter import RandomFractionSplitter
 
 from aprec.utils.item_id import ItemId
 from aprec.recommenders.metrics.ndcg import KerasNDCG
 from aprec.recommenders.recommender import Recommender
-from aprec.recommenders.dnn_sequential_recommender.data_generator import DataGenerator
-from aprec.recommenders.dnn_sequential_recommender.data_generator import actions_to_vector
+from aprec.recommenders.dnn_sequential_recommender.data_generator.data_generator import DataGenerator
+from aprec.recommenders.dnn_sequential_recommender.data_generator.data_generator import actions_to_vector
 from aprec.recommenders.dnn_sequential_recommender.models.sequential_recsys_model import SequentialRecsysModel
 from aprec.losses.loss import Loss
 from aprec.losses.bce import BCELoss
@@ -29,8 +30,9 @@ class DNNSequentialRecommender(Recommender):
                  items_featurizer=None,
                  train_epochs=300, optimizer=Adam(),
                  sequence_splitter = RandomFractionSplitter(), 
+                 targets_builder = FullMatrixTargetsBuilder(),
                  batch_size=1000, early_stop_epochs=100, target_decay=1.0,
-                 training_time_limit=None,  eval_ndcg_at=40, debug=False, sampled_target=None):
+                 training_time_limit=None,  eval_ndcg_at=40, debug=False):
         super().__init__()
         self.model_arch = model_arch
         self.users = ItemId()
@@ -59,8 +61,8 @@ class DNNSequentialRecommender(Recommender):
         self.max_user_features = 0
         self.sequence_splitter = sequence_splitter
         self.max_user_feature_val = 0
+        self.targets_builder = targets_builder
         self.debug = debug
-        self.sampled_target = sampled_target
 
     def add_user(self, user):
         if self.users_featurizer is None:
@@ -120,11 +122,10 @@ class DNNSequentialRecommender(Recommender):
                                       self.items.size(),
                                       batch_size=self.batch_size,
                                       sequence_splitter=LastItemSplitter(), 
-                                      target_decay=self.target_decay,
                                       user_id_required=self.model_arch.requires_user_id,
                                       max_user_features=self.max_user_features,
                                       user_features_required=not (self.users_featurizer is None), 
-                                      sampled_target=self.sampled_target
+                                      targets_builder=self.targets_builder
                                       )
         self.model = self.get_model(val_generator)
         best_ndcg = 0
@@ -142,12 +143,12 @@ class DNNSequentialRecommender(Recommender):
             val_generator.reset()
             generator = DataGenerator(train_users, train_user_ids, train_features, self.model_arch.max_history_length,
                                       self.items.size(),
-                                      batch_size=self.batch_size, target_decay=self.target_decay,
+                                      batch_size=self.batch_size,
                                       user_id_required=self.model_arch.requires_user_id,
                                       sequence_splitter=self.sequence_splitter,
                                       max_user_features=self.max_user_features,
                                       user_features_required=not (self.users_featurizer is None), 
-                                      sampled_target=self.sampled_target
+                                      targets_builder=self.targets_builder
                                       )
             print(f"epoch: {epoch}")
             val_ndcg = self.train_epoch(generator, val_generator, ndcg_metric)
@@ -240,7 +241,6 @@ class DNNSequentialRecommender(Recommender):
                                           user_feature_max_val=self.max_user_feature_val,
                                           batch_size=self.batch_size,
                                           item_features=self.item_features,
-                                          sampled_target=self.sampled_target
                                           )
         model = self.model_arch.get_model()
 
@@ -284,7 +284,8 @@ class DNNSequentialRecommender(Recommender):
             user_features = self.user_features.get(self.users.get_id(user_id), list())
             features_vector = DataGenerator.get_features_matrix([user_features], self.max_user_features)
             model_inputs.append(features_vector)
-        if self.sampled_target is not None:
+
+        if hasattr(self.model, 'score_all_items'):
             scores = self.model.score_all_items(model_inputs)[0].numpy()
         else: 
             scores = self.model(model_inputs)[0].numpy()
