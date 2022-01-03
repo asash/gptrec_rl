@@ -9,6 +9,7 @@ from aprec.recommenders.dnn_sequential_recommender.targetsplitters.biased_percen
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import LastItemSplitter
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.random_fraction_splitter import RandomFractionSplitter
 from aprec.recommenders.top_recommender import TopRecommender
+from aprec.recommenders.conditional_top_recommender import ConditionalTopRecommender
 from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.salrec.salrec_recommender import SalrecRecommender
 from aprec.recommenders.lightfm import LightFMRecommender
@@ -25,8 +26,10 @@ from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
 from aprec.recommenders.deep_mf import DeepMFRecommender
 from aprec.losses.bce import BCELoss
 from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
+from aprec.recommenders.lambdamart_ensemble_recommender import LambdaMARTEnsembleRecommender
 from aprec.recommenders.dnn_sequential_recommender.models.caser import Caser
 from aprec.recommenders.dnn_sequential_recommender.featurizers.hashing_featurizer import HashingFeaturizer
+from aprec.recommenders.svd import SvdRecommender
 from aprec.evaluation.split_actions import LeaveOneOut
 
 DATASET = "mts_kion"
@@ -70,7 +73,7 @@ def dnn(model_arch, loss, splitter, learning_rate=0.001, user_hasher=None, items
                                                           optimizer=Adam(learning_rate),
                                                           early_stop_epochs=100,
                                                           batch_size=128,
-                                                          training_time_limit = 3600*4,
+                                                          training_time_limit = 3600*8,
                                                           eval_ndcg_at=40,
                                                           target_decay=1.0,
                                                           sequence_splitter=splitter,
@@ -78,13 +81,24 @@ def dnn(model_arch, loss, splitter, learning_rate=0.001, user_hasher=None, items
                                                           items_featurizer=items_hasher
                                                           ))
 
+bert4rec = VanillaBERT4Rec(training_time_limit=16*3600)
+caser = dnn(Caser(requires_user_id=False, user_extra_features=True),
+                                                                         BiasedPercentageSplitter(0.15, 0.8),
+                                                                         LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975),
+                                                                         user_hasher=HashingFeaturizer())
+
 recommenders_raw = {
-    "Sasrec-Kion": lambda: dnn(KionChallengeSASRec(),
-                    LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975), 
-                    BiasedPercentageSplitter(0.15, 0.8),
-                    user_hasher=HashingFeaturizer(),
-                    items_hasher=HashingFeaturizer(cat_hashes_space=100000)
-                 )
+
+     "Ensemble":  lambda: LambdaMARTEnsembleRecommender(candidates_selection_recommender=top_recommender(), 
+                                                        other_recommenders = { 
+                                                            "top_age":        ConditionalTopRecommender(conditional_field='age'), 
+                                                            "top_sex":        ConditionalTopRecommender(conditional_field='sex'), 
+                                                            "top_income":     ConditionalTopRecommender(conditional_field='income'), 
+                                                            "top_kids":       ConditionalTopRecommender(conditional_field='kids_flg'), 
+                                                            "svd":        SvdRecommender(128),
+                                                            "caser": caser, 
+                                                            "bert4rec": bert4rec
+                                                        })
 }
 
 

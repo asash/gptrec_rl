@@ -20,10 +20,13 @@ class ConditionalTopRecommender(Recommender):
         
 
     def add_action(self, action):
-        if action.user_id not in self.user_field_values and self.conditional_field not in action.data:
-            raise Exception(f"this actions does not have required field: {self.conditional_field}")
 
-        field_value: str = action.data[self.conditional_field]
+        if self.conditional_field in action.data:
+            field_value = action.data[self.conditional_field]
+        elif action.user_id in self.user_field_values:
+            field_value = self.user_field_values[action.user_id]
+        else:
+            field_value = "N/A"
         if field_value not in self.items_counts:
             self.items_counts[field_value] = Counter()
         self.user_field_values[action.user_id] = field_value
@@ -38,8 +41,10 @@ class ConditionalTopRecommender(Recommender):
 
     def recommend(self, user_id, limit, features=None):
         if user_id not in self.user_field_values:
-            raise Exception("New user without field value")
-        return self.precalculated_top_items[self.user_field_values[user_id]][:limit]
+            field_value = "N/A"
+        else:
+            field_value = self.user_field_values[user_id]
+        return self.precalculated_top_items.get(field_value, [])[:limit]
 
     def get_similar_items(self, item_id, limit):
         raise NotImplementedError

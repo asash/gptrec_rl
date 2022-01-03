@@ -1,6 +1,6 @@
 import unittest
 
-from api.items_ranking_request import ItemsRankingRequest
+from aprec.api.items_ranking_request import ItemsRankingRequest
 from aprec.datasets.movielens20m import get_movielens20m_actions
 from aprec.recommenders.vanilla_bert4rec import VanillaBERT4Rec
 from aprec.utils.generator_limit import generator_limit
@@ -22,6 +22,9 @@ class TestVanillaBert4rec(unittest.TestCase):
         recommender = get_recommender_and_add_actions()
         recommender.rebuild_model()
         print(recommender.recommend('120', 10))
+        recs = recommender.recommend('cold-start-user', 10)
+        self.assertEqual(recs, [])
+
 
     def test_sampled_rankings(self):
         recommender = get_recommender_and_add_actions()

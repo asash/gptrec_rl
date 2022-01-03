@@ -218,6 +218,8 @@ class VanillaBERT4Rec(Recommender):
 
     def recommend(self, user_id, limit, features=None):
         internal_user_id = "user_" + str(self.user_ids.get_id(user_id))
+        if internal_user_id not in self.predictions_cache:
+            return []
         recs = self.predictions_cache[internal_user_id]
         result = []
         for internal_item_id, score in recs[:limit]:
