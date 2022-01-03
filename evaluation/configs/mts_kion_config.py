@@ -89,14 +89,14 @@ caser = dnn(Caser(requires_user_id=False, user_extra_features=True),
 
 recommenders_raw = {
 
-     "Ensemble":  lambda: LambdaMARTEnsembleRecommender(candidates_selection_recommender=top_recommender(), 
+     "Ensemble":  lambda: LambdaMARTEnsembleRecommender(candidates_selection_recommender=caser, 
                                                         other_recommenders = { 
                                                             "top_age":        ConditionalTopRecommender(conditional_field='age'), 
                                                             "top_sex":        ConditionalTopRecommender(conditional_field='sex'), 
                                                             "top_income":     ConditionalTopRecommender(conditional_field='income'), 
                                                             "top_kids":       ConditionalTopRecommender(conditional_field='kids_flg'), 
                                                             "svd":        SvdRecommender(128),
-                                                            "caser": caser, 
+                                                            "top": top_recommender(),
                                                             "bert4rec": bert4rec
                                                         })
 }
