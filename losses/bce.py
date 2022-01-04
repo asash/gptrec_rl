@@ -6,6 +6,7 @@ class BCELoss(Loss):
     def __init__(self, *args, **kwargs):
         super().__init__()
         self.__name__ = "BCE"
+        self.less_is_better = True
         self.loss = BinaryCrossentropy(from_logits=True)
 
     def __call__(self, y_true, y_pred):

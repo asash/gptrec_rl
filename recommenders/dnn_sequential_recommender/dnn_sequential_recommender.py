@@ -33,7 +33,7 @@ class DNNSequentialRecommender(Recommender):
                  targets_builder = FullMatrixTargetsBuilder(),
                  batch_size=1000, early_stop_epochs=100, target_decay=1.0,
                  training_time_limit=None, debug=False,
-                 metric = KerasNDCG(40)
+                 metric = KerasNDCG(40), 
                  ):
         super().__init__()
         self.model_arch = model_arch
@@ -157,7 +157,8 @@ class DNNSequentialRecommender(Recommender):
             val_metric_history.append((total_trainig_time, val_metric))
 
             steps_since_improved += 1
-            if val_metric > best_metric_val:
+            if (self.metric.less_is_better and val_metric < best_metric_val) or\
+                        (not self.metric.less_is_better and val_metric > best_metric_val):
                 steps_since_improved = 0
                 best_metric_val = val_metric
                 best_epoch = epoch

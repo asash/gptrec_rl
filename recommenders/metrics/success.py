@@ -5,6 +5,7 @@ class KerasSuccess(object):
    def __init__(self, k):
         self.k = k
         self.__name__ = f"Success_at_{k}"
+        self.less_is_better = False
 
    def __call__(self, y_true, y_pred):
         top_k = tf.nn.top_k(y_pred, self.k)

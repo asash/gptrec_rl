@@ -10,6 +10,7 @@ class KerasNDCG(object):
             discounts.append(1 / math.log2(i + 1))
         self.discounts = tf.cast(tf.constant(tf.expand_dims(discounts, 1)), 'float32')
         self.__name__ = f"ndcg_at_{k}"
+        self.less_is_better = False
 
     def dcg(self, scores):
        gain = tf.pow(2.0, scores) - 1
