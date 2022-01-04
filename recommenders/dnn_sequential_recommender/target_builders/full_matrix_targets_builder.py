@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.sparse.csr import csr_matrix
-from aprec.recommenders.dnn_sequential_recommender.data_generator.target_builders.target_builders import TargetBuilder
+from aprec.recommenders.dnn_sequential_recommender.target_builders.target_builders import TargetBuilder
 
 
 class FullMatrixTargetsBuilder(TargetBuilder):
@@ -9,7 +9,7 @@ class FullMatrixTargetsBuilder(TargetBuilder):
         self.target_decay = target_decay
         self.min_target_val = min_target_val
 
-    def build(self, user_targets, user_sequences):
+    def build(self, user_targets):
         rows = []
         cols = []
         vals = []

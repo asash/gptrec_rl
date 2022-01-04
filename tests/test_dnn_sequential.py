@@ -1,12 +1,16 @@
-from aprec.recommenders.dnn_sequential_recommender.data_generator.target_builders.sampled_matrix_target_builder import SampledMatrixBuilder
+from aprec.losses.bce import BCELoss
+from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_per_positive_target import NegativePerPositiveTargetBuilder
+from aprec.recommenders.dnn_sequential_recommender.target_builders.sampled_matrix_target_builder import SampledMatrixBuilder
 from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import LastItemSplitter
+from aprec.recommenders.dnn_sequential_recommender.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.datasets.movielens20m import get_movielens20m_actions
 from aprec.utils.generator_limit import generator_limit
 from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
 from aprec.losses.xendcg import XENDCGLoss
 import aprec.datasets.mts_kion as kion
+from aprec.datasets.movielens20m import get_movies_catalog
 import unittest
 
 from aprec.recommenders.dnn_sequential_recommender.models.caser import Caser
@@ -76,6 +80,26 @@ class TestDnnSequentialRecommender(unittest.TestCase):
         recommender.rebuild_model()
         recs = recommender.recommend(USER_ID, 10)
         print(recs)
+
+    def test_sasrec_model_vanilla(self):
+        val_users = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
+        model = SASRec(embedding_size=32, vanilla=True)
+        recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=50000,
+                                               batch_size=5,
+                                               training_time_limit=10, 
+                                               debug=True, sequence_splitter=ShiftedSequenceSplitter(), 
+                                               targets_builder=NegativePerPositiveTargetBuilder(),
+                                               metric=BCELoss()
+                                               )
+        recommender.set_val_users(val_users)
+        recommender = FilterSeenRecommender(recommender)
+        for action in generator_limit(get_movielens20m_actions(), 10000):
+            recommender.add_action(action)
+        recommender.rebuild_model()
+        recs = recommender.recommend(USER_ID, 10)
+        catalog = get_movies_catalog()
+        for rec in recs:
+            print(catalog.get_item(rec[0]), "\t", rec[1])
 
     def test_sasrec_model_no_reuse(self):
         val_users = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']

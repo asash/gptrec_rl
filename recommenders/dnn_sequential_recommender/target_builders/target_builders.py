@@ -9,8 +9,8 @@ class TargetBuilder(object):
 
     def set_n_items(self, n):
         self.n_items = n
-
-    def build(self, user_targets, user_sequences):
+    
+    def build(self, user_targets):
         raise NotImplementedError()
 
     def get_targets(self, start, end):

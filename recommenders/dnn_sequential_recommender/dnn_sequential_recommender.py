@@ -6,7 +6,7 @@ from collections import defaultdict
 import tensorflow as tf
 
 from tqdm import tqdm
-from aprec.recommenders.dnn_sequential_recommender.data_generator.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
+from aprec.recommenders.dnn_sequential_recommender.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import LastItemSplitter
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.random_fraction_splitter import RandomFractionSplitter
 
@@ -32,7 +32,9 @@ class DNNSequentialRecommender(Recommender):
                  sequence_splitter = RandomFractionSplitter(), 
                  targets_builder = FullMatrixTargetsBuilder(),
                  batch_size=1000, early_stop_epochs=100, target_decay=1.0,
-                 training_time_limit=None,  eval_ndcg_at=40, debug=False):
+                 training_time_limit=None, debug=False,
+                 metric = KerasNDCG(40)
+                 ):
         super().__init__()
         self.model_arch = model_arch
         self.users = ItemId()
@@ -50,8 +52,6 @@ class DNNSequentialRecommender(Recommender):
         self.batch_size = batch_size
         self.target_decay = target_decay
         self.val_users = None
-        self.eval_ndcg_at = 40
-        self.eval_ndcg_at = eval_ndcg_at
         self.training_time_limit = training_time_limit
         self.users_featurizer = users_featurizer
         self.items_featurizer = items_featurizer
@@ -63,6 +63,7 @@ class DNNSequentialRecommender(Recommender):
         self.max_user_feature_val = 0
         self.targets_builder = targets_builder
         self.debug = debug
+        self.metric = metric 
 
     def add_user(self, user):
         if self.users_featurizer is None:
@@ -128,16 +129,15 @@ class DNNSequentialRecommender(Recommender):
                                       targets_builder=self.targets_builder
                                       )
         self.model = self.get_model(val_generator)
-        best_ndcg = 0
+        best_metric_val = 0
         steps_since_improved = 0
         best_epoch = -1
         best_weights = self.model.get_weights()
-        val_ndcg_history = []
+        val_metric_history = []
         start_time = time.time()
 
-        ndcg_metric = KerasNDCG(self.eval_ndcg_at)
         if not self.debug:
-            self.model.compile(optimizer=self.optimizer, loss=self.loss, metrics=[ndcg_metric])
+            self.model.compile(optimizer=self.optimizer, loss=self.loss, metrics=[self.metric])
 
         for epoch in range(self.train_epochs):
             val_generator.reset()
@@ -151,18 +151,18 @@ class DNNSequentialRecommender(Recommender):
                                       targets_builder=self.targets_builder
                                       )
             print(f"epoch: {epoch}")
-            val_ndcg = self.train_epoch(generator, val_generator, ndcg_metric)
+            val_metric = self.train_epoch(generator, val_generator)
 
             total_trainig_time = time.time() - start_time
-            val_ndcg_history.append((total_trainig_time, val_ndcg))
+            val_metric_history.append((total_trainig_time, val_metric))
 
             steps_since_improved += 1
-            if val_ndcg > best_ndcg:
+            if val_metric > best_metric_val:
                 steps_since_improved = 0
-                best_ndcg = val_ndcg
+                best_metric_val = val_metric
                 best_epoch = epoch
                 best_weights = self.model.get_weights()
-            print(f"val_ndcg: {val_ndcg:.5f}, best_ndcg: {best_ndcg:.5f}, steps_since_improved: {steps_since_improved},"
+            print(f"val_{self.metric.__name__}: {val_metric:.5f}, best_{self.metric.__name__}: {best_metric_val:.5f}, steps_since_improved: {steps_since_improved},"
                   f" total_training_time: {total_trainig_time}")
             if steps_since_improved >= self.early_stop_epochs:
                 print(f"early stopped at epoch {epoch}")
@@ -175,22 +175,22 @@ class DNNSequentialRecommender(Recommender):
             K.clear_session()
             gc.collect()
         self.model.set_weights(best_weights)
-        self.metadata = {"epochs_trained": best_epoch + 1, "best_val_ndcg": best_ndcg,
-                         "val_ndcg_history": val_ndcg_history}
+        self.metadata = {"epochs_trained": best_epoch + 1, f"best_val_{self.metric.__name__}": best_metric_val,
+                         f"val_{self.metric.__name__}_history": val_metric_history}
         print(self.get_metadata())
-        print(f"taken best model from epoch{best_epoch}. best_val_ndcg: {best_ndcg}")
+        print(f"taken best model from epoch{best_epoch}. best_val_{self.metric.__name__}: {best_metric_val}")
 
-    def train_epoch(self, generator, val_generator, ndcg_metric):
+    def train_epoch(self, generator, val_generator):
         if not self.debug:
             return self.train_epoch_prod(generator, val_generator)
         else:
-            return self.train_epoch_debug(generator, ndcg_metric, val_generator)
+            return self.train_epoch_debug(generator, val_generator)
 
-    def train_epoch_debug(self, generator, ndcg_metric, val_generator):
+    def train_epoch_debug(self, generator, val_generator):
         pbar = tqdm(generator, ascii=True)
         variables = self.model.variables
         loss_sum = 0
-        ndcg_sum = 0
+        metric_sum = 0
         num_batches = 0
         for X, y_true in pbar:
             num_batches += 1
@@ -199,29 +199,29 @@ class DNNSequentialRecommender(Recommender):
                 loss_val = tf.reduce_mean(self.loss(y_true, y_pred))
             grad = tape.gradient(loss_val, variables)
             self.optimizer.apply_gradients(zip(grad, variables))
-            ndcg = ndcg_metric(y_true=y_true, y_pred=y_pred)
+            metric = self.metric(y_true=y_true, y_pred=y_pred)
             loss_sum += loss_val
-            ndcg_sum += ndcg
+            metric_sum += metric
             pbar.set_description(f"loss: {loss_sum/num_batches:.5f}, "
-                                 f"ndcg_at_{self.eval_ndcg_at}: {ndcg_sum/num_batches:.5f}")
+                                 f"{self.metric.__name__}: {metric_sum/num_batches:.5f}")
         val_loss_sum = 0
-        val_ndcg_sum = 0
+        val_metric_sum = 0
         num_val_samples = 0
         num_batches = 0
         for X, y_true in val_generator:
             num_batches += 1
             y_pred = self.model(X)
             loss_val = self.loss(y_true, y_pred)
-            ndcg = ndcg_metric(y_true, y_pred)
-            val_ndcg_sum += ndcg
+            metric = self.metric(y_true, y_pred)
+            val_metric_sum += metric
             val_loss_sum += loss_val
             num_val_samples += y_true.shape[0]
-        val_ndcg = val_ndcg_sum / num_batches
-        return val_ndcg
+        val_metric = val_metric_sum / num_batches
+        return val_metric
 
     def train_epoch_prod(self, generator, val_generator):
         train_history = self.model.fit(generator, validation_data=val_generator)
-        return train_history.history[f"val_ndcg_at_{self.eval_ndcg_at}"][-1]
+        return train_history.history[f"val_{self.metric.__name__}"][-1]
 
     def train_val_split(self):
         all_user_ids = self.users_with_actions

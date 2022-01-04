@@ -4,8 +4,12 @@ from aprec.evaluation.samplers.pop_sampler import PopTargetItemsSampler
 from aprec.losses.bpr import BPRLoss
 from aprec.losses.top1 import TOP1Loss
 from aprec.recommenders.dnn_sequential_recommender.models.sasrec.sasrec import SASRec
+from aprec.recommenders.dnn_sequential_recommender.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
+from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_per_positive_target import NegativePerPositiveTargetBuilder
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.biased_percentage_splitter import BiasedPercentageSplitter
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import LastItemSplitter
+from aprec.recommenders.dnn_sequential_recommender.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
+from aprec.recommenders.metrics.ndcg import KerasNDCG
 from aprec.recommenders.salrec.salrec_recommender import SalrecRecommender
 
 from aprec.recommenders.top_recommender import TopRecommender
@@ -42,17 +46,17 @@ def lightfm_recommender(k, loss):
     return LightFMRecommender(k, loss, num_threads=32)
 
 
-def dnn(model_arch, loss, sequence_splitter,
-         learning_rate=0.001, training_time_limit=3600):
+def dnn(model_arch, loss, sequence_splitter, target_builder=FullMatrixTargetsBuilder(),
+         learning_rate=0.001, training_time_limit=3600, metric=KerasNDCG(40)):
     return DNNSequentialRecommender(train_epochs=10000, loss=loss,
                                                           model_arch=model_arch,
                                                           optimizer=Adam(learning_rate),
                                                           early_stop_epochs=100,
                                                           batch_size=128,
                                                           training_time_limit=training_time_limit,
-                                                          eval_ndcg_at=10,
-                                                          target_decay=1.0,
                                                           sequence_splitter=sequence_splitter, 
+                                                          targets_builder=target_builder, 
+                                                          metric=metric,
                                                           )
 
 def salrec(loss, training_time_limit=3600, target_decay=1.0, seq_len = 100):
@@ -67,9 +71,11 @@ def vanilla_bert4rec(time_limit):
 
 recommenders = {
     "SASRec": lambda: dnn(
-            SASRec(max_history_len=200, dropout_rate=0.2, num_heads=2),
+            SASRec(max_history_len=200, dropout_rate=0.2, num_heads=2, vanilla=True),
             BCELoss(),
-            LastItemSplitter(),
+            ShiftedSequenceSplitter(),
+            target_builder=NegativePerPositiveTargetBuilder(200), 
+            metric=BCELoss()
             ),
 }
 for i in range(0):

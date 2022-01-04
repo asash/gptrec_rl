@@ -1,7 +1,7 @@
 import random
 
 import numpy as np
-from aprec.recommenders.dnn_sequential_recommender.data_generator.target_builders.target_builders import TargetBuilder
+from aprec.recommenders.dnn_sequential_recommender.target_builders.target_builders import TargetBuilder
 
 
 class SampledMatrixBuilder(TargetBuilder):
@@ -11,7 +11,7 @@ class SampledMatrixBuilder(TargetBuilder):
         self.min_target_val = min_target_val
         self.n_samples = n_samples
 
-    def build(self, user_targets, user_sequences):
+    def build(self, user_targets):
         all_items = list(range(self.n_items))
         self.target_matrix = []
         self.target_ids = []

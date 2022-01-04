@@ -1,11 +1,9 @@
 import random
 
 import numpy as np
-from scipy.sparse import csr_matrix
 from tensorflow.python.keras.utils.data_utils import Sequence
-from aprec.recommenders.dnn_sequential_recommender.data_generator.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
+from aprec.recommenders.dnn_sequential_recommender.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
 
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import LastItemSplitter
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.random_fraction_splitter import RandomFractionSplitter
 
 
@@ -47,7 +45,7 @@ class DataGenerator(Sequence):
             self.user_features_matrix = self.get_features_matrix(self.user_features, self.max_user_features)
 
         self.targets_builder.set_n_items(self.n_items)
-        self.targets_builder.build(target, self.sequences_matrix)
+        self.targets_builder.build(target)
         self.current_position = 0
         self.max = self.__len__()
 
