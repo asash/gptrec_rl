@@ -77,6 +77,8 @@ recommenders = {
             target_builder=NegativePerPositiveTargetBuilder(200), 
             metric=BCELoss()
             ),
+    "top": top_recommender, 
+    "mf-bpr": lightfm_recommender(128, 'bpr')
 }
 for i in range(0):
     loss_type = np.random.choice(["top1max", 'bce', 'lambdarank'])
