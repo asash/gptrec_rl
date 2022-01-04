@@ -6,6 +6,7 @@ from collections import Counter
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import LastItemSplitter
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.random_fraction_splitter import RandomFractionSplitter
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.biased_percentage_splitter import BiasedPercentageSplitter
+from aprec.recommenders.dnn_sequential_recommender.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter 
 
 class TestItemSplitters(unittest.TestCase):
     def test_last_item_splitter(self):
@@ -78,3 +79,14 @@ class TestItemSplitters(unittest.TestCase):
         self.assertEquals(target_lens.most_common(), [(5, 4519), (6, 2535), (4, 2466), (3, 461), (2, 19)])
         self.assertEquals(target_counts.most_common(5),[(30, 6297), (29, 5590), (28, 4942), (27, 4495), (26, 3910)])
 
+    def test_shifted_sequence_splitter(self):
+        sequence = [1, 2, 3, 4, 5]
+        splitter = ShiftedSequenceSplitter()
+        train, label = splitter.split(sequence)
+        self.assertEquals(train, [1, 2, 3, 4])
+        self.assertEquals(label, [2, 3, 4, 5])
+        splitter = ShiftedSequenceSplitter(max_len=2)
+
+        train, label = splitter.split(sequence)
+        self.assertEquals(train, [3, 4])
+        self.assertEquals(label, [4, 5])
