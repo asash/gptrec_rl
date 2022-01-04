@@ -129,7 +129,11 @@ class DNNSequentialRecommender(Recommender):
                                       targets_builder=self.targets_builder
                                       )
         self.model = self.get_model(val_generator)
-        best_metric_val = 0
+        if self.metric.less_is_better:
+            best_metric_val = float('inf')
+        else:
+            best_metric_val = float('-inf')
+
         steps_since_improved = 0
         best_epoch = -1
         best_weights = self.model.get_weights()
