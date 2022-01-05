@@ -100,7 +100,7 @@ for i in range(1000):
             optimizer=Adam(beta_2=0.98),
             target_builder=FullMatrixTargetsBuilder, 
             metric=KerasNDCG(10),
-            ),
+            )
 
 
 for i in range(0):
