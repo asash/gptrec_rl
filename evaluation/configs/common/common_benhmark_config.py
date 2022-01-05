@@ -5,6 +5,7 @@ from aprec.recommenders.dnn_sequential_recommender.target_builders.full_matrix_t
 from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_per_positive_target import NegativePerPositiveTargetBuilder
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import LastItemSplitter
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
+from aprec.recommenders.dnn_sequential_recommender.targetsplitters.biased_percentage_splitter import BiasedPercentageSplitter
 from aprec.recommenders.metrics.ndcg import KerasNDCG
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.svd import SvdRecommender
@@ -12,6 +13,7 @@ from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender im
 from aprec.recommenders.lightfm import LightFMRecommender
 from aprec.recommenders.vanilla_bert4rec import VanillaBERT4Rec
 from aprec.losses.bce import BCELoss
+from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
 
 
 
@@ -78,6 +80,22 @@ recommenders = {
             metric=BCELoss(),
             max_epochs=201
             ),
+
+    "SASRec-biased-sampling": lambda: dnn(
+            SASRec(max_history_len=200, 
+                            dropout_rate=0.2,
+                            num_heads=1,
+                            num_blocks=2,
+                            embedding_size=50,
+                    ),
+            LambdaGammaRankLoss,
+            BiasedPercentageSplitter,
+            optimizer=Adam(beta_2=0.98),
+            target_builder=lambda: FullMatrixTargetsBuilder, 
+            metric=KerasNDCG(10),
+            max_epochs=201
+            ),
+
     "top": top_recommender, 
     "mf-bpr": lambda: lightfm_recommender(128, 'bpr')
 }
