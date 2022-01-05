@@ -88,7 +88,7 @@ recommenders = {
                             num_blocks=2,
                             embedding_size=50,
                     ),
-            LambdaGammaRankLoss,
+            LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975),
             BiasedPercentageSplitter,
             optimizer=Adam(beta_2=0.98),
             target_builder=FullMatrixTargetsBuilder, 
