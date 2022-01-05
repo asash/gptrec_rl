@@ -41,8 +41,10 @@ def dnn(model_arch, loss, sequence_splitter,
                 val_sequence_splitter=LastItemSplitter, 
                  target_builder=FullMatrixTargetsBuilder,
                 optimizer=Adam(),
-                training_time_limit=3600, metric=KerasNDCG(40)):
-    return DNNSequentialRecommender(train_epochs=10000, loss=loss,
+                training_time_limit=3600, metric=KerasNDCG(40), 
+                max_epochs=10000
+                ):
+    return DNNSequentialRecommender(train_epochs=max_epochs, loss=loss,
                                                           model_arch=model_arch,
                                                           optimizer=optimizer,
                                                           early_stop_epochs=1000,
@@ -68,6 +70,7 @@ recommenders = {
                             num_blocks=2,
                             vanilla=True, 
                             embedding_size=50,
+                            max_epochs=201,
                     ),
             BCELoss(),
             ShiftedSequenceSplitter,
