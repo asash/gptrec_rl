@@ -89,7 +89,7 @@ recommenders = {
                             embedding_size=50,
                     ),
             LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975),
-            BiasedPercentageSplitter,
+            lambda: BiasedPercentageSplitter(0.2, 0.8),
             optimizer=Adam(beta_2=0.98),
             target_builder=FullMatrixTargetsBuilder, 
             metric=KerasNDCG(10),
