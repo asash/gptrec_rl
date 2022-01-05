@@ -1,27 +1,18 @@
 import numpy as np
 from aprec.evaluation.samplers.random_sampler import RandomTargetItemSampler
-from aprec.evaluation.samplers.pop_sampler import PopTargetItemsSampler
-from aprec.losses.bpr import BPRLoss
-from aprec.losses.top1 import TOP1Loss
 from aprec.recommenders.dnn_sequential_recommender.models.sasrec.sasrec import SASRec
 from aprec.recommenders.dnn_sequential_recommender.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
 from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_per_positive_target import NegativePerPositiveTargetBuilder
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.biased_percentage_splitter import BiasedPercentageSplitter
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import LastItemSplitter
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
 from aprec.recommenders.metrics.ndcg import KerasNDCG
-from aprec.recommenders.salrec.salrec_recommender import SalrecRecommender
-
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
 from aprec.recommenders.lightfm import LightFMRecommender
 from aprec.recommenders.vanilla_bert4rec import VanillaBERT4Rec
 from aprec.losses.bce import BCELoss
-from aprec.recommenders.dnn_sequential_recommender.models.gru4rec import GRU4Rec
-from aprec.recommenders.dnn_sequential_recommender.models.caser import Caser
 
-from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
 
 
 from aprec.evaluation.metrics.ndcg import NDCG
@@ -54,7 +45,7 @@ def dnn(model_arch, loss, sequence_splitter,
     return DNNSequentialRecommender(train_epochs=10000, loss=loss,
                                                           model_arch=model_arch,
                                                           optimizer=optimizer,
-                                                          early_stop_epochs=10,
+                                                          early_stop_epochs=1000,
                                                           batch_size=128,
                                                           training_time_limit=training_time_limit,
                                                           sequence_splitter=sequence_splitter, 
