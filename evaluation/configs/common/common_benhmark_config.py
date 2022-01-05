@@ -49,7 +49,7 @@ def dnn(model_arch, loss, sequence_splitter,
     return DNNSequentialRecommender(train_epochs=max_epochs, loss=loss,
                                                           model_arch=model_arch,
                                                           optimizer=optimizer,
-                                                          early_stop_epochs=1000,
+                                                          early_stop_epochs=100,
                                                           batch_size=128,
                                                           training_time_limit=training_time_limit,
                                                           sequence_splitter=sequence_splitter, 
@@ -65,21 +65,6 @@ def vanilla_bert4rec(time_limit):
 
 
 recommenders = {
-    "SASRec-biased-sampling": lambda: dnn(
-            SASRec(max_history_len=200, 
-                            dropout_rate=0.2,
-                            num_heads=1,
-                            num_blocks=2,
-                            embedding_size=50,
-                    ),
-            LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975),
-            lambda: BiasedPercentageSplitter(0.2, 0.8),
-            optimizer=Adam(beta_2=0.98),
-            target_builder=FullMatrixTargetsBuilder, 
-            metric=KerasNDCG(10),
-            max_epochs=201
-            ),
-
     "SASRec": lambda: dnn(
             SASRec(max_history_len=200, 
                             dropout_rate=0.2,
@@ -93,14 +78,31 @@ recommenders = {
             optimizer=Adam(beta_2=0.98),
             target_builder=lambda: NegativePerPositiveTargetBuilder(200), 
             metric=BCELoss(),
-            max_epochs=201
             ),
-
-
-
     "top": top_recommender, 
     "mf-bpr": lambda: lightfm_recommender(128, 'bpr')
 }
+
+for i in range(1000):
+    dropout_rate = float(np.random.choice([0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6]))
+    max_pct = float(np.random.choice([0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.9]))
+    bias  = float(np.random.choice([0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.9]))
+    recommenders[f"SASRec-bias:{bias}-dropout:{dropout_rate}-pct:{max_pct}"]= lambda dropout_rate=dropout_rate,\
+         bias=bias, max_pct=max_pct : dnn(
+            SASRec(max_history_len=200, 
+                            dropout_rate=dropout_rate,
+                            num_heads=1,
+                            num_blocks=2,
+                            embedding_size=50,
+                    ),
+            LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975),
+            lambda: BiasedPercentageSplitter(max_pct=max_pct, bias=bias),
+            optimizer=Adam(beta_2=0.98),
+            target_builder=FullMatrixTargetsBuilder, 
+            metric=KerasNDCG(10),
+            ),
+
+
 for i in range(0):
     loss_type = np.random.choice(["top1max", 'bce', 'lambdarank'])
 
