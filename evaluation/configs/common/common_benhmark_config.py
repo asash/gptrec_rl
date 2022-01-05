@@ -91,7 +91,7 @@ recommenders = {
             LambdaGammaRankLoss,
             BiasedPercentageSplitter,
             optimizer=Adam(beta_2=0.98),
-            target_builder=lambda: FullMatrixTargetsBuilder, 
+            target_builder=FullMatrixTargetsBuilder, 
             metric=KerasNDCG(10),
             max_epochs=201
             ),
