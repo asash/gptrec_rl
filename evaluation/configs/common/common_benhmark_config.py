@@ -70,13 +70,13 @@ recommenders = {
                             num_blocks=2,
                             vanilla=True, 
                             embedding_size=50,
-                            max_epochs=201,
                     ),
             BCELoss(),
             ShiftedSequenceSplitter,
             optimizer=Adam(beta_2=0.98),
             target_builder=lambda: NegativePerPositiveTargetBuilder(200), 
-            metric=BCELoss()
+            metric=BCELoss(),
+            max_epochs=201
             ),
     "top": top_recommender, 
     "mf-bpr": lambda: lightfm_recommender(128, 'bpr')
