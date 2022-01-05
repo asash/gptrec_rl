@@ -46,23 +46,23 @@ def lightfm_recommender(k, loss):
     return LightFMRecommender(k, loss, num_threads=32)
 
 
-def dnn(model_arch, loss, sequence_splitter, target_builder=FullMatrixTargetsBuilder(),
-         learning_rate=0.001, training_time_limit=3600, metric=KerasNDCG(40)):
+def dnn(model_arch, loss, sequence_splitter, 
+                val_sequence_splitter=LastItemSplitter, 
+                 target_builder=FullMatrixTargetsBuilder,
+                optimizer=Adam(),
+                training_time_limit=3600, metric=KerasNDCG(40)):
     return DNNSequentialRecommender(train_epochs=10000, loss=loss,
                                                           model_arch=model_arch,
-                                                          optimizer=Adam(learning_rate),
-                                                          early_stop_epochs=100,
+                                                          optimizer=optimizer,
+                                                          early_stop_epochs=10,
                                                           batch_size=128,
                                                           training_time_limit=training_time_limit,
                                                           sequence_splitter=sequence_splitter, 
                                                           targets_builder=target_builder, 
+                                                          val_sequence_splitter = val_sequence_splitter,
                                                           metric=metric,
+                                                          debug=True
                                                           )
-
-def salrec(loss, training_time_limit=3600, target_decay=1.0, seq_len = 100):
-    return SalrecRecommender(loss=loss, target_decay=target_decay, max_history_len=seq_len, training_time_limit=training_time_limit,
-                             train_epochs=10000, early_stop_epochs=1000, num_blocks=3, num_bottlenecks=1)
-
 
 def vanilla_bert4rec(time_limit):
     recommender = VanillaBERT4Rec(training_time_limit=time_limit, num_train_steps=10000000)
@@ -71,10 +71,17 @@ def vanilla_bert4rec(time_limit):
 
 recommenders = {
     "SASRec": lambda: dnn(
-            SASRec(max_history_len=200, dropout_rate=0.2, num_heads=2, vanilla=True),
+            SASRec(max_history_len=200, 
+                            dropout_rate=0.0,
+                            num_heads=1,
+                            num_blocks=0,
+                            vanilla=True, 
+                            embedding_size=50,
+                    ),
             BCELoss(),
-            ShiftedSequenceSplitter(),
-            target_builder=NegativePerPositiveTargetBuilder(200), 
+            ShiftedSequenceSplitter,
+            optimizer=Adam(beta_2=0.98),
+            target_builder=lambda: NegativePerPositiveTargetBuilder(200), 
             metric=BCELoss()
             ),
     "top": top_recommender, 

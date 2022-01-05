@@ -1,4 +1,5 @@
 import gc
+import random
 import time
 
 import tensorflow.keras.backend as K
@@ -29,8 +30,9 @@ class DNNSequentialRecommender(Recommender):
                  users_featurizer=None,
                  items_featurizer=None,
                  train_epochs=300, optimizer=Adam(),
-                 sequence_splitter = RandomFractionSplitter(), 
-                 targets_builder = FullMatrixTargetsBuilder(),
+                 sequence_splitter = RandomFractionSplitter, 
+                 val_sequence_splitter = LastItemSplitter,
+                 targets_builder = FullMatrixTargetsBuilder,
                  batch_size=1000, early_stop_epochs=100, target_decay=1.0,
                  training_time_limit=None, debug=False,
                  metric = KerasNDCG(40), 
@@ -64,6 +66,7 @@ class DNNSequentialRecommender(Recommender):
         self.targets_builder = targets_builder
         self.debug = debug
         self.metric = metric 
+        self.val_sequence_splitter = val_sequence_splitter
 
     def add_user(self, user):
         if self.users_featurizer is None:
@@ -122,12 +125,14 @@ class DNNSequentialRecommender(Recommender):
         val_generator = DataGenerator(val_users, val_user_ids, val_features, self.model_arch.max_history_length,
                                       self.items.size(),
                                       batch_size=self.batch_size,
-                                      sequence_splitter=LastItemSplitter(), 
+                                      sequence_splitter=self.val_sequence_splitter, 
                                       user_id_required=self.model_arch.requires_user_id,
                                       max_user_features=self.max_user_features,
                                       user_features_required=not (self.users_featurizer is None), 
-                                      targets_builder=self.targets_builder
+                                      targets_builder=self.targets_builder,
+                                      shuffle_data=False
                                       )
+
         self.model = self.get_model(val_generator)
         if self.metric.less_is_better:
             best_metric_val = float('inf')
@@ -152,7 +157,8 @@ class DNNSequentialRecommender(Recommender):
                                       sequence_splitter=self.sequence_splitter,
                                       max_user_features=self.max_user_features,
                                       user_features_required=not (self.users_featurizer is None), 
-                                      targets_builder=self.targets_builder
+                                      targets_builder=self.targets_builder, 
+                                      shuffle_data=True
                                       )
             print(f"epoch: {epoch}")
             val_metric = self.train_epoch(generator, val_generator)
@@ -185,6 +191,7 @@ class DNNSequentialRecommender(Recommender):
         print(self.get_metadata())
         print(f"taken best model from epoch{best_epoch}. best_val_{self.metric.__name__}: {best_metric_val}")
 
+
     def train_epoch(self, generator, val_generator):
         if not self.debug:
             return self.train_epoch_prod(generator, val_generator)
@@ -200,7 +207,7 @@ class DNNSequentialRecommender(Recommender):
         for X, y_true in pbar:
             num_batches += 1
             with tf.GradientTape() as tape:
-                y_pred = self.model(X)
+                y_pred = self.model(X, training=True)
                 loss_val = tf.reduce_mean(self.loss(y_true, y_pred))
             grad = tape.gradient(loss_val, variables)
             self.optimizer.apply_gradients(zip(grad, variables))
@@ -222,7 +229,9 @@ class DNNSequentialRecommender(Recommender):
             val_loss_sum += loss_val
             num_val_samples += y_true.shape[0]
         val_metric = val_metric_sum / num_batches
-        return val_metric
+        return float(val_metric)
+
+
 
     def train_epoch_prod(self, generator, val_generator):
         train_history = self.model.fit(generator, validation_data=val_generator)

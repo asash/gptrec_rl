@@ -19,7 +19,7 @@ class NegativePerPositiveTargetBuilder(TargetBuilder):
             seq = user_targets[i]
             if len(seq) < self.sequence_len:
                 user_inputs += [[self.n_items, self.n_items]] * (self.sequence_len - len(seq))
-                targets_for_user += [[0.0, 0.0]] * (self.sequence_len - len(seq))
+                targets_for_user += [[-1.0, -1.0]] * (self.sequence_len - len(seq))
             for target in seq[-self.sequence_len:]:
                 positive = target[1]
                 negative = self.random.randint(0, self.n_items - 1)

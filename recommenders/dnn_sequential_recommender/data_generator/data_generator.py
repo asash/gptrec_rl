@@ -14,8 +14,9 @@ class DataGenerator(Sequence):
                  user_id_required=False,
                  max_user_features=0,
                  user_features_required=False, 
-                 sequence_splitter = RandomFractionSplitter(), 
-                 targets_builder = FullMatrixTargetsBuilder(),
+                 sequence_splitter = RandomFractionSplitter, 
+                 targets_builder = FullMatrixTargetsBuilder,
+                 shuffle_data = True
                  ):
         self.user_ids = [[id] for id in user_ids]
         self.user_actions = user_actions
@@ -29,13 +30,15 @@ class DataGenerator(Sequence):
         self.user_features = user_features
         self.max_user_features = max_user_features
         self.user_features_required = user_features_required
-        self.sequence_splitter = sequence_splitter
-        self.targets_builder = targets_builder
+        self.sequence_splitter = sequence_splitter()
+        self.targets_builder = targets_builder()
+        self.do_shuffle_data = shuffle_data
         self.reset()
 
 
     def reset(self):
-        self.shuffle_data()
+        if self.do_shuffle_data: 
+            self.shuffle_data()
         history, target = self.split_actions(self.user_actions)
         self.sequences_matrix = self.matrix_for_embedding(history, self.history_size, self.n_items)
         if self.return_direct_positions or self.return_reverse_positions:
