@@ -76,7 +76,7 @@ def dnn(model_arch, loss, sequence_splitter,
                 val_sequence_splitter=LastItemSplitter, 
                  target_builder=FullMatrixTargetsBuilder,
                 optimizer=Adam(),
-                training_time_limit=3600, metric=KerasNDCG(40), 
+                training_time_limit=200, metric=KerasNDCG(40), 
                 max_epochs=10000,
                 user_hasher=None
                 ):
