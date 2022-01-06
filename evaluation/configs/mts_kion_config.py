@@ -4,10 +4,15 @@ import random
 from tqdm import tqdm
 
 from aprec.datasets.mts_kion import get_mts_kion_dataset, get_submission_user_ids, get_users, get_items
+from aprec.recommenders.dnn_sequential_recommender.models.sasrec.sasrec import SASRec
 from aprec.recommenders.dnn_sequential_recommender.models.sasrec.sasrec_kion import KionChallengeSASRec, KionSasrecModel
+from aprec.recommenders.dnn_sequential_recommender.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
+from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_per_positive_target import NegativePerPositiveTargetBuilder
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.biased_percentage_splitter import BiasedPercentageSplitter
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import LastItemSplitter
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.random_fraction_splitter import RandomFractionSplitter
+from aprec.recommenders.dnn_sequential_recommender.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
+from aprec.recommenders.metrics.ndcg import KerasNDCG
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.conditional_top_recommender import ConditionalTopRecommender
 from aprec.recommenders.svd import SvdRecommender
@@ -67,28 +72,60 @@ USERS_FRACTIONS = [1.]
 def top_recommender():
     return FilterSeenRecommender(TopRecommender())
 
-def dnn(model_arch, loss, splitter, learning_rate=0.001, user_hasher=None, items_hasher=None):
-    return FilterSeenRecommender(DNNSequentialRecommender(train_epochs=10000, loss=loss,
+def dnn(model_arch, loss, sequence_splitter, 
+                val_sequence_splitter=LastItemSplitter, 
+                 target_builder=FullMatrixTargetsBuilder,
+                optimizer=Adam(),
+                training_time_limit=3600, metric=KerasNDCG(40), 
+                max_epochs=10000,
+                user_hasher=None
+                ):
+    return DNNSequentialRecommender(train_epochs=max_epochs, loss=loss,
                                                           model_arch=model_arch,
-                                                          optimizer=Adam(learning_rate),
+                                                          optimizer=optimizer,
                                                           early_stop_epochs=100,
                                                           batch_size=128,
-                                                          training_time_limit = 3600*8,
-                                                          target_decay=1.0,
-                                                          sequence_splitter=splitter,
-                                                          users_featurizer=user_hasher,
-                                                          items_featurizer=items_hasher
-                                                          ))
+                                                          training_time_limit=training_time_limit,
+                                                          sequence_splitter=sequence_splitter, 
+                                                          targets_builder=target_builder, 
+                                                          val_sequence_splitter = val_sequence_splitter,
+                                                          metric=metric,
+                                                          debug=False, 
+                                                          users_featurizer=user_hasher
+                                                          )
 
-bert4rec = VanillaBERT4Rec(training_time_limit=16*3600)
-caser = dnn(Caser(requires_user_id=False, user_extra_features=True),
-                                                                         LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975),
-                                                                         BiasedPercentageSplitter(0.15, 0.8),
+
+caser_default = dnn(Caser(requires_user_id=False, user_extra_features=True),
+                                                                         loss=LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975),
+                                                                         sequence_splitter=LastItemSplitter,
                                                                          user_hasher=HashingFeaturizer())
+sasrec = dnn(SASRec(max_history_len=50, 
+                            dropout_rate=0.2,
+                            num_heads=1,
+                            num_blocks=2,
+                            vanilla=True, 
+                            embedding_size=50),
+            BCELoss(),
+            ShiftedSequenceSplitter,
+            optimizer=Adam(beta_2=0.98),
+            target_builder=lambda: NegativePerPositiveTargetBuilder(200), 
+            metric=BCELoss())
 
+sasrec_biased = dnn(SASRec(max_history_len=50, 
+                            dropout_rate=0.2,
+                            num_heads=1,
+                            num_blocks=2,
+                            embedding_size=50),
+            LambdaGammaRankLoss(pred_truncate_at=4000),
+            BiasedPercentageSplitter(max_pct=0.1, bias=0.8),
+            optimizer=Adam(beta_2=0.98),
+            target_builder=FullMatrixTargetsBuilder, 
+            metric=KerasNDCG(40))
+
+ 
 recommenders_raw = {
 
-     "Ensemble":  lambda: LambdaMARTEnsembleRecommender(candidates_selection_recommender=caser, 
+     "Ensemble":  lambda: LambdaMARTEnsembleRecommender(candidates_selection_recommender=caser_default, 
                                                         other_recommenders = { 
                                                             "top_age":        ConditionalTopRecommender(conditional_field='age'), 
                                                             "top_sex":        ConditionalTopRecommender(conditional_field='sex'), 
@@ -96,8 +133,10 @@ recommenders_raw = {
                                                             "top_kids":       ConditionalTopRecommender(conditional_field='kids_flg'), 
                                                             "svd":        SvdRecommender(128),
                                                             "top": top_recommender(),
-                                                            "bert4rec": bert4rec
-                                                        })
+                                                            "sasrec": sasrec, 
+                                                            "sasrec_biased": sasrec_biased
+                                                        }, 
+                                                        n_ensemble_users=1000)
 }
 
 
