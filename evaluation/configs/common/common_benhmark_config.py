@@ -65,6 +65,21 @@ def vanilla_bert4rec(time_limit):
 
 
 recommenders = {
+    "SASRec-bias:0.7-dropout:0.4-pct:0.6":  lambda dropout_rate=0.4,\
+         bias=0.7, max_pct=0.6 : dnn(
+            SASRec(max_history_len=200, 
+                            dropout_rate=dropout_rate,
+                            num_heads=1,
+                            num_blocks=2,
+                            embedding_size=50,
+                    ),
+            LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975),
+            lambda: BiasedPercentageSplitter(max_pct=max_pct, bias=bias),
+            optimizer=Adam(beta_2=0.98),
+            target_builder=FullMatrixTargetsBuilder, 
+            metric=KerasNDCG(10),
+            ),
+
     "SASRec": lambda: dnn(
             SASRec(max_history_len=200, 
                             dropout_rate=0.2,
@@ -80,7 +95,9 @@ recommenders = {
             metric=BCELoss(),
             ),
     "top": top_recommender, 
-    "mf-bpr": lambda: lightfm_recommender(128, 'bpr')
+    "mf-bpr": lambda: lightfm_recommender(128, 'bpr'),
+
+
 }
 
 for i in range(1000):
