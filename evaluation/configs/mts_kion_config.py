@@ -76,7 +76,7 @@ def dnn(model_arch, loss, sequence_splitter,
                 val_sequence_splitter=LastItemSplitter, 
                  target_builder=FullMatrixTargetsBuilder,
                 optimizer=Adam(),
-                training_time_limit=200, metric=KerasNDCG(40), 
+                training_time_limit=3600, metric=KerasNDCG(40), 
                 max_epochs=10000,
                 user_hasher=None
                 ):
@@ -108,7 +108,7 @@ sasrec = dnn(SASRec(max_history_len=50,
             BCELoss(),
             ShiftedSequenceSplitter,
             optimizer=Adam(beta_2=0.98),
-            target_builder=lambda: NegativePerPositiveTargetBuilder(200), 
+            target_builder=lambda: NegativePerPositiveTargetBuilder(50), 
             metric=BCELoss())
 
 sasrec_biased = dnn(SASRec(max_history_len=50, 
@@ -117,7 +117,7 @@ sasrec_biased = dnn(SASRec(max_history_len=50,
                             num_blocks=2,
                             embedding_size=50),
             LambdaGammaRankLoss(pred_truncate_at=4000),
-            BiasedPercentageSplitter(max_pct=0.1, bias=0.8),
+            lambda: BiasedPercentageSplitter(max_pct=0.1, bias=0.8),
             optimizer=Adam(beta_2=0.98),
             target_builder=FullMatrixTargetsBuilder, 
             metric=KerasNDCG(40))
@@ -125,7 +125,7 @@ sasrec_biased = dnn(SASRec(max_history_len=50,
  
 recommenders_raw = {
 
-     "Ensemble":  lambda: LambdaMARTEnsembleRecommender(candidates_selection_recommender=caser_default, 
+     "Ensemble":  lambda: LambdaMARTEnsembleRecommender(candidates_selection_recommender=sasrec, 
                                                         other_recommenders = { 
                                                             "top_age":        ConditionalTopRecommender(conditional_field='age'), 
                                                             "top_sex":        ConditionalTopRecommender(conditional_field='sex'), 
@@ -133,7 +133,7 @@ recommenders_raw = {
                                                             "top_kids":       ConditionalTopRecommender(conditional_field='kids_flg'), 
                                                             "svd":        SvdRecommender(128),
                                                             "top": top_recommender(),
-                                                            "sasrec": sasrec, 
+                                                            "caser": caser_default, 
                                                             "sasrec_biased": sasrec_biased
                                                         }, 
                                                         n_ensemble_users=1000)
