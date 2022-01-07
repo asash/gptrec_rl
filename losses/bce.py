@@ -9,12 +9,13 @@ class BCELoss(Loss):
         self.__name__ = "BCE"
         self.less_is_better = True
 
-    def __call__(self, y_true, y_pred):
+    def __call__(self, y_true_raw, y_pred):
         EPS = 1e-24
+        y_true = tf.cast(y_true_raw, 'float32')
         is_target = tf.cast((y_true >= -EPS), 'float32')
         trues = y_true*is_target
         pos = -trues*tf.math.log((tf.sigmoid(y_pred) + EPS)) * is_target
         neg = -(1.0 - trues)*tf.math.log((1.0 - tf.sigmoid(y_pred)) + EPS) * is_target
         num_targets = tf.reduce_sum(is_target)
-        res_sum = tf.reduce_sum(pos + neg)/num_targets
+        res_sum = tf.math.divide_no_nan(tf.reduce_sum(pos + neg), num_targets)
         return res_sum
