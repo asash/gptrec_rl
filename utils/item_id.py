@@ -1,7 +1,11 @@
+from collections import Counter, defaultdict
+
+
 class ItemId(object):
     def __init__(self):
         self.straight = {}
         self.reverse = {}
+        self.get_count = Counter()
 
     def size(self):
         return len(self.straight)
@@ -10,6 +14,7 @@ class ItemId(object):
         if item_id not in self.straight:
             self.straight[item_id] = len(self.straight)
             self.reverse[self.straight[item_id]] = item_id
+        self.get_count[item_id] += 1
         return self.straight[item_id]
 
     def has_id(self, id):
