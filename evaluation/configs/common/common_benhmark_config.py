@@ -65,8 +65,8 @@ def vanilla_bert4rec(time_limit):
 
 
 recommenders = {
-    "SASRec-bias:0.7-dropout:0.4-pct:0.6":  lambda dropout_rate=0.4,\
-         bias=0.7, max_pct=0.6 : dnn(
+    "SASRec-bias:0.8-dropout:0.2-pct:0.2":  lambda dropout_rate=0.2,\
+         bias=0.8, max_pct=0.2 : dnn(
             SASRec(max_history_len=200, 
                             dropout_rate=dropout_rate,
                             num_heads=1,

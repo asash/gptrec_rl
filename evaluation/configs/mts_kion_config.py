@@ -114,7 +114,7 @@ sasrec = dnn(SASRec(max_history_len=50,
             BCELoss(),
             ShiftedSequenceSplitter,
             optimizer=Adam(beta_2=0.98),
-            target_builder=lambda: NegativePerPositiveTargetBuilder(200), 
+            target_builder=lambda: NegativePerPositiveTargetBuilder(50), 
             metric=BCELoss())
 
 transitions_chain = TransitionsChainRecommender()
@@ -134,8 +134,10 @@ sasrec_biased = dnn(SASRec(max_history_len=50,
 recommenders_raw = {
 
      "Ensemble":  lambda: FilterSeenRecommender(LambdaMARTEnsembleRecommender(
-                                                        candidates_selection_recommender=caser_default, 
+                                                        candidates_selection_recommender=sasrec, 
                                                         other_recommenders = { 
+                                                            "lightfm_bpr": LightFMRecommender(128, loss='bpr', num_threads=32), 
+                                                            "lightfm_32": LightFMRecommender(128, loss='warp', num_threads=32), 
                                                             "transitions_chain": transitions_chain,
                                                             "top_age":        ConditionalTopRecommender(conditional_field='age'), 
                                                             "top_sex":        ConditionalTopRecommender(conditional_field='sex'), 
@@ -148,8 +150,8 @@ recommenders_raw = {
                                                             "top_recent_20pct": TopRecommender(0.2),
                                                             "top_recent_40pct": TopRecommender(0.4),
                                                             "top_recent_80pct": TopRecommender(0.8),
-                                                            "sasrec": sasrec, 
                                                             "sasrec_biased": sasrec_biased,
+                                                            "caser_default": caser_default, 
                                                             "caser_random_fraction": caser_random_fraction
                                                         }, 
                                                         n_ensemble_users=10000, 
