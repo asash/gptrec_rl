@@ -31,6 +31,7 @@ from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
 from aprec.recommenders.deep_mf import DeepMFRecommender
 from aprec.losses.bce import BCELoss
 from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
+from aprec.recommenders.transition_chain_recommender import TransitionsChainRecommender
 from aprec.recommenders.lambdamart_ensemble_recommender import LambdaMARTEnsembleRecommender
 from aprec.recommenders.dnn_sequential_recommender.models.caser import Caser
 from aprec.recommenders.dnn_sequential_recommender.featurizers.hashing_featurizer import HashingFeaturizer
@@ -116,6 +117,8 @@ sasrec = dnn(SASRec(max_history_len=50,
             target_builder=lambda: NegativePerPositiveTargetBuilder(200), 
             metric=BCELoss())
 
+transitions_chain = TransitionsChainRecommender()
+
 sasrec_biased = dnn(SASRec(max_history_len=50, 
                             dropout_rate=0.2,
                             num_heads=1,
@@ -133,11 +136,11 @@ recommenders_raw = {
      "Ensemble":  lambda: FilterSeenRecommender(LambdaMARTEnsembleRecommender(
                                                         candidates_selection_recommender=caser_default, 
                                                         other_recommenders = { 
+                                                            "transitions_chain": transitions_chain,
                                                             "top_age":        ConditionalTopRecommender(conditional_field='age'), 
                                                             "top_sex":        ConditionalTopRecommender(conditional_field='sex'), 
                                                             "top_income":     ConditionalTopRecommender(conditional_field='income'), 
                                                             "top_kids":       ConditionalTopRecommender(conditional_field='kids_flg'), 
-                                                            
                                                             "svd":        SvdRecommender(128),
                                                             "top_recent_1pct": TopRecommender(0.01),
                                                             "top_recent_5pct": TopRecommender(0.05),
