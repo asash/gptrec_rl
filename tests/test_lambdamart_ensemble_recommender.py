@@ -1,3 +1,4 @@
+import json
 import unittest
 from aprec.datasets.movielens20m import get_movielens20m_actions
 from aprec.recommenders.top_recommender import TopRecommender
@@ -16,7 +17,8 @@ class TestLambdaMartEnsembleRecommender(unittest.TestCase):
         recommender = LambdaMARTEnsembleRecommender(
                             candidates_selection_recommender=candidates_selection, 
                             other_recommenders=other_recommenders,
-                            n_ensemble_users=200
+                            n_ensemble_users=200, 
+                            n_ensemble_val_users=20, 
         ) 
         
         USER_ID = '120'
@@ -26,6 +28,7 @@ class TestLambdaMartEnsembleRecommender(unittest.TestCase):
         recommender.rebuild_model()
         recs = recommender.recommend(USER_ID, 10)
         print(recs)
+        print(json.dumps(recommender.get_metadata()))
 
 if __name__ == "__main__":
     unittest.main()

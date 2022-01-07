@@ -12,7 +12,18 @@ class TestTopRecommender(unittest.TestCase):
             recommender.add_action(action)
         recommender.rebuild_model()
         recommendations = recommender.recommend(1, 5)
-        self.assertEqual(recommendations, [('260', 10), ('589', 9), ('1196', 8), ('480', 8), ('1', 8)])
+        self.assertEqual(recommendations, [('260', 10), ('589', 9), ('1', 8), ('356', 8), ('480', 8)])
+
+    def test_recent_top(self):
+        recommender = TopRecommender(recency=0.5)
+        for action in generator_limit(get_movielens20m_actions(), 1000):
+            recommender.add_action(action)
+        recommender.rebuild_model()
+        recommendations = recommender.recommend(1, 5)
+        self.assertEquals(recommendations,[('2959', 3), ('2762', 3), ('1196', 3), ('260', 3), ('587', 2)]
+ )
+        print(recommendations)
+
 
     def test_top_recommender_ranking_request(self):
         recommender = TopRecommender()

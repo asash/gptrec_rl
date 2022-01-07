@@ -41,7 +41,7 @@ DATASET = "mts_kion"
 USERS = get_users
 ITEMS = get_items
 
-GENERATE_SUBMIT_THRESHOLD =  0.16
+GENERATE_SUBMIT_THRESHOLD =  0.14
 
 def generate_submit(recommender, recommender_name, evaluation_result, config):
     submit_user_ids = get_submission_user_ids()
@@ -99,6 +99,11 @@ caser_default = dnn(Caser(requires_user_id=False, user_extra_features=True),
                                                                          loss=LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975),
                                                                          sequence_splitter=LastItemSplitter,
                                                                          user_hasher=HashingFeaturizer())
+
+caser_random_fraction = dnn(Caser(requires_user_id=False, user_extra_features=True),
+                                                                         loss=LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975),
+                                                                         sequence_splitter=RandomFractionSplitter,
+                                                                         user_hasher=HashingFeaturizer())
 sasrec = dnn(SASRec(max_history_len=50, 
                             dropout_rate=0.2,
                             num_heads=1,
@@ -117,7 +122,7 @@ sasrec_biased = dnn(SASRec(max_history_len=50,
                             num_blocks=2,
                             embedding_size=50),
             LambdaGammaRankLoss(pred_truncate_at=4000),
-            BiasedPercentageSplitter(max_pct=0.1, bias=0.8),
+            sequence_splitter = lambda: BiasedPercentageSplitter(max_pct=0.2, bias=0.8),
             optimizer=Adam(beta_2=0.98),
             target_builder=FullMatrixTargetsBuilder, 
             metric=KerasNDCG(40))
@@ -125,18 +130,28 @@ sasrec_biased = dnn(SASRec(max_history_len=50,
  
 recommenders_raw = {
 
-     "Ensemble":  lambda: LambdaMARTEnsembleRecommender(candidates_selection_recommender=caser_default, 
+     "Ensemble":  lambda: FilterSeenRecommender(LambdaMARTEnsembleRecommender(
+                                                        candidates_selection_recommender=caser_default, 
                                                         other_recommenders = { 
                                                             "top_age":        ConditionalTopRecommender(conditional_field='age'), 
                                                             "top_sex":        ConditionalTopRecommender(conditional_field='sex'), 
                                                             "top_income":     ConditionalTopRecommender(conditional_field='income'), 
                                                             "top_kids":       ConditionalTopRecommender(conditional_field='kids_flg'), 
+                                                            
                                                             "svd":        SvdRecommender(128),
-                                                            "top": top_recommender(),
+                                                            "top_recent_1pct": TopRecommender(0.01),
+                                                            "top_recent_5pct": TopRecommender(0.05),
+                                                            "top_recent_10pct": TopRecommender(0.1),
+                                                            "top_recent_20pct": TopRecommender(0.2),
+                                                            "top_recent_40pct": TopRecommender(0.4),
+                                                            "top_recent_80pct": TopRecommender(0.8),
                                                             "sasrec": sasrec, 
-                                                            "sasrec_biased": sasrec_biased
+                                                            "sasrec_biased": sasrec_biased,
+                                                            "caser_random_fraction": caser_random_fraction
                                                         }, 
-                                                        n_ensemble_users=1000)
+                                                        n_ensemble_users=10000, 
+                                                        lambda_l2=0.1,
+                                                        ))
 }
 
 
@@ -158,4 +173,4 @@ MAX_TEST_USERS=4096
 METRICS = [MAP(10), NDCG(10), NDCG(2), NDCG(5), NDCG(20), NDCG(40), Precision(10), Recall(10), HIT(1), HIT(10), MRR()]
 
 
-SPLIT_STRATEGY = LeaveOneOut(MAX_TEST_USERS)
+SPLIT_STRATEGY = LeaveOneOut(MAX_TEST_USERS, remove_single_action=False)

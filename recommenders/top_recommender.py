@@ -2,15 +2,22 @@ from aprec.recommenders.recommender import Recommender
 from collections import Counter
 
 class TopRecommender(Recommender):
-    def __init__(self):
+    def __init__(self, recency=1.0): #recency parameter controls how many actions are considered out of all actions
         super().__init__()
         self.items_counter=Counter()
         self.item_scores = {}
+        self.actions = []
+        self.recency = recency
 
     def add_action(self, action):
-        self.items_counter[action.item_id] += 1
+        self.actions.append(action)
 
     def rebuild_model(self):
+        self.actions.sort(key=lambda x: x.timestamp)
+        n_actions = int(len(self.actions) * self.recency)
+        for action in self.actions[-n_actions:]:
+            self.items_counter[action.item_id] += 1
+        self.actions = []
         self.most_common = self.items_counter.most_common()
         for item, score in self.most_common:
             self.item_scores[item] = score
