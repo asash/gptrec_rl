@@ -1,14 +1,14 @@
 from typing import List
 
 import lightgbm
-from aprec import recommenders
+from tqdm import tqdm
 from aprec.api.action import Action
 from aprec.api.item import Item
 from aprec.api.user import User
+from aprec.recommenders.featurizer import Featurizer
 from aprec.recommenders.recommender import Recommender
 import numpy as np
-from lightgbm import LGBMRanker, Dataset
-from lightgbm.callback import early_stopping, log_evaluation
+from lightgbm import Dataset
 
 class LambdaMARTEnsembleRecommender(Recommender):
     def __init__(self, candidates_selection_recommender: Recommender, 
@@ -21,7 +21,8 @@ class LambdaMARTEnsembleRecommender(Recommender):
                                 max_trees = 20000,
                                 early_stopping=1000,
                                 lambda_l2=0.0,
-                                booster='gbdt'
+                                booster='gbdt',
+                                featurizer: Featurizer = None
                                 ):
         super().__init__()
         self.candidates_selection_recommender = candidates_selection_recommender
@@ -35,16 +36,22 @@ class LambdaMARTEnsembleRecommender(Recommender):
         self.ndcg_at = ndcg_at
         self.n_ensemble_val_users = n_ensemble_val_users
         self.num_leaves = num_leaves
+        self.lambda_l2 = lambda_l2
+        self.featurizer = featurizer
     
     def add_item(self, item: Item):
         self.candidates_selection_recommender.add_item(item)
         for other_recommender in self.other_recommenders:
             self.other_recommenders[other_recommender].add_item(item)
+        if self.featurizer is not None:
+            self.featurizer.add_item(item)
 
     def add_user(self, user: User):
         self.candidates_selection_recommender.add_user(user)
         for other_recommender in self.other_recommenders:
             self.other_recommenders[other_recommender].add_user(user)
+        if self.featurizer is not None:
+            self.featurizer.add_user(user)
 
     def add_action(self, action: Action):
         if action.user_id not in self.user_actions:
@@ -71,7 +78,10 @@ class LambdaMARTEnsembleRecommender(Recommender):
                 self.candidates_selection_recommender.add_action(action)
                 for recommender in self.other_recommenders:
                     self.other_recommenders[recommender].add_action(action)
-
+                if self.featurizer is not None:
+                    self.featurizer.add_action(action)
+        print("rebuilding featurizer...")
+        self.featurizer.build()
         print("rebuilding candidates selection recommender...")
         self.candidates_selection_recommender.rebuild_model()
 
@@ -80,7 +90,9 @@ class LambdaMARTEnsembleRecommender(Recommender):
             self.other_recommenders[other_recommender].rebuild_model()
 
 
+        print ("building ensemble train dataset...")
         train_dataset = self.get_data(ensemble_users)
+        print ("building ensemble val dataset...")
         val_dataset = self.get_data(ensemble_val_users)
 
         self.ranker = lightgbm.train(
@@ -89,6 +101,7 @@ class LambdaMARTEnsembleRecommender(Recommender):
              'eval_at': self.ndcg_at,
              'boosting': self.booster, 
              'num_leaves': self.num_leaves, 
+             'lambda_l2': self.lambda_l2
             },
             train_set=train_dataset, 
             valid_sets=[val_dataset], 
@@ -113,13 +126,15 @@ class LambdaMARTEnsembleRecommender(Recommender):
         samples = []
         target = []
         group = []
-        for user_id in users:
+        for user_id in tqdm(users, ascii=True):
             candidates = self.build_candidates(user_id)
             target_id = self.user_actions[user_id][-1].item_id
             for candidate in candidates:
                 samples.append(candidates[candidate])
                 target.append(int(candidate == target_id))
             group.append(len(candidates))
+        if self.featurizer is not None:
+            features_list += self.featurizer.feature_names
         return Dataset(np.array(samples),label=target, group=group, feature_name=features_list, free_raw_data=False).construct()
 
     def recommend(self, user_id, limit: int, features=None):
@@ -154,6 +169,11 @@ class LambdaMARTEnsembleRecommender(Recommender):
                 if candidate not in recommender_processed_candidates:
                     candidate_features[candidate] += [0, self.candidates_limit, -1000]
                     recommender_processed_candidates.add(candidate)
+        if self.featurizer is not None:
+            candidate_ids = list(candidate_features.keys())
+            features = self.featurizer.get_features(user_id, candidate_ids)
+            for candidate, features in zip(candidate_ids, features):
+                candidate_features[candidate] += features
         return candidate_features
     
     def set_val_users(self, val_users):

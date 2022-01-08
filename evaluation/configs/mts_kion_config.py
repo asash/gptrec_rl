@@ -12,6 +12,7 @@ from aprec.recommenders.dnn_sequential_recommender.targetsplitters.biased_percen
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import LastItemSplitter
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.random_fraction_splitter import RandomFractionSplitter
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
+from aprec.recommenders.kion_challenge_featurizer import KionChallengeFeaturizer
 from aprec.recommenders.metrics.ndcg import KerasNDCG
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.conditional_top_recommender import ConditionalTopRecommender
@@ -104,7 +105,7 @@ caser_default = dnn(Caser(requires_user_id=False, user_extra_features=True),
 caser_random_fraction = dnn(Caser(requires_user_id=False, user_extra_features=True),
                                                                          loss=LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975),
                                                                          sequence_splitter=RandomFractionSplitter,
-                                                                         user_hasher=HashingFeaturizer())
+                                                                         user_hasher=HashingFeaturizer(), training_time_limit=4*3600)
 sasrec = dnn(SASRec(max_history_len=50, 
                             dropout_rate=0.2,
                             num_heads=1,
@@ -134,26 +135,27 @@ sasrec_biased = dnn(SASRec(max_history_len=50,
 recommenders_raw = {
 
      "Ensemble":  lambda: FilterSeenRecommender(LambdaMARTEnsembleRecommender(
-                                                        candidates_selection_recommender=sasrec, 
+                                                        candidates_selection_recommender=caser_random_fraction, 
                                                         other_recommenders = { 
-                                                            "lightfm_bpr": LightFMRecommender(128, loss='bpr', num_threads=32), 
-                                                            "lightfm_32": LightFMRecommender(128, loss='warp', num_threads=32), 
-                                                            "transitions_chain": transitions_chain,
-                                                            "top_age":        ConditionalTopRecommender(conditional_field='age'), 
-                                                            "top_sex":        ConditionalTopRecommender(conditional_field='sex'), 
-                                                            "top_income":     ConditionalTopRecommender(conditional_field='income'), 
-                                                            "top_kids":       ConditionalTopRecommender(conditional_field='kids_flg'), 
-                                                            "svd":        SvdRecommender(128),
-                                                            "top_recent_1pct": TopRecommender(0.01),
-                                                            "top_recent_5pct": TopRecommender(0.05),
-                                                            "top_recent_10pct": TopRecommender(0.1),
-                                                            "top_recent_20pct": TopRecommender(0.2),
-                                                            "top_recent_40pct": TopRecommender(0.4),
-                                                            "top_recent_80pct": TopRecommender(0.8),
-                                                            "sasrec_biased": sasrec_biased,
-                                                            "caser_default": caser_default, 
-                                                            "caser_random_fraction": caser_random_fraction
+                                                             "lightfm_bpr": LightFMRecommender(128, loss='bpr', num_threads=32), 
+                                                             "lightfm_warp": LightFMRecommender(128, loss='warp', num_threads=32), 
+                                                             "transitions_chain": transitions_chain,
+                                                             "top_age":        ConditionalTopRecommender(conditional_field='age'), 
+                                                             "top_sex":        ConditionalTopRecommender(conditional_field='sex'), 
+                                                             "top_income":     ConditionalTopRecommender(conditional_field='income'), 
+                                                             "top_kids":       ConditionalTopRecommender(conditional_field='kids_flg'), 
+                                                             "svd":        SvdRecommender(128),
+                                                             "top_recent_1pct": TopRecommender(0.01),
+                                                             "top_recent_5pct": TopRecommender(0.05),
+                                                             "top_recent_10pct": TopRecommender(0.1),
+                                                             "top_recent_20pct": TopRecommender(0.2),
+                                                             "top_recent_40pct": TopRecommender(0.4),
+                                                             "top_recent_80pct": TopRecommender(0.8),
+                                                             "sasrec_biased": sasrec_biased,
+                                                             "sasrec":sasrec,
+                                                           "caser_default": caser_default, 
                                                         }, 
+                                                        featurizer=KionChallengeFeaturizer(),
                                                         n_ensemble_users=10000, 
                                                         lambda_l2=0.1,
                                                         ))
@@ -164,8 +166,7 @@ all_recommenders = list(recommenders_raw.keys())
 
 
 RECOMMENDERS = {
-        "top_recommender": top_recommender,
-
+    #    "top_recommender": top_recommender,
     }
 for model in all_recommenders:
     RECOMMENDERS[model] = recommenders_raw[model]

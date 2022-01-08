@@ -3,6 +3,7 @@ import math
 from aprec.api.action import Action
 from aprec.api.item import Item
 from aprec.recommenders.featurizer import Featurizer
+from tqdm import tqdm
 from aprec.utils.item_id import ItemId
 
 def dot(x, y):
@@ -71,7 +72,8 @@ class KionChallengeFeaturizer(Featurizer):
             self.item_genre_vectors[item_id] = norm(self.item_genre_vectors[item_id])
             pass
 
-        for user in self.user_actions:
+        print("building item pair counts...")
+        for user in tqdm(self.user_actions, ascii=True):
             actions = self.user_actions[user][-self.max_sim_actions_per_user:]
             for action in actions:
                     self.item_counts[action.item_id] += 1

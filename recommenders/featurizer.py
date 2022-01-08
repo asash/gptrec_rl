@@ -17,3 +17,6 @@ class Featurizer(object):
 
     def get_features(self, user_id, item_id):
         pass
+
+    def build(self):
+        pass
