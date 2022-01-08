@@ -36,7 +36,7 @@ class LightFMRecommender(Recommender):
 
     def recommend(self, user_id_external, limit, features=None):
         if not(self.users.has_item(user_id_external)):
-            raise Exception("can't process unknown users")
+            return [] #can't process unknown users
         user_id = self.users.get_id(user_id_external)
         items_ids = [i for i in range(self.items.size())]
         scores = self.model.predict(user_id, items_ids)

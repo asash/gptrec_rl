@@ -66,7 +66,7 @@ class TransitionsChainRecommender(Recommender):
 
     def recommend(self, user_id, limit, features=None):
         if user_id not in self.user_to_items:
-            raise Exception("New user without history")
+            return [] #"New user without history"
         return self.recommend_by_items(self.user_to_items[user_id], limit)
 
     def recommend_by_items(self, items_list, limit):
