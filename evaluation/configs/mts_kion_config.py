@@ -157,7 +157,7 @@ recommenders_raw = {
                                                              "caser_default": caser_default, 
                                                         }, 
                                                         featurizer=KionChallengeFeaturizer(),
-                                                        n_ensemble_users=10000, 
+                                                        n_ensemble_users=15000, 
                                                         lambda_l2=0.1,
                                                         recently_interacted_hours=7*24,
                                                         n_ensemble_val_users=2048,
