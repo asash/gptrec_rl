@@ -84,7 +84,13 @@ def run_experiment(config):
         target_items_sampler = None
         if hasattr(config, "TARGET_ITEMS_SAMPLER"):
             target_items_sampler = config.TARGET_ITEMS_SAMPLER
+        
+        filter_cold_start = True
 
+        if hasattr(config, "FILTER_COLD_START"):
+            filter_cold_start = config.FILTER_COLD_START
+ 
+        
         recommender_evaluator = RecommendersEvaluator(actions,
                                                       config.RECOMMENDERS,
                                                       config.METRICS,
@@ -96,7 +102,8 @@ def run_experiment(config):
                                                       users=users,
                                                       items=items,
                                                       experiment_config=config,
-                                                      target_items_sampler=target_items_sampler
+                                                      target_items_sampler=target_items_sampler, 
+                                                      filter_cold_start=filter_cold_start
                                                       )
 
         if  hasattr(config, 'FEATURES_FROM_TEST'):

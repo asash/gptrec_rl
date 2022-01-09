@@ -52,6 +52,11 @@ class Recommender():
     def from_str(self):
         raise (NotImplementedError)
 
+
+    #the directory where the recommender can save stuff, like logs
+    def set_out_dir(self, out_dir):
+        self.out_dir = out_dir
+
     def get_metadata(self):
         return {}
 

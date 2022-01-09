@@ -48,24 +48,33 @@ def get_single_action_users(users):
     return result
 
 class LeaveOneOut(ActionsSplitter):
-    def __init__(self, max_test_users=4096, random_seed = 31337, remove_single_action=True):
+    def __init__(self, max_test_users=4096, random_seed = 31337, remove_single_action=True, recently_interacted_hours = None):
         self.max_test_users=max_test_users
         self.random_seed = random_seed
         self.remove_single_actions =remove_single_action
+        self.recently_interacted_hours = recently_interacted_hours
 
     def __call__(self, actions):
         sorted_actions = sorted(actions, key=lambda x: x.timestamp)
+        latest_action_time = sorted_actions[-1].timestamp
         users = defaultdict(list)
+        eligible_users = set()
         for action in sorted_actions:
+            if self.recently_interacted_hours is not None:
+                if (latest_action_time - action.timestamp) * 3600 < self.recently_interacted_hours:
+                    eligible_users.add(action.user_id)
             users[action.user_id].append(action)
         train = []
         test = []
         control_users = get_control_users(actions)
+        if self.recently_interacted_hours is None:
+            eligible_users = users.keys()
+
         if self.remove_single_actions:
             single_action_users = get_single_action_users(users)
-            valid_user_selection = list(users.keys() - control_users - single_action_users)
+            valid_user_selection = list(eligible_users - control_users - single_action_users)
         else:
-            valid_user_selection = list(users.keys() - control_users)
+            valid_user_selection = list(eligible_users - control_users)
         valid_user_selection.sort()
         np.random.seed(self.random_seed)
         test_user_ids = set(np.random.choice(valid_user_selection, self.max_test_users, replace=False))

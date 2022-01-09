@@ -94,6 +94,7 @@ class RecommendersEvaluator(object):
                  items=None,
                  experiment_config=None,
                  target_items_sampler: TargetItemSampler = None,
+                 filter_cold_start=True
                  ):
         self.actions = actions
         self.metrics = metrics
@@ -105,7 +106,8 @@ class RecommendersEvaluator(object):
         self.n_val_users = n_val_users
         self.train, self.test = self.data_splitter(actions)
         self.save_split(self.train, self.test)
-        self.test = filter_cold_start(self.train, self.test)
+        if filter_cold_start:
+            self.test = filter_cold_start(self.train, self.test)
         self.users = users
         self.items = items
         all_train_user_ids = list(set([action.user_id for action in self.train]))
@@ -131,6 +133,7 @@ class RecommendersEvaluator(object):
                 sys.stdout.write("!!!!!!!!!   ")
                 print("evaluating {}".format(recommender_name))
                 recommender = self.recommenders[recommender_name]()
+                recommender.set_out_dir(self.out_dir)
                 print("adding train actions...")
                 for action in tqdm(self.train, ascii=True):
                     recommender.add_action(action)

@@ -1,5 +1,6 @@
 from collections import Counter, defaultdict
 import math
+import sys
 from aprec.api.action import Action
 from aprec.api.item import Item
 from aprec.recommenders.featurizer import Featurizer
@@ -40,6 +41,7 @@ class KionChallengeFeaturizer(Featurizer):
         self.item_genre_vectors = {}
         self.user_cat_feature_ids = defaultdict(ItemId) 
         self.user_cat_features =  defaultdict(dict)
+        self.latest_timestamp = 0
     
     def add_item(self, item: Item):
         self.items[item.item_id] = item
@@ -62,6 +64,7 @@ class KionChallengeFeaturizer(Featurizer):
 
     def add_action(self, action: Action):
         self.user_actions[action.user_id].append(action)
+        self.latest_timestamp = max(self.latest_timestamp, action.timestamp)
     
     def build(self):
         for item_id in self.item_genres:
@@ -88,9 +91,16 @@ class KionChallengeFeaturizer(Featurizer):
         user_history = self.user_actions.get(user_id, [])[-self.max_feature_items:][::-1]
         result = []
         for item in items:
-            item_features = []
-            item_genre_vec = self.item_genre_vectors.get(item, {})
 
+            if user_id in self.user_actions:
+                recency = self.latest_timestamp - self.user_actions[user_id][-1].timestamp
+                session_len = len(self.user_actions[user_id])
+            else:
+                recency = sys.maxsize
+                session_len = 0
+            item_features = [recency, session_len]
+
+            item_genre_vec = self.item_genre_vectors.get(item, {})
             user_cat_feature_names = []
             for feature_type in self.user_cat_feature_ids:
                 features = [0] *self.user_cat_feature_ids[feature_type].size() 
@@ -148,7 +158,7 @@ class KionChallengeFeaturizer(Featurizer):
                 self.history_feature_names_initialized = True
             result.append(item_features)
         if not self.feature_names_initialized:
-            self.feature_names = self.user_cat_feature_names + self.history_feature_names
+            self.feature_names =['recency', 'session_len'] + self.user_cat_feature_names + self.history_feature_names
             self.feature_names_initialized = True
         return result
 

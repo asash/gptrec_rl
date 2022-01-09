@@ -43,7 +43,7 @@ DATASET = "mts_kion"
 USERS = get_users
 ITEMS = get_items
 
-GENERATE_SUBMIT_THRESHOLD =  0.14
+GENERATE_SUBMIT_THRESHOLD =  0.9
 
 def generate_submit(recommender, recommender_name, evaluation_result, config):
     submit_user_ids = get_submission_user_ids()
@@ -145,6 +145,7 @@ recommenders_raw = {
                                                              "top_income":     ConditionalTopRecommender(conditional_field='income'), 
                                                              "top_kids":       ConditionalTopRecommender(conditional_field='kids_flg'), 
                                                              "svd":        SvdRecommender(128),
+                                                             "top_full": TopRecommender(),
                                                              "top_recent_1pct": TopRecommender(0.01),
                                                              "top_recent_5pct": TopRecommender(0.05),
                                                              "top_recent_10pct": TopRecommender(0.1),
@@ -153,11 +154,13 @@ recommenders_raw = {
                                                              "top_recent_80pct": TopRecommender(0.8),
                                                              "sasrec_biased": sasrec_biased,
                                                              "sasrec":sasrec,
-                                                           "caser_default": caser_default, 
+                                                             "caser_default": caser_default, 
                                                         }, 
                                                         featurizer=KionChallengeFeaturizer(),
                                                         n_ensemble_users=10000, 
                                                         lambda_l2=0.1,
+                                                        recently_interacted_hours=7*24,
+                                                        n_ensemble_val_users=2048,
                                                         ))
 }
 
@@ -179,4 +182,5 @@ MAX_TEST_USERS=4096
 METRICS = [MAP(10), NDCG(10), NDCG(2), NDCG(5), NDCG(20), NDCG(40), Precision(10), Recall(10), HIT(1), HIT(10), MRR()]
 
 
-SPLIT_STRATEGY = LeaveOneOut(MAX_TEST_USERS, remove_single_action=False)
+SPLIT_STRATEGY = LeaveOneOut(MAX_TEST_USERS, remove_single_action=False, recently_interacted_hours=7*24)
+FILTER_COLD_START=False

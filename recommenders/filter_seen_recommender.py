@@ -55,6 +55,10 @@ class FilterSeenRecommender(Recommender):
         metadata['proxy_model'] = 'filter_seen_recommender'
         return metadata
 
+
+    def  set_out_dir(self, out_dir):
+        self.recommender.set_out_dir(out_dir)
+
     def get_item_rankings(self):
         base_rankings = self.recommender.get_item_rankings()
         result = {}
