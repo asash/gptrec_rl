@@ -43,7 +43,7 @@ DATASET = "mts_kion"
 USERS = get_users
 ITEMS = get_items
 
-GENERATE_SUBMIT_THRESHOLD =  0.9
+GENERATE_SUBMIT_THRESHOLD =  009
 
 def generate_submit(recommender, recommender_name, evaluation_result, config):
     submit_user_ids = get_submission_user_ids()
