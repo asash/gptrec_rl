@@ -1,4 +1,5 @@
 import numpy as np
+from numpy import random
 from aprec.evaluation.samplers.random_sampler import RandomTargetItemSampler
 from aprec.recommenders.dnn_sequential_recommender.models.sasrec.sasrec import SASRec
 from aprec.recommenders.dnn_sequential_recommender.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
@@ -20,6 +21,7 @@ from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
 
 from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.evaluation.metrics.mrr import MRR
+from aprec.evaluation.metrics.map import MAP
 from aprec.evaluation.metrics.hit import HIT
 
 from tensorflow.keras.optimizers import Adam
@@ -67,23 +69,9 @@ def vanilla_bert4rec(time_limit):
 
 
 recommenders = {
-    "SASRec-bias:0.8-dropout:0.2-pct:0.2":  lambda dropout_rate=0.2,\
-         bias=0.8, max_pct=0.2 : dnn(
-            SASRec(max_history_len=200, 
-                            dropout_rate=dropout_rate,
-                            num_heads=1,
-                            num_blocks=2,
-                            embedding_size=50,
-                    ),
-            LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975),
-            lambda: RecencySequenceSampling(max_pct=max_pct, recency_importance=exponential_importance(bias)),
-            optimizer=Adam(beta_2=0.98),
-            target_builder=FullMatrixTargetsBuilder, 
-            metric=KerasNDCG(10),
-            ),
 
     "SASRec": lambda: dnn(
-            SASRec(max_history_len=200, 
+            SASRec(max_history_len=10, 
                             dropout_rate=0.2,
                             num_heads=1,
                             num_blocks=2,
@@ -102,7 +90,32 @@ recommenders = {
 
 }
 
-METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40)]
+
+for i in range(1000):
+    dropout = random.random() 
+    lambdarank_truncate = int(np.random.choice([1000, 2500, 5000, 10000, 20000, 35000]))
+    pct = random.random() 
+    bias = random.random()
+    name = f"SASRec-bias:{bias}-dropout:{dropout}-pct:{pct}-truncate:{lambdarank_truncate}"
+    
+    func = lambda dropout_rate=dropout,\
+         bias=bias, max_pct=pct, truncate=lambdarank_truncate : dnn(
+            SASRec(max_history_len=10, 
+                            dropout_rate=dropout_rate,
+                            num_heads=1,
+                            num_blocks=2,
+                            embedding_size=50,
+                    ),
+            LambdaGammaRankLoss(pred_truncate_at=truncate),
+            lambda: RecencySequenceSampling(max_pct=max_pct, recency_importance=exponential_importance(bias)),
+            optimizer=Adam(beta_2=0.98),
+            target_builder=FullMatrixTargetsBuilder, 
+            metric=KerasNDCG(10),
+            )
+    recommenders[name] = func
+
+
+METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
 TARGET_ITEMS_SAMPLER = RandomTargetItemSampler(101)
 
 def get_recommenders(filter_seen: bool):
