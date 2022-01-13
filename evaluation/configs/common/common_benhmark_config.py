@@ -28,7 +28,7 @@ from tensorflow.keras.optimizers import Adam
 
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 
-USERS_FRACTIONS = [1.]
+USERS_FRACTIONS = [0.1]
 
 def top_recommender():
     return TopRecommender()
@@ -59,19 +59,19 @@ def dnn(model_arch, loss, sequence_splitter,
                                                           targets_builder=target_builder, 
                                                           val_sequence_splitter = val_sequence_splitter,
                                                           metric=metric,
-                                                          debug=False
+                                                          debug=True
                                                           )
 
 def vanilla_bert4rec(time_limit):
     recommender = VanillaBERT4Rec(training_time_limit=time_limit, num_train_steps=10000000)
     return recommender
 
-
+HISTORY_LEN=10
 
 recommenders = {
 
     "SASRec": lambda: dnn(
-            SASRec(max_history_len=10, 
+            SASRec(max_history_len=HISTORY_LEN, 
                             dropout_rate=0.2,
                             num_heads=1,
                             num_blocks=2,
@@ -81,7 +81,7 @@ recommenders = {
             BCELoss(),
             ShiftedSequenceSplitter,
             optimizer=Adam(beta_2=0.98),
-            target_builder=lambda: NegativePerPositiveTargetBuilder(200), 
+            target_builder=lambda: NegativePerPositiveTargetBuilder(HISTORY_LEN), 
             metric=BCELoss(),
             ),
     "top": top_recommender, 
@@ -100,7 +100,7 @@ for i in range(1000):
     
     func = lambda dropout_rate=dropout,\
          bias=bias, max_pct=pct, truncate=lambdarank_truncate : dnn(
-            SASRec(max_history_len=10, 
+            SASRec(max_history_len=HISTORY_LEN, 
                             dropout_rate=dropout_rate,
                             num_heads=1,
                             num_blocks=2,
