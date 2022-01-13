@@ -94,7 +94,7 @@ class RecommendersEvaluator(object):
                  items=None,
                  experiment_config=None,
                  target_items_sampler: TargetItemSampler = None,
-                 filter_cold_start=True
+                 remove_cold_start=True
                  ):
         self.actions = actions
         self.metrics = metrics
@@ -106,7 +106,7 @@ class RecommendersEvaluator(object):
         self.n_val_users = n_val_users
         self.train, self.test = self.data_splitter(actions)
         self.save_split(self.train, self.test)
-        if filter_cold_start:
+        if remove_cold_start:
             self.test = filter_cold_start(self.train, self.test)
         self.users = users
         self.items = items

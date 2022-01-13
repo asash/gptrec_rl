@@ -103,7 +103,7 @@ def run_experiment(config):
                                                       items=items,
                                                       experiment_config=config,
                                                       target_items_sampler=target_items_sampler, 
-                                                      filter_cold_start=filter_cold_start
+                                                      remove_cold_start=filter_cold_start
                                                       )
 
         if  hasattr(config, 'FEATURES_FROM_TEST'):

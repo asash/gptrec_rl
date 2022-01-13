@@ -8,7 +8,7 @@ from aprec.recommenders.dnn_sequential_recommender.models.sasrec.sasrec import S
 from aprec.recommenders.dnn_sequential_recommender.models.sasrec.sasrec_kion import KionChallengeSASRec, KionSasrecModel
 from aprec.recommenders.dnn_sequential_recommender.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
 from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_per_positive_target import NegativePerPositiveTargetBuilder
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.biased_percentage_splitter import BiasedPercentageSplitter
+from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import RecencySequenceSampling
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import LastItemSplitter
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.random_fraction_splitter import RandomFractionSplitter
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
@@ -126,7 +126,7 @@ sasrec_biased = dnn(SASRec(max_history_len=50,
                             num_blocks=2,
                             embedding_size=50),
             LambdaGammaRankLoss(pred_truncate_at=4000),
-            sequence_splitter = lambda: BiasedPercentageSplitter(max_pct=0.2, bias=0.8),
+            sequence_splitter = lambda: RecencySequenceSampling(max_pct=0.2, bias=0.8),
             optimizer=Adam(beta_2=0.98),
             target_builder=FullMatrixTargetsBuilder, 
             metric=KerasNDCG(40))
@@ -169,10 +169,10 @@ all_recommenders = list(recommenders_raw.keys())
 
 
 RECOMMENDERS = {
-    #    "top_recommender": top_recommender,
+        "top_recommender": lambda: TopRecommender(0.01),
     }
-for model in all_recommenders:
-    RECOMMENDERS[model] = recommenders_raw[model]
+#for model in all_recommenders:
+   # RECOMMENDERS[model] = recommenders_raw[model]
 
 print(f"evaluating {len(RECOMMENDERS)} models")
 

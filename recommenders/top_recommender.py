@@ -25,6 +25,9 @@ class TopRecommender(Recommender):
     def recommend(self, user_id, limit, features=None):
         return self.most_common[:limit]
 
+    def get_metadata(self):
+        return {"top 20 items":  self.most_common[:20]}
+
 
     def get_similar_items(self, item_id, limit):
         return self.most_common[:limit]

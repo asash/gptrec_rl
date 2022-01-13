@@ -5,7 +5,7 @@ import random
 from collections import Counter
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import LastItemSplitter
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.random_fraction_splitter import RandomFractionSplitter
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.biased_percentage_splitter import BiasedPercentageSplitter
+from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import RecencySequenceSampling
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter 
 
 class TestItemSplitters(unittest.TestCase):
@@ -41,12 +41,12 @@ class TestItemSplitters(unittest.TestCase):
             expected = N / (len(sequence) - 1)
             self.assertAlmostEquals(abs(cnt - expected) / expected, 0.0, places=1)
 
-    def test_biased_percentage(self):
+    def test_recency_sequence_sampling_exp(self):
         sequence=list(range(5))
         bias = 0.5
         random.seed(31337)
         np.random.seed(31338)
-        splitter = BiasedPercentageSplitter(max_pct=0.0, bias = bias)
+        splitter = RecencySequenceSampling(max_pct=0.0, recency_importance= lambda n, k: 0.5 ** (n - k))
         N = 100000 
         target_counts = Counter() 
         for i in range(N):
@@ -61,11 +61,8 @@ class TestItemSplitters(unittest.TestCase):
             expected = bias
             self.assertAlmostEquals(rel, expected, places=1)
 
-    def test_biased_percentage(self):
-        bias = 0.85 
-        random.seed(31337)
-        np.random.seed(31338)
-        splitter = BiasedPercentageSplitter(max_pct=0.2, bias = bias)
+    def test_recency_sequence_sampling(self):
+        splitter = RecencySequenceSampling(max_pct=0.2)
         N = 10000 
         target_counts = Counter() 
         target_lens = Counter()
@@ -76,8 +73,8 @@ class TestItemSplitters(unittest.TestCase):
             for target in targets:
                 target_counts[target] +=1
             target_lens[len(targets)] +=1
-        self.assertEquals(target_lens.most_common(), [(5, 4519), (6, 2535), (4, 2466), (3, 461), (2, 19)])
-        self.assertEquals(target_counts.most_common(5),[(30, 6297), (29, 5590), (28, 4942), (27, 4495), (26, 3910)])
+        self.assertEquals(target_lens.most_common(), [(5, 4173), (4, 3300), (6, 1577), (3, 881), (2, 69)])
+        self.assertEquals(target_counts.most_common(5),[(30, 7411), (29, 6553), (28, 5699), (27, 4777), (26, 3977)])
 
     def test_shifted_sequence_splitter(self):
         sequence = [1, 2, 3, 4, 5]
@@ -90,3 +87,6 @@ class TestItemSplitters(unittest.TestCase):
         train, label = splitter.split(sequence)
         self.assertEquals(train, [3, 4])
         self.assertEquals(label, [4, 5])
+
+if __name__ == "__main__":
+    unittest.main()

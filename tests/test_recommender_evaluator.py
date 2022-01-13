@@ -29,8 +29,13 @@ class TestRecommenderEvaluator(unittest.TestCase):
         result = evaluator()['recommenders']['top_recommender']
         del(result["model_build_time"])
         del(result["model_inference_time"])
-        self.assertEqual(result,
-              {'precision@5': 0.0078125, 'sampled_metrics': {'precision@5': 0.039062500000000014},'model_metadata': {}})
+        self.assertEqual(result, 
+                {'precision@5': 0.0078125, 'sampled_metrics': {'precision@5': 0.039062500000000014},
+                'model_metadata': {"top 20 items": [("318", 556), ("296", 523), ("356", 501), ("593", 493),
+                ("260", 425), ("50", 410), ("527", 407), ("2571", 403),
+                ("110", 372), ("1196", 356), ("457", 355), ("1198", 355), 
+                ("2858", 349), ("589", 341), ("608", 339), ("1210", 338),
+                ("1", 334), ("858", 334), ("47", 324), ("2959", 321)]}})
         
 if __name__ == "__main__":
     unittest.main()
