@@ -28,7 +28,7 @@ from tensorflow.keras.optimizers import Adam
 
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 
-USERS_FRACTIONS = [0.1]
+USERS_FRACTIONS = [1.0]
 
 def top_recommender():
     return TopRecommender()
