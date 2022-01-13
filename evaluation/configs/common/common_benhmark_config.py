@@ -59,7 +59,7 @@ def dnn(model_arch, loss, sequence_splitter,
                                                           targets_builder=target_builder, 
                                                           val_sequence_splitter = val_sequence_splitter,
                                                           metric=metric,
-                                                          debug=True
+                                                          debug=False
                                                           )
 
 def vanilla_bert4rec(time_limit):
