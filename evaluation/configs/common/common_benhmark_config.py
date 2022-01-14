@@ -50,7 +50,7 @@ def dnn(model_arch, loss, sequence_splitter,
                 val_sequence_splitter=LastItemSplitter, 
                  target_builder=FullMatrixTargetsBuilder,
                 optimizer=Adam(),
-                training_time_limit=1200, metric=KerasNDCG(40), 
+                training_time_limit=3600, metric=KerasNDCG(40), 
                 max_epochs=10000
                 ):
     return DNNSequentialRecommender(train_epochs=max_epochs, loss=loss,
@@ -70,9 +70,12 @@ def vanilla_bert4rec(time_limit):
     recommender = VanillaBERT4Rec(training_time_limit=time_limit, num_train_steps=10000000)
     return recommender
 
-HISTORY_LEN=200
+HISTORY_LEN=50
 
 recommenders = {
+    "top": top_recommender, 
+    "mf-bpr": lambda: lightfm_recommender(128, 'bpr'),
+
     "SASRec-vanilla": lambda: dnn(
             SASRec(max_history_len=HISTORY_LEN, 
                             dropout_rate=0.2,
@@ -393,8 +396,7 @@ recommenders = {
             metric=KerasNDCG(40), 
             ),
 
-    "top": top_recommender, 
-    "mf-bpr": lambda: lightfm_recommender(128, 'bpr'),
+
 }
 
 
