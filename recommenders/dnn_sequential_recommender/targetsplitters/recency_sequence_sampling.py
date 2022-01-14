@@ -4,6 +4,9 @@ from random import Random
 def exponential_importance(p):
     return lambda n, k: p**(n - k)
 
+def linear_importance(a=1, b=1):
+    return lambda n, k: a*k+b
+
 class RecencySequenceSampling(TargetSplitter):
     #recency importance is a function that defines the chances of k-th element 
     #to be sampled as a positive in the sequence of the length n

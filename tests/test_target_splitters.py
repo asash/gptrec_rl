@@ -4,6 +4,7 @@ import numpy as np
 import random
 from collections import Counter
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import LastItemSplitter
+from aprec.recommenders.dnn_sequential_recommender.targetsplitters.random_splitter import RandomSplitter
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.random_fraction_splitter import RandomFractionSplitter
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import RecencySequenceSampling
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter 
@@ -75,6 +76,21 @@ class TestItemSplitters(unittest.TestCase):
             target_lens[len(targets)] +=1
         self.assertEquals(target_lens.most_common(), [(5, 4173), (4, 3300), (6, 1577), (3, 881), (2, 69)])
         self.assertEquals(target_counts.most_common(5),[(30, 7411), (29, 6553), (28, 5699), (27, 4777), (26, 3977)])
+
+
+    def test_random_spliter(self):
+        N=1000
+        sequence = list(range(N)) 
+        splitter = RandomSplitter()
+        input, target = splitter.split(sequence)
+        self.assertEquals(len(target), 235)
+
+        #all elements are at least in one sequence
+        self.assertEquals(len(set(input).union(set(target))), N)
+
+        #all no element is presented in both 
+        self.assertEquals(len(set(input).intersection(set(target))), 0)
+
 
     def test_shifted_sequence_splitter(self):
         sequence = [1, 2, 3, 4, 5]
