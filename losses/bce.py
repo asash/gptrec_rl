@@ -20,8 +20,4 @@ class BCELoss(Loss):
         num_targets = tf.reduce_sum(is_target)
         ce_sum = tf.reduce_sum(pos + neg)
         res_sum = tf.math.divide_no_nan(ce_sum, num_targets)
-        # K.print_tensor(y_true, "y_true", summarize=100000000)
-        # K.print_tensor(y_pred, "y_pred", summarize=10000000)
-        # K.print_tensor(pos, "pos", summarize=100000000)
-        # K.print_tensor(pos, "neg", summarize=1000000000)
         return res_sum
