@@ -46,7 +46,7 @@ def dnn(model_arch, loss, sequence_splitter,
                 val_sequence_splitter=LastItemSplitter, 
                  target_builder=FullMatrixTargetsBuilder,
                 optimizer=Adam(),
-                training_time_limit=3600, metric=KerasNDCG(40), 
+                training_time_limit=1200, metric=KerasNDCG(40), 
                 max_epochs=10000
                 ):
     return DNNSequentialRecommender(train_epochs=max_epochs, loss=loss,
@@ -93,11 +93,10 @@ recommenders = {
 
 for i in range(1000):
     dropout = random.random() 
-    lambdarank_truncate = int(np.random.choice([1000, 2500, 5000, 10000, 20000, 35000]))
-    pct = random.random() 
-    bias = random.random()
+    lambdarank_truncate = int(np.random.choice([5000]))
+    pct = np.random.choice([0.1, 0.2, 0.3, 0.4, 0.5, 0.6]) 
+    bias = np.random.choice(0.0, 0.001, 0.01, 0.05, 0.1, 0.15, 0.2) 
     name = f"SASRec-bias:{bias}-dropout:{dropout}-pct:{pct}-truncate:{lambdarank_truncate}"
-    
     func = lambda dropout_rate=dropout,\
          bias=bias, max_pct=pct, truncate=lambdarank_truncate : dnn(
             SASRec(max_history_len=HISTORY_LEN, 
