@@ -90,6 +90,31 @@ recommenders = {
             target_builder=lambda: NegativePerPositiveTargetBuilder(HISTORY_LEN), 
             metric=BCELoss(),
             ),
+    "GRU4rec-rssLinear-bce": lambda: dnn(
+            GRU4Rec(max_history_len=HISTORY_LEN),
+            BCELoss(),
+            lambda: RecencySequenceSampling(0.2, linear_importance()),
+            optimizer=Adam(beta_2=0.98),
+            target_builder=FullMatrixTargetsBuilder, 
+            metric=KerasNDCG(40), 
+            ),
+
+    "Caser-rssLinear-bce": lambda: dnn(
+            Caser(max_history_len=HISTORY_LEN, requires_user_id=False),
+            BCELoss(),
+            lambda: RecencySequenceSampling(0.2, linear_importance()),
+            optimizer=Adam(beta_2=0.98),
+            target_builder=FullMatrixTargetsBuilder, 
+            metric=KerasNDCG(40), 
+            ),
+    "Sasrec-rssLinear-bce": lambda: dnn(
+            SASRec(max_history_len=HISTORY_LEN, vanilla=False),
+            BCELoss(),
+            lambda: RecencySequenceSampling(0.2, linear_importance()),
+            optimizer=Adam(beta_2=0.98),
+            target_builder=FullMatrixTargetsBuilder, 
+            metric=KerasNDCG(40), 
+            ),
 
     "GRU4rec-continuation-bce": lambda: dnn(
             GRU4Rec(max_history_len=HISTORY_LEN),
@@ -167,30 +192,7 @@ recommenders = {
             metric=KerasNDCG(40), 
             ),
 
-    "GRU4rec-rssLinear-bce": lambda: dnn(
-            GRU4Rec(max_history_len=HISTORY_LEN),
-            BCELoss(),
-            lambda: RecencySequenceSampling(0.2, linear_importance()),
-            optimizer=Adam(beta_2=0.98),
-            target_builder=FullMatrixTargetsBuilder, 
-            metric=KerasNDCG(40), 
-            ),
-    "Caser-rssLinear-bce": lambda: dnn(
-            Caser(max_history_len=HISTORY_LEN, requires_user_id=False),
-            BCELoss(),
-            lambda: RecencySequenceSampling(0.2, linear_importance()),
-            optimizer=Adam(beta_2=0.98),
-            target_builder=FullMatrixTargetsBuilder, 
-            metric=KerasNDCG(40), 
-            ),
-    "Sasrec-rssLinear-bce": lambda: dnn(
-            SASRec(max_history_len=HISTORY_LEN, vanilla=False),
-            BCELoss(),
-            lambda: RecencySequenceSampling(0.2, linear_importance()),
-            optimizer=Adam(beta_2=0.98),
-            target_builder=FullMatrixTargetsBuilder, 
-            metric=KerasNDCG(40), 
-            ),
+
 
 #bpr
     "GRU4rec-continuation-bpr": lambda: dnn(
