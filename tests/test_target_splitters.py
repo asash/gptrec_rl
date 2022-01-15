@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 import random
 from collections import Counter
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import LastItemSplitter
+from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import SequenceContinuation
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.random_splitter import RandomSplitter
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.random_fraction_splitter import RandomFractionSplitter
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import RecencySequenceSampling
@@ -12,7 +12,7 @@ from aprec.recommenders.dnn_sequential_recommender.targetsplitters.shifted_seque
 class TestItemSplitters(unittest.TestCase):
     def test_last_item_splitter(self):
         sequence=[1, 2, 3, 4, 5, 6, 7, 8, 9] 
-        splitter = LastItemSplitter()
+        splitter = SequenceContinuation()
         for i in range(100):
             train, label = splitter.split(sequence)
             self.assertEquals(len(train), 8)
@@ -74,8 +74,8 @@ class TestItemSplitters(unittest.TestCase):
             for target in targets:
                 target_counts[target] +=1
             target_lens[len(targets)] +=1
-        self.assertEquals(target_lens.most_common(), [(5, 4173), (4, 3300), (6, 1577), (3, 881), (2, 69)])
-        self.assertEquals(target_counts.most_common(5),[(30, 7411), (29, 6553), (28, 5699), (27, 4777), (26, 3977)])
+        self.assertEquals(target_lens.most_common(), [(5, 4098), (4, 3316), (6, 1544), (3, 965), (2, 77)])
+        self.assertEquals(target_counts.most_common(5),[(30, 7391), (29, 6416), (28, 5638), (27, 4719), (26, 3973)])
 
 
     def test_random_spliter(self):

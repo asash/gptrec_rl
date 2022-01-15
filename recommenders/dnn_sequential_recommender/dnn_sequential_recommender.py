@@ -8,7 +8,7 @@ import tensorflow as tf
 
 from tqdm import tqdm
 from aprec.recommenders.dnn_sequential_recommender.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import LastItemSplitter
+from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import SequenceContinuation
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.random_fraction_splitter import RandomFractionSplitter
 
 from aprec.utils.item_id import ItemId
@@ -31,7 +31,7 @@ class DNNSequentialRecommender(Recommender):
                  items_featurizer=None,
                  train_epochs=300, optimizer=Adam(),
                  sequence_splitter = RandomFractionSplitter, 
-                 val_sequence_splitter = LastItemSplitter,
+                 val_sequence_splitter = SequenceContinuation,
                  targets_builder = FullMatrixTargetsBuilder,
                  batch_size=1000, early_stop_epochs=100, target_decay=1.0,
                  training_time_limit=None, debug=False,

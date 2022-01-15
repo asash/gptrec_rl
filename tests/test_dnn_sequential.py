@@ -2,7 +2,7 @@ from aprec.losses.bce import BCELoss
 from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_per_positive_target import NegativePerPositiveTargetBuilder
 from aprec.recommenders.dnn_sequential_recommender.target_builders.sampled_matrix_target_builder import SampledMatrixBuilder
 from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import LastItemSplitter
+from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import SequenceContinuation
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.datasets.movielens20m import get_movielens20m_actions
@@ -56,7 +56,7 @@ class TestDnnSequentialRecommender(unittest.TestCase):
         model = SASRec(embedding_size=32)
         recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=50000,
                                                batch_size=5,
-                                               training_time_limit=10, debug=True, sequence_splitter=LastItemSplitter)
+                                               training_time_limit=10, debug=True, sequence_splitter=SequenceContinuation)
         recommender.set_val_users(val_users)
         recommender = FilterSeenRecommender(recommender)
         for action in generator_limit(get_movielens20m_actions(), 10000):
@@ -71,7 +71,7 @@ class TestDnnSequentialRecommender(unittest.TestCase):
         recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=50000,
                                                batch_size=5,
                                                training_time_limit=10, 
-                                               debug=True, sequence_splitter=LastItemSplitter, 
+                                               debug=True, sequence_splitter=SequenceContinuation, 
                                                targets_builder=SampledMatrixBuilder)
         recommender.set_val_users(val_users)
         recommender = FilterSeenRecommender(recommender)
@@ -106,7 +106,7 @@ class TestDnnSequentialRecommender(unittest.TestCase):
         model = SASRec(embedding_size=32, reuse_item_embeddings=False, encode_output_embeddings=True)
         recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=50000,
                                                batch_size=5,
-                                               training_time_limit=10, debug=True, sequence_splitter=LastItemSplitter)
+                                               training_time_limit=10, debug=True, sequence_splitter=SequenceContinuation)
         recommender.set_val_users(val_users)
         recommender = FilterSeenRecommender(recommender)
         for action in generator_limit(get_movielens20m_actions(), 10000):

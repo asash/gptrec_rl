@@ -9,7 +9,7 @@ from aprec.recommenders.dnn_sequential_recommender.models.sasrec.sasrec_kion imp
 from aprec.recommenders.dnn_sequential_recommender.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
 from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_per_positive_target import NegativePerPositiveTargetBuilder
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import RecencySequenceSampling
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import LastItemSplitter
+from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import SequenceContinuation
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.random_fraction_splitter import RandomFractionSplitter
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
 from aprec.recommenders.kion_challenge_featurizer import KionChallengeFeaturizer
@@ -75,7 +75,7 @@ def top_recommender():
     return FilterSeenRecommender(TopRecommender())
 
 def dnn(model_arch, loss, sequence_splitter, 
-                val_sequence_splitter=LastItemSplitter, 
+                val_sequence_splitter=SequenceContinuation, 
                  target_builder=FullMatrixTargetsBuilder,
                 optimizer=Adam(),
                 training_time_limit=3600, metric=KerasNDCG(40), 
@@ -99,7 +99,7 @@ def dnn(model_arch, loss, sequence_splitter,
 
 caser_default = dnn(Caser(requires_user_id=False, user_extra_features=True),
                                                                          loss=LambdaGammaRankLoss(pred_truncate_at=2500, bce_grad_weight=0.975),
-                                                                         sequence_splitter=LastItemSplitter,
+                                                                         sequence_splitter=SequenceContinuation,
                                                                          user_hasher=HashingFeaturizer())
 
 caser_random_fraction = dnn(Caser(requires_user_id=False, user_extra_features=True),

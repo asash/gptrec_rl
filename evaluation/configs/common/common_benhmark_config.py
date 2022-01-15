@@ -5,7 +5,7 @@ from aprec.recommenders.dnn_sequential_recommender.models.gru4rec import GRU4Rec
 from aprec.recommenders.dnn_sequential_recommender.models.caser import Caser
 from aprec.recommenders.dnn_sequential_recommender.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
 from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_per_positive_target import NegativePerPositiveTargetBuilder
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import LastItemSplitter
+from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import SequenceContinuation
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.random_splitter import RandomSplitter
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import RecencySequenceSampling, linear_importance
@@ -47,7 +47,7 @@ def lightfm_recommender(k, loss):
 
 
 def dnn(model_arch, loss, sequence_splitter, 
-                val_sequence_splitter=LastItemSplitter, 
+                val_sequence_splitter=SequenceContinuation, 
                  target_builder=FullMatrixTargetsBuilder,
                 optimizer=Adam(),
                 training_time_limit=3600, metric=KerasNDCG(40), 
@@ -94,7 +94,7 @@ recommenders = {
     "GRU4rec-continuation-bce": lambda: dnn(
             GRU4Rec(max_history_len=HISTORY_LEN),
             BCELoss(),
-            LastItemSplitter,
+            SequenceContinuation,
             optimizer=Adam(beta_2=0.98),
             target_builder=FullMatrixTargetsBuilder, 
             metric=KerasNDCG(40), 
@@ -102,7 +102,7 @@ recommenders = {
     "Caser-continuation-bce": lambda: dnn(
             Caser(max_history_len=HISTORY_LEN, requires_user_id=False),
             BCELoss(),
-            LastItemSplitter,
+            SequenceContinuation,
             optimizer=Adam(beta_2=0.98),
             target_builder=FullMatrixTargetsBuilder, 
             metric=KerasNDCG(40), 
@@ -110,7 +110,7 @@ recommenders = {
     "Sasrec-continuation-bce": lambda: dnn(
             SASRec(max_history_len=HISTORY_LEN, vanilla=False),
             BCELoss(),
-            LastItemSplitter,
+            SequenceContinuation,
             optimizer=Adam(beta_2=0.98),
             target_builder=FullMatrixTargetsBuilder, 
             metric=KerasNDCG(40), 
@@ -196,7 +196,7 @@ recommenders = {
     "GRU4rec-continuation-bpr": lambda: dnn(
             GRU4Rec(max_history_len=HISTORY_LEN),
             BPRLoss(pred_truncate=4000),
-            LastItemSplitter,
+            SequenceContinuation,
             optimizer=Adam(beta_2=0.98),
             target_builder=FullMatrixTargetsBuilder, 
             metric=KerasNDCG(40), 
@@ -204,7 +204,7 @@ recommenders = {
     "Caser-continuation-bpr": lambda: dnn(
             Caser(max_history_len=HISTORY_LEN, requires_user_id=False),
             BPRLoss(pred_truncate=4000),
-            LastItemSplitter,
+            SequenceContinuation,
             optimizer=Adam(beta_2=0.98),
             target_builder=FullMatrixTargetsBuilder, 
             metric=KerasNDCG(40), 
@@ -212,7 +212,7 @@ recommenders = {
     "Sasrec-continuation-bpr": lambda: dnn(
             SASRec(max_history_len=HISTORY_LEN, vanilla=False),
             BPRLoss(pred_truncate=4000),
-            LastItemSplitter,
+            SequenceContinuation,
             optimizer=Adam(beta_2=0.98),
             target_builder=FullMatrixTargetsBuilder, 
             metric=KerasNDCG(40), 
@@ -298,7 +298,7 @@ recommenders = {
     "GRU4rec-continuation-lambdarank": lambda: dnn(
             GRU4Rec(max_history_len=HISTORY_LEN),
             LambdaGammaRankLoss(pred_truncate_at=4000),
-            LastItemSplitter,
+            SequenceContinuation,
             optimizer=Adam(beta_2=0.98),
             target_builder=FullMatrixTargetsBuilder, 
             metric=KerasNDCG(40), 
@@ -306,7 +306,7 @@ recommenders = {
     "Caser-continuation-lambdarank": lambda: dnn(
             Caser(max_history_len=HISTORY_LEN, requires_user_id=False),
             LambdaGammaRankLoss(pred_truncate_at=4000),
-            LastItemSplitter,
+            SequenceContinuation,
             optimizer=Adam(beta_2=0.98),
             target_builder=FullMatrixTargetsBuilder, 
             metric=KerasNDCG(40), 
@@ -314,7 +314,7 @@ recommenders = {
     "Sasrec-continuation-lambdarank": lambda: dnn(
             SASRec(max_history_len=HISTORY_LEN, vanilla=False),
             LambdaGammaRankLoss(pred_truncate_at=4000),
-            LastItemSplitter,
+            SequenceContinuation,
             optimizer=Adam(beta_2=0.98),
             target_builder=FullMatrixTargetsBuilder, 
             metric=KerasNDCG(40), 

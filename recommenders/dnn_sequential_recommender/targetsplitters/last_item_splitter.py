@@ -1,13 +1,13 @@
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.targetsplitter import TargetSplitter
 
 
-class LastItemSplitter(TargetSplitter):
+class SequenceContinuation(TargetSplitter):
     def __init__(self) -> None:
         super().__init__()
     
-    def split(self, sequence):
+    def split(self, sequence, max_targets=1):
         if len(sequence) == 0:
             return [], []
-        train = sequence[:-1]
-        target = sequence[-1:]
+        train = sequence[:-max_targets]
+        target = sequence[-max_targets:]
         return train, target
