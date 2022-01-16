@@ -88,7 +88,7 @@ def get_recommender(model, bias):
     name = f"{model}-rssExp:{bias}-lambdarank"
     recommender = lambda arch=arch, bias=bias: dnn(
             arch,
-            loss
+            loss,
             lambda: RecencySequenceSampling(0.2, exponential_importance(bias)),
             optimizer=Adam(beta_2=0.98),
             target_builder=FullMatrixTargetsBuilder, 
