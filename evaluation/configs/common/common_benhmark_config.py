@@ -78,14 +78,17 @@ recommenders = {
 def get_recommender(model, bias):
     if model == 'Caser':
         arch = Caser(max_history_len=HISTORY_LEN, requires_user_id=False)
+        loss = BCELoss()
     if model == 'SASRec':
         arch = SASRec(max_history_len=HISTORY_LEN, vanilla=False)
+        loss=LambdaGammaRankLoss(pred_truncate_at=4000)
     if model == 'GRU4rec':
-        arch = GRU4Rec(max_history_len=HISTORY_LEN),
+        arch = GRU4Rec(max_history_len=HISTORY_LEN)
+        loss=LambdaGammaRankLoss(pred_truncate_at=4000)
     name = f"{model}-rssExp:{bias}-lambdarank"
     recommender = lambda arch=arch, bias=bias: dnn(
             arch,
-            LambdaGammaRankLoss(pred_truncate_at=4000),
+            loss
             lambda: RecencySequenceSampling(0.2, exponential_importance(bias)),
             optimizer=Adam(beta_2=0.98),
             target_builder=FullMatrixTargetsBuilder, 
@@ -94,8 +97,8 @@ def get_recommender(model, bias):
     return name, recommender
 
 
-for bias in [0.01, 0.1, 0.2, 0.4, 0.8, 1.0]:
-    for model in ["Caser", "GRU4rec", "SASRec"]:
+for bias in [1.0, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.6, 0.4, 0.3, 0.2, 0.1, 0.01]:
+    for model in ["Caser-bce", "GRU4rec-lambdarank", "SASRec-lambdarank"]:
         name, recommender_func = get_recommender(model, bias)
         recommenders[name] = recommender_func
 
