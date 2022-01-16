@@ -76,13 +76,13 @@ recommenders = {
 }
 
 def get_recommender(model, bias):
-    if model == 'Caser':
+    if model == 'Caser-bce':
         arch = Caser(max_history_len=HISTORY_LEN, requires_user_id=False)
         loss = BCELoss()
-    if model == 'SASRec':
+    if model == 'SASRec-lambdarank':
         arch = SASRec(max_history_len=HISTORY_LEN, vanilla=False)
         loss=LambdaGammaRankLoss(pred_truncate_at=4000)
-    if model == 'GRU4rec':
+    if model == 'GRU4rec-lambdarank':
         arch = GRU4Rec(max_history_len=HISTORY_LEN)
         loss=LambdaGammaRankLoss(pred_truncate_at=4000)
     name = f"{model}-rssExp:{bias}-lambdarank"
