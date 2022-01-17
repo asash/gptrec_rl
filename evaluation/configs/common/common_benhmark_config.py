@@ -73,7 +73,16 @@ def vanilla_bert4rec(time_limit):
 HISTORY_LEN=50
 
 recommenders = {
+    "Sasrec-continuation-bce": lambda: dnn(
+            SASRec(max_history_len=HISTORY_LEN, vanilla=False),
+            BCELoss(),
+            SequenceContinuation,
+            optimizer=Adam(beta_2=0.98),
+            target_builder=FullMatrixTargetsBuilder, 
+            metric=KerasNDCG(40), 
+            ),
 }
+
 
 def get_recommender(model, bias):
     if model == 'Caser-bce':
@@ -97,8 +106,9 @@ def get_recommender(model, bias):
     return name, recommender
 
 
-for bias in [1.0, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.6, 0.4, 0.3, 0.2, 0.1, 0.01]:
-    for model in ["Caser-bce", "GRU4rec-lambdarank", "SASRec-lambdarank"]:
+for i in range(100)
+    bias = random.random()
+    for model in ["SASRec-lambdarank"]:
         name, recommender_func = get_recommender(model, bias)
         recommenders[name] = recommender_func
 

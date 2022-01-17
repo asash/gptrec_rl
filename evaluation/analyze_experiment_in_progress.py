@@ -91,6 +91,7 @@ if __name__ == "__main__":
         experiment_logs_file = sys.argv[1]
     data = get_data_from_logs(experiment_logs_file, 0)
     df = pd.DataFrame(data).set_index('model_name')
+    ranks = range(1, len(df) + 1)
     if len(sys.argv) > 2:
         main_metric = sys.argv[2]
     else:
@@ -99,6 +100,7 @@ if __name__ == "__main__":
 
     df = df.sort_values(main_metric)
     
+    df.insert(loc=0, column=f'rank by {main_metric}', value=ranks)
     try:
         del df['model_metadata']    
     except:
@@ -121,6 +123,7 @@ if __name__ == "__main__":
 
         del(df['sampled_metrics'])
         sampled_metrics_df = pd.DataFrame(sampled_metrics, index=df.index).sort_values(main_metric)
+        sampled_metrics_df.insert(loc=0, column=f'rank by {main_metric}', value=ranks)
         print("sampled metrics: ")
         print(sampled_metrics_df)
         print("\n\n\n")
