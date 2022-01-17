@@ -1,4 +1,5 @@
 from collections import Counter
+import gzip
 import logging
 import os
 
@@ -23,6 +24,19 @@ def unzip(zipped_file, unzip_dir):
         mkdir_p(full_dir_name)
         shell(f"unzip -o {zipped_file} -d {full_dir_name}")
     return full_dir_name
-    
-    
+
+def gunzip(gzip_file):
+    full_file_name = os.path.abspath(gzip_file)
+    if not(gzip_file.endswith(".gz")):
+        raise Exception(f"{gzip_file} is not a gzip file")
+    unzipped_file_name = full_file_name[:-3]
+    if os.path.isfile(unzipped_file_name):
+        logging.info(f"{unzipped_file_name} already exists, skipping")
+        return unzipped_file_name
+
+    with gzip.open(full_file_name) as input:
+        data = input.read()
+        with open(unzipped_file_name, 'wb') as output:
+            output.write(data)
+    return unzipped_file_name 
     
