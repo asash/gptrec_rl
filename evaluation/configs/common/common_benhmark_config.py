@@ -106,7 +106,7 @@ def get_recommender(model, bias):
     return name, recommender
 
 
-for i in range(100)
+for i in range(100):
     bias = random.random()
     for model in ["SASRec-lambdarank"]:
         name, recommender_func = get_recommender(model, bias)
