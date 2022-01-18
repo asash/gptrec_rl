@@ -73,6 +73,14 @@ def vanilla_bert4rec(time_limit):
 HISTORY_LEN=50
 
 recommenders = {
+    "Sasrec-vanilla": lambda: dnn(
+            SASRec(max_history_len=HISTORY_LEN, vanilla=True),
+            BCELoss(),
+            ShiftedSequenceSplitter,
+            optimizer=Adam(beta_2=0.98),
+            target_builder=lambda: NegativePerPositiveTargetBuilder(HISTORY_LEN), 
+            metric=KerasNDCG(40), 
+            ),
     "Sasrec-continuation-bce": lambda: dnn(
             SASRec(max_history_len=HISTORY_LEN, vanilla=False),
             BCELoss(),

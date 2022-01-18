@@ -20,6 +20,8 @@ class RecencySequenceSampling(TargetSplitter):
 
     
     def split(self, sequence):
+        if len(sequence) == 0:
+            return [], []
         target = set() 
         cnt = max(1, int(len(sequence)*self.max_pct))
         f = lambda j: self.recency_iportnace(len(sequence), j)
