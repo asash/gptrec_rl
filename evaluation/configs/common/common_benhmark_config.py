@@ -73,22 +73,24 @@ def vanilla_bert4rec(time_limit):
 HISTORY_LEN=50
 
 recommenders = {
-    "Sasrec-vanilla": lambda: dnn(
-            SASRec(max_history_len=HISTORY_LEN, vanilla=True),
-            BCELoss(),
-            ShiftedSequenceSplitter,
-            optimizer=Adam(beta_2=0.98),
-            target_builder=lambda: NegativePerPositiveTargetBuilder(HISTORY_LEN), 
-            metric=KerasNDCG(40), 
-            ),
-    "Sasrec-continuation-bce": lambda: dnn(
-            SASRec(max_history_len=HISTORY_LEN, vanilla=False),
-            BCELoss(),
-            SequenceContinuation,
-            optimizer=Adam(beta_2=0.98),
-            target_builder=FullMatrixTargetsBuilder, 
-            metric=KerasNDCG(40), 
-            ),
+    "mf-bpr": lambda: lightfm_recommender(128), 
+    "top": lambda: top_recommender()
+    # "Sasrec-vanilla": lambda: dnn(
+    #         SASRec(max_history_len=HISTORY_LEN, vanilla=True),
+    #         BCELoss(),
+    #         ShiftedSequenceSplitter,
+    #         optimizer=Adam(beta_2=0.98),
+    #         target_builder=lambda: NegativePerPositiveTargetBuilder(HISTORY_LEN), 
+    #         metric=KerasNDCG(40), 
+    #         ),
+    # "Sasrec-continuation-bce": lambda: dnn(
+    #         SASRec(max_history_len=HISTORY_LEN, vanilla=False),
+    #         BCELoss(),
+    #         SequenceContinuation,
+    #         optimizer=Adam(beta_2=0.98),
+    #         target_builder=FullMatrixTargetsBuilder, 
+    #         metric=KerasNDCG(40), 
+    #         ),
 }
 
 
@@ -114,7 +116,7 @@ def get_recommender(model, bias):
     return name, recommender
 
 
-for i in range(100):
+for i in range(0):
     bias = random.random()
     for model in ["SASRec-lambdarank"]:
         name, recommender_func = get_recommender(model, bias)
