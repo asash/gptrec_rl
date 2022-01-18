@@ -73,41 +73,22 @@ def vanilla_bert4rec(time_limit):
 HISTORY_LEN=50
 
 recommenders = {
-    "mf-bpr": lambda: lightfm_recommender(128), 
-    "top": lambda: top_recommender()
-    # "Sasrec-vanilla": lambda: dnn(
-    #         SASRec(max_history_len=HISTORY_LEN, vanilla=True),
-    #         BCELoss(),
-    #         ShiftedSequenceSplitter,
-    #         optimizer=Adam(beta_2=0.98),
-    #         target_builder=lambda: NegativePerPositiveTargetBuilder(HISTORY_LEN), 
-    #         metric=KerasNDCG(40), 
-    #         ),
-    # "Sasrec-continuation-bce": lambda: dnn(
-    #         SASRec(max_history_len=HISTORY_LEN, vanilla=False),
-    #         BCELoss(),
-    #         SequenceContinuation,
-    #         optimizer=Adam(beta_2=0.98),
-    #         target_builder=FullMatrixTargetsBuilder, 
-    #         metric=KerasNDCG(40), 
-    #         ),
 }
 
-
 def get_recommender(model, bias):
-    if model == 'Caser-bce':
+    if model == 'Caser':
         arch = Caser(max_history_len=HISTORY_LEN, requires_user_id=False)
         loss = BCELoss()
-    if model == 'SASRec-lambdarank':
+    if model == 'SASRec':
         arch = SASRec(max_history_len=HISTORY_LEN, vanilla=False)
         loss=LambdaGammaRankLoss(pred_truncate_at=4000)
-    if model == 'GRU4rec-lambdarank':
+    if model == 'GRU4rec':
         arch = GRU4Rec(max_history_len=HISTORY_LEN)
         loss=LambdaGammaRankLoss(pred_truncate_at=4000)
     name = f"{model}-rssExp:{bias}-lambdarank"
     recommender = lambda arch=arch, bias=bias: dnn(
             arch,
-            loss,
+            loss
             lambda: RecencySequenceSampling(0.2, exponential_importance(bias)),
             optimizer=Adam(beta_2=0.98),
             target_builder=FullMatrixTargetsBuilder, 
@@ -116,9 +97,8 @@ def get_recommender(model, bias):
     return name, recommender
 
 
-for i in range(0):
-    bias = random.random()
-    for model in ["SASRec-lambdarank"]:
+for bias in [1.0, 0.9, 0.8,  0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.01]:
+    for model in ["Caser-bce", "GRU4rec-lambdarank", "SASRec-lambdarank"]:
         name, recommender_func = get_recommender(model, bias)
         recommenders[name] = recommender_func
 
