@@ -73,8 +73,8 @@ def vanilla_bert4rec(time_limit):
 HISTORY_LEN=50
 
 recommenders = {
-    "bert4rec-1h": lambda: vanilla_bert4rec(3600), 
-    "bert4rec-16h": lambda: vanilla_bert4rec(3600*16)
+#    "bert4rec-1h": lambda: vanilla_bert4rec(3600), 
+#    "bert4rec-16h": lambda: vanilla_bert4rec(3600*16)
 }
 
 def get_recommender(model, bias):
@@ -99,10 +99,10 @@ def get_recommender(model, bias):
     return name, recommender
 
 
-# for bias in [1.0, 0.9, 0.8,  0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.01]:
-#     for model in ["Caser-bce", "GRU4rec-lambdarank", "SASRec-lambdarank"]:
-#         name, recommender_func = get_recommender(model, bias)
-#         recommenders[name] = recommender_func
+for bias in [1.0, 0.9, 0.8,  0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.01]:
+     for model in ["Caser-bce", "GRU4rec-lambdarank", "SASRec-lambdarank"]:
+         name, recommender_func = get_recommender(model, bias)
+         recommenders[name] = recommender_func
 
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
