@@ -71,8 +71,24 @@ def vanilla_bert4rec(time_limit):
     return recommender
 
 HISTORY_LEN=50
+def vanilla_sasrec():
+        return  dnn(
+            SASRec(max_history_len=HISTORY_LEN, 
+                            dropout_rate=0.2,
+                            num_heads=1,
+                            num_blocks=2,
+                            vanilla=True, 
+                            embedding_size=50,
+                    ),
+            BCELoss(),
+            ShiftedSequenceSplitter,
+            optimizer=Adam(beta_2=0.98),
+            target_builder=lambda: NegativePerPositiveTargetBuilder(HISTORY_LEN), 
+            metric=BCELoss(),
+            )
 
 recommenders = {
+    "SASRec-vanilla": vanilla_sasrec
 #    "bert4rec-1h": lambda: vanilla_bert4rec(3600), 
 #    "bert4rec-16h": lambda: vanilla_bert4rec(3600*16)
 }
