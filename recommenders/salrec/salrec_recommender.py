@@ -121,7 +121,7 @@ class SalrecRecommender(Recommender):
             self.max_user_feature_hashes = int(np.max([len(self.user_features[user])
                                                    for user in self.user_features]))
 
-        train_users, train_ids, train_user_features,  val_users, fal_features,val_user_features = self.train_val_split()
+        train_users, train_ids, train_user_features,  val_users, val_ids ,val_user_features = self.train_val_split()
         print("train_users: {}, val_users:{}, items:{}".format(len(train_users), len(val_users), self.items.size()))
         val_generator = DataGenerator(val_users, self.max_history_length, self.items.size(),
                                       val_user_features,
@@ -165,7 +165,7 @@ class SalrecRecommender(Recommender):
         for epoch in range(self.train_epochs):
             val_generator.current_position=0
             generator = DataGenerator(train_users, self.max_history_length, self.items.size(),
-                                              val_user_features,
+                                              train_user_features,
                                               self.max_user_feature_hashes,
                                               batch_size=self.batch_size, target_decay=self.target_decay,
                                               num_actions_to_predict=self.num_target_predictions,
