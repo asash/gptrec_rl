@@ -71,7 +71,7 @@ def vanilla_bert4rec(time_limit):
     return recommender
 
 def salrec():
-    recommender = SalrecRecommender(train_epochs=100000,
+    recommender = SalrecRecommender(train_epochs=10000,
                                     max_history_len=200,
                                      loss=BCELoss())
     return recommender

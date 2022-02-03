@@ -222,7 +222,7 @@ class SalrecRecommender(Recommender):
 
 
     def items_and_features_for_user(self, user_id):
-        if user_id in self.user_actions:
+        if self.users.get_id(user_id) in self.user_actions:
             actions = self.user_actions[self.users.get_id(user_id)]
         else:
             actions = []
