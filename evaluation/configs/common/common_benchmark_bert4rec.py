@@ -55,7 +55,7 @@ def bert4rec():
         model = BERT4Rec(embedding_size=64)
         recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=100,
                                                batch_size=128,
-                                               training_time_limit=3600, 
+                                               training_time_limit=3600000, 
                                                loss = MeanPredLoss(),
                                                debug=False, sequence_splitter=ItemsMasking, 
                                                targets_builder=ItemsMaskingTargetsBuilder,
