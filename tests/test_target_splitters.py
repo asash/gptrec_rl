@@ -3,6 +3,7 @@ import unittest
 import numpy as np
 import random
 from collections import Counter
+from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import SequenceContinuation
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.random_splitter import RandomSplitter
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.random_fraction_splitter import RandomFractionSplitter
@@ -103,6 +104,24 @@ class TestItemSplitters(unittest.TestCase):
         train, label = splitter.split(sequence)
         self.assertEquals(train, [3, 4])
         self.assertEquals(label, [4, 5])
+
+    def test_items_masking(self):
+        sequence = [1, 2, 3, 4, 5]
+        splitter = ItemsMasking()
+        splitter.set_num_items(6)
+        train, label = splitter.split(sequence)
+        self.assertEquals(train, [1, 2, 3, 4, 7])
+        self.assertEquals(label, [1, 2, 3, 4, 5])
+        cnt = Counter()
+        for i in range(100):
+            splitter = ItemsMasking(random_seed=2*i + 1)
+            splitter.set_num_items(6)
+            train, label = splitter.split(sequence)
+            for i in range(len(train)):
+                if train[i] == 7:
+                    cnt[i] += 1
+        self.assertEqual(cnt, Counter({4: 24, 3: 20, 0: 20, 1: 19, 2: 17}))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -10,6 +10,9 @@ class TargetBuilder(object):
     def set_n_items(self, n):
         self.n_items = n
     
+    def set_sequence_len(self, sequence_len):
+        self.sequence_len = sequence_len
+    
     def build(self, user_targets):
         raise NotImplementedError()
 

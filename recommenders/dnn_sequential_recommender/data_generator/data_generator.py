@@ -6,10 +6,11 @@ from aprec.recommenders.dnn_sequential_recommender.target_builders.full_matrix_t
 
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.random_fraction_splitter import RandomFractionSplitter
 
-
 class DataGenerator(Sequence):
     def __init__(self, user_actions, user_ids,  user_features, history_size,
-                 n_items, batch_size=1000,
+                 n_items, 
+                 history_vectorizer,
+                 batch_size=1000,
                  return_drect_positions=False, return_reverse_positions=False,
                  user_id_required=False,
                  max_user_features=0,
@@ -31,8 +32,12 @@ class DataGenerator(Sequence):
         self.max_user_features = max_user_features
         self.user_features_required = user_features_required
         self.sequence_splitter = sequence_splitter()
+        self.sequence_splitter.set_num_items(n_items)
+        self.sequence_splitter.set_sequence_len(history_size)
         self.targets_builder = targets_builder()
+        self.targets_builder.set_sequence_len(history_size)
         self.do_shuffle_data = shuffle_data
+        self.history_vectorizer = history_vectorizer
         self.reset()
 
 
@@ -40,7 +45,7 @@ class DataGenerator(Sequence):
         if self.do_shuffle_data: 
             self.shuffle_data()
         history, target = self.split_actions(self.user_actions)
-        self.sequences_matrix = self.matrix_for_embedding(history, self.history_size, self.n_items)
+        self.sequences_matrix = self.matrix_for_embedding(history)
         if self.return_direct_positions or self.return_reverse_positions:
             self.direct_position, self.reverse_position = self.positions(history, self.history_size)
 
@@ -69,11 +74,10 @@ class DataGenerator(Sequence):
         return np.array(result)
 
 
-    @staticmethod
-    def matrix_for_embedding(user_actions, history_size, n_items):
+    def matrix_for_embedding(self, user_actions):
         result = []
         for actions in user_actions:
-            result.append(actions_to_vector(actions, history_size, n_items))
+            result.append(self.history_vectorizer(actions))
         return np.array(result)
 
     def build_target_matrix(self, user_targets):
@@ -145,12 +149,3 @@ def reverse_positions(session_len, history_size):
         return list(range(history_size, 0, -1))
     else:
         return [0] * (history_size - session_len) + list(range(session_len, 0, -1))
-
-
-def actions_to_vector(user_actions, vector_size, special_value):
-    if len(user_actions) >= vector_size:
-        return np.array([action[1] for action in user_actions[-vector_size:]])
-    else:
-        n_special = vector_size - len(user_actions)
-        result_list = [special_value] * n_special + [action[1] for action in user_actions]
-        return np.array(result_list)
