@@ -1,5 +1,6 @@
 import numpy as np
 from numpy import random
+from aprec.evaluation.samplers.pop_sampler import PopTargetItemsSampler
 from aprec.losses.mean_ypred_ploss import MeanPredLoss
 from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
 from aprec.recommenders.dnn_sequential_recommender.models.bert4rec.bert4rec import BERT4Rec
@@ -70,7 +71,7 @@ recommenders = {
 }
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
-TARGET_ITEMS_SAMPLER = RandomTargetItemSampler(101)
+TARGET_ITEMS_SAMPLER = PopTargetItemsSampler(101)
 
 def get_recommenders(filter_seen: bool):
     result = {}
