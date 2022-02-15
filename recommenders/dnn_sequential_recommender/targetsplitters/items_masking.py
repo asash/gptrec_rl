@@ -1,11 +1,10 @@
 import copy
 from random import Random
 
-import numpy as np
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.targetsplitter import TargetSplitter
 
 class ItemsMasking(TargetSplitter):
-    def __init__(self, max_len=100, masking_prob = 0.2,
+    def __init__(self,  masking_prob = 0.2,
                  max_predictions_per_seq = 20,
                  random_seed = 31337, force_last=False) -> None:
         super().__init__()

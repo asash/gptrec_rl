@@ -8,14 +8,14 @@ from aprec.recommenders.dnn_sequential_recommender.models.bert4rec.bert4rec_mode
 
 class BERT4Rec(SequentialRecsysModel):
     def __init__(self, output_layer_activation = 'linear',
-                 embedding_size = 64, max_history_len = 100,
+                 embedding_size = 128, max_history_len = 200,
                  attention_probs_dropout_prob = 0.2,
                  hidden_act = "gelu",
                  hidden_dropout_prob = 0.2,
                  initializer_range = 0.02,
-                 intermediate_size = 256,
+                 intermediate_size = 512,
                  num_attention_heads = 2,
-                 num_hidden_layers = 2,
+                 num_hidden_layers = 3,
                  type_vocab_size = 2, 
                 ):
         super().__init__(output_layer_activation, embedding_size, max_history_len)
@@ -35,8 +35,7 @@ class BERT4Rec(SequentialRecsysModel):
         bert_config = BertConfig(
             vocab_size = self.num_items + 2, # +1 for mask item, +1 for padding
             hidden_size = self.embedding_size,
-            max_position_embeddings=2*self.max_history_length, #for Relative positional embedding 1..lenght - past,
-                                                               #0 - present,  length +1 .. 2*length - 1 -future
+            max_position_embeddings=2*self.max_history_length, 
             attention_probs_dropout_prob=self.attention_probs_dropout_prob, 
             hidden_act=self.hidden_act, 
             hidden_dropout_prob=self.hidden_dropout_prob, 
