@@ -39,7 +39,7 @@ class TestOwnBERT4rec(unittest.TestCase):
                                                training_time_limit=10, 
                                                loss = MeanPredLoss(),
                                                debug=True, sequence_splitter=ItemsMasking, 
-                                               targets_builder=ItemsMaskingTargetsBuilder,
+                                               targets_builder= lambda: ItemsMaskingTargetsBuilder(relative_positions_encoding=True),
                                                val_sequence_splitter=lambda: ItemsMasking(force_last=True),
                                                metric=MeanPredLoss(), 
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
