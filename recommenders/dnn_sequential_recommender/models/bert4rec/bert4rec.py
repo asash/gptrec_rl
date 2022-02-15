@@ -8,12 +8,12 @@ from aprec.recommenders.dnn_sequential_recommender.models.bert4rec.bert4rec_mode
 
 class BERT4Rec(SequentialRecsysModel):
     def __init__(self, output_layer_activation = 'linear',
-                 embedding_size = 128, max_history_len = 200,
+                 embedding_size = 64, max_history_len = 100,
                  attention_probs_dropout_prob = 0.2,
                  hidden_act = "gelu",
                  hidden_dropout_prob = 0.2,
                  initializer_range = 0.02,
-                 intermediate_size = 512,
+                 intermediate_size = 128,
                  num_attention_heads = 2,
                  num_hidden_layers = 3,
                  type_vocab_size = 2, 
