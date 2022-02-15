@@ -55,7 +55,7 @@ class BERT4RecModel(Model):
         self.batch_size = batch_size
         self.output_layer_activation = outputput_layer_activation
         self.token_type_ids = tf.constant(tf.zeros(shape=(batch_size, bert_config.max_position_embeddings)))
-        self.position_ids_for_pred = tf.constant(np.array(list(range(sequence_length))[::-1]).reshape(1, sequence_length))
+        self.position_ids_for_pred = tf.constant(np.array(list(range(1, sequence_length +1))).reshape(1, sequence_length))
         self.bert =  TFBertForMaskedLM(bert_config)
 
     def call(self, inputs, **kwargs):

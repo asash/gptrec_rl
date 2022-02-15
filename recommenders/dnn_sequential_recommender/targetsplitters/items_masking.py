@@ -36,5 +36,5 @@ class ItemsMasking(TargetSplitter):
         for position in mask_positions:
             labels.append((position, seq[position]))
             train[position] = (train[position][0], mask_token)
-        return train, labels
+        return train, (seq_len, labels)
     

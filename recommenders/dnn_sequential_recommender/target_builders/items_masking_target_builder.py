@@ -17,22 +17,18 @@ class ItemsMaskingTargetsBuilder(TargetBuilder):
     def build(self, user_targets):
         targets = []
         positions = []
-        for user in user_targets:
+        for seq_len, user in user_targets:
             user_positions = []
             user_target = [self.ignore_value] * self.sequence_len
             if self.relative_positions_encoding:
-                split_pos = self.random.randint(0, self.sequence_len - 1)
+                split_pos = self.random.randint(self.sequence_len - seq_len, self.sequence_len - 1)
             else:
                 split_pos = self.sequence_len - 1
-            for i in range(split_pos + 1):
-                user_positions.append(split_pos - i) 
-            cnt = 1
 
-            for i in range(split_pos+1, self.sequence_len):
-                user_positions.append(self.sequence_len + cnt)
-                cnt += 1 
+            for i in range(self.sequence_len):
+                user_positions.append(self.sequence_len - split_pos  + i) 
+
             positions.append(user_positions)
-
             for pos in user:
                 user_target[pos[0]] = pos[1][1]
 
