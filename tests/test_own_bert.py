@@ -1,8 +1,7 @@
 from aprec.datasets.movielens20m import get_movielens20m_actions, get_movies_catalog
 from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
 from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
-from aprec.recommenders.dnn_sequential_recommender.models.bert4rec.bert4rec_modelling import TFBertModel
-from aprec.recommenders.dnn_sequential_recommender.models.bert4rec.configuration_bert import BertConfig
+from transformers import TFBertModel, BertConfig
 from aprec.recommenders.dnn_sequential_recommender.models.bert4rec.bert4rec import BERT4Rec
 from aprec.losses.mean_ypred_ploss import MeanPredLoss
 from transformers import BertTokenizer

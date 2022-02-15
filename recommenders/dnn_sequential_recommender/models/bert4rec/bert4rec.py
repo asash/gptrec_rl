@@ -3,8 +3,7 @@ from tensorflow.keras import Model
 import tensorflow as tf
 
 from aprec.recommenders.dnn_sequential_recommender.models.sequential_recsys_model import SequentialRecsysModel
-from aprec.recommenders.dnn_sequential_recommender.models.bert4rec.configuration_bert import BertConfig
-from aprec.recommenders.dnn_sequential_recommender.models.bert4rec.bert4rec_modelling import TFBertForMaskedLM
+from transformers import BertConfig, TFBertForMaskedLM
 
 class BERT4Rec(SequentialRecsysModel):
     def __init__(self, output_layer_activation = 'linear',
