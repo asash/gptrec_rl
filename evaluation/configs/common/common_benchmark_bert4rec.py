@@ -59,7 +59,7 @@ def deberta4rec(relative_position_encoding):
                                                batch_size=128,
                                                training_time_limit=3600000, 
                                                loss = MeanPredLoss(),
-                                               debug=False, sequence_splitter=lambda: ItemsMasking(masking_prob=0.4), 
+                                               debug=False, sequence_splitter=lambda: ItemsMasking(masking_prob=0.2), 
                                                targets_builder= lambda: ItemsMaskingTargetsBuilder(relative_positions_encoding=relative_position_encoding),
                                                val_sequence_splitter=lambda: ItemsMasking(force_last=True),
                                                metric=MeanPredLoss(), 
