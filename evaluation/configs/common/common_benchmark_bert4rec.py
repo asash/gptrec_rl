@@ -53,8 +53,8 @@ def lightfm_recommender(k, loss):
 
 
 
-def deberta4rec(relative_position_encoding):
-        model = Deberta4Rec(embedding_size=64, intermediate_size=128, num_hidden_layers=2, max_history_len=50)
+def deberta4rec(relative_position_encoding, sequence_len):
+        model = Deberta4Rec(embedding_size=64, intermediate_size=128, num_hidden_layers=2, max_history_len=sequence_len)
         recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=200,
                                                batch_size=256,
                                                training_time_limit=3600000, 
@@ -69,7 +69,7 @@ def deberta4rec(relative_position_encoding):
 
 
 def bert4rec(relative_position_encoding, sequence_len=50):
-        model = bert4rec(embedding_size=64, intermediate_size=128, num_hidden_layers=2, max_history_len=sequence_len)
+        model = BERT4Rec(embedding_size=64, intermediate_size=128, num_hidden_layers=2, max_history_len=sequence_len)
         recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=200,
                                                batch_size=256,
                                                training_time_limit=3600000, 
