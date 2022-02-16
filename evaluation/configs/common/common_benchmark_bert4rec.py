@@ -53,12 +53,12 @@ def lightfm_recommender(k, loss):
 
 
 def bert4rec(relative_position_encoding):
-        model = BERT4Rec(embedding_size=128, intermediate_size=256, num_hidden_layers=3)
+        model = BERT4Rec(embedding_size=128, intermediate_size=256, num_hidden_layers=3, max_history_len=50)
         recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=200,
                                                batch_size=128,
                                                training_time_limit=3600000, 
                                                loss = MeanPredLoss(),
-                                               debug=False, sequence_splitter=ItemsMasking, 
+                                               debug=False, sequence_splitter=lambda: ItemsMasking(masking_prob=0.4), 
                                                targets_builder= lambda: ItemsMaskingTargetsBuilder(relative_positions_encoding=relative_position_encoding),
                                                val_sequence_splitter=lambda: ItemsMasking(force_last=True),
                                                metric=MeanPredLoss(), 
