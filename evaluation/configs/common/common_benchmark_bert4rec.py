@@ -4,6 +4,7 @@ from aprec.evaluation.samplers.pop_sampler import PopTargetItemsSampler
 from aprec.losses.mean_ypred_ploss import MeanPredLoss
 from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
 from aprec.recommenders.dnn_sequential_recommender.models.bert4rec.bert4rec import BERT4Rec
+from aprec.recommenders.dnn_sequential_recommender.models.deberta4rec.deberta4rec import Deberta4Rec
 from aprec.recommenders.dnn_sequential_recommender.models.sasrec.sasrec import SASRec
 from aprec.recommenders.dnn_sequential_recommender.models.gru4rec import GRU4Rec
 from aprec.recommenders.dnn_sequential_recommender.models.caser import Caser
@@ -52,8 +53,8 @@ def lightfm_recommender(k, loss):
 
 
 
-def bert4rec(relative_position_encoding):
-        model = BERT4Rec(embedding_size=128, intermediate_size=256, num_hidden_layers=3, max_history_len=50)
+def deberta4rec(relative_position_encoding):
+        model = Deberta4Rec(embedding_size=64, intermediate_size=128, num_hidden_layers=2, max_history_len=200)
         recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=200,
                                                batch_size=128,
                                                training_time_limit=3600000, 
@@ -67,8 +68,8 @@ def bert4rec(relative_position_encoding):
         return recommender
 
 recommenders = {
-    "bert4rec_relative": lambda: bert4rec(True), 
-    "bert4rec_static": lambda: bert4rec(False), 
+    "deberta4rec_relative": lambda: deberta4rec(True), 
+    "deberta4rec_static": lambda: deberta4rec(False), 
 }
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
