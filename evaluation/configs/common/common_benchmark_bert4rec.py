@@ -68,13 +68,14 @@ def deberta4rec(relative_position_encoding, sequence_len):
         return recommender
 
 
-def bert4rec(relative_position_encoding, sequence_len=50):
-        model = BERT4Rec(embedding_size=64, intermediate_size=128, num_hidden_layers=2, max_history_len=sequence_len)
+def bert4rec(relative_position_encoding, sequence_len=50, rss = lambda n, k: 1):
+        model = BERT4Rec(embedding_size=64, intermediate_size=128,
+                         num_hidden_layers=2, max_history_len=sequence_len)
         recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=200,
                                                batch_size=256,
                                                training_time_limit=3600000, 
                                                loss = MeanPredLoss(),
-                                               debug=False, sequence_splitter=lambda: ItemsMasking(masking_prob=0.2), 
+                                               debug=False, sequence_splitter=lambda: ItemsMasking(masking_prob=0.2, recency_importance=rss), 
                                                targets_builder= lambda: ItemsMaskingTargetsBuilder(relative_positions_encoding=relative_position_encoding),
                                                val_sequence_splitter=lambda: ItemsMasking(force_last=True),
                                                metric=MeanPredLoss(), 
@@ -82,25 +83,8 @@ def bert4rec(relative_position_encoding, sequence_len=50):
                                                )
         return recommender
 recommenders = {
-    "deberta4rec_relative-50": lambda: deberta4rec(True, 50), 
-    "deberta4rec_static-50": lambda: deberta4rec(False, 50), 
-    "bert4rec_relative-50": lambda: bert4rec(True, 50), 
-    "bert4rec_static-50": lambda: bert4rec(False, 50), 
-
-    "deberta4rec_relative-100": lambda: deberta4rec(True, 100), 
-    "deberta4rec_static-100": lambda: deberta4rec(False, 100), 
-    "bert4rec_relative-100": lambda: bert4rec(True, 100), 
-    "bert4rec_static-100": lambda: bert4rec(False, 100), 
-
-    "deberta4rec_relative-200": lambda: deberta4rec(True, 200), 
-    "deberta4rec_static-200": lambda: deberta4rec(False, 200), 
-    "bert4rec_relative-200": lambda: bert4rec(True, 200), 
+    "bert4rec_static-200-rss:0.8": lambda: bert4rec(False, 200, exponential_importance(0.8)), 
     "bert4rec_static-200": lambda: bert4rec(False, 200), 
-
-    "deberta4rec_relative-400": lambda: deberta4rec(True, 400), 
-    "deberta4rec_static-400": lambda: deberta4rec(False, 400), 
-    "bert4rec_relative-400": lambda: bert4rec(True, 400), 
-    "bert4rec_static-400": lambda: bert4rec(False, 400), 
 }
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
