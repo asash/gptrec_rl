@@ -1,5 +1,6 @@
 from aprec.datasets.movielens20m import get_movielens20m_actions, get_movies_catalog
 from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
+from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import exponential_importance
 from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
 from transformers import TFBertModel, BertConfig
 from aprec.recommenders.dnn_sequential_recommender.models.bert4rec.bert4rec import BERT4Rec
@@ -37,7 +38,7 @@ class TestOwnBERT4rec(unittest.TestCase):
                                                batch_size=5,
                                                training_time_limit=10, 
                                                loss = MeanPredLoss(),
-                                               debug=True, sequence_splitter=ItemsMasking, 
+                                               debug=True, sequence_splitter=lambda: ItemsMasking(recency_importance=exponential_importance(0.8)), 
                                                targets_builder= lambda: ItemsMaskingTargetsBuilder(relative_positions_encoding=True),
                                                val_sequence_splitter=lambda: ItemsMasking(force_last=True),
                                                metric=MeanPredLoss(), 
