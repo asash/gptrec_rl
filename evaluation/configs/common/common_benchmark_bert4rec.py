@@ -53,23 +53,9 @@ def lightfm_recommender(k, loss):
 
 
 
-def deberta4rec(relative_position_encoding, sequence_len):
-        model = Deberta4Rec(embedding_size=64, intermediate_size=128, num_hidden_layers=2, max_history_len=sequence_len)
-        recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=200,
-                                               batch_size=256,
-                                               training_time_limit=3600000, 
-                                               loss = MeanPredLoss(),
-                                               debug=False, sequence_splitter=lambda: ItemsMasking(masking_prob=0.2), 
-                                               targets_builder= lambda: ItemsMaskingTargetsBuilder(relative_positions_encoding=relative_position_encoding),
-                                               val_sequence_splitter=lambda: ItemsMasking(force_last=True),
-                                               metric=MeanPredLoss(), 
-                                               pred_history_vectorizer=AddMaskHistoryVectorizer(),
-                                               )
-        return recommender
 
-
-def bert4rec(relative_position_encoding, sequence_len=50, rss = lambda n, k: 1, layers=2):
-        model = BERT4Rec(embedding_size=64, intermediate_size=128,
+def bert4rec(relative_position_encoding, sequence_len=50, rss = lambda n, k: 1, layers=2, arch=BERT4Rec):
+        model = arch(embedding_size=64, intermediate_size=128,
                          num_hidden_layers=layers, max_history_len=sequence_len)
         recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=200,
                                                batch_size=256,
@@ -108,6 +94,33 @@ recommenders = {
     "bert4rec_static-100-10": lambda: bert4rec(False, 100, layers=10), 
     "bert4rec_static-100-11": lambda: bert4rec(False, 100, layers=11), 
     "bert4rec_static-100-12": lambda: bert4rec(False, 100, layers=12), 
+
+    "deberta4rec_relative-100-1": lambda:bert4rec(True, 100,arch=Deberta4Rec, layers=1), 
+    "deberta4rec_relative-100-2": lambda:bert4rec(True, 100,arch=Deberta4Rec, layers=2), 
+    "deberta4rec_relative-100-3": lambda:bert4rec(True, 100,arch=Deberta4Rec, layers=3), 
+    "deberta4rec_relative-100-4": lambda:bert4rec(True, 100,arch=Deberta4Rec, layers=4), 
+    "deberta4rec_relative-100-5": lambda:bert4rec(True, 100,arch=Deberta4Rec, layers=5), 
+    "deberta4rec_relative-100-6": lambda:bert4rec(True, 100,arch=Deberta4Rec, layers=6), 
+    "deberta4rec_relative-100-7": lambda:bert4rec(True, 100,arch=Deberta4Rec, layers=7), 
+    "deberta4rec_relative-100-8": lambda:bert4rec(True, 100,arch=Deberta4Rec, layers=8), 
+    "deberta4rec_relative-100-9": lambda:bert4rec(True, 100,arch=Deberta4Rec, layers=9), 
+    "deberta4rec_relative-100-10": lambda:bert4rec(True, 100,arch=Deberta4Rec, layers=10), 
+    "deberta4rec_relative-100-11": lambda:bert4rec(True, 100,arch=Deberta4Rec, layers=11), 
+    "deberta4rec_relative-100-12": lambda:bert4rec(True, 100,arch=Deberta4Rec, layers=12), 
+
+    "deberta4rec_static-100-1": lambda:bert4rec(False, 100,arch=Deberta4Rec, layers=1), 
+    "deberta4rec_static-100-2": lambda:bert4rec(False, 100,arch=Deberta4Rec, layers=2), 
+    "deberta4rec_static-100-3": lambda:bert4rec(False, 100,arch=Deberta4Rec, layers=3), 
+    "deberta4rec_static-100-4": lambda:bert4rec(False, 100,arch=Deberta4Rec, layers=4), 
+    "deberta4rec_static-100-5": lambda:bert4rec(False, 100,arch=Deberta4Rec, layers=5), 
+    "deberta4rec_static-100-6": lambda:bert4rec(False, 100,arch=Deberta4Rec, layers=6), 
+    "deberta4rec_static-100-7": lambda:bert4rec(False, 100,arch=Deberta4Rec, layers=7), 
+    "deberta4rec_static-100-8": lambda:bert4rec(False, 100,arch=Deberta4Rec, layers=8), 
+    "deberta4rec_static-100-9": lambda:bert4rec(False, 100,arch=Deberta4Rec, layers=9), 
+    "deberta4rec_static-100-10": lambda:bert4rec(False, 100,arch=Deberta4Rec, layers=10), 
+    "deberta4rec_static-100-11": lambda:bert4rec(False, 100,arch=Deberta4Rec, layers=11), 
+    "deberta4rec_static-100-12": lambda:bert4rec(False, 100,arch=Deberta4Rec, layers=12), 
+
 
 }
 

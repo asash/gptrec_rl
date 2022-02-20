@@ -5,7 +5,6 @@ from tqdm import tqdm
 
 from aprec.datasets.mts_kion import get_mts_kion_dataset, get_submission_user_ids, get_users, get_items
 from aprec.recommenders.dnn_sequential_recommender.models.sasrec.sasrec import SASRec
-from aprec.recommenders.dnn_sequential_recommender.models.sasrec.sasrec_kion import KionChallengeSASRec, KionSasrecModel
 from aprec.recommenders.dnn_sequential_recommender.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
 from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_per_positive_target import NegativePerPositiveTargetBuilder
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import RecencySequenceSampling
@@ -17,10 +16,8 @@ from aprec.recommenders.metrics.ndcg import KerasNDCG
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.conditional_top_recommender import ConditionalTopRecommender
 from aprec.recommenders.svd import SvdRecommender
-from aprec.recommenders.salrec.salrec_recommender import SalrecRecommender
 from aprec.recommenders.lightfm import LightFMRecommender
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
-from aprec.recommenders.vanilla_bert4rec import VanillaBERT4Rec
 from aprec.evaluation.metrics.precision import Precision
 from aprec.evaluation.metrics.recall import Recall
 from aprec.evaluation.metrics.ndcg import NDCG
