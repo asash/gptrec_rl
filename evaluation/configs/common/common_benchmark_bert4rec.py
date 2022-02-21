@@ -1,31 +1,15 @@
-import numpy as np
-from numpy import random
 from aprec.evaluation.samplers.pop_sampler import PopTargetItemsSampler
 from aprec.losses.mean_ypred_ploss import MeanPredLoss
 from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
 from aprec.recommenders.dnn_sequential_recommender.models.bert4rec.bert4rec import BERT4Rec
 from aprec.recommenders.dnn_sequential_recommender.models.deberta4rec.deberta4rec import Deberta4Rec
-from aprec.recommenders.dnn_sequential_recommender.models.sasrec.sasrec import SASRec
-from aprec.recommenders.dnn_sequential_recommender.models.gru4rec import GRU4Rec
-from aprec.recommenders.dnn_sequential_recommender.models.caser import Caser
-from aprec.recommenders.dnn_sequential_recommender.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
+from aprec.recommenders.dnn_sequential_recommender.models.convbert4rec.convbert4rec import ConvBERT4Rec
 from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
-from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_per_positive_target import NegativePerPositiveTargetBuilder
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import SequenceContinuation
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.random_splitter import RandomSplitter
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import RecencySequenceSampling, linear_importance
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import exponential_importance
-from aprec.evaluation.samplers.random_sampler import RandomTargetItemSampler
-from aprec.recommenders.metrics.ndcg import KerasNDCG
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
 from aprec.recommenders.lightfm import LightFMRecommender
-from aprec.recommenders.vanilla_bert4rec import VanillaBERT4Rec
-from aprec.losses.bce import BCELoss
-from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
 
 
 
@@ -69,59 +53,7 @@ def bert4rec(relative_position_encoding, sequence_len=50, rss = lambda n, k: 1, 
                                                )
         return recommender
 recommenders = {
-    "bert4rec_relative-100-1": lambda: bert4rec(True, 100, layers=1), 
-    "bert4rec_relative-100-2": lambda: bert4rec(True, 100, layers=2), 
-    "bert4rec_relative-100-3": lambda: bert4rec(True, 100, layers=3), 
-    "bert4rec_relative-100-4": lambda: bert4rec(True, 100, layers=4), 
-    "bert4rec_relative-100-5": lambda: bert4rec(True, 100, layers=5), 
-    "bert4rec_relative-100-6": lambda: bert4rec(True, 100, layers=6), 
-    "bert4rec_relative-100-7": lambda: bert4rec(True, 100, layers=7), 
-    "bert4rec_relative-100-8": lambda: bert4rec(True, 100, layers=8), 
-    "bert4rec_relative-100-9": lambda: bert4rec(True, 100, layers=9), 
-    "bert4rec_relative-100-10": lambda: bert4rec(True, 100, layers=10), 
-    "bert4rec_relative-100-11": lambda: bert4rec(True, 100, layers=11), 
-    "bert4rec_relative-100-12": lambda: bert4rec(True, 100, layers=12), 
-
-    "bert4rec_static-100-1": lambda: bert4rec(False, 100, layers=1), 
-    "bert4rec_static-100-2": lambda: bert4rec(False, 100, layers=2), 
-    "bert4rec_static-100-3": lambda: bert4rec(False, 100, layers=3), 
-    "bert4rec_static-100-4": lambda: bert4rec(False, 100, layers=4), 
-    "bert4rec_static-100-5": lambda: bert4rec(False, 100, layers=5), 
-    "bert4rec_static-100-6": lambda: bert4rec(False, 100, layers=6), 
-    "bert4rec_static-100-7": lambda: bert4rec(False, 100, layers=7), 
-    "bert4rec_static-100-8": lambda: bert4rec(False, 100, layers=8), 
-    "bert4rec_static-100-9": lambda: bert4rec(False, 100, layers=9), 
-    "bert4rec_static-100-10": lambda: bert4rec(False, 100, layers=10), 
-    "bert4rec_static-100-11": lambda: bert4rec(False, 100, layers=11), 
-    "bert4rec_static-100-12": lambda: bert4rec(False, 100, layers=12), 
-
-    "deberta4rec_relative-100-1": lambda:bert4rec(True, 100,arch=Deberta4Rec, layers=1), 
-    "deberta4rec_relative-100-2": lambda:bert4rec(True, 100,arch=Deberta4Rec, layers=2), 
-    "deberta4rec_relative-100-3": lambda:bert4rec(True, 100,arch=Deberta4Rec, layers=3), 
-    "deberta4rec_relative-100-4": lambda:bert4rec(True, 100,arch=Deberta4Rec, layers=4), 
-    "deberta4rec_relative-100-5": lambda:bert4rec(True, 100,arch=Deberta4Rec, layers=5), 
-    "deberta4rec_relative-100-6": lambda:bert4rec(True, 100,arch=Deberta4Rec, layers=6), 
-    "deberta4rec_relative-100-7": lambda:bert4rec(True, 100,arch=Deberta4Rec, layers=7), 
-    "deberta4rec_relative-100-8": lambda:bert4rec(True, 100,arch=Deberta4Rec, layers=8), 
-    "deberta4rec_relative-100-9": lambda:bert4rec(True, 100,arch=Deberta4Rec, layers=9), 
-    "deberta4rec_relative-100-10": lambda:bert4rec(True, 100,arch=Deberta4Rec, layers=10), 
-    "deberta4rec_relative-100-11": lambda:bert4rec(True, 100,arch=Deberta4Rec, layers=11), 
-    "deberta4rec_relative-100-12": lambda:bert4rec(True, 100,arch=Deberta4Rec, layers=12), 
-
-    "deberta4rec_static-100-1": lambda:bert4rec(False, 100,arch=Deberta4Rec, layers=1), 
-    "deberta4rec_static-100-2": lambda:bert4rec(False, 100,arch=Deberta4Rec, layers=2), 
-    "deberta4rec_static-100-3": lambda:bert4rec(False, 100,arch=Deberta4Rec, layers=3), 
-    "deberta4rec_static-100-4": lambda:bert4rec(False, 100,arch=Deberta4Rec, layers=4), 
-    "deberta4rec_static-100-5": lambda:bert4rec(False, 100,arch=Deberta4Rec, layers=5), 
-    "deberta4rec_static-100-6": lambda:bert4rec(False, 100,arch=Deberta4Rec, layers=6), 
-    "deberta4rec_static-100-7": lambda:bert4rec(False, 100,arch=Deberta4Rec, layers=7), 
-    "deberta4rec_static-100-8": lambda:bert4rec(False, 100,arch=Deberta4Rec, layers=8), 
-    "deberta4rec_static-100-9": lambda:bert4rec(False, 100,arch=Deberta4Rec, layers=9), 
-    "deberta4rec_static-100-10": lambda:bert4rec(False, 100,arch=Deberta4Rec, layers=10), 
-    "deberta4rec_static-100-11": lambda:bert4rec(False, 100,arch=Deberta4Rec, layers=11), 
-    "deberta4rec_static-100-12": lambda:bert4rec(False, 100,arch=Deberta4Rec, layers=12), 
-
-
+    "convbert4rec-100-2": lambda:bert4rec(False, 200,arch=ConvBERT4Rec, layers=2), 
 }
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
