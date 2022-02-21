@@ -38,14 +38,14 @@ def lightfm_recommender(k, loss):
 
 
 
-def bert4rec(relative_position_encoding, sequence_len=50, rss = lambda n, k: 1, layers=2, arch=BERT4Rec):
+def bert4rec(relative_position_encoding, sequence_len=50, rss = lambda n, k: 1, layers=2, arch=BERT4Rec, masking_prob=0.2):
         model = arch(embedding_size=64, intermediate_size=128,
                          num_hidden_layers=layers, max_history_len=sequence_len)
         recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=200,
                                                batch_size=256,
                                                training_time_limit=3600000, 
                                                loss = MeanPredLoss(),
-                                               debug=False, sequence_splitter=lambda: ItemsMasking(masking_prob=0.2, recency_importance=rss), 
+                                               debug=False, sequence_splitter=lambda: ItemsMasking(masking_prob=masking_prob, recency_importance=rss), 
                                                targets_builder= lambda: ItemsMaskingTargetsBuilder(relative_positions_encoding=relative_position_encoding),
                                                val_sequence_splitter=lambda: ItemsMasking(force_last=True),
                                                metric=MeanPredLoss(), 
@@ -53,7 +53,12 @@ def bert4rec(relative_position_encoding, sequence_len=50, rss = lambda n, k: 1, 
                                                )
         return recommender
 recommenders = {
-    "convbert4rec-100-2": lambda:bert4rec(False, 200,arch=ConvBERT4Rec, layers=2), 
+    "convbert4rec-200-2-mp:0.3": lambda:bert4rec(False, 200,arch=ConvBERT4Rec, layers=2, masking_prob=0.3), 
+    "convbert4rec-200-4-mp:0.2": lambda:bert4rec(False, 200,arch=ConvBERT4Rec, layers=4), 
+    "convbert4rec-200-2-mp:0.2-relative": lambda:bert4rec(True, 200,arch=ConvBERT4Rec, layers=2), 
+    "convbert4rec-200-5-mp:0.2": lambda:bert4rec(False, 200,arch=ConvBERT4Rec, layers=5), 
+    "convbert4rec-200-2-mp:0.4": lambda:bert4rec(False, 200,arch=ConvBERT4Rec, layers=2, masking_prob=0.4), 
+    "convbert4rec-200-2-mp:0.5": lambda:bert4rec(False, 200,arch=ConvBERT4Rec, layers=2, masking_prob=0.5), 
 }
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
