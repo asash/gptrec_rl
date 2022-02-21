@@ -55,12 +55,6 @@ def bert4rec(relative_position_encoding, sequence_len=50, rss = lambda n, k: 1, 
         return recommender
 recommenders = {
     "albert4rec-200-2-mp:0.2": lambda:bert4rec(False, 200,arch=ALBERT4Rec, layers=2, masking_prob=0.2), 
-    "albert4rec-200-2-mp:0.3": lambda:bert4rec(False, 200,arch=ALBERT4Rec, layers=2, masking_prob=0.3), 
-    "albert4rec-200-4-mp:0.2": lambda:bert4rec(False, 200,arch=ALBERT4Rec, layers=4), 
-    "albert4rec-200-2-mp:0.2-relative": lambda:bert4rec(True, 200,arch=ALBERT4Rec, layers=2), 
-    "albert4rec-200-5-mp:0.2": lambda:bert4rec(False, 200,arch=ALBERT4Rec, layers=5), 
-    "albert4rec-200-2-mp:0.4": lambda:bert4rec(False, 200,arch=ALBERT4Rec, layers=2, masking_prob=0.4), 
-    "albert4rec-200-2-mp:0.5": lambda:bert4rec(False, 200,arch=ALBERT4Rec, layers=2, masking_prob=0.5), 
 }
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
