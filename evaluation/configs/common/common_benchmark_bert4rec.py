@@ -43,7 +43,7 @@ def bert4rec(relative_position_encoding, sequence_len=50, rss = lambda n, k: 1, 
         model = arch(embedding_size=64, intermediate_size=128,
                          num_hidden_layers=layers, max_history_len=sequence_len)
         recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=200,
-                                               batch_size=256,
+                                               batch_size=128,
                                                training_time_limit=3600000, 
                                                loss = MeanPredLoss(),
                                                debug=False, sequence_splitter=lambda: ItemsMasking(masking_prob=masking_prob, recency_importance=rss), 
