@@ -40,7 +40,8 @@ def lightfm_recommender(k, loss):
 
 
 def bert4rec(relative_position_encoding, sequence_len=50, rss = lambda n, k: 1, layers=2, arch=BERT4Rec, masking_prob=0.2):
-        model = arch(embedding_size=64, intermediate_size=128,
+        model = arch(embedding_size=128, intermediate_size=512,
+                         hidden_size=512,
                          num_hidden_layers=layers, max_history_len=sequence_len)
         recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=200,
                                                batch_size=128,
@@ -54,7 +55,7 @@ def bert4rec(relative_position_encoding, sequence_len=50, rss = lambda n, k: 1, 
                                                )
         return recommender
 recommenders = {
-    "albert4rec-200-2-mp:0.2": lambda:bert4rec(False, 200,arch=ALBERT4Rec, layers=2, masking_prob=0.2), 
+    "albert4recLarge-200-2-mp:0.2": lambda:bert4rec(False, 200,arch=ALBERT4Rec, layers=3, masking_prob=0.2), 
 }
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
