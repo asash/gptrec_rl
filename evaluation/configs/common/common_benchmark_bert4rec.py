@@ -1,3 +1,4 @@
+from msilib import sequence
 from aprec.evaluation.samplers.pop_sampler import PopTargetItemsSampler
 from aprec.losses.mean_ypred_ploss import MeanPredLoss
 from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
@@ -52,7 +53,9 @@ def bert4rec(relative_position_encoding, sequence_len=50, rss = lambda n, k: 1, 
                                                )
         return recommender
 recommenders = {
-    "mixer": lambda:bert4rec(True, 200, arch=RecsysMixer, layers=2, masking_prob=0.2), 
+    "mixer": lambda:bert4rec(True, 200, 
+                arch=lambda sequence_len: RecsysMixer(max_history_len=sequence_len, num_blocks=5),
+                 layers=2, masking_prob=0.2), 
 }
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
