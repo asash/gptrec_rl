@@ -40,7 +40,7 @@ def lightfm_recommender(k, loss):
 
 def bert4rec(relative_position_encoding, sequence_len=50, rss = lambda n, k: 1, layers=2, arch=BERT4Rec, masking_prob=0.2):
         model = arch( max_history_len=sequence_len)
-        recommender = DNNSequentialRecommender(model, train_epochs=10, early_stop_epochs=200,
+        recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=200,
                                                batch_size=256,
                                                training_time_limit=3600000, 
                                                loss = MeanPredLoss(),
