@@ -1,11 +1,12 @@
 from ast import List
 from ctypes import Union
+from xmlrpc.client import Boolean
 from aprec.recommenders.dnn_sequential_recommender.models.sequential_recsys_model import SequentialRecsysModel
 from transformers.models.bert.modeling_tf_bert import BertConfig, TFBertMLMHead
 
 from tensorflow.keras import Model
 from tensorflow.keras import activations
-from tensorflow.keras.layers import Embedding, Dense, Permute, Add, LayerNormalization, Activation, Layer
+from tensorflow.keras.layers import Embedding, Dense, Permute, Add, LayerNormalization, Activation, Layer, Dropout
 import tensorflow.keras as keras
 import tensorflow as tf
 import numpy as np
@@ -36,6 +37,7 @@ class MlpBlock(Layer):
         self,
         dim: int,
         hidden_dim: int,
+        dropout_prob: float,
         activation=None,
         **kwargs
     ):
@@ -49,12 +51,15 @@ class MlpBlock(Layer):
         self.dense1 = Dense(hidden_dim)
         self.activation = Activation(activation)
         self.dense2 = Dense(dim)
+        self.dropout = Dropout(dropout_prob)
 
-    def call(self, inputs):
+    def call(self, inputs, train: Boolean):
         x = inputs
         x = self.dense1(x)
         x = self.activation(x)
         x = self.dense2(x)
+        if train:
+            x = self.dropout(x)
         return x
 
     def compute_output_shape(self, input_signature):
@@ -76,6 +81,8 @@ class MixerBlock(Layer):
         channel_dim: int,
         token_mixer_hidden_dim: int,
         channel_mixer_hidden_dim: int = None,
+        token_dropout_prob: float = 0.2,
+        channel_dropout_prob: float = 0.2,
         activation=None,
         **kwargs
     ):
@@ -95,21 +102,21 @@ class MixerBlock(Layer):
 
         self.norm1 = LayerNormalization(axis=1)
         self.permute1 = Permute((2, 1))
-        self.token_mixer = MlpBlock(num_patches, token_mixer_hidden_dim, name='token_mixer')
+        self.token_mixer = MlpBlock(num_patches, token_mixer_hidden_dim, token_dropout_prob, name='token_mixer')
 
         self.permute2 = Permute((2, 1))
         self.norm2 = LayerNormalization(axis=1)
-        self.channel_mixer = MlpBlock(channel_dim, channel_mixer_hidden_dim, name='channel_mixer')
+        self.channel_mixer = MlpBlock(channel_dim, channel_mixer_hidden_dim, channel_dropout_prob, name='channel_mixer')
 
         self.skip_connection1 = Add()
         self.skip_connection2 = Add()
 
-    def call(self, inputs):
+    def call(self, inputs, train: Boolean):
         x = inputs
         skip_x = x
         x = self.norm1(x)
         x = self.permute1(x)
-        x = self.token_mixer(x)
+        x = self.token_mixer(x, train)
 
         x = self.permute2(x)
 
@@ -117,7 +124,7 @@ class MixerBlock(Layer):
         skip_x = x
 
         x = self.norm2(x)
-        x = self.channel_mixer(x)
+        x = self.channel_mixer(x, train)
 
         x = self.skip_connection2([x, skip_x])  # TODO need 2?
 
@@ -143,13 +150,16 @@ class MixerModel(Model):
     def __init__(self, embedding_size, max_history_length, output_layer_activation, num_items, num_blocks,
                         token_mixer_hidden_dim, 
                         channel_mixer_hidden_dim, 
+                        token_dropout_prob = 0.2, 
+                        channel_dropout_prob = 0.2,
                         *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.positions_embedding = Embedding(2 * max_history_length, embedding_size) 
         self.item_embeddings = Embedding(num_items + 2, embedding_size) 
         self.mixer_blocks = []
         for _ in range(num_blocks):
-            self.mixer_blocks.append(MixerBlock(max_history_length, embedding_size, token_mixer_hidden_dim, channel_mixer_hidden_dim))
+            self.mixer_blocks.append(MixerBlock(max_history_length, embedding_size, token_mixer_hidden_dim, channel_mixer_hidden_dim, 
+                token_dropout_prob=token_dropout_prob, channel_dropout_prob=channel_dropout_prob))
         self.num_blocks = num_blocks
         self.position_ids_for_pred = tf.constant(np.array(list(range(1, max_history_length +1))).reshape(1, max_history_length))
         self.output_layer = Dense(num_items)
@@ -160,21 +170,22 @@ class MixerModel(Model):
         sequences = inputs[0]
         labels = inputs[1]        
         positions = inputs[2]
-        result = self.get_scores(sequences, positions)
+        train = kwargs['training']
+        result = self.get_scores(sequences, positions, train)
         loss = hf_compute_loss(labels, result)
         return loss
 
-    def get_scores(self, sequences, positions):
+    def get_scores(self, sequences, positions, train):
         x = self.positions_embedding(positions) +  self.item_embeddings(sequences)
         for mixer_block in self.mixer_blocks:
-            x = mixer_block(x) 
+            x = mixer_block(x, train) 
         predictions = self.output_layer(x) 
         return predictions
 
 
     def score_all_items(self, inputs):
         sequence = inputs[0] 
-        result = self.get_scores(sequence, self.position_ids_for_pred)[:,-1,:-2]
+        result = self.get_scores(sequence, self.position_ids_for_pred, False)[:,-1,:-2]
         return result
 
 def hf_compute_loss(labels, logits):
