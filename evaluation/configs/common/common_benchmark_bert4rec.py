@@ -2,9 +2,8 @@ from aprec.evaluation.samplers.pop_sampler import PopTargetItemsSampler
 from aprec.losses.mean_ypred_ploss import MeanPredLoss
 from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
 from aprec.recommenders.dnn_sequential_recommender.models.bert4rec.bert4rec import BERT4Rec
-from aprec.recommenders.dnn_sequential_recommender.models.deberta4rec.deberta4rec import Deberta4Rec
-from aprec.recommenders.dnn_sequential_recommender.models.convbert4rec.convbert4rec import ConvBERT4Rec
 from aprec.recommenders.dnn_sequential_recommender.models.albert4rec.albert4rec import ALBERT4Rec
+from aprec.recommenders.dnn_sequential_recommender.models.mixer import RecsysMixer
 from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
 from aprec.recommenders.top_recommender import TopRecommender
@@ -40,9 +39,7 @@ def lightfm_recommender(k, loss):
 
 
 def bert4rec(relative_position_encoding, sequence_len=50, rss = lambda n, k: 1, layers=2, arch=BERT4Rec, masking_prob=0.2):
-        model = arch(embedding_size=128, intermediate_size=512,
-                         hidden_size=512,
-                         num_hidden_layers=layers, max_history_len=sequence_len)
+        model = arch( max_history_len=sequence_len)
         recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=200,
                                                batch_size=64,
                                                training_time_limit=3600000, 
@@ -55,7 +52,7 @@ def bert4rec(relative_position_encoding, sequence_len=50, rss = lambda n, k: 1, 
                                                )
         return recommender
 recommenders = {
-    "albert4recLarge-200-2-mp:0.2": lambda:bert4rec(False, 200,arch=ALBERT4Rec, layers=2, masking_prob=0.2), 
+    "mixer": lambda:bert4rec(False, 200, arch=RecsysMixer, layers=2, masking_prob=0.2), 
 }
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
