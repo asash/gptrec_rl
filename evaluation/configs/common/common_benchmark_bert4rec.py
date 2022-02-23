@@ -1,4 +1,3 @@
-from msilib import sequence
 from aprec.evaluation.samplers.pop_sampler import PopTargetItemsSampler
 from aprec.losses.mean_ypred_ploss import MeanPredLoss
 from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
