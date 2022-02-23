@@ -1,5 +1,3 @@
-from ast import List
-from ctypes import Union
 from xmlrpc.client import Boolean
 from aprec.recommenders.dnn_sequential_recommender.models.sequential_recsys_model import SequentialRecsysModel
 from transformers.models.bert.modeling_tf_bert import BertConfig, TFBertMLMHead
@@ -162,7 +160,7 @@ class MixerModel(Model):
                 token_dropout_prob=token_dropout_prob, channel_dropout_prob=channel_dropout_prob))
         self.num_blocks = num_blocks
         self.position_ids_for_pred = tf.constant(np.array(list(range(1, max_history_length +1))).reshape(1, max_history_length))
-        self.output_layer = Dense(num_items)
+        self.all_items = tf.range(0, num_items)
 
         
 
@@ -179,8 +177,10 @@ class MixerModel(Model):
         x = self.positions_embedding(positions) +  self.item_embeddings(sequences)
         for mixer_block in self.mixer_blocks:
             x = mixer_block(x, train) 
-        predictions = self.output_layer(x) 
-        return predictions
+
+        all_item_embeddings = self.item_embeddings(self.all_items) 
+        result = x @ tf.transpose(all_item_embeddings)
+        return result
 
 
     def score_all_items(self, inputs):
