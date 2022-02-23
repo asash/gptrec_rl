@@ -52,7 +52,7 @@ def bert4rec(relative_position_encoding, sequence_len=50, rss = lambda n, k: 1, 
                                                )
         return recommender
 recommenders = {
-    "mixer": lambda:bert4rec(False, 200, arch=RecsysMixer, layers=2, masking_prob=0.2), 
+    "mixer": lambda:bert4rec(True, 200, arch=RecsysMixer, layers=2, masking_prob=0.2), 
 }
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
