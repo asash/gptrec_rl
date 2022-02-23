@@ -53,7 +53,10 @@ def bert4rec(relative_position_encoding, sequence_len=50, rss = lambda n, k: 1, 
         return recommender
 recommenders = {
     "mixer": lambda:bert4rec(True, 200, 
-                arch=lambda max_history_len: RecsysMixer(max_history_len=max_history_len, num_blocks=5),
+                arch=lambda max_history_len: RecsysMixer(max_history_len=max_history_len, num_blocks=12, 
+                                                                                                       embedding_size=128, 
+                                                                                                       token_mixer_hidden_dim=128, 
+                                                                                                       channel_mixer_hidden_dim=128),
                  layers=2, masking_prob=0.2), 
 }
 
