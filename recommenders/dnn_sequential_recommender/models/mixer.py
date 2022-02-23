@@ -12,7 +12,7 @@ import numpy as np
 
 class RecsysMixer(SequentialRecsysModel):
     def __init__(self, output_layer_activation = 'linear',
-                 embedding_size = 64, max_history_len = 100, token_mixer_hidden_dim = 64, channel_mixer_hidden_dim=64, num_blocks=2):
+                 embedding_size = 64, max_history_len = 100, token_mixer_hidden_dim = 64, channel_mixer_hidden_dim=64, num_blocks=2, l2_emb=0.1):
         super().__init__(output_layer_activation, embedding_size, max_history_len)
         self.embedding_size = embedding_size
         self.max_history_length = max_history_len
@@ -20,6 +20,7 @@ class RecsysMixer(SequentialRecsysModel):
         self.token_mixer_hidden_dim = token_mixer_hidden_dim 
         self.channel_mixer_hidden_dim = channel_mixer_hidden_dim
         self.num_blocks = num_blocks
+        self.l2_emb = l2_emb
 
     def get_model(self):
         return MixerModel(self.embedding_size,
@@ -150,6 +151,7 @@ class MixerModel(Model):
                         channel_mixer_hidden_dim, 
                         token_dropout_prob = 0.2, 
                         channel_dropout_prob = 0.2,
+                        emb_l2_weight = 0.1,
                         *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.positions_embedding = Embedding(2 * max_history_length, embedding_size) 
@@ -161,6 +163,7 @@ class MixerModel(Model):
         self.num_blocks = num_blocks
         self.position_ids_for_pred = tf.constant(np.array(list(range(1, max_history_length +1))).reshape(1, max_history_length))
         self.all_items = tf.range(0, num_items)
+        self.emb_l2_weight = emb_l2_weight 
 
         
 
@@ -169,18 +172,24 @@ class MixerModel(Model):
         labels = inputs[1]        
         positions = inputs[2]
         train = kwargs['training']
-        result = self.get_scores(sequences, positions, train)
-        loss = hf_compute_loss(labels, result)
+        scores, embeddings = self.get_scores(sequences, positions, train, True)
+        
+        l2 = tf.reduce_sum(embeddings * embeddings) * self.emb_l2_weight
+
+        loss = hf_compute_loss(labels, scores) + l2
         return loss
 
-    def get_scores(self, sequences, positions, train):
+    def get_scores(self, sequences, positions, train, return_emb=False):
         x = self.positions_embedding(positions) +  self.item_embeddings(sequences)
         for mixer_block in self.mixer_blocks:
             x = mixer_block(x, train) 
 
         all_item_embeddings = self.item_embeddings(self.all_items) 
         result = x @ tf.transpose(all_item_embeddings)
-        return result
+        if not return_emb:
+            return result
+        else:
+            return result, all_item_embeddings
 
 
     def score_all_items(self, inputs):
