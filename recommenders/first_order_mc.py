@@ -5,6 +5,7 @@ from aprec.recommenders.recommender import Recommender
 
 class FirstOrderMarkovChainRecommender(Recommender):
     def __init__(self, cache_items=1000):
+        super().__init__()
         self.user_actions = defaultdict(list)
         self.cache_items = cache_items
 
