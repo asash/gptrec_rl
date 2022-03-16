@@ -11,6 +11,7 @@ from aprec.recommenders.dnn_sequential_recommender.targetsplitters.shifted_seque
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import RecencySequenceSampling, linear_importance
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import exponential_importance
 from aprec.evaluation.samplers.random_sampler import RandomTargetItemSampler
+from aprec.recommenders.first_order_mc import FirstOrderMarkovChainRecommender
 from aprec.recommenders.metrics.ndcg import KerasNDCG
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.svd import SvdRecommender
@@ -88,7 +89,10 @@ def vanilla_sasrec():
             )
 
 recommenders = {
-    "SASRec-vanilla": vanilla_sasrec
+    "TOP": lambda: top_recommender(), 
+    "MF-BPR":lambda: LightFMRecommender(30, 'bpr'),
+    "FIRST_ORDER_MC": lambda: FirstOrderMarkovChainRecommender() 
+#    "SASRec-vanilla": vanilla_sasrec
 #    "bert4rec-1h": lambda: vanilla_bert4rec(3600), 
 #    "bert4rec-16h": lambda: vanilla_bert4rec(3600*16)
 }
