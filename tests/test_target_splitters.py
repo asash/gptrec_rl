@@ -106,13 +106,13 @@ class TestItemSplitters(unittest.TestCase):
         self.assertEquals(label, [4, 5])
 
     def test_items_masking(self):
-        sequence = [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5)]
+        sequence = [(0, 1), (1, 2), (2, 3), (3, 4), (4, 7)]
         splitter = ItemsMasking()
         splitter.set_num_items(6)
         splitter.set_sequence_len(5)
         train, label = splitter.split(sequence)
-        self.assertEquals(train, [(0, 1), (1, 2), (2, 3), (3, 4), (4, 7)])
-        self.assertEquals(label, (5, [(4, (4, 5))])) # sequence len, pairs of (masked position, masked item)
+        self.assertEquals(train, [(0, 1), (1, 7), (2, 3), (3, 4), (4, 7)])
+        self.assertEquals(label, (5, [(1, (1, 2))])) # sequence len, pairs of (masked position, masked item)
         cnt = Counter()
         for i in range(100):
             splitter = ItemsMasking(random_seed=2*i + 1)
@@ -122,7 +122,7 @@ class TestItemSplitters(unittest.TestCase):
             for i in range(len(train)):
                 if train[i][1] == 7:
                     cnt[i] += 1
-        self.assertEqual(cnt, Counter({4: 24, 3: 20, 0: 20, 1: 19, 2: 17}))
+        self.assertEqual(cnt, Counter({4: 100, 2: 27, 3: 21, 0: 15, 1: 13}))
 
 
 if __name__ == "__main__":
