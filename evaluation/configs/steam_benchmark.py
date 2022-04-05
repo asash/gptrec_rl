@@ -1,5 +1,5 @@
 from aprec.evaluation.split_actions import LeaveOneOut
-from aprec.evaluation.configs.common.common_benhmark_config import *
+from aprec.evaluation.configs.common.common_benchmark_config import *
 
 DATASET = "BERT4rec.steam"
 N_VAL_USERS=512
