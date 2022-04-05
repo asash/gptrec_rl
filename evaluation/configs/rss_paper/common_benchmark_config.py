@@ -69,6 +69,7 @@ def vanilla_bert4rec(time_limit):
 HISTORY_LEN=50
 
 recommenders = {
+    "bert4rec-1h": lambda: vanilla_bert4rec(3600), 
     "top": top_recommender, 
     "mf-bpr": lambda: lightfm_recommender(128, 'bpr'),
 
@@ -87,8 +88,6 @@ recommenders = {
             metric=BCELoss(),
             ),
     
-    "bert4rec-1h": lambda: vanilla_bert4rec(3600), 
-    "bert4rec-16h": lambda: vanilla_bert4rec(3600 * 16), 
 
     "GRU4rec-continuation-bce": lambda: dnn(
             GRU4Rec(max_history_len=HISTORY_LEN),
@@ -197,7 +196,7 @@ recommenders = {
             metric=KerasNDCG(40), 
             ),
 
-
+    "bert4rec-16h": lambda: vanilla_bert4rec(3600 * 16), 
 }
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
