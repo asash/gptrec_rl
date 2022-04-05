@@ -1,14 +1,11 @@
-import numpy as np
-from numpy import random
 from aprec.recommenders.dnn_sequential_recommender.models.sasrec.sasrec import SASRec
 from aprec.recommenders.dnn_sequential_recommender.models.gru4rec import GRU4Rec
 from aprec.recommenders.dnn_sequential_recommender.models.caser import Caser
 from aprec.recommenders.dnn_sequential_recommender.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
 from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_per_positive_target import NegativePerPositiveTargetBuilder
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import SequenceContinuation
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.random_splitter import RandomSplitter
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import RecencySequenceSampling, linear_importance
+from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import RecencySequenceSampling
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import exponential_importance
 from aprec.evaluation.samplers.random_sampler import RandomTargetItemSampler
 from aprec.recommenders.metrics.ndcg import KerasNDCG
@@ -18,7 +15,6 @@ from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender im
 from aprec.recommenders.lightfm import LightFMRecommender
 from aprec.recommenders.vanilla_bert4rec import VanillaBERT4Rec
 from aprec.losses.bce import BCELoss
-from aprec.losses.bpr import BPRLoss
 from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
 
 
@@ -50,7 +46,7 @@ def dnn(model_arch, loss, sequence_splitter,
                 val_sequence_splitter=SequenceContinuation, 
                  target_builder=FullMatrixTargetsBuilder,
                 optimizer=Adam(),
-                training_time_limit=3600, metric=KerasNDCG(40), 
+                training_time_limit=1200, metric=KerasNDCG(40), 
                 max_epochs=10000
                 ):
     return DNNSequentialRecommender(train_epochs=max_epochs, loss=loss,
@@ -73,58 +69,138 @@ def vanilla_bert4rec(time_limit):
 HISTORY_LEN=50
 
 recommenders = {
-    "mf-bpr": lambda: lightfm_recommender(128), 
-    "top": lambda: top_recommender()
-    # "Sasrec-vanilla": lambda: dnn(
-    #         SASRec(max_history_len=HISTORY_LEN, vanilla=True),
-    #         BCELoss(),
-    #         ShiftedSequenceSplitter,
-    #         optimizer=Adam(beta_2=0.98),
-    #         target_builder=lambda: NegativePerPositiveTargetBuilder(HISTORY_LEN), 
-    #         metric=KerasNDCG(40), 
-    #         ),
-    # "Sasrec-continuation-bce": lambda: dnn(
-    #         SASRec(max_history_len=HISTORY_LEN, vanilla=False),
-    #         BCELoss(),
-    #         SequenceContinuation,
-    #         optimizer=Adam(beta_2=0.98),
-    #         target_builder=FullMatrixTargetsBuilder, 
-    #         metric=KerasNDCG(40), 
-    #         ),
-}
+    "top": top_recommender, 
+    "mf-bpr": lambda: lightfm_recommender(128, 'bpr'),
 
+    "SASRec-vanilla": lambda: dnn(
+            SASRec(max_history_len=HISTORY_LEN, 
+                            dropout_rate=0.2,
+                            num_heads=1,
+                            num_blocks=2,
+                            vanilla=True, 
+                            embedding_size=50,
+                    ),
+            BCELoss(),
+            ShiftedSequenceSplitter,
+            optimizer=Adam(beta_2=0.98),
+            target_builder=lambda: NegativePerPositiveTargetBuilder(HISTORY_LEN), 
+            metric=BCELoss(),
+            ),
+    
+    "bert4rec-1h": lambda: vanilla_bert4rec(3600), 
+    "bert4rec-16h": lambda: vanilla_bert4rec(3600 * 16), 
 
-def get_recommender(model, bias):
-    if model == 'Caser-bce':
-        arch = Caser(max_history_len=HISTORY_LEN, requires_user_id=False)
-        loss = BCELoss()
-    if model == 'SASRec-lambdarank':
-        arch = SASRec(max_history_len=HISTORY_LEN, vanilla=False)
-        loss=LambdaGammaRankLoss(pred_truncate_at=4000)
-    if model == 'GRU4rec-lambdarank':
-        arch = GRU4Rec(max_history_len=HISTORY_LEN)
-        loss=LambdaGammaRankLoss(pred_truncate_at=4000)
-    name = f"{model}-rssExp:{bias}-lambdarank"
-    recommender = lambda arch=arch, bias=bias: dnn(
-            arch,
-            loss,
-            lambda: RecencySequenceSampling(0.2, exponential_importance(bias)),
+    "GRU4rec-continuation-bce": lambda: dnn(
+            GRU4Rec(max_history_len=HISTORY_LEN),
+            BCELoss(),
+            SequenceContinuation,
             optimizer=Adam(beta_2=0.98),
             target_builder=FullMatrixTargetsBuilder, 
             metric=KerasNDCG(40), 
-            )
-    return name, recommender
+            ),
+
+    "Caser-continuation-bce": lambda: dnn(
+            Caser(max_history_len=HISTORY_LEN, requires_user_id=False),
+            BCELoss(),
+            SequenceContinuation,
+            optimizer=Adam(beta_2=0.98),
+            target_builder=FullMatrixTargetsBuilder, 
+            metric=KerasNDCG(40), 
+            ),
+
+    "Sasrec-continuation-bce": lambda: dnn(
+            SASRec(max_history_len=HISTORY_LEN, vanilla=False),
+            BCELoss(),
+            SequenceContinuation,
+            optimizer=Adam(beta_2=0.98),
+            target_builder=FullMatrixTargetsBuilder, 
+            metric=KerasNDCG(40), 
+            ),
+
+    "GRU4rec-rss-bce": lambda: dnn(
+            GRU4Rec(max_history_len=HISTORY_LEN),
+            BCELoss(),
+            lambda: RecencySequenceSampling(0.2, exponential_importance(0.8)),
+            optimizer=Adam(beta_2=0.98),
+            target_builder=FullMatrixTargetsBuilder, 
+            metric=KerasNDCG(40), 
+            ),
+    "Caser-rss-bce": lambda: dnn(
+            Caser(max_history_len=HISTORY_LEN, requires_user_id=False),
+            BCELoss(),
+            lambda: RecencySequenceSampling(0.2, exponential_importance(0.8)),
+            optimizer=Adam(beta_2=0.98),
+            target_builder=FullMatrixTargetsBuilder, 
+            metric=KerasNDCG(40), 
+            ),
+    "Sasrec-rss-bce": lambda: dnn(
+            SASRec(max_history_len=HISTORY_LEN, vanilla=False),
+            BCELoss(),
+            lambda: RecencySequenceSampling(0.2, exponential_importance(0.8)),
+            optimizer=Adam(beta_2=0.98),
+            target_builder=FullMatrixTargetsBuilder, 
+            metric=KerasNDCG(40), 
+            ),
 
 
-for i in range(0):
-    bias = random.random()
-    for model in ["SASRec-lambdarank"]:
-        name, recommender_func = get_recommender(model, bias)
-        recommenders[name] = recommender_func
+#LambdaRank
+    "GRU4rec-continuation-lambdarank": lambda: dnn(
+            GRU4Rec(max_history_len=HISTORY_LEN),
+            LambdaGammaRankLoss(pred_truncate_at=4000),
+            SequenceContinuation,
+            optimizer=Adam(beta_2=0.98),
+            target_builder=FullMatrixTargetsBuilder, 
+            metric=KerasNDCG(40), 
+            ),
+    "Caser-continuation-lambdarank": lambda: dnn(
+            Caser(max_history_len=HISTORY_LEN, requires_user_id=False),
+            LambdaGammaRankLoss(pred_truncate_at=4000),
+            SequenceContinuation,
+            optimizer=Adam(beta_2=0.98),
+            target_builder=FullMatrixTargetsBuilder, 
+            metric=KerasNDCG(40), 
+            ),
+    "Sasrec-continuation-lambdarank": lambda: dnn(
+            SASRec(max_history_len=HISTORY_LEN, vanilla=False),
+            LambdaGammaRankLoss(pred_truncate_at=4000),
+            SequenceContinuation,
+            optimizer=Adam(beta_2=0.98),
+            target_builder=FullMatrixTargetsBuilder, 
+            metric=KerasNDCG(40), 
+            ),
 
+        
+    "GRU4rec-rss-lambdarank": lambda: dnn(
+            GRU4Rec(max_history_len=HISTORY_LEN),
+            LambdaGammaRankLoss(pred_truncate_at=4000),
+            lambda: RecencySequenceSampling(0.2, exponential_importance(0.8)),
+            optimizer=Adam(beta_2=0.98),
+            target_builder=FullMatrixTargetsBuilder, 
+            metric=KerasNDCG(40), 
+            ),
+
+    "Caser-rss-lambdarank": lambda: dnn(
+            Caser(max_history_len=HISTORY_LEN, requires_user_id=False),
+            LambdaGammaRankLoss(pred_truncate_at=4000),
+            lambda: RecencySequenceSampling(0.2, exponential_importance(0.8)),
+            optimizer=Adam(beta_2=0.98),
+            target_builder=FullMatrixTargetsBuilder, 
+            metric=KerasNDCG(40), 
+            ),
+
+    "Sasrec-rss-lambdarank": lambda: dnn(
+            SASRec(max_history_len=HISTORY_LEN, vanilla=False),
+            LambdaGammaRankLoss(pred_truncate_at=4000),
+            lambda: RecencySequenceSampling(0.2, exponential_importance(0.8)),
+            optimizer=Adam(beta_2=0.98),
+            target_builder=FullMatrixTargetsBuilder, 
+            metric=KerasNDCG(40), 
+            ),
+
+
+}
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
-TARGET_ITEMS_SAMPLER = RandomTargetItemSampler(101)
 
 def get_recommenders(filter_seen: bool):
     result = {}

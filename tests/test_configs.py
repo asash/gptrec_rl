@@ -23,6 +23,10 @@ class TestConfigs(unittest.TestCase):
             return True
         if "/common/" in filename:
             return True
+
+        if "common_benchmark_config" in filename:
+            return True 
+
         if "__pycache__" in filename:
             return True
         if "__init__" in filename:
