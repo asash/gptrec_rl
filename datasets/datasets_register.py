@@ -7,6 +7,7 @@ from aprec.datasets.movielens20m import get_movielens20m_actions
 from aprec.datasets.gowalla import get_gowalla_dataset
 from aprec.datasets.yelp import get_yelp_dataset
 from aprec.datasets.mts_kion import get_mts_kion_dataset
+from aprec.datasets.dataset_utils import filter_cold_users
 
 class DatasetsRegister(object):
     _all_datasets =  {
@@ -19,6 +20,16 @@ class DatasetsRegister(object):
         "gowalla": get_gowalla_dataset,
         "mts_kion": lambda: get_mts_kion_dataset(),
         "yelp": get_yelp_dataset,
+
+        "ml-20m_warm5": lambda: filter_cold_users(get_movielens20m_actions(min_rating=0.0), 5), 
+        "booking_warm5": lambda: filter_cold_users(get_booking_dataset(unix_timestamps=True)[0], 5), 
+        "gowalla_warm5": lambda: filter_cold_users(get_gowalla_dataset(), 5), 
+        "yelp_warm5": lambda: filter_cold_users(get_yelp_dataset(), 5),
+
+        "ml-20m_warm10": lambda: filter_cold_users(get_movielens20m_actions(min_rating=0.0), 10), 
+        "booking_warm10": lambda: filter_cold_users(get_booking_dataset(unix_timestamps=True)[0], 10), 
+        "gowalla_warm10": lambda: filter_cold_users(get_gowalla_dataset(), 10), 
+        "yelp_warm10": lambda: filter_cold_users(get_yelp_dataset(), 10)
     }
 
     def __getitem__(self, item):
