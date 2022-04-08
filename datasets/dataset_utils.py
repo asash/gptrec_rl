@@ -15,6 +15,13 @@ def filter_popular_items(actions_generator, max_actions):
     popular_items = set([item_id for (item_id, cnt) in items_counter.most_common(max_actions)])
     return filter(lambda action: action.item_id in popular_items, actions)
 
+def filter_cold_users(actions_generator, min_actions_per_user = 0):
+    actions = []
+    user_counter = Counter()
+    for action in actions_generator:
+        actions.append(action)
+        user_counter[action.user_id] += 1
+    return filter(lambda action: user_counter[action.user_id] >= min_actions_per_user, actions)
 
 def unzip(zipped_file, unzip_dir):
     full_dir_name = os.path.join(get_dir(), unzip_dir)
