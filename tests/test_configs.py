@@ -1,5 +1,6 @@
 import importlib.util
 import os
+import sys
 import unittest
 from aprec.datasets.datasets_register import DatasetsRegister
 from aprec.evaluation.samplers.sampler import TargetItemSampler
@@ -34,7 +35,7 @@ class TestConfigs(unittest.TestCase):
         return False
 
     def validate_config(self, filename):
-        print(f"validating {filename}")
+        sys.stderr.write(f"validating {filename}... ")
         config_name = os.path.basename(filename[:-3])
         spec = importlib.util.spec_from_file_location(config_name, filename)
         config = importlib.util.module_from_spec(spec)
@@ -54,10 +55,6 @@ class TestConfigs(unittest.TestCase):
             self.assertGreater(fraction, 0)
             self.assertLessEqual(fraction, 1)
 
-        for recommender_name in config.RECOMMENDERS:
-            recommender = config.RECOMMENDERS[recommender_name]()
-            self.assertTrue(isinstance(recommender, Recommender), f"bad recommender type of {recommender_name}")
-            del(recommender)
 
         if hasattr(config, "USERS"):
             self.assertTrue(callable(config.USERS), "USERS should be callable")
@@ -66,6 +63,15 @@ class TestConfigs(unittest.TestCase):
             raise Exception("SAMPLED_METRICS_ON field is obsolete. Please use  TARGET_ITEMS_SAMPLER")
         if hasattr(config, "TARGET_ITEMS_SAMPLER"):
             self.assertTrue(isinstance(config.TARGET_ITEMS_SAMPLER, TargetItemSampler))
+
+        model_cnt = 0 
+        for recommender_name in config.RECOMMENDERS:
+            recommender = config.RECOMMENDERS[recommender_name]()
+            self.assertTrue(isinstance(recommender, Recommender), f"bad recommender type of {recommender_name}")
+            del(recommender)
+            model_cnt += 1
+        sys.stderr.write(f"{model_cnt} models found\n")
+
 
 
 if __name__ == "__main__":

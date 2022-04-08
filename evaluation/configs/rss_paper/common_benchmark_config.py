@@ -46,7 +46,7 @@ def dnn(model_arch, loss, sequence_splitter,
                 val_sequence_splitter=SequenceContinuation, 
                  target_builder=FullMatrixTargetsBuilder,
                 optimizer=Adam(),
-                training_time_limit=1200, metric=KerasNDCG(40), 
+                training_time_limit=3600, metric=KerasNDCG(40), 
                 max_epochs=10000
                 ):
     return DNNSequentialRecommender(train_epochs=max_epochs, loss=loss,
@@ -201,9 +201,11 @@ recommenders = {
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
 
-def get_recommenders(filter_seen: bool):
+def get_recommenders(filter_seen: bool, filter_recommenders = set()):
     result = {}
     for recommender_name in recommenders:
+        if recommender_name in filter_recommenders:
+                continue
         if filter_seen:
             result[recommender_name] =\
                 lambda recommender_name=recommender_name: FilterSeenRecommender(recommenders[recommender_name]())
