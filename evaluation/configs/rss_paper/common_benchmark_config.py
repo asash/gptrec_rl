@@ -194,9 +194,7 @@ recommenders = {
             optimizer=Adam(beta_2=0.98),
             target_builder=FullMatrixTargetsBuilder, 
             metric=KerasNDCG(40), 
-            ),
-
-    "bert4rec-16h": lambda: vanilla_bert4rec(3600 * 16), 
+            )
 }
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
