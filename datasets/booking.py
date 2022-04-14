@@ -39,7 +39,7 @@ def split_csv_string(string):
 
 
 
-def get_booking_dataset_one_file(filename, is_testset=False, max_actions=None, unix_timestamps=False):
+def get_booking_dataset_one_file(filename, is_testset=False, max_actions=None, unix_timestamps=False, mark_control=True):
     actions = []
     submit_actions = []
     with open(filename) as input_file:
@@ -64,15 +64,18 @@ def get_booking_dataset_one_file(filename, is_testset=False, max_actions=None, u
             if unix_timestamps:
                 checkin = calendar.timegm(checkin.timetuple())
                 checkout = calendar.timegm(checkout.timetuple())
-            action = Action(user_id = utrip_id, item_id = city_id, timestamp=checkin, data = {'user_id': user_id,
-                                                                          'device_class': device_class,
-                                                                          'affiliate_id': affiliate_id,
-                                                                          'hotel_country': hotel_country,
-                                                                          'booker_country': booker_country,
-                                                                          'checkin_date': checkin,
-                                                                          'checkout_date': checkout,
-                                                                          'is_control': is_testset
-                                                                         })
+            data = {'user_id': user_id,
+                    'device_class': device_class,
+                    'affiliate_id': affiliate_id,
+                    'hotel_country': hotel_country,
+                    'booker_country': booker_country,
+                    'checkin_date': checkin,
+                    'checkout_date': checkout,
+                    }
+            if mark_control:
+                data['is_control'] = is_testset
+
+            action = Action(user_id = utrip_id, item_id = city_id, timestamp=checkin, data = data)
             if action.item_id == "0":
                 submit_actions.append(action)
             else:
@@ -83,14 +86,14 @@ def get_booking_dataset_one_file(filename, is_testset=False, max_actions=None, u
     return actions, submit_actions
 
 def get_booking_dataset_internal(train_filename, test_filename,
-                                    max_actions_per_file=None, unix_timestamps=False):
+                                    max_actions_per_file=None, unix_timestamps=False, mark_control=True):
 
     train_actions, _ = get_booking_dataset_one_file(train_filename, is_testset=False,
                                                  max_actions=max_actions_per_file,
-                                                 unix_timestamps=unix_timestamps)
+                                                 unix_timestamps=unix_timestamps, mark_control=mark_control)
     test_actions, submit_actions = get_booking_dataset_one_file(test_filename, is_testset=True,
                                                  max_actions=max_actions_per_file,
-                                                 unix_timestamps=unix_timestamps)
+                                                 unix_timestamps=unix_timestamps, mark_control=mark_control)
     return train_actions + test_actions, submit_actions
 
 def download_booking_file(url, filename):
@@ -117,8 +120,8 @@ def download_booking_test():
 
 
 
-def get_booking_dataset(max_actions_per_file=None, unix_timestamps=False):
+def get_booking_dataset(max_actions_per_file=None, unix_timestamps=False, mark_control=True):
     train_filename = download_booking_train()
     test_filename = download_booking_test()
-    return get_booking_dataset_internal(train_filename, test_filename, max_actions_per_file, unix_timestamps)
+    return get_booking_dataset_internal(train_filename, test_filename, max_actions_per_file, unix_timestamps, mark_control)
 

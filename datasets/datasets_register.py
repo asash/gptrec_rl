@@ -16,18 +16,18 @@ class DatasetsRegister(object):
         "BERT4rec.beauty": lambda: get_bert4rec_dataset("beauty"),
         "ml-20m": lambda: get_movielens20m_actions(min_rating=0.0),
         "ml-100k": lambda: get_movielens100k_actions(min_rating=0.0),
-        "booking": lambda: get_booking_dataset(unix_timestamps=True)[0],
+        "booking": lambda: get_booking_dataset(unix_timestamps=True, mark_control=False)[0],
         "gowalla": get_gowalla_dataset,
         "mts_kion": lambda: get_mts_kion_dataset(),
         "yelp": get_yelp_dataset,
 
         "ml-20m_warm5": lambda: filter_cold_users(get_movielens20m_actions(min_rating=0.0), 5), 
-        "booking_warm5": lambda: filter_cold_users(get_booking_dataset(unix_timestamps=True)[0], 5), 
+        "booking_warm5": lambda: filter_cold_users(get_booking_dataset(unix_timestamps=True, mark_control=False)[0], 5), 
         "gowalla_warm5": lambda: filter_cold_users(get_gowalla_dataset(), 5), 
         "yelp_warm5": lambda: filter_cold_users(get_yelp_dataset(), 5),
 
         "ml-20m_warm10": lambda: filter_cold_users(get_movielens20m_actions(min_rating=0.0), 10), 
-        "booking_warm10": lambda: filter_cold_users(get_booking_dataset(unix_timestamps=True)[0], 10), 
+        "booking_warm10": lambda: filter_cold_users(get_booking_dataset(unix_timestamps=True, mark_control=False)[0], 10), 
         "gowalla_warm10": lambda: filter_cold_users(get_gowalla_dataset(), 10), 
         "yelp_warm10": lambda: filter_cold_users(get_yelp_dataset(), 10)
     }
