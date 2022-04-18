@@ -1,6 +1,7 @@
 import os
 
 import torch
+import tqdm
 
 from aprec.recommenders.recommender import Recommender
 from aprec.api.action import Action
@@ -102,11 +103,8 @@ class RecboleBERT4RecRecommender(Recommender):
             self.build_recbole_model(dataset_name, full_yaml_filename)
 
     def recommend(self, user_id, limit: int, features=None):
-        internal_id = self.user_id.get_id(user_id)
-        user_sequence, user_seq_len  = self.get_sequence(internal_id)
-        interaction = {'item_id_list': user_sequence.to(self.model.device), 'item_length':user_seq_len.to(self.model.device)}
-        scores = self.model.full_sort_predict(interaction)
-        best_scores = torch.topk(scores[0], k=limit)
+        scores = self.get_user_scores(user_id)
+        best_scores = torch.topk(scores, k=limit)
         result = []
         for (id, val) in zip(best_scores.indices, best_scores.values):
             token = self.train_dataset.id2token('item_id', id)
@@ -115,3 +113,28 @@ class RecboleBERT4RecRecommender(Recommender):
             item_id = self.item_id.reverse_id(internal_id)
             result.append((item_id, float(val)))            
         return result
+
+    def get_user_scores(self, user_id):
+        internal_id = self.user_id.get_id(user_id)
+        user_sequence, user_seq_len  = self.get_sequence(internal_id)
+        interaction = {'item_id_list': user_sequence.to(self.model.device), 'item_length':user_seq_len.to(self.model.device)}
+        scores = self.model.full_sort_predict(interaction)
+        return scores[0]
+
+    def get_item_rankings(self):
+        result = {}
+        print('generating sampled predictions...')
+        for request in tqdm.tqdm(self.items_ranking_requests, ascii=True):
+            scores = self.get_user_scores(request.user_id) 
+            user_result = []
+            for item_id in request.item_ids:
+                if self.item_id.has_item(item_id):
+                    token = str(self.item_id.get_id(item_id))
+                    id = self.train_dataset.token2id('item_id', token)
+                    user_result.append((item_id, float(scores[id])))
+                else:
+                    user_result.append((item_id, float("-inf")))
+            user_result.sort(key=lambda x: -x[1])
+            result[request.user_id] = user_result
+        return result
+
