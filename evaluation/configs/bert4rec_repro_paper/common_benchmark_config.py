@@ -2,21 +2,15 @@ from aprec.recommenders.dnn_sequential_recommender.models.sasrec.sasrec import S
 from aprec.recommenders.dnn_sequential_recommender.models.gru4rec import GRU4Rec
 from aprec.recommenders.dnn_sequential_recommender.models.caser import Caser
 from aprec.recommenders.dnn_sequential_recommender.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
-from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_per_positive_target import NegativePerPositiveTargetBuilder
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import SequenceContinuation
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import RecencySequenceSampling
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import exponential_importance
-from aprec.evaluation.samplers.random_sampler import RandomTargetItemSampler
 from aprec.recommenders.metrics.ndcg import KerasNDCG
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
 from aprec.recommenders.bert4recrepro.recbole_bert4rec import RecboleBERT4RecRecommender
+from aprec.recommenders.bert4recrepro.b4vae_bert4rec import B4rVaeBert4Rec
 from aprec.recommenders.lightfm import LightFMRecommender
 from aprec.recommenders.vanilla_bert4rec import VanillaBERT4Rec
-from aprec.losses.bce import BCELoss
-from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
 
 
 
@@ -71,11 +65,15 @@ def vanilla_bert4rec(time_limit):
 def recbole_bert4rec(epochs=None):
     return RecboleBERT4RecRecommender(epochs=epochs)
 
+def b4rvae_bert4rec(epochs=None):
+    return B4rVaeBert4Rec(epochs=epochs)
+
 HISTORY_LEN=50
 
 recommenders = {
 #    "bert4rec-1h": lambda: vanilla_bert4rec(3600), 
-     "recbole_bert4rec": recbole_bert4rec, 
+#     "recbole_bert4rec": recbole_bert4rec, 
+     "b4vae_bert4rec": b4rvae_bert4rec
 }
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
