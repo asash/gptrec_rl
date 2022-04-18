@@ -1,3 +1,4 @@
+from aprec.evaluation.samplers.pop_sampler import PopTargetItemsSampler
 from aprec.recommenders.dnn_sequential_recommender.models.sasrec.sasrec import SASRec
 from aprec.recommenders.dnn_sequential_recommender.models.gru4rec import GRU4Rec
 from aprec.recommenders.dnn_sequential_recommender.models.caser import Caser
@@ -76,6 +77,7 @@ recommenders = {
      "b4vae_bert4rec": b4rvae_bert4rec
 }
 
+TARGET_ITEMS_SAMPLER = PopTargetItemsSampler(101)
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
 
 def get_recommenders(filter_seen: bool, filter_recommenders = set()):
