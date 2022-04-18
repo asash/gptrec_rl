@@ -158,7 +158,7 @@ class B4rVaeBert4Rec(Recommender):
             user_result = []
             for item_id in request.item_ids:
                 if self.item_id.has_item(item_id):
-                    user_result.append((item_id, scores[self.item_id.get_id(item_id)]))
+                    user_result.append((item_id, float(scores[self.item_id.get_id(item_id)])))
                 else:
                     user_result.append((item_id, float("-inf")))
             user_result.sort(key=lambda x: -x[1])
