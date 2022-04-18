@@ -138,7 +138,8 @@ class B4rVaeBert4Rec(Recommender):
         best_scores = torch.topk(scores, limit)
         result = []
         for (internal_id, val) in zip(best_scores.indices, best_scores.values):
-            item_id = self.item_id.reverse_id(int(internal_id))
-            if item_id == '[PAD]': continue
-            result.append((item_id, float(val)))      
+            if internal_id < self.item_id.size():
+                item_id = self.item_id.reverse_id(int(internal_id))
+                if item_id == '[PAD]': continue
+                result.append((item_id, float(val)))      
         return result[:limit]
