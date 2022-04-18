@@ -80,11 +80,15 @@ class B4rVaeArgs(object):
 
 
 class B4rVaeBert4Rec(Recommender):
-    def __init__(self, epochs=None):
+    def __init__(self, epochs=None, cache_topk=200):
+        super().__init__()
         self.item_id = ItemId()
         self.user_id = ItemId()
         assert(self.item_id.get_id('[PAD]') == 0)
         self.user_actions = {} 
+        self.cache_topk=cache_topk
+        self.top_cache = {}
+        self.recommendations_cache = {}
         self.args = B4rVaeArgs()
         if epochs is not None:
             self.args.num_epochs = epochs
@@ -132,10 +136,11 @@ class B4rVaeBert4Rec(Recommender):
 
 
     def recommend(self, user_id, limit: int, features=None):
-        seq = self.get_pred_user_sequence(user_id)
-        scores = self.model(seq)
-        scores = scores[:, -1, :][0]
-        best_scores = torch.topk(scores, limit)
+        if user_id in self.top_cache:
+            best_scores = self.top_cache[user_id] 
+        else:
+            scores, best_scores = self.get_user_scores(user_id)
+
         result = []
         for (internal_id, val) in zip(best_scores.indices, best_scores.values):
             if internal_id < self.item_id.size():
@@ -143,3 +148,26 @@ class B4rVaeBert4Rec(Recommender):
                 if item_id == '[PAD]': continue
                 result.append((item_id, float(val)))      
         return result[:limit]
+
+    def get_user_scores(self, user_id):
+        seq = self.get_pred_user_sequence(user_id)
+        scores = self.model(seq)
+        scores = scores[:, -1, :][0]
+        topk =  torch.topk(scores, self.cache_topk)
+        self.top_cache[user_id] = topk
+        return scores, topk
+
+    
+    def get_item_rankings(self):
+        result = {}
+        for request in self.items_ranking_requests:
+            scores, topk = self.get_user_scores(request.user_id) 
+            user_result = []
+            for item_id in request.item_ids:
+                if self.item_id.has_item(item_id):
+                    user_result.append((item_id, scores[self.item_id.get_id(item_id)]))
+                else:
+                    user_result.append((item_id, float("-inf")))
+            user_result.sort(key=lambda x: -x[1])
+            result[request.user_id] = user_result
+        return result
