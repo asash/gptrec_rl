@@ -112,9 +112,9 @@ HISTORY_LEN=50
 
 recommenders = {
 #    "bert4rec-1h": lambda: vanilla_bert4rec(3600), 
+     "original_bert4rec": original_ber4rec,
      "mf-bpr": lambda: lightfm_recommender(128, 'bpr'),
      "vanilla_sasrec": vanilla_sasrec,
-     "original_bert4rec": original_ber4rec,
      "recbole_bert4rec": recbole_bert4rec, 
      "b4vae_bert4rec": b4rvae_bert4rec,
      "our_bert4rec":  our_bert4rec
