@@ -12,14 +12,12 @@ from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 USERS_FRACTIONS = [1.0]
 
 
-def original_ber4rec(time_limit):
-    recommender = VanillaBERT4Rec(training_time_limit=time_limit)
+def original_ber4rec(training_steps):
+    recommender = VanillaBERT4Rec(num_train_steps=training_steps)
     return recommender
 
-HISTORY_LEN=50
-
 recommenders = {
-     "original_bert4rec-0.5h": lambda: original_ber4rec(1800)
+     "original_bert4rec-200000": lambda: original_ber4rec(200000)
 }
 
 TARGET_ITEMS_SAMPLER = PopTargetItemsSampler(101)
