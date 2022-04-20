@@ -1,9 +1,18 @@
+from aprec.evaluation.configs.bert4rec_config import vanilla_bert4rec
 from aprec.evaluation.samplers.pop_sampler import PopTargetItemsSampler
+from aprec.losses.bce import BCELoss
+from aprec.losses.mean_ypred_ploss import MeanPredLoss
+from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
+from aprec.recommenders.dnn_sequential_recommender.models.bert4rec.bert4rec import BERT4Rec
 from aprec.recommenders.dnn_sequential_recommender.models.sasrec.sasrec import SASRec
 from aprec.recommenders.dnn_sequential_recommender.models.gru4rec import GRU4Rec
 from aprec.recommenders.dnn_sequential_recommender.models.caser import Caser
 from aprec.recommenders.dnn_sequential_recommender.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
+from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
+from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_per_positive_target import NegativePerPositiveTargetBuilder
+from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import SequenceContinuation
+from aprec.recommenders.dnn_sequential_recommender.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
 from aprec.recommenders.metrics.ndcg import KerasNDCG
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.svd import SvdRecommender
@@ -58,8 +67,8 @@ def dnn(model_arch, loss, sequence_splitter,
                                                           debug=False
                                                           )
 
-def vanilla_bert4rec(time_limit):
-    recommender = VanillaBERT4Rec(training_time_limit=time_limit, num_train_steps=10000000)
+def original_ber4rec():
+    recommender = VanillaBERT4Rec()
     return recommender
 
 
@@ -69,13 +78,46 @@ def recbole_bert4rec(epochs=None):
 def b4rvae_bert4rec(epochs=None):
     return B4rVaeBert4Rec(epochs=epochs)
 
+def our_bert4rec(relative_position_encoding=False, sequence_len=50, rss = lambda n, k: 1, layers=2, arch=BERT4Rec, masking_prob=0.2):
+        model = arch( max_history_len=sequence_len)
+        recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=200,
+                                               batch_size=128,
+                                               training_time_limit=3600000, 
+                                               loss = MeanPredLoss(),
+                                               debug=True, sequence_splitter=lambda: ItemsMasking(masking_prob=masking_prob, recency_importance=rss), 
+                                               targets_builder= lambda: ItemsMaskingTargetsBuilder(relative_positions_encoding=relative_position_encoding),
+                                               val_sequence_splitter=lambda: ItemsMasking(force_last=True),
+                                               metric=MeanPredLoss(), 
+                                               pred_history_vectorizer=AddMaskHistoryVectorizer(),
+                                               )
+        return recommender
+
+vanilla_sasrec  = lambda: dnn(
+            SASRec(max_history_len=HISTORY_LEN, 
+                            dropout_rate=0.2,
+                            num_heads=1,
+                            num_blocks=2,
+                            vanilla=True, 
+                            embedding_size=50,
+                    ),
+            BCELoss(),
+            ShiftedSequenceSplitter,
+            optimizer=Adam(beta_2=0.98),
+            target_builder=lambda: NegativePerPositiveTargetBuilder(HISTORY_LEN), 
+            metric=BCELoss(),
+            )
+    
+
 HISTORY_LEN=50
 
 recommenders = {
 #    "bert4rec-1h": lambda: vanilla_bert4rec(3600), 
      "mf-bpr": lambda: lightfm_recommender(128, 'bpr'),
+     "vanilla_sasrec": vanilla_sasrec,
+     "original_bert4rec": original_ber4rec,
      "recbole_bert4rec": recbole_bert4rec, 
-     "b4vae_bert4rec": b4rvae_bert4rec
+     "b4vae_bert4rec": b4rvae_bert4rec,
+     "our_bert4rec":  our_bert4rec
 }
 
 TARGET_ITEMS_SAMPLER = PopTargetItemsSampler(101)

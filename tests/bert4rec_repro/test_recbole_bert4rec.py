@@ -4,6 +4,7 @@ from aprec.api.items_ranking_request import ItemsRankingRequest
 from aprec.datasets.movielens20m import get_movielens20m_actions, get_movies_catalog
 from aprec.recommenders.bert4recrepro.recbole_bert4rec import RecboleBERT4RecRecommender
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
+from recbole.quick_start import run_recbole
 from aprec.utils.generator_limit import generator_limit
 
 
@@ -39,7 +40,13 @@ class TestRecboleBert4rec(unittest.TestCase):
         for rec in recs:
             print(catalog.get_item(rec[0]), "\t", rec[1])
 
-
+    @unittest.skip
+    def test_default_recbole(self):
+        parameter_dict = {
+            'load_col': {'inter':  ['user_id', 'item_id', 'rating', 'timestamp']},
+            'neg_sampling': None,
+        }
+        run_recbole(model='BERT4Rec', dataset='ml-1m', config_dict=parameter_dict)
 
 
 
