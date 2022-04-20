@@ -1,4 +1,5 @@
 booking_data/
+saved/
 .ipynb_checkpoints/
 a.out
 log_tensorboard
