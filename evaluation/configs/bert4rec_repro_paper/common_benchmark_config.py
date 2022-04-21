@@ -81,7 +81,7 @@ def b4rvae_bert4rec(epochs=None):
 def our_bert4rec(relative_position_encoding=False, sequence_len=50, rss = lambda n, k: 1, layers=2, arch=BERT4Rec, masking_prob=0.2):
         model = arch( max_history_len=sequence_len)
         recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=200,
-                                               batch_size=128,
+                                               batch_size=64,
                                                training_time_limit=3600000, 
                                                loss = MeanPredLoss(),
                                                debug=True, sequence_splitter=lambda: ItemsMasking(masking_prob=masking_prob, recency_importance=rss), 
@@ -112,11 +112,11 @@ HISTORY_LEN=50
 
 recommenders = {
 #    "bert4rec-1h": lambda: vanilla_bert4rec(3600), 
-     "original_bert4rec": original_ber4rec,
-     "mf-bpr": lambda: lightfm_recommender(128, 'bpr'),
-     "vanilla_sasrec": vanilla_sasrec,
-     "recbole_bert4rec": recbole_bert4rec, 
-     "b4vae_bert4rec": b4rvae_bert4rec,
+#     "original_bert4rec": original_ber4rec,
+#     "mf-bpr": lambda: lightfm_recommender(128, 'bpr'),
+#     "vanilla_sasrec": vanilla_sasrec,
+#     "recbole_bert4rec": recbole_bert4rec, 
+#     "b4vae_bert4rec": b4rvae_bert4rec,
      "our_bert4rec":  our_bert4rec
 }
 
