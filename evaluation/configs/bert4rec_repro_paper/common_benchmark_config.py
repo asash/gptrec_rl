@@ -118,7 +118,7 @@ recommenders = {
     #  "recbole_bert4rec": recbole_bert4rec, 
     #  "b4vae_bert4rec": b4rvae_bert4rec,
     #  "our_bert4rec":  our_bert4rec
-       "our_bert4rec_high_masking_prob":  our_bert4rec(masking_prob=0.6, max_predictions_per_seq=30)
+       "our_bert4rec_high_masking_prob":  lambda: our_bert4rec(masking_prob=0.6, max_predictions_per_seq=30)
 }
 
 TARGET_ITEMS_SAMPLER = PopTargetItemsSampler(101)
