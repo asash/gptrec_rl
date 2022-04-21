@@ -78,13 +78,13 @@ def recbole_bert4rec(epochs=None):
 def b4rvae_bert4rec(epochs=None):
     return B4rVaeBert4Rec(epochs=epochs)
 
-def our_bert4rec(relative_position_encoding=False, sequence_len=50, rss = lambda n, k: 1, layers=2, arch=BERT4Rec, masking_prob=0.2):
+def our_bert4rec(relative_position_encoding=False, sequence_len=50, rss = lambda n, k: 1, layers=2, arch=BERT4Rec, masking_prob=0.2, max_predictions_per_seq=20):
         model = arch( max_history_len=sequence_len)
         recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=200,
                                                batch_size=64,
                                                training_time_limit=3600000, 
                                                loss = MeanPredLoss(),
-                                               debug=True, sequence_splitter=lambda: ItemsMasking(masking_prob=masking_prob, recency_importance=rss), 
+                                               debug=True, sequence_splitter=lambda: ItemsMasking(masking_prob=masking_prob, max_predictions_per_seq=max_predictions_per_seq, recency_importance=rss), 
                                                targets_builder= lambda: ItemsMaskingTargetsBuilder(relative_positions_encoding=relative_position_encoding),
                                                val_sequence_splitter=lambda: ItemsMasking(force_last=True),
                                                metric=MeanPredLoss(), 
@@ -111,13 +111,14 @@ vanilla_sasrec  = lambda: dnn(
 HISTORY_LEN=50
 
 recommenders = {
-#    "bert4rec-1h": lambda: vanilla_bert4rec(3600), 
-#     "original_bert4rec": original_ber4rec,
-#     "mf-bpr": lambda: lightfm_recommender(128, 'bpr'),
-#     "vanilla_sasrec": vanilla_sasrec,
-#     "recbole_bert4rec": recbole_bert4rec, 
-#     "b4vae_bert4rec": b4rvae_bert4rec,
-     "our_bert4rec":  our_bert4rec
+    #  "bert4rec-1h": lambda: vanilla_bert4rec(3600), 
+    #  "original_bert4rec": original_ber4rec,
+    #  "mf-bpr": lambda: lightfm_recommender(128, 'bpr'),
+    #  "vanilla_sasrec": vanilla_sasrec,
+    #  "recbole_bert4rec": recbole_bert4rec, 
+    #  "b4vae_bert4rec": b4rvae_bert4rec,
+    #  "our_bert4rec":  our_bert4rec
+       "our_bert4rec_high_masking_prob":  our_bert4rec(masking_prob=0.6, max_predictions_per_seq=30)
 }
 
 TARGET_ITEMS_SAMPLER = PopTargetItemsSampler(101)
