@@ -112,13 +112,13 @@ HISTORY_LEN=50
 
 recommenders = {
     #  "bert4rec-1h": lambda: vanilla_bert4rec(3600), 
-    #  "original_bert4rec": original_ber4rec,
-    #  "mf-bpr": lambda: lightfm_recommender(128, 'bpr'),
-    #  "vanilla_sasrec": vanilla_sasrec,
-    #  "recbole_bert4rec": recbole_bert4rec, 
-    #  "b4vae_bert4rec": b4rvae_bert4rec,
-    #  "our_bert4rec":  our_bert4rec
-       "our_bert4rec_high_masking_prob":  lambda: our_bert4rec(masking_prob=0.6, max_predictions_per_seq=30)
+      "original_bert4rec": original_ber4rec,
+      "mf-bpr": lambda: lightfm_recommender(128, 'bpr'),
+      "vanilla_sasrec": vanilla_sasrec,
+      "recbole_bert4rec": recbole_bert4rec, 
+      "b4vae_bert4rec": b4rvae_bert4rec,
+      "our_bert4rec":  our_bert4rec
+    #   "our_bert4rec_high_masking_prob":  lambda: our_bert4rec(masking_prob=0.6, max_predictions_per_seq=30)
 }
 
 TARGET_ITEMS_SAMPLER = PopTargetItemsSampler(101)
