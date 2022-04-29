@@ -12,7 +12,6 @@ from aprec.utils.generator_limit import generator_limit
 from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
 from aprec.losses.xendcg import XENDCGLoss
 import aprec.datasets.mts_kion as kion
-from aprec.datasets.movielens20m import get_movies_catalog
 import unittest
 
 from aprec.recommenders.dnn_sequential_recommender.models.caser import Caser
