@@ -1,18 +1,19 @@
-import json
-import os
+
 import unittest
-from aprec.datasets.movielens20m import get_movielens20m_actions
-from aprec.recommenders.top_recommender import TopRecommender
-from aprec.recommenders.svd import SvdRecommender
-from aprec.recommenders.lambdamart_ensemble_recommender import LambdaMARTEnsembleRecommender
-from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
-from aprec.tests.test_deepmf import USER_ID
-import tempfile
-from aprec.utils.generator_limit import generator_limit
-import pandas as pd
 
 class TestLambdaMartEnsembleRecommender(unittest.TestCase):
     def test_lambdamart_ensemble_recommender(self):
+        import json
+        import os
+        from aprec.datasets.movielens20m import get_movielens20m_actions
+        from aprec.recommenders.top_recommender import TopRecommender
+        from aprec.recommenders.svd import SvdRecommender
+        from aprec.recommenders.lambdamart_ensemble_recommender import LambdaMARTEnsembleRecommender
+        from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
+        import tempfile
+        from aprec.utils.generator_limit import generator_limit
+        import pandas as pd
+
         tempdir = tempfile.mkdtemp("lambdamart_recommender_test")
         candidates_selection = FilterSeenRecommender(TopRecommender())
         other_recommenders = {

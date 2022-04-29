@@ -1,15 +1,15 @@
-from re import I
 import unittest
-from aprec.api.items_ranking_request import ItemsRankingRequest
-from aprec.datasets.movielens20m import get_movielens20m_actions, get_movies_catalog
-from aprec.recommenders.bert4recrepro.recbole_bert4rec import RecboleBERT4RecRecommender
-from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
-from recbole.quick_start import run_recbole
-from aprec.utils.generator_limit import generator_limit
+
 
 
 class TestRecboleBert4rec(unittest.TestCase):
     def test_sampled_rankings(self):
+        from aprec.api.items_ranking_request import ItemsRankingRequest
+        from aprec.datasets.movielens20m import get_movielens20m_actions
+        from aprec.recommenders.bert4recrepro.recbole_bert4rec import RecboleBERT4RecRecommender
+        from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
+        from aprec.utils.generator_limit import generator_limit
+
         recommender = FilterSeenRecommender(RecboleBERT4RecRecommender(epochs=5, max_sequence_len=10))
         for action in generator_limit(get_movielens20m_actions(), 10000):
             recommender.add_action(action)
@@ -27,6 +27,11 @@ class TestRecboleBert4rec(unittest.TestCase):
                 self.assertGreater(score, float('-inf'))
 
     def test_recbole_bert4rec(self):
+        from aprec.datasets.movielens20m import get_movielens20m_actions, get_movies_catalog
+        from aprec.recommenders.bert4recrepro.recbole_bert4rec import RecboleBERT4RecRecommender
+        from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
+        from aprec.utils.generator_limit import generator_limit
+
         USER_ID = '120'
         val_users = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
         recommender = RecboleBERT4RecRecommender(epochs=5, max_sequence_len=10)
@@ -42,6 +47,7 @@ class TestRecboleBert4rec(unittest.TestCase):
 
     @unittest.skip
     def test_default_recbole(self):
+        from recbole.quick_start import run_recbole
         parameter_dict = {
             'load_col': {'inter':  ['user_id', 'item_id', 'rating', 'timestamp']},
             'neg_sampling': None,

@@ -1,9 +1,8 @@
-from aprec.utils.item_id import ItemId
-
 import unittest
 
 class TestItemId(unittest.TestCase):
     def test_get_id(self):
+        from aprec.utils.item_id import ItemId
         items_dict = ItemId()
         self.assertEqual(items_dict.get_id("aaa"), 0)
         self.assertEqual(items_dict.get_id("bbb"), 1)

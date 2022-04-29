@@ -1,7 +1,4 @@
 import unittest
-from aprec.tests.generate_actions import generate_actions
-from aprec.evaluation.n_actions_for_user import n_actions_for_user
-
 REFERENCE_1_ACTION =\
 """Action(uid=0, item=0, ts=2)
 Action(uid=1, item=3, ts=0)
@@ -24,6 +21,10 @@ def sorted_actions_str(actions):
 
 class TestNActionsForUser(unittest.TestCase):
     def test_n_actions_for_user(self):
+        from aprec.tests.generate_actions import generate_actions
+        from aprec.evaluation.n_actions_for_user import n_actions_for_user
+
+
         actions = generate_actions(10)
         actions_1 = n_actions_for_user(actions, 1)
         actions_2 = n_actions_for_user(actions, 2)

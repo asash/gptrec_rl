@@ -1,8 +1,5 @@
 import json
 import unittest
-from aprec.datasets.yelp import get_yelp_dataset
-from aprec.datasets.dataset_stats import dataset_stats
-from aprec.datasets.datasets_register import DatasetsRegister
 
 reference_actions =  [{'user_id': 430450, 'item_id': 91854, 'data': {}, 'timestamp': 1108524202}, 
                       {'user_id': 430450, 'item_id': 137692, 'data': {}, 'timestamp': 1108524579}, 
@@ -17,6 +14,7 @@ reference_actions =  [{'user_id': 430450, 'item_id': 91854, 'data': {}, 'timesta
 
 class TestYelpDataset(unittest.TestCase):
     def test_yelp_dataset(self):
+        from aprec.datasets.yelp import get_yelp_dataset
         dataset = [json.loads(action.to_json()) for action in get_yelp_dataset(max_actions=10)]
         self.assertEqual(reference_actions, dataset)
 

@@ -1,14 +1,14 @@
-import random
-
-import numpy as np
-
-from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
-import tensorflow as tf
-from tqdm import tqdm
 import unittest
 
 class TestLambdaranTime(unittest.TestCase):
    def test_get_lambdas(self):
+       import random
+       import numpy as np
+       from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
+       import tensorflow as tf
+       from tqdm import tqdm
+
+
        random.seed(31337)
        np.random.seed(31337)
        batch_size = 128

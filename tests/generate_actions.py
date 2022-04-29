@@ -1,8 +1,6 @@
-from aprec.api.action import Action
-from math import sin, cos
-
-
 def generate_actions(n):
+    from math import sin, cos
+    from aprec.api.action import Action
     max_users = n / 3
     max_timestamp = n / 2
     result = []
@@ -16,6 +14,4 @@ def generate_actions(n):
             actions_set.add((user_id, item_id))
             result.append(Action(user_id, item_id, timestamp))
         i += 1
-
-
     return result

@@ -1,12 +1,11 @@
-from aprec.losses.lambda_gamma_rank import  LambdaGammaRankLoss
-import tensorflow.keras.backend as K
-from tensorflow.keras import Sequential
-from tensorflow.keras.layers import Dense
-import tensorflow as tf
 import unittest
 
 class TestLambdarankLoss(unittest.TestCase):
     def lambdas_sample_test(self, y, s, lambdas, ndcg_at=30, bce_weight=0.0, remove_batch_dim=False):
+        from aprec.losses.lambda_gamma_rank import  LambdaGammaRankLoss
+        import tensorflow.keras.backend as K
+        import tensorflow as tf
+
         y_true = K.constant(y)
         y_pred = K.constant(s)
         expected_lambdas = lambdas
@@ -72,6 +71,10 @@ class TestLambdarankLoss(unittest.TestCase):
 
 
     def test_dcg(self):
+        from aprec.losses.lambda_gamma_rank import  LambdaGammaRankLoss
+        import tensorflow.keras.backend as K
+
+
         loss = LambdaGammaRankLoss(4, 1, ndcg_at=1)
         res = loss.get_inverse_idcg(K.constant([[0, 0, 1, 1]]))
         assert res == 1
@@ -83,6 +86,12 @@ class TestLambdarankLoss(unittest.TestCase):
 
 
     def test_model_lambdarank(self):
+        from aprec.losses.lambda_gamma_rank import  LambdaGammaRankLoss
+        import tensorflow.keras.backend as K
+        from tensorflow.keras import Sequential
+        from tensorflow.keras.layers import Dense
+
+
         model = Sequential()
         model.add(Dense(2, activation='sigmoid'))
         model.add(Dense(2, activation='sigmoid'))

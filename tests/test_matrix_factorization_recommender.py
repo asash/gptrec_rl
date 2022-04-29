@@ -3,11 +3,20 @@ from aprec.recommenders.matrix_factorization import MatrixFactorizationRecommend
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.datasets.movielens20m import get_movielens20m_actions
 from aprec.utils.generator_limit import generator_limit
+import tensorflow as tf
 import unittest
 
 USER_ID = '120'
 
 class TestMatrixFactorizationRecommender(unittest.TestCase):
+    def setUp(cls):
+        tf.keras.backend.clear_session()
+
+    def tearDown(cls):
+        tf.keras.backend.clear_session()
+
+
+
     def test_matrix_factorization_recommender_recommender(self):
         losses = ['bce', 'bpr', 'lambdarank', 'xendcg', 'climf', 'top1']
         for loss in losses: 

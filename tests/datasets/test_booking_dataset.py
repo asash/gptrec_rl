@@ -1,14 +1,11 @@
-import os.path
-
-from aprec.datasets.booking import download_booking_train, download_booking_test, get_booking_dataset
-from aprec.utils.os_utils import file_md5
-import json
-
-from unittest import TestCase
 import unittest
+from unittest import TestCase
 
 class TestBookingDatset(TestCase):
     def test_booking_download(self):
+        from aprec.datasets.booking import download_booking_train, download_booking_test
+        from aprec.utils.os_utils import file_md5
+
         #download train file
         result_file = download_booking_train()
         booking_file_md5 = file_md5(result_file)
@@ -20,6 +17,11 @@ class TestBookingDatset(TestCase):
         self.assertEqual(booking_file_md5, "2d068bea795cc4b798422ad1d80bd0c4")
 
     def test_booking_dataset(self):
+        import os.path
+
+        from aprec.datasets.booking import get_booking_dataset
+        import json
+
         local_path = os.path.abspath(os.path.dirname(__file__))
         with open(os.path.join(local_path, "booking_dataset_reference_actions.json")) as input:
             reference_actions = json.load(input)

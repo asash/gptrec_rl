@@ -1,19 +1,21 @@
-from aprec.datasets.movielens20m import get_movielens20m_actions, get_movies_catalog
-from aprec.losses.mean_ypred_ploss import MeanPredLoss
-from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import exponential_importance
-from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
-from aprec.recommenders.dnn_sequential_recommender.models.mixer import MixerModel, RecsysMixer
 import unittest
-from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
-
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
-from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
-from aprec.tests.test_dnn_sequential import USER_ID
-from aprec.utils.generator_limit import generator_limit
 
 class TestMixer(unittest.TestCase):
     def test_mixer_recommender(self):
+        from aprec.datasets.movielens20m import get_movielens20m_actions, get_movies_catalog
+        from aprec.losses.mean_ypred_ploss import MeanPredLoss
+        from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
+        from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import exponential_importance
+        from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
+        from aprec.recommenders.dnn_sequential_recommender.models.mixer import MixerModel, RecsysMixer
+        from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
+
+        from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
+        from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
+        from aprec.tests.test_dnn_sequential import USER_ID
+        from aprec.utils.generator_limit import generator_limit
+
+
         val_users = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
         model = RecsysMixer(embedding_size=32)
         recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=50000,

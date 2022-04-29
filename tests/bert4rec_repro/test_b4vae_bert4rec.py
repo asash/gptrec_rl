@@ -1,14 +1,13 @@
 import unittest
-from aprec.api.items_ranking_request import ItemsRankingRequest
-from aprec.datasets.dataset_utils import filter_cold_users
-from aprec.datasets.movielens20m import get_movielens20m_actions, get_movies_catalog
-from aprec.recommenders.bert4recrepro.b4vae_bert4rec import B4rVaeBert4Rec
-from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
-from aprec.utils.generator_limit import generator_limit
-
 
 class TestB4rVaeBert4rec(unittest.TestCase):
     def test_b4rvae(self):
+        from aprec.datasets.dataset_utils import filter_cold_users
+        from aprec.datasets.movielens20m import get_movielens20m_actions, get_movies_catalog
+        from aprec.recommenders.bert4recrepro.b4vae_bert4rec import B4rVaeBert4Rec
+        from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
+        from aprec.utils.generator_limit import generator_limit
+
         USER_ID = '120'
         val_users = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
         recommender = B4rVaeBert4Rec(epochs=5)
@@ -23,6 +22,14 @@ class TestB4rVaeBert4rec(unittest.TestCase):
             print(catalog.get_item(rec[0]), "\t", rec[1])
 
     def test_sampled_rankings(self):
+        from aprec.api.items_ranking_request import ItemsRankingRequest
+        from aprec.datasets.dataset_utils import filter_cold_users
+        from aprec.datasets.movielens20m import get_movielens20m_actions
+        from aprec.recommenders.bert4recrepro.b4vae_bert4rec import B4rVaeBert4Rec
+        from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
+        from aprec.utils.generator_limit import generator_limit
+
+
         recommender = FilterSeenRecommender(B4rVaeBert4Rec(epochs=5))
         for action in filter_cold_users(generator_limit(get_movielens20m_actions(), 100000), 5):
             recommender.add_action(action)

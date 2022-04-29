@@ -1,18 +1,18 @@
-import tempfile
-
-from aprec.evaluation.evaluate_recommender import RecommendersEvaluator
 import unittest
-
-from aprec.datasets.movielens20m import get_movielens20m_actions
-from aprec.evaluation.samplers.pop_sampler import PopTargetItemsSampler
-from aprec.utils.generator_limit import generator_limit
-from aprec.evaluation.split_actions import LeaveOneOut
-from aprec.evaluation.metrics.precision import Precision
-from aprec.recommenders.top_recommender import TopRecommender
 
 
 class TestRecommenderEvaluator(unittest.TestCase):
     def test_recommender_evaluator(self):
+        from aprec.datasets.movielens20m import get_movielens20m_actions
+        from aprec.evaluation.samplers.pop_sampler import PopTargetItemsSampler
+        from aprec.utils.generator_limit import generator_limit
+        from aprec.evaluation.split_actions import LeaveOneOut
+        from aprec.evaluation.metrics.precision import Precision
+        from aprec.recommenders.top_recommender import TopRecommender
+        from aprec.evaluation.evaluate_recommender import RecommendersEvaluator
+        import tempfile
+
+
         actions = [action for action in generator_limit(get_movielens20m_actions(), 100000)]
         recommenders= {"top_recommender": TopRecommender}
 

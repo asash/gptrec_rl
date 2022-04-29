@@ -1,25 +1,22 @@
 import unittest
-import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
-
 from aprec.losses.xendcg import XENDCGLoss
 
 
 class TestXENDCGLoss(unittest.TestCase):
     def test_xendcg(self):
+        import tensorflow as tf
         true = tf.constant([[0., 1., 0.]])
         pred = tf.constant([[0., 0.5, 0]])
-
         xendcg = XENDCGLoss(true.shape[1], true.shape[0])
         result = xendcg(true, pred)
         print(result)
 
     def test_model_xendcg(self):
-
+        import tensorflow as tf
+        from tensorflow.keras.models import Sequential
+        from tensorflow.keras.layers import Dense
         X = tf.constant([[0., 0], [1, 0]])
         Y = tf.constant([[1., 0], [0, 1]])
-
         model = Sequential()
         model.add(Dense(2, activation='sigmoid'))
         model.add(Dense(2, activation='sigmoid'))

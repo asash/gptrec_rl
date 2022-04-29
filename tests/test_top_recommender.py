@@ -1,4 +1,3 @@
-from aprec.api.items_ranking_request import ItemsRankingRequest
 from aprec.datasets.movielens20m import get_movielens20m_actions, get_movies_catalog
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.utils.generator_limit import generator_limit
@@ -26,6 +25,7 @@ class TestTopRecommender(unittest.TestCase):
 
 
     def test_top_recommender_ranking_request(self):
+        from aprec.api.items_ranking_request import ItemsRankingRequest
         recommender = TopRecommender()
         ranking_request = ItemsRankingRequest(user_id='1', item_ids=['1196', '589'])
         recommender.add_test_items_ranking_request(ranking_request)

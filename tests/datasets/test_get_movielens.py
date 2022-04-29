@@ -1,11 +1,5 @@
 import unittest
 
-from aprec.datasets.movielens20m import get_movielens20m_actions, get_movies_catalog
-from aprec.datasets.movielens100k import get_movielens100k_actions
-from aprec.utils.generator_limit import generator_limit
-from collections import Counter
-
-
 REFERENCE_LINES_MOVIELENS_20M =\
 """Action(uid=1, item=151, ts=1094785734, data={'rating': 4.0})
 Action(uid=1, item=223, ts=1112485573, data={'rating': 4.0})
@@ -34,12 +28,19 @@ Action(uid=6, item=86, ts=883603013, data={'rating': 3.0})
 
 class TestMovielensActions(unittest.TestCase):
     def test_get_actions20m(self):
+        from aprec.datasets.movielens20m import get_movielens20m_actions
+        from aprec.utils.generator_limit import generator_limit
         lines = ""
         for action in generator_limit(get_movielens20m_actions(), 10):
             lines += action.to_str() + "\n" 
         self.assertEqual(lines, REFERENCE_LINES_MOVIELENS_20M)
 
     def test_get_actions_100k(self):
+        from aprec.datasets.movielens100k import get_movielens100k_actions
+        from aprec.utils.generator_limit import generator_limit
+        from collections import Counter
+
+
         lines = ""
         for action in generator_limit(get_movielens100k_actions(min_rating=1), 10):
             lines += action.to_str() + "\n"
@@ -58,6 +59,7 @@ class TestMovielensActions(unittest.TestCase):
 
 
     def test_get_catalog(self):
+        from aprec.datasets.movielens20m import get_movies_catalog
         catalog = get_movies_catalog()
         movie = catalog.get_item("2571")
         self.assertEqual(movie.title, "Matrix, The (1999)")

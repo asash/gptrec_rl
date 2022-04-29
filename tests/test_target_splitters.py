@@ -1,17 +1,11 @@
-from typing import Sequence
 import unittest
 import numpy as np
 import random
 from collections import Counter
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import SequenceContinuation
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.random_splitter import RandomSplitter
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.random_fraction_splitter import RandomFractionSplitter
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import RecencySequenceSampling
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter 
 
 class TestItemSplitters(unittest.TestCase):
     def test_last_item_splitter(self):
+        from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import SequenceContinuation
         sequence=[1, 2, 3, 4, 5, 6, 7, 8, 9] 
         splitter = SequenceContinuation()
         for i in range(100):
@@ -25,6 +19,7 @@ class TestItemSplitters(unittest.TestCase):
         self.assertEquals(label, [1])
 
     def test_random_fraction(self):
+        from aprec.recommenders.dnn_sequential_recommender.targetsplitters.random_fraction_splitter import RandomFractionSplitter
         sequence=list(range(5))
         splitter = RandomFractionSplitter()
         target_lens = []
@@ -44,6 +39,7 @@ class TestItemSplitters(unittest.TestCase):
             self.assertAlmostEquals(abs(cnt - expected) / expected, 0.0, places=1)
 
     def test_recency_sequence_sampling_exp(self):
+        from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import RecencySequenceSampling
         sequence=list(range(5))
         bias = 0.5
         random.seed(31337)
@@ -64,6 +60,7 @@ class TestItemSplitters(unittest.TestCase):
             self.assertAlmostEquals(rel, expected, places=1)
 
     def test_recency_sequence_sampling(self):
+        from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import RecencySequenceSampling
         splitter = RecencySequenceSampling(max_pct=0.2)
         N = 10000 
         target_counts = Counter() 
@@ -80,6 +77,7 @@ class TestItemSplitters(unittest.TestCase):
 
 
     def test_random_spliter(self):
+        from aprec.recommenders.dnn_sequential_recommender.targetsplitters.random_splitter import RandomSplitter
         N=1000
         sequence = list(range(N)) 
         splitter = RandomSplitter()
@@ -94,6 +92,7 @@ class TestItemSplitters(unittest.TestCase):
 
 
     def test_shifted_sequence_splitter(self):
+        from aprec.recommenders.dnn_sequential_recommender.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter 
         sequence = [1, 2, 3, 4, 5]
         splitter = ShiftedSequenceSplitter()
         train, label = splitter.split(sequence)
@@ -106,6 +105,7 @@ class TestItemSplitters(unittest.TestCase):
         self.assertEquals(label, [4, 5])
 
     def test_items_masking(self):
+        from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
         sequence = [(0, 1), (1, 2), (2, 3), (3, 4), (4, 7)]
         splitter = ItemsMasking()
         splitter.set_num_items(6)

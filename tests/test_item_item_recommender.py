@@ -1,8 +1,4 @@
-from aprec.recommenders.item_item import ItemItemRecommender
-from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
-from aprec.datasets.movielens20m import get_movielens20m_actions, get_movies_catalog
-from aprec.utils.generator_limit import generator_limit
-from aprec.api.action import Action
+
 import unittest
 
 USER_ID = '120' 
@@ -24,9 +20,15 @@ class TestItemItemRecommender(unittest.TestCase):
             self.assertAlmostEqual(rec1[i][1], rec2[i][1])
          
     def test_item_item_recommender(self):
+        from aprec.recommenders.item_item import ItemItemRecommender
+        from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
+        from aprec.datasets.movielens20m import get_movielens20m_actions, get_movies_catalog
+        from aprec.utils.generator_limit import generator_limit
+        from aprec.api.action import Action
         item_item_recommender = ItemItemRecommender()
         recommender = FilterSeenRecommender(item_item_recommender)
         catalog = get_movies_catalog()
+
         for action in generator_limit(get_movielens20m_actions(), 10000):
             recommender.add_action(action)
         recommender.rebuild_model()

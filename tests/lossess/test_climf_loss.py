@@ -1,10 +1,11 @@
 import unittest
-from aprec.losses.climf import CLIMFLoss
-import tensorflow.keras.backend as K
+
 
 
 class TestCLIMFLoss(unittest.TestCase):
     def test_climf_loss(self):
+        from aprec.losses.climf import CLIMFLoss
+        import tensorflow.keras.backend as K
         climf_loss = CLIMFLoss(4, 2, 3)
         val = climf_loss(K.constant([[0, 0, 1, 1],
                                    [0, 0, 1, 1]]),

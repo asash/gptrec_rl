@@ -3,9 +3,9 @@ import unittest
 
 import numpy as np
 
-from api.action import Action
+from aprec.api.action import Action
 from aprec.evaluation.metrics.sampled_proxy_metric import SampledProxy
-from evaluation.metrics.precision import Precision
+from aprec.evaluation.metrics.precision import Precision
 
 
 class TestSampledProxyMetric(unittest.TestCase):
@@ -16,7 +16,7 @@ class TestSampledProxyMetric(unittest.TestCase):
         all_item_ids = [1, 2, 3, 4, 5, 6]
         random.seed(31337)
         np.random.seed(31337)
-        metric = SampledProxy(all_item_ids, 2, [1./6] * 6, Precision(3))
+        metric = SampledProxy(all_item_ids, [1./6] * 6, 2, Precision(3))
         self.assertAlmostEqual(metric(recommended, actual), 2./3)
 
 if __name__ == "__main__":

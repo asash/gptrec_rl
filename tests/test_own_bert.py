@@ -1,22 +1,8 @@
-from aprec.datasets.movielens20m import get_movielens20m_actions, get_movies_catalog
-from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import exponential_importance
-from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
-from transformers import TFBertModel, BertConfig
-from aprec.recommenders.dnn_sequential_recommender.models.bert4rec.bert4rec import BERT4Rec
-from aprec.losses.mean_ypred_ploss import MeanPredLoss
-from transformers import BertTokenizer
-
 import unittest
-from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
-
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
-from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
-from aprec.tests.test_dnn_sequential import USER_ID
-from aprec.utils.generator_limit import generator_limit
-
 class TestOwnBERT4rec(unittest.TestCase):
     def test_bert_nlp__model(self):
+        from transformers import TFBertModel, BertConfig
+        from transformers import BertTokenizer
         config = BertConfig()
         model = TFBertModel(config)
         tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
@@ -26,12 +12,27 @@ class TestOwnBERT4rec(unittest.TestCase):
         pass
 
     def test_bert4rec_model(self):
+        from aprec.recommenders.dnn_sequential_recommender.models.bert4rec.bert4rec import BERT4Rec
+
         bert4rec = BERT4Rec()
         bert4rec.set_common_params(10, 10, None, None, 32, None)
         model = bert4rec.get_model()
         print(model.bert)
 
     def test_bert4rec_recommender(self):
+        from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
+        from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
+        from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
+        from aprec.tests.test_dnn_sequential import USER_ID
+        from aprec.utils.generator_limit import generator_limit
+        from aprec.datasets.movielens20m import get_movielens20m_actions, get_movies_catalog
+        from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
+        from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import exponential_importance
+        from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
+        from aprec.recommenders.dnn_sequential_recommender.models.bert4rec.bert4rec import BERT4Rec
+        from aprec.losses.mean_ypred_ploss import MeanPredLoss
+
+
         val_users = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
         model = BERT4Rec(embedding_size=32)
         recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=50000,

@@ -1,7 +1,7 @@
 import unittest
 from aprec.evaluation.split_actions import TemporalGlobal, RandomSplit
 from aprec.datasets.movielens20m import get_movielens20m_actions
-from generate_actions import generate_actions
+from aprec.tests.generate_actions import generate_actions
 from aprec.utils.generator_limit import generator_limit
 from aprec.evaluation.evaluate_recommender import group_by_user
 

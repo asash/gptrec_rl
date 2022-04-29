@@ -1,8 +1,3 @@
-from aprec.recommenders.svd import SvdRecommender
-from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
-from aprec.datasets.movielens20m import get_movielens20m_actions, get_movies_catalog
-from aprec.utils.generator_limit import generator_limit
-from aprec.api.action import Action
 import unittest
 
 USER_ID = '120' 
@@ -30,6 +25,12 @@ class TestSvdRecommender(unittest.TestCase):
             self.assertAlmostEqual(rec1[i][1], rec2[i][1])
          
     def test_svd_recommender(self):
+        from aprec.recommenders.svd import SvdRecommender
+        from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
+        from aprec.datasets.movielens20m import get_movielens20m_actions
+        from aprec.utils.generator_limit import generator_limit
+        from aprec.api.action import Action
+
         svd_recommender = SvdRecommender(10, random_seed=31337)
         recommender = FilterSeenRecommender(svd_recommender)
         for action in generator_limit(get_movielens20m_actions(), 10000):

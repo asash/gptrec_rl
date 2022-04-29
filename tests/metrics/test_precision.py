@@ -1,9 +1,10 @@
-from aprec.evaluation.metrics.precision import Precision
-from aprec.api.action import Action
 import unittest
 
 class TestPrecision(unittest.TestCase):
     def test_precsion(self):
+        from aprec.evaluation.metrics.precision import Precision
+        from aprec.api.action import Action
+
         recommended = [(1, 2), (2, 1), (3, 0.5)]
         actual = [Action(user_id = 1, item_id = 1, timestamp=1), 
                   Action(user_id = 1, item_id = 3, timestamp=2)]

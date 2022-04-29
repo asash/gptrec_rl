@@ -601,6 +601,9 @@ def get_ouptut_file(filename):
     return open(filename, 'w')
 
 if __name__ == "__main__":
+    print ("child process env:")
+    print (json.dumps(dict(os.environ), indent=4))
+
     if FLAGS.save_predictions_file is not None:
         output_file = open(FLAGS.save_predictions_file, "w")
 

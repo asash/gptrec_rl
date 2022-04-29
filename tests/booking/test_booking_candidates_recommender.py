@@ -1,12 +1,10 @@
 import os
 import unittest
 
-from aprec.datasets.booking import get_booking_dataset_internal
-from aprec.recommenders.booking_recommender.candidates_recommender import BookingCandidatesRecommender
-
-
 class TestCandidatesRecommender(unittest.TestCase):
     def test_candadates_recommender(self):
+        from aprec.datasets.booking import get_booking_dataset_internal
+        from aprec.recommenders.booking_recommender.candidates_recommender import BookingCandidatesRecommender
         current_dir = os.path.dirname(__file__)
         booking_train_file = os.path.join(current_dir, "booking_train_dataset.csv")
         booking_test_file = os.path.join(current_dir, "booking_test_dataset.csv")

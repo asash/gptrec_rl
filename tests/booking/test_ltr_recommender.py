@@ -2,11 +2,10 @@ import os
 import unittest
 from copy import deepcopy
 
-from aprec.datasets.booking import get_booking_dataset_internal
-from aprec.recommenders.booking_recommender.booking_recommender_ltr import BookingRecommenderLTR
 
 
 def LTR(model_type, attention, lgbm_objecitve='lambdarank', lgbm_boosting_type='gbdt'):
+    from aprec.recommenders.booking_recommender.booking_recommender_ltr import BookingRecommenderLTR
     return BookingRecommenderLTR(batch_size=2, n_val_users=10,
                                  candidates_cnt=100, val_epoch_size=10, epoch_size=100,
                                  num_training_samples=50, model_type=model_type, attention=attention,
@@ -15,6 +14,7 @@ def LTR(model_type, attention, lgbm_objecitve='lambdarank', lgbm_boosting_type='
 
 class TestBookingLtrRecommender(unittest.TestCase):
     def test_booking_ltr_recommender(self):
+        from aprec.datasets.booking import get_booking_dataset_internal
         current_dir = os.path.dirname(__file__)
         booking_train_file = os.path.join(current_dir, "booking_train_dataset.csv")
         booking_test_file = os.path.join(current_dir, "booking_test_dataset.csv")
