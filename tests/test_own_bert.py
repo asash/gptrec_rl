@@ -39,7 +39,7 @@ class TestOwnBERT4rec(unittest.TestCase):
                                                batch_size=5,
                                                training_time_limit=10, 
                                                loss = MeanPredLoss(),
-                                               debug=True, sequence_splitter=lambda: ItemsMasking(recency_importance=exponential_importance(0.8)), 
+                                               debug=True, sequence_splitter=lambda: ItemsMasking(), 
                                                targets_builder= lambda: ItemsMaskingTargetsBuilder(relative_positions_encoding=True),
                                                val_sequence_splitter=lambda: ItemsMasking(force_last=True),
                                                metric=MeanPredLoss(), 
