@@ -1,5 +1,6 @@
 import datetime
-import time
+from datetime import timezone
+import calendar
 import pandas as pd
 
 
@@ -31,7 +32,8 @@ def get_actions(actions_file, max_actions=None):
         cnt = 0
         for line in input:
             user_id, item_id, last_watch_date, total_dur, watched_pct = line.split(",")
-            timestamp = time.mktime(datetime.datetime.strptime(last_watch_date, "%Y-%m-%d").timetuple())
+            ts = datetime.datetime.strptime(last_watch_date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            timestamp = calendar.timegm(ts.timetuple()) 
             cnt += 1
             actions.append(Action(user_id=user_id, item_id=item_id, timestamp=timestamp))
             if max_actions is not None and cnt >= max_actions:
