@@ -17,7 +17,7 @@ from aprec.recommenders.dnn_sequential_recommender.targetsplitters.targetsplitte
 from aprec.utils.item_id import ItemId
 from aprec.recommenders.metrics.ndcg import KerasNDCG
 from aprec.recommenders.recommender import Recommender
-from aprec.recommenders.dnn_sequential_recommender.data_generator.data_generator import DataGenerator
+from aprec.recommenders.dnn_sequential_recommender.data_generator.data_generator import DataGenerator, DataGeneratorAsyncFactory
 from aprec.recommenders.dnn_sequential_recommender.models.sequential_recsys_model import SequentialRecsysModel
 from aprec.losses.loss import Loss
 from aprec.losses.bce import BCELoss
@@ -40,6 +40,8 @@ class DNNSequentialRecommender(Recommender):
                  metric = KerasNDCG(40), 
                  train_history_vectorizer:HistoryVectorizer = DefaultHistoryVectrizer(), 
                  pred_history_vectorizer:HistoryVectorizer = DefaultHistoryVectrizer(),
+                 data_generator_processes = 2, 
+                 data_generator_queue_size = 4,
                  ):
         super().__init__()
         self.model_arch = model_arch
@@ -73,6 +75,8 @@ class DNNSequentialRecommender(Recommender):
         self.val_sequence_splitter = val_sequence_splitter
         self.train_history_vectorizer = train_history_vectorizer
         self.pred_history_vectorizer = pred_history_vectorizer
+        self.data_generator_processes = data_generator_processes
+        self.data_generator_queue_size = data_generator_queue_size
 
     def add_user(self, user):
         if self.users_featurizer is None:
@@ -153,9 +157,9 @@ class DNNSequentialRecommender(Recommender):
         if not self.debug:
             self.model.compile(optimizer=self.optimizer, loss=self.loss, metrics=[self.metric])
 
-        for epoch in range(self.train_epochs):
-            val_generator.reset()
-            generator = DataGenerator(train_users, train_user_ids, train_features, self.model_arch.max_history_length,
+
+        data_generator_async_factory = DataGeneratorAsyncFactory(self.data_generator_processes, self.data_generator_queue_size,
+                                      train_users, train_user_ids, train_features, self.model_arch.max_history_length,
                                       self.items.size(),
                                       self.train_history_vectorizer,
                                       batch_size=self.batch_size,
@@ -164,8 +168,12 @@ class DNNSequentialRecommender(Recommender):
                                       max_user_features=self.max_user_features,
                                       user_features_required=not (self.users_featurizer is None), 
                                       targets_builder=self.targets_builder, 
-                                      shuffle_data=True
-                                      )
+                                      shuffle_data=True)
+
+
+        for epoch in range(self.train_epochs):
+            val_generator.reset()
+            generator = data_generator_async_factory.next_generator() 
             print(f"epoch: {epoch}")
             val_metric = self.train_epoch(generator, val_generator)
 
@@ -191,6 +199,7 @@ class DNNSequentialRecommender(Recommender):
 
             K.clear_session()
             gc.collect()
+        data_generator_async_factory.close()
         self.model.set_weights(best_weights)
         self.metadata = {"epochs_trained": best_epoch + 1, f"best_val_{self.metric.__name__}": best_metric_val,
                          f"val_{self.metric.__name__}_history": val_metric_history}

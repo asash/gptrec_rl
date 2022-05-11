@@ -25,9 +25,9 @@ class TestOwnBERT4rec(unittest.TestCase):
         metric.set_batch_size(batch_size)
         recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=50000,
                                                batch_size=batch_size,
-                                               training_time_limit=10, 
+                                               training_time_limit=20, 
                                                loss = ItemsMaksingLossProxy(BCELoss(), negatives_per_positive, sequence_len),
-                                               debug=True, sequence_splitter=lambda: ItemsMasking(), 
+                                               debug=False, sequence_splitter=lambda: ItemsMasking(), 
                                                targets_builder= lambda: ItemsMaskingWithNegativesTargetsBuilder(relative_positions_encoding=True, 
                                                                                         negatives_sampler=RandomNegativesSampler(negatives_per_positive)),
                                                val_sequence_splitter=lambda: ItemsMasking(force_last=True),

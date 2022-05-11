@@ -3,6 +3,7 @@ import random
 import numpy as np
 from tensorflow.python.keras.utils.data_utils import Sequence
 from aprec.recommenders.dnn_sequential_recommender.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
+from multiprocessing_on_dill import Process, Queue
 
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.random_fraction_splitter import RandomFractionSplitter
 
@@ -149,3 +150,35 @@ def reverse_positions(session_len, history_size):
         return list(range(history_size, 0, -1))
     else:
         return [0] * (history_size - session_len) + list(range(session_len, 0, -1))
+
+class DataGeneratorFactory(object):
+    def __init__(self, queue, *args, **kwargs):
+        self.factory_func = lambda: DataGenerator(*args, **kwargs)
+        self.queue = queue
+
+    def __call__(self):
+        while True:
+            data_generator = self.factory_func()
+            self.queue.put(data_generator)
+
+
+#class to asyncrhoniously prepare data generators for next epochs
+#inspired by data sampler from SASRec
+#https://github.com/kang205/SASRec/blob/master/sampler.py
+class DataGeneratorAsyncFactory(object):
+    def __init__(self, n_workers, queue_size, *args, **kwargs) -> None:
+        self.result_queue = Queue(queue_size)
+        self.processors = []
+        generator_factory = DataGeneratorFactory(self.result_queue, *args, **kwargs)
+        for i in range(n_workers):
+            self.processors.append(Process(target=generator_factory))
+            self.processors[-1].daemon = True 
+            self.processors[-1].start()
+
+    def next_generator(self):
+        return self.result_queue.get()
+
+    def close(self):
+        for p in self.processors:
+            p.terminate()
+            p.join()
