@@ -1,3 +1,4 @@
+import random
 from aprec.evaluation.samplers.pop_sampler import PopTargetItemsSampler
 from aprec.losses.mean_ypred_ploss import MeanPredLoss
 from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
@@ -123,7 +124,9 @@ TARGET_ITEMS_SAMPLER = PopTargetItemsSampler(101)
 
 def get_recommenders(filter_seen: bool):
     result = {}
-    for recommender_name in recommenders:
+    all_recommenders = list(recommenders.keys())
+    random.shuffle(all_recommenders)
+    for recommender_name in all_recommenders:
         if filter_seen:
             result[recommender_name] =\
                 lambda recommender_name=recommender_name: FilterSeenRecommender(recommenders[recommender_name]())
