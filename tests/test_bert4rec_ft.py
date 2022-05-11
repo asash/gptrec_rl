@@ -1,7 +1,4 @@
 import unittest
-from aprec.losses.bce import BCELoss
-
-from aprec.losses.items_masking_loss_proxy import ItemsMaksingLossProxy
 class TestOwnBERT4rec(unittest.TestCase):
     def test_bert4rec_ft_recommender(self):
         from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_with_negatives import ItemsMaskingWithNegativesTargetsBuilder, RandomNegativesSampler
@@ -13,7 +10,8 @@ class TestOwnBERT4rec(unittest.TestCase):
         from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
         from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
         from aprec.recommenders.dnn_sequential_recommender.models.bert4recft.bert4recft import BERT4RecFT
-        from aprec.losses.mean_ypred_ploss import MeanPredLoss
+        from aprec.losses.bce import BCELoss
+        from aprec.losses.items_masking_loss_proxy import ItemsMaksingLossProxy
 
 
         val_users = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
