@@ -1,7 +1,8 @@
 import unittest
 class TestOwnBERT4rec(unittest.TestCase):
     def test_bert4rec_ft_recommender(self):
-        from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_with_negatives import ItemsMaskingWithNegativesTargetsBuilder, RandomNegativesSampler
+        from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_with_negatives import ItemsMaskingWithNegativesTargetsBuilder,\
+                         RandomNegativesSampler, SVDSimilaritySampler
         from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
         from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
         from aprec.tests.test_dnn_sequential import USER_ID
@@ -27,7 +28,7 @@ class TestOwnBERT4rec(unittest.TestCase):
                                                loss = ItemsMaksingLossProxy(BCELoss(), negatives_per_positive, sequence_len),
                                                debug=False, sequence_splitter=lambda: ItemsMasking(), 
                                                targets_builder= lambda: ItemsMaskingWithNegativesTargetsBuilder(relative_positions_encoding=True, 
-                                                                                        negatives_sampler=RandomNegativesSampler(negatives_per_positive)),
+                                                                                        negatives_sampler=SVDSimilaritySampler(negatives_per_positive)),
                                                val_sequence_splitter=lambda: ItemsMasking(force_last=True),
                                                metric=metric,
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),

@@ -15,6 +15,9 @@ class TargetBuilder(object):
     
     def build(self, user_targets):
         raise NotImplementedError()
+    
+    def set_train_sequences(self):
+        pass
 
     def get_targets(self, start, end):
         raise NotImplementedError()

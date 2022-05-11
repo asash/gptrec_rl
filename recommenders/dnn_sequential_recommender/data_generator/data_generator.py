@@ -17,7 +17,7 @@ class DataGenerator(Sequence):
                  max_user_features=0,
                  user_features_required=False, 
                  sequence_splitter = RandomFractionSplitter, 
-                 targets_builder = FullMatrixTargetsBuilder,
+                 targets_builder = FullMatrixTargetsBuilder(),
                  shuffle_data = True
                  ):
         self.user_ids = [[id] for id in user_ids]
@@ -35,7 +35,7 @@ class DataGenerator(Sequence):
         self.sequence_splitter = sequence_splitter()
         self.sequence_splitter.set_num_items(n_items)
         self.sequence_splitter.set_sequence_len(history_size)
-        self.targets_builder = targets_builder()
+        self.targets_builder = targets_builder
         self.targets_builder.set_sequence_len(history_size)
         self.do_shuffle_data = shuffle_data
         self.history_vectorizer = history_vectorizer

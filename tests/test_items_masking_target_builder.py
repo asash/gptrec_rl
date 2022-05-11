@@ -1,5 +1,6 @@
 import unittest
 import numpy as np
+import sys
 
 
 class TestItemsMaskingTargetBuilder(unittest.TestCase):
@@ -38,6 +39,57 @@ class TestItemsMaskingTargetBuilder(unittest.TestCase):
         self.assertTrue(np.all(target == expected_target))
         self.assertTrue(np.all(expected_sampled_items == sampled_items))
         self.assertTrue(np.all(extra_inputs[1] == expected_positions))
+
+    @staticmethod
+    def ml_sequences(n_actions):
+        from aprec.utils.generator_limit import generator_limit
+        from aprec.datasets.movielens20m import get_movielens20m_actions
+        from aprec.utils.item_id import ItemId
+        from collections import defaultdict
+        sequences_dict = defaultdict(list)
+        actions = [action for action in generator_limit(get_movielens20m_actions(), n_actions)]
+        actions.sort(key = lambda action: action.timestamp)
+        item_ids = ItemId()
+        for action in actions:
+            sequences_dict[action.user_id].append((action.timestamp, item_ids.get_id(action.item_id)))
+        sequences = list(sequences_dict.values())
+        return sequences, item_ids
+
+
+    def test_hard_items(self):
+        from aprec.datasets.movielens20m import get_movies_catalog
+        from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_with_negatives import SVDSimilaritySampler 
+        ml_sequences, item_ids = self.ml_sequences(10000)
+        items_sampler = SVDSimilaritySampler(5, ann_sampling_factor=2) 
+        items_sampler.set_train_sequences(ml_sequences)
+        items_sampler.set_n_items(item_ids.size())
+        catalog = get_movies_catalog()
+        
+        positive = item_ids.get_id('1') # Toy Story
+        negatives = [item_ids.reverse_id(id) for id in items_sampler.sample_negatives(positive)]
+        print(negatives)
+        print("sampled for Toy Story")
+        for item in negatives:
+            sys.stdout.write(catalog.get_item(item).title + "\n")
+        print("\n")
+
+
+        #self.assertEqual(negatives, ['32', '3114', '786', '1073', '736']) #Twelve Monkeys, Toy Story 2,Eraser,title=Willy Wonka & the Chocolate Factory,Twister 
+        print("sampled for star wars:")
+        for i in range(10):
+            positive = item_ids.get_id('260') # Star Wars EP VI 
+            negatives = [item_ids.reverse_id(id) for id in items_sampler.sample_negatives(positive)]
+            print(negatives)
+            for item in negatives:
+                sys.stdout.write(catalog.get_item(item).title + "\n")
+            print("\n")
+
+
+
+
+
+print("\n")
+
 
 
 if __name__ == "__main__":

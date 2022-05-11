@@ -10,6 +10,7 @@ from tqdm import tqdm
 from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.default_history_vectorizer import DefaultHistoryVectrizer
 from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.history_vectorizer import HistoryVectorizer
 from aprec.recommenders.dnn_sequential_recommender.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
+from aprec.recommenders.dnn_sequential_recommender.target_builders.target_builders import TargetBuilder
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import SequenceContinuation
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.random_fraction_splitter import RandomFractionSplitter
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.targetsplitter import TargetSplitter
@@ -34,7 +35,7 @@ class DNNSequentialRecommender(Recommender):
                  train_epochs=300, optimizer=Adam(),
                  sequence_splitter:TargetSplitter = RandomFractionSplitter, 
                  val_sequence_splitter:TargetSplitter = SequenceContinuation,
-                 targets_builder = FullMatrixTargetsBuilder,
+                 targets_builder: TargetBuilder = FullMatrixTargetsBuilder,
                  batch_size=1000, early_stop_epochs=100, target_decay=1.0,
                  training_time_limit=None, debug=False,
                  metric = KerasNDCG(40), 
@@ -69,7 +70,7 @@ class DNNSequentialRecommender(Recommender):
         self.max_user_features = 0
         self.sequence_splitter = sequence_splitter
         self.max_user_feature_val = 0
-        self.targets_builder = targets_builder
+        self.targets_builder = targets_builder()
         self.debug = debug
         self.metric = metric 
         self.val_sequence_splitter = val_sequence_splitter
@@ -128,6 +129,7 @@ class DNNSequentialRecommender(Recommender):
         self.pass_parameters()
         self.max_user_features, self.max_user_feature_val = self.get_max_user_features()
         train_users, train_user_ids, train_features, val_users, val_user_ids, val_features = self.train_val_split()
+        self.targets_builder.set_train_sequences(train_users)
 
         print("train_users: {}, val_users:{}, items:{}".format(len(train_users), len(val_users), self.items.size()))
         val_generator = DataGenerator(val_users, val_user_ids, val_features, self.model_arch.max_history_length,
