@@ -8,16 +8,13 @@ import time
 import traceback
 from collections import defaultdict
 
-import numpy as np
 from tqdm import tqdm
-from aprec import recommenders
 
-from aprec.api.items_ranking_request import ItemsRankingRequest
 from aprec.evaluation.samplers.sampler import TargetItemSampler
 from aprec.utils.os_utils import mkdir_p
 from aprec.evaluation.filter_cold_start import filter_cold_start
-from aprec.evaluation.metrics.sampled_proxy_metric import SampledProxy
 from aprec.evaluation.evaluation_utils import group_by_user
+from multiprocessing_on_dill.context import ForkProcess, ForkContext
 
 def evaluate_recommender(recommender, test_actions,
                          metrics, out_dir, recommender_name,
@@ -37,7 +34,7 @@ def evaluate_recommender(recommender, test_actions,
         else:
             requests.append((user_id, None))
 
-
+ 
     print("generating predictions...")
     all_predictions = recommender.recommend_batch(requests, recommendations_limit)
 
@@ -124,72 +121,76 @@ class RecommendersEvaluator(object):
         self.features_from_test = features_from_test
 
     def __call__(self):
-        result = {"recommenders": {}}
+        ctx = ForkContext()
+        result_queue = ctx.Queue(maxsize=1) 
+        result = {}
+        result["recommenders"] = {}
         print(f"recommenders to evaluate:")
         for i, recommender_name in enumerate(self.recommenders):
             print(f"{i+1}. {recommender_name}")
         for recommender_name in self.recommenders:
-            try:
-                sys.stdout.write("!!!!!!!!!   ")
-                print("evaluating {}".format(recommender_name))
-                recommender = self.recommenders[recommender_name]()
-                recommender.set_out_dir(self.out_dir)
-                print("adding train actions...")
-                for action in tqdm(self.train, ascii=True):
-                    recommender.add_action(action)
-                recommender.set_val_users(self.val_user_ids)
-                print("rebuilding model...")
-
-                if self.users is not None:
-                    print("adding_users")
-                    for user in self.users:
-                        recommender.add_user(user)
-
-                if self.items is not None:
-                    print("adding items")
-                    for item in self.items:
-                        recommender.add_item(item)
-
-
-                build_time_start = time.time()
-                if self.sampled_requests is not None:
-                    for request in self.sampled_requests:
-                        recommender.add_test_items_ranking_request(request)
-
-                recommender.rebuild_model()
-                build_time_end = time.time()
-                print("done")
-
-                print("calculating metrics...")
-                evaluate_time_start = time.time()
-                evaluation_result = evaluate_recommender(recommender, self.test,
-                                                         self.metrics, self.out_dir,
-                                                         recommender_name, self.features_from_test,
-                                                         recommendations_limit=self.recommendations_limit,
-                                                         evaluate_on_samples=self.sampled_requests is not None)
-                evaluate_time_end = time.time()
-                print("calculating metrics...")
-                evaluation_result['model_build_time'] =  build_time_end - build_time_start
-                evaluation_result['model_inference_time'] =  evaluate_time_end - evaluate_time_start
-                evaluation_result['model_metadata'] = copy.deepcopy(recommender.get_metadata())
-                print("done")
-                print(json.dumps(evaluation_result))
-                result['recommenders'][recommender_name] = evaluation_result
-                for callback in self.callbacks:
-                    callback(recommender, recommender_name, evaluation_result, self.experiment_config)
-                del(recommender)
-            except Exception as ex:
-                print(f"ERROR: exception during evaluating {recommender_name}")
-                print(ex)
-
-                print(traceback.format_exc())
-
-
-                try:
-                    del(recommender)
-                except:
-                    continue
+            #using ForkProcess in order to guarantee that every recommender is evaluated in its own process and
+            #the recommender releases all resources after evaluating.
+            eval_process = ForkProcess(target=self.evaluate_single_recommender,  args=(recommender_name, result_queue))
+            eval_process.start()
+            eval_process.join()
+            if not result_queue.empty(): #successful evaluation:
+                result['recommenders'][recommender_name] = result_queue.get()
         return result
+
+    def evaluate_single_recommender(self, recommender_name, result_queue):
+        try:
+            sys.stdout.write("!!!!!!!!!   ")
+            print("evaluating {}".format(recommender_name))
+            recommender = self.recommenders[recommender_name]()
+            recommender.set_out_dir(self.out_dir)
+            print("adding train actions...")
+            for action in tqdm(self.train, ascii=True):
+                recommender.add_action(action)
+            recommender.set_val_users(self.val_user_ids)
+            print("rebuilding model...")
+            if self.users is not None:
+                print("adding_users")
+                for user in self.users:
+                    recommender.add_user(user)
+            if self.items is not None:
+                print("adding items")
+                for item in self.items:
+                    recommender.add_item(item)
+            build_time_start = time.time()
+            if self.sampled_requests is not None:
+                for request in self.sampled_requests:
+                    recommender.add_test_items_ranking_request(request)
+            recommender.rebuild_model()
+            build_time_end = time.time()
+            print("done")
+            print("calculating metrics...")
+            evaluate_time_start = time.time()
+            evaluation_result = evaluate_recommender(recommender, self.test,
+                                                     self.metrics, self.out_dir,
+                                                     recommender_name, self.features_from_test,
+                                                     recommendations_limit=self.recommendations_limit,
+                                                     evaluate_on_samples=self.sampled_requests is not None)
+            evaluate_time_end = time.time()
+            print("calculating metrics...")
+            evaluation_result['model_build_time'] = build_time_end - build_time_start
+            evaluation_result['model_inference_time'] = evaluate_time_end - evaluate_time_start
+            evaluation_result['model_metadata'] = copy.deepcopy(recommender.get_metadata())
+            print("done")
+            print(json.dumps(evaluation_result))
+            result_queue.put(evaluation_result)
+
+            for callback in self.callbacks:
+                callback(recommender, recommender_name, evaluation_result, self.experiment_config)
+            del (recommender)
+        except Exception as ex:
+            print(f"ERROR: exception during evaluating {recommender_name}")
+            print(ex)
+            print(traceback.format_exc())
+            try:
+                del (recommender)
+            except:
+                pass
 
     def save_split(self, train, test):
         self.save_actions(train, "train.json.gz")

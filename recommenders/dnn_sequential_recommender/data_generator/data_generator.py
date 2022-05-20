@@ -3,7 +3,8 @@ import random
 import numpy as np
 from tensorflow.python.keras.utils.data_utils import Sequence
 from aprec.recommenders.dnn_sequential_recommender.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
-from multiprocessing_on_dill import Process, Queue
+from multiprocessing_on_dill.context import ForkProcess, ForkContext
+
 
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.random_fraction_splitter import RandomFractionSplitter
 
@@ -167,11 +168,12 @@ class DataGeneratorFactory(object):
 #https://github.com/kang205/SASRec/blob/master/sampler.py
 class DataGeneratorAsyncFactory(object):
     def __init__(self, n_workers, queue_size, *args, **kwargs) -> None:
-        self.result_queue = Queue(queue_size)
+        ctx = ForkContext()
+        self.result_queue = ctx.Queue(queue_size)
         self.processors = []
         generator_factory = DataGeneratorFactory(self.result_queue, *args, **kwargs)
         for i in range(n_workers):
-            self.processors.append(Process(target=generator_factory))
+            self.processors.append(ForkProcess(target=generator_factory))
             self.processors[-1].daemon = True 
             self.processors[-1].start()
 
