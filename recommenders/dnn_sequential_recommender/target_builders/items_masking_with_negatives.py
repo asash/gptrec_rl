@@ -1,6 +1,5 @@
 from random import Random
 from scipy.sparse import csr_matrix
-from sklearn import neighbors
 from sklearn.neighbors import NearestNeighbors
 from sklearn.decomposition import TruncatedSVD
 
