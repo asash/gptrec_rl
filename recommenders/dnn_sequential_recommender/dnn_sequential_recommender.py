@@ -41,8 +41,8 @@ class DNNSequentialRecommender(Recommender):
                  metric = KerasNDCG(40), 
                  train_history_vectorizer:HistoryVectorizer = DefaultHistoryVectrizer(), 
                  pred_history_vectorizer:HistoryVectorizer = DefaultHistoryVectrizer(),
-                 data_generator_processes = 4, 
-                 data_generator_queue_size = 8,
+                 data_generator_processes = 8, 
+                 data_generator_queue_size = 16,
                  ):
         super().__init__()
         self.model_arch = model_arch
