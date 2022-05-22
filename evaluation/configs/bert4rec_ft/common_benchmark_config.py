@@ -19,11 +19,9 @@ def bert4rec_ft(negatives_sampler):
         from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_with_negatives import RandomNegativesSampler
         from aprec.losses.bce import BCELoss
         from aprec.losses.items_masking_loss_proxy import ItemsMaksingLossProxy
-
-
         sequence_len = 100
         model = BERT4RecFT(max_history_len=sequence_len)
-        batch_size = 128 
+        batch_size = 256 
         negatives_per_positive = negatives_sampler.get_sample_size()
         metric = ItemsMaksingLossProxy(BCELoss(), negatives_per_positive, sequence_len)
         metric.set_batch_size(batch_size)
