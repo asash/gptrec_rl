@@ -1,4 +1,6 @@
+import os
 import random
+import tempfile
 
 import numpy as np
 from tensorflow.python.keras.utils.data_utils import Sequence
@@ -7,6 +9,7 @@ from multiprocessing_on_dill.context import ForkProcess, ForkContext
 
 
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.random_fraction_splitter import RandomFractionSplitter
+from aprec.utils.os_utils import shell
 
 class DataGenerator(Sequence):
     def __init__(self, user_actions, user_ids,  user_features, history_size,
@@ -152,9 +155,67 @@ def reverse_positions(session_len, history_size):
     else:
         return [0] * (history_size - session_len) + list(range(session_len, 0, -1))
 
+class MemmapDataGenerator(Sequence):
+    @staticmethod
+    def flush(arr, fname):
+        arr = np.array(arr)
+        shape = arr.shape
+        dtype = arr.dtype
+        res = np.memmap(fname, shape=shape, dtype=dtype, mode="write")
+        res[:] = arr[:]
+        res.flush()
+        return fname, shape, dtype
+    
+    @staticmethod
+    def recover(fname, shape, dtype):
+        res = np.memmap(fname, shape=shape, dtype=dtype, mode="readonly")
+        return res
+
+    def __init__(self, data_generator):
+        self.tempdir = tempfile.mkdtemp()
+        self.inputs = []
+        self.targets = []
+        for i in range(len(data_generator)):
+            inputs, target = data_generator[i]
+            target_name = os.path.join(self.tempdir, f"batch_{i}.target")
+            self.targets.append(self.flush(target, target_name))
+            mmaped_inputs = []
+            for n_input in range(len(inputs)):
+                input_name= os.path.join(self.tempdir, f"batch_{i}_input_{n_input}.input")
+                mmaped_inputs.append(self.flush(inputs[n_input], input_name))
+            self.inputs.append(mmaped_inputs)
+        pass
+        self.current_position = 0
+        self.max = self.__len__()
+
+    def __next__(self):
+        if self.current_position >= self.max:
+            raise StopIteration()
+        result = self.__getitem__(self.current_position)
+        self.current_position += 1
+        return result
+
+    def __len__(self):
+        return len(self.targets)
+    
+    def __getitem__(self, idx):
+        inputs = []
+        for input in self.inputs[idx]:
+            inputs.append(self.recover(*input))
+        targets = self.recover(*self.targets[idx])
+        return inputs, targets
+
+    def reset(self):
+        self.current_position = 0
+        self.max = self.__len__()
+
+    def cleanup(self):
+        shell(f"rm -rf {self.tempdir}")
+
+ 
 class DataGeneratorFactory(object):
     def __init__(self, queue, *args, **kwargs):
-        self.factory_func = lambda: DataGenerator(*args, **kwargs)
+        self.factory_func = lambda: MemmapDataGenerator(DataGenerator(*args, **kwargs))
         self.queue = queue
 
     def __call__(self):
@@ -163,9 +224,6 @@ class DataGeneratorFactory(object):
             self.queue.put(data_generator)
 
 
-#class to asyncrhoniously prepare data generators for next epochs
-#inspired by data sampler from SASRec
-#https://github.com/kang205/SASRec/blob/master/sampler.py
 class DataGeneratorAsyncFactory(object):
     def __init__(self, n_workers, queue_size, *args, **kwargs) -> None:
         ctx = ForkContext()

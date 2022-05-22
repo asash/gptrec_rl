@@ -194,13 +194,11 @@ class DNNSequentialRecommender(Recommender):
             if steps_since_improved >= self.early_stop_epochs:
                 print(f"early stopped at epoch {epoch}")
                 break
-
             if self.training_time_limit is not None and total_trainig_time > self.training_time_limit:
                 print(f"time limit stop triggered at epoch {epoch}")
                 break
+            generator.cleanup()
 
-            K.clear_session()
-            gc.collect()
         data_generator_async_factory.close()
         self.model.set_weights(best_weights)
         self.metadata = {"epochs_trained": best_epoch + 1, f"best_val_{self.metric.__name__}": best_metric_val,
