@@ -61,6 +61,9 @@ class DataGenerator(Sequence):
         self.targets_builder.build(target)
         self.current_position = 0
         self.max = self.__len__()
+    
+    def reset_iterator(self):
+        self.current_position = 0
 
     def shuffle_data(self):
         actions_with_ids_and_features = list(zip(self.user_actions, self.user_ids, self.user_features))

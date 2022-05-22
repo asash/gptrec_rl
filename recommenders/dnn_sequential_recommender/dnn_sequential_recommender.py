@@ -174,7 +174,7 @@ class DNNSequentialRecommender(Recommender):
 
 
         for epoch in range(self.train_epochs):
-            val_generator.reset()
+            val_generator.reset_iterator()
             generator = data_generator_async_factory.next_generator() 
             print(f"epoch: {epoch}")
             val_metric = self.train_epoch(generator, val_generator)
