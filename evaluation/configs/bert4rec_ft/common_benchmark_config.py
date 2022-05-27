@@ -35,6 +35,7 @@ def bert4rec_ft(negatives_sampler):
                                                val_sequence_splitter=lambda: ItemsMasking(force_last=True),
                                                metric=metric,
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
+                                               max_batches_per_epoch=24
                                                )
         return recommender
 

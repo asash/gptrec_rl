@@ -38,17 +38,13 @@ def run_experiment(config):
     result = []
     print(f"Dataset: {config.DATASET}")
     print("reading  data...")
-    all_actions = [action for action in DatasetsRegister()[config.DATASET]()]
+    actions = [action for action in DatasetsRegister()[config.DATASET]()]
     print("done")
     callbacks = ()
     if hasattr(config, 'CALLBACKS'):
         callbacks = config.CALLBACKS
 
     for users_fraction in config.USERS_FRACTIONS:
-        every_user = 1/users_fraction
-        print("use one out of every {} users ({}% fraction)".format(every_user, users_fraction*100))
-        actions = list(filter( lambda action: real_hash(action.user_id)  < users_fraction,
-                         all_actions))
         print("actions in dataset: {}".format(len(actions)))
         item_id_set = set([action.item_id for action in actions])
         user_id_set = set([action.user_id for action in actions])

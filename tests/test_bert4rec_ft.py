@@ -32,6 +32,7 @@ class TestOwnBERT4rec(unittest.TestCase):
                                                val_sequence_splitter=lambda: ItemsMasking(force_last=True),
                                                metric=metric,
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
+                                               max_batches_per_epoch=5
                                                )
         recommender.set_val_users(val_users)
         recommender = FilterSeenRecommender(recommender)

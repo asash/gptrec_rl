@@ -43,6 +43,7 @@ class DNNSequentialRecommender(Recommender):
                  pred_history_vectorizer:HistoryVectorizer = DefaultHistoryVectrizer(),
                  data_generator_processes = 8, 
                  data_generator_queue_size = 16,
+                 max_batches_per_epoch=10
                  ):
         super().__init__()
         self.model_arch = model_arch
@@ -78,6 +79,7 @@ class DNNSequentialRecommender(Recommender):
         self.pred_history_vectorizer = pred_history_vectorizer
         self.data_generator_processes = data_generator_processes
         self.data_generator_queue_size = data_generator_queue_size
+        self.max_batches_per_epoch = max_batches_per_epoch
 
     def add_user(self, user):
         if self.users_featurizer is None:
@@ -170,7 +172,9 @@ class DNNSequentialRecommender(Recommender):
                                       max_user_features=self.max_user_features,
                                       user_features_required=not (self.users_featurizer is None), 
                                       targets_builder=self.targets_builder, 
-                                      shuffle_data=True)
+                                      shuffle_data=True,
+                                      max_batches_per_epoch = self.max_batches_per_epoch
+                                      )
 
 
         for epoch in range(self.train_epochs):

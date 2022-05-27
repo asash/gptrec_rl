@@ -1,7 +1,9 @@
 from random import Random
+import sys
 from scipy.sparse import csr_matrix
 from sklearn.neighbors import NearestNeighbors
 from sklearn.decomposition import TruncatedSVD
+import logging
 
 import numpy as np
 from aprec.recommenders.dnn_sequential_recommender.target_builders.target_builders import TargetBuilder
@@ -92,6 +94,7 @@ class SVDSimilaritySampler(NegativesSampler):
         self.ann_sampling_factor = ann_sampling_factor
 
     def set_train_sequences(self, train_sequences):
+        logging.warning("building svd similarty sampler...")
         rows = []
         cols = []
         vals = []
@@ -110,12 +113,13 @@ class SVDSimilaritySampler(NegativesSampler):
         ann.fit(embeddings)
         self.samples = []
         self.probs = []
+        logging.warning("computing knn index in svd similarity sampler...")
         neighbors = ann.kneighbors(embeddings, return_distance=True)
         self.items = neighbors[1][:,1:]
         distances = neighbors[0][:,1:]
         sims = 1/distances
         self.probs = np.transpose(sims.T / np.sum(sims, axis=1))
-        pass
+        logging.warning("svd similarity index built.\n")
 
     def sample_negatives(self, positive):
         sample = self.random.choices(self.items[positive], weights=self.probs[positive], k=self.sample_size) 
