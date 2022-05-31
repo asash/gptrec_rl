@@ -2,6 +2,7 @@ import os
 import sys
 import importlib.util
 import json
+import time
 import mmh3
 
 from aprec.utils.os_utils import shell
@@ -38,8 +39,10 @@ def run_experiment(config):
     result = []
     print(f"Dataset: {config.DATASET}")
     print("reading  data...")
+    reading_start = time.time()
     actions = [action for action in DatasetsRegister()[config.DATASET]()]
-    print("done")
+    reading_end = time.time()
+    print(f"dataset read in {reading_end - reading_start} seconds")
     callbacks = ()
     if hasattr(config, 'CALLBACKS'):
         callbacks = config.CALLBACKS

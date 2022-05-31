@@ -101,8 +101,16 @@ class RecommendersEvaluator(object):
         self.out_dir = out_dir
         self.features_from_test = None
         self.n_val_users = n_val_users
+        print("splitting actions...")
+        split_actions_start = time.time()
         self.train, self.test = self.data_splitter(actions)
+        split_actions_end = time.time() 
+        print(f"actions split in {split_actions_end - split_actions_start} seconds")
+        print(f"saving split for reproducibility purposes...")
+        saving_start = time.time()
         self.save_split(self.train, self.test)
+        saving_end = time.time()
+        print(f"split saved in {saving_end - saving_start} seconds")
         if remove_cold_start:
             self.test = filter_cold_start(self.train, self.test)
         self.users = users
@@ -113,8 +121,12 @@ class RecommendersEvaluator(object):
         self.val_user_ids = all_train_user_ids[:self.n_val_users]
         self.sampled_requests = None
         if target_items_sampler is not None:
+            print("generating sampled items requests...")
+            sampled_requests_generation_start = time.time()
             target_items_sampler.set_actions(self.actions, self.test)
             self.sampled_requests = target_items_sampler.get_sampled_ranking_requests() 
+            sampled_requests_generation_end = time.time()
+            print(f"sampled requests generated in {sampled_requests_generation_start - sampled_requests_generation_end} seconds")
         self.experiment_config = experiment_config
 
     def set_features_from_test(self, features_from_test):
@@ -193,10 +205,18 @@ class RecommendersEvaluator(object):
                 pass
 
     def save_split(self, train, test):
+        training_actions_saving_start = time.time()
+        print("saving train actions...")
         self.save_actions(train, "train.json.gz")
+        training_actions_saving_end = time.time()
+        print(f"train actions aved in {training_actions_saving_end - training_actions_saving_start} seconds")
+        print("saving test actions...")
+        test_actions_saving_start = time.time()
         self.save_actions(test, "test.json.gz")
+        test_actions_saving_end = time.time()
+        print(f"test actions aved in {test_actions_saving_end - test_actions_saving_start} seconds")
 
     def save_actions(self, actions, filename):
         with gzip.open(os.path.join(self.out_dir, filename), 'w') as output:
-            for action in actions:
+            for action in tqdm(actions):
                 output.write(action.to_json().encode('utf-8') + b"\n")

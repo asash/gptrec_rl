@@ -1,5 +1,3 @@
-import gc
-import random
 import time
 
 import tensorflow.keras.backend as K
