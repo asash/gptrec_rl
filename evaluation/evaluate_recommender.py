@@ -91,7 +91,8 @@ class RecommendersEvaluator(object):
                  items=None,
                  experiment_config=None,
                  target_items_sampler: TargetItemSampler = None,
-                 remove_cold_start=True
+                 remove_cold_start=True, 
+                 save_split = False,
                  ):
         self.actions = actions
         self.metrics = metrics
@@ -106,11 +107,13 @@ class RecommendersEvaluator(object):
         self.train, self.test = self.data_splitter(actions)
         split_actions_end = time.time() 
         print(f"actions split in {split_actions_end - split_actions_start} seconds")
-        print(f"saving split for reproducibility purposes...")
-        saving_start = time.time()
-        self.save_split(self.train, self.test)
-        saving_end = time.time()
-        print(f"split saved in {saving_end - saving_start} seconds")
+        if save_split:
+            print(f"saving split for reproducibility purposes...")
+            saving_start = time.time()
+            self.save_split(self.train, self.test)
+            saving_end = time.time()
+            print(f"split saved in {saving_end - saving_start} seconds")
+
         if remove_cold_start:
             self.test = filter_cold_start(self.train, self.test)
         self.users = users

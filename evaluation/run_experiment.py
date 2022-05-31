@@ -46,6 +46,9 @@ def run_experiment(config):
     callbacks = ()
     if hasattr(config, 'CALLBACKS'):
         callbacks = config.CALLBACKS
+    
+    if (not hasattr(config, 'SAVE_SPLIT')):
+        config.SAVE_SPLIT = False
 
     for users_fraction in config.USERS_FRACTIONS:
         print("actions in dataset: {}".format(len(actions)))
@@ -102,7 +105,8 @@ def run_experiment(config):
                                                       items=items,
                                                       experiment_config=config,
                                                       target_items_sampler=target_items_sampler, 
-                                                      remove_cold_start=filter_cold_start
+                                                      remove_cold_start=filter_cold_start, 
+                                                      save_split=config.SAVE_SPLIT
                                                       )
 
         if  hasattr(config, 'FEATURES_FROM_TEST'):
