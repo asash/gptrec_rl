@@ -1,10 +1,12 @@
 import time
+from regex import B
 
 import tensorflow.keras.backend as K
 from collections import defaultdict
 import tensorflow as tf
 
 from tqdm import tqdm
+from aprec.api.items_ranking_request import ItemsRankingRequest
 from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.default_history_vectorizer import DefaultHistoryVectrizer
 from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.history_vectorizer import HistoryVectorizer
 from aprec.recommenders.dnn_sequential_recommender.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
@@ -78,6 +80,10 @@ class DNNSequentialRecommender(Recommender):
         self.data_generator_processes = data_generator_processes
         self.data_generator_queue_size = data_generator_queue_size
         self.max_batches_per_epoch = max_batches_per_epoch
+
+        #we use following two dicts for sampled metrics
+        self.item_ranking_requrests = {}
+        self.item_ranking_results = {}
 
     def add_user(self, user):
         if self.users_featurizer is None:
@@ -216,6 +222,8 @@ class DNNSequentialRecommender(Recommender):
         self.pred_history_vectorizer.set_sequence_len(self.model_arch.max_history_length)
         self.pred_history_vectorizer.set_padding_value(self.items.size())
         
+    def add_test_items_ranking_request(self, request: ItemsRankingRequest):
+        self.item_ranking_requrests[request.user_id] = request 
 
     def train_epoch(self, generator, val_generator):
         if not self.debug:
@@ -288,24 +296,31 @@ class DNNSequentialRecommender(Recommender):
 
     def recommend(self, user_id, limit, features=None):
         scores = self.get_all_item_scores(user_id)
-        best_ids = np.argsort(scores)[::-1][:limit]
+        if user_id in self.item_ranking_requrests:
+            self.process_item_ranking_request(user_id, scores)
+        best_ids = tf.nn.top_k(scores, limit).indices.numpy()
         result = [(self.items.reverse_id(id), scores[id]) for id in best_ids]
         return result
 
     def get_item_rankings(self):
-        result = {}
-        for request in self.items_ranking_requests:
-            user_id = request.user_id
+        for user_id in self.items_ranking_requests:
+            self.process_item_ranking_request(user_id)
+        return self.item_ranking_results
+
+    def process_item_ranking_request(self,  user_id, scores=None):
+        if (user_id not in self.item_ranking_requrests) or  (user_id in self.item_ranking_results):
+            return
+        if scores is None:
             scores = self.get_all_item_scores(user_id)
-            user_result = []
-            for item_id in request.item_ids:
-                if (self.items.has_item(item_id)) and (self.items.get_id(item_id) < len(scores)):
-                    user_result.append((item_id, scores[self.items.get_id(item_id)]))
-                else:
-                    user_result.append((item_id, float("-inf")))
-            user_result.sort(key = lambda x: -x[1])
-            result[user_id] = user_result
-        return result
+        request = self.item_ranking_requrests[user_id]
+        user_result = []
+        for item_id in request.item_ids:
+            if (self.items.has_item(item_id)) and (self.items.get_id(item_id) < len(scores)):
+                user_result.append((item_id, scores[self.items.get_id(item_id)]))
+            else:
+                user_result.append((item_id, float("-inf")))
+        user_result.sort(key = lambda x: -x[1])
+        self.item_ranking_results[user_id] = user_result
 
     def get_all_item_scores(self, user_id):
         actions = self.user_actions[self.users.get_id(user_id)]

@@ -25,7 +25,7 @@ def bert4rec_ft(negatives_sampler):
         negatives_per_positive = negatives_sampler.get_sample_size()
         metric = ItemsMaksingLossProxy(BCELoss(), negatives_per_positive, sequence_len)
         metric.set_batch_size(batch_size)
-        recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=200,
+        recommender = DNNSequentialRecommender(model, train_epochs=1, early_stop_epochs=200,
                                                batch_size=batch_size,
                                                training_time_limit=3600000, 
                                                loss = ItemsMaksingLossProxy(BCELoss(), negatives_per_positive, sequence_len),
@@ -71,17 +71,30 @@ recommenders = {
     # "bert4rec_ft_svd_20_factor_10": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=20, ann_sampling_factor=10)),
     # "bert4rec_ft_svd_20_factor_20": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=20, ann_sampling_factor=20)),
 
-    # "bert4rec_ft_svd_50_factor_1": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=50, ann_sampling_factor=1)),
-    # "bert4rec_ft_svd_50_factor_2": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=50, ann_sampling_factor=2)),
-    # "bert4rec_ft_svd_50_factor_5": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=50, ann_sampling_factor=5)),
-    # "bert4rec_ft_svd_50_factor_10": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=50, ann_sampling_factor=10)),
-    # "bert4rec_ft_svd_50_factor_20": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=50, ann_sampling_factor=20)),
+    "bert4rec_ft_svd_50_factor_1": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=50, ann_sampling_factor=1)),
+    "bert4rec_ft_svd_50_factor_2": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=50, ann_sampling_factor=2)),
+    "bert4rec_ft_svd_50_factor_5": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=50, ann_sampling_factor=5)),
+    "bert4rec_ft_svd_50_factor_10": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=50, ann_sampling_factor=10)),
+    "bert4rec_ft_svd_50_factor_20": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=50, ann_sampling_factor=20)),
 
     "bert4rec_ft_svd_100_factor_1": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=100, ann_sampling_factor=1)),
     "bert4rec_ft_svd_100_factor_2": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=100, ann_sampling_factor=2)),
     "bert4rec_ft_svd_100_factor_5": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=100, ann_sampling_factor=5)),
     "bert4rec_ft_svd_100_factor_10": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=100, ann_sampling_factor=10)),
     "bert4rec_ft_svd_100_factor_20": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=100, ann_sampling_factor=20)),
+
+    "bert4rec_ft_svd_200_factor_1": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=200, ann_sampling_factor=1)),
+    "bert4rec_ft_svd_200_factor_2": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=200, ann_sampling_factor=2)),
+    "bert4rec_ft_svd_200_factor_5": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=200, ann_sampling_factor=5)),
+    "bert4rec_ft_svd_200_factor_10": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=200, ann_sampling_factor=10)),
+    "bert4rec_ft_svd_200_factor_20": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=200, ann_sampling_factor=20)),
+
+    "bert4rec_ft_svd_400_factor_1": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=400, ann_sampling_factor=1)),
+    "bert4rec_ft_svd_400_factor_2": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=400, ann_sampling_factor=2)),
+    "bert4rec_ft_svd_400_factor_5": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=400, ann_sampling_factor=5)),
+    "bert4rec_ft_svd_400_factor_10": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=400, ann_sampling_factor=10)),
+    "bert4rec_ft_svd_400_factor_20": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=400, ann_sampling_factor=20)),
+
 }
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
