@@ -25,7 +25,7 @@ def bert4rec_ft(negatives_sampler):
         negatives_per_positive = negatives_sampler.get_sample_size()
         metric = ItemsMaksingLossProxy(BCELoss(), negatives_per_positive, sequence_len)
         metric.set_batch_size(batch_size)
-        recommender = DNNSequentialRecommender(model, train_epochs=1, early_stop_epochs=200,
+        recommender = DNNSequentialRecommender(model, train_epochs=100000, early_stop_epochs=200,
                                                batch_size=batch_size,
                                                training_time_limit=3600000, 
                                                loss = ItemsMaksingLossProxy(BCELoss(), negatives_per_positive, sequence_len),
