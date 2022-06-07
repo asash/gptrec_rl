@@ -14,7 +14,7 @@ class SASRec(SequentialRecsysModel):
     def __init__(self, output_layer_activation='linear', embedding_size=64,
                  max_history_len=64, 
                  dropout_rate=0.2,
-                 num_blocks=3,
+                 num_blocks=2,
                  num_heads=1,
                  reuse_item_embeddings=True, #use same item embeddings for
                                              # sequence embedding and for the embedding matrix

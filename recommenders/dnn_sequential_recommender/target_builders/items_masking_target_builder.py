@@ -5,7 +5,7 @@ from aprec.recommenders.dnn_sequential_recommender.target_builders.target_builde
 
 class ItemsMaskingTargetsBuilder(TargetBuilder):
     def __init__(self, random_seed=31337, 
-                       relative_positions_encoding = True, 
+                       relative_positions_encoding = False, 
                        ignore_value=-100): #-100 is used by default in hugginface's BERT implementation
         self.random = Random()
         self.random.seed(random_seed) 

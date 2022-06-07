@@ -5,12 +5,16 @@ from aprec.evaluation.metrics.mrr import MRR
 from aprec.evaluation.metrics.map import MAP
 from aprec.evaluation.metrics.hit import HIT
 from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_with_negatives import SVDSimilaritySampler
+from aprec.recommenders.dnn_sequential_recommender.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
+from aprec.recommenders.first_order_mc import FirstOrderMarkovChainRecommender
+from aprec.recommenders.lightfm import LightFMRecommender
+from aprec.recommenders.top_recommender import TopRecommender
 
 USERS_FRACTIONS = [1.0]
 
 
-def bert4rec_ft(negatives_sampler):
+def bert4rec_ft(negatives_sampler=SVDSimilaritySampler()):
         from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
         from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
         from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
@@ -30,8 +34,7 @@ def bert4rec_ft(negatives_sampler):
                                                training_time_limit=3600000, 
                                                loss = ItemsMaksingLossProxy(BCELoss(), negatives_per_positive, sequence_len),
                                                debug=False, sequence_splitter=lambda: ItemsMasking(), 
-                                               targets_builder= lambda: ItemsMaskingWithNegativesTargetsBuilder(relative_positions_encoding=True, 
-                                                                                        negatives_sampler=RandomNegativesSampler(negatives_per_positive)),
+                                               targets_builder= lambda: ItemsMaskingWithNegativesTargetsBuilder(negatives_sampler=RandomNegativesSampler(negatives_per_positive)),
                                                val_sequence_splitter=lambda: ItemsMasking(force_last=True),
                                                metric=metric,
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
@@ -39,62 +42,62 @@ def bert4rec_ft(negatives_sampler):
                                                )
         return recommender
 
+def regular_bert4rec():
+        sequence_len = 100
+        from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
+        from aprec.losses.mean_ypred_ploss import MeanPredLoss
+        from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
+        from aprec.recommenders.dnn_sequential_recommender.models.bert4rec.bert4rec import BERT4Rec
+        from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
+        from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
+        model = BERT4Rec( max_history_len=sequence_len)
+        recommender = DNNSequentialRecommender(model, train_epochs=100000, early_stop_epochs=200,
+                                               batch_size=64,
+                                               training_time_limit=3600000, 
+                                               loss = MeanPredLoss(),
+                                               debug=False, sequence_splitter=lambda: ItemsMasking(), 
+                                               targets_builder= lambda: ItemsMaskingTargetsBuilder(),
+                                               val_sequence_splitter=lambda: ItemsMasking(force_last=True),
+                                               metric=MeanPredLoss(), 
+                                               pred_history_vectorizer=AddMaskHistoryVectorizer(),
+                                               )
+        return recommender
+
+def vanilla_sasrec():
+        sequence_len = 100
+        from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
+        from aprec.losses.bce import BCELoss
+        from aprec.recommenders.dnn_sequential_recommender.models.sasrec.sasrec import SASRec
+        from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_per_positive_target import NegativePerPositiveTargetBuilder
+        from tensorflow.keras.optimizers import Adam
+        model = SASRec(max_history_len=sequence_len, vanilla=True)
+        recommender = DNNSequentialRecommender(model, train_epochs=100000, early_stop_epochs=200,
+                                               batch_size=64,
+                                               training_time_limit=3600000, 
+                                               optimizer=Adam(beta_2=0.98),
+                                               loss = BCELoss(),
+                                               debug=False, sequence_splitter=ShiftedSequenceSplitter, 
+                                               targets_builder= lambda: NegativePerPositiveTargetBuilder(sequence_len),
+                                               val_sequence_splitter=ShiftedSequenceSplitter,
+                                               metric=BCELoss(), 
+                                               )
+        return recommender
+
+
+def top_recommender():
+    return TopRecommender()
+
+def lightfm_recommender(k=256, loss='bpr'):
+    return LightFMRecommender(k, loss, num_threads=32)
+
 
 recommenders = {
-    # "bert4rec_ft_svd_5_factor_1": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=5, ann_sampling_factor=1)),
-    # "bert4rec_ft_svd_5_factor_2": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=5, ann_sampling_factor=2)),
-    # "bert4rec_ft_svd_5_factor_5": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=5, ann_sampling_factor=5)),
-    # "bert4rec_ft_svd_5_factor_10": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=5, ann_sampling_factor=10)),
-    # "bert4rec_ft_svd_5_factor_20": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=5, ann_sampling_factor=20)),
-
-    # "bert4rec_ft_svd_1_factor_1": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=1, ann_sampling_factor=1)),
-    # "bert4rec_ft_svd_1_factor_2": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=1, ann_sampling_factor=2)),
-    # "bert4rec_ft_svd_1_factor_5": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=1, ann_sampling_factor=5)),
-    # "bert4rec_ft_svd_1_factor_10": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=1, ann_sampling_factor=10)),
-    # "bert4rec_ft_svd_1_factor_20": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=1, ann_sampling_factor=20)),
-
-    # "bert4rec_ft_svd_2_factor_1": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=2, ann_sampling_factor=1)),
-    # "bert4rec_ft_svd_2_factor_2": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=2, ann_sampling_factor=2)),
-    # "bert4rec_ft_svd_2_factor_5": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=2, ann_sampling_factor=5)),
-    # "bert4rec_ft_svd_2_factor_10": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=2, ann_sampling_factor=10)),
-    # "bert4rec_ft_svd_2_factor_20": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=2, ann_sampling_factor=20)),
-
-    # "bert4rec_ft_svd_10_factor_1": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=10, ann_sampling_factor=1)),
-    # "bert4rec_ft_svd_10_factor_2": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=10, ann_sampling_factor=2)),
-    # "bert4rec_ft_svd_10_factor_5": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=10, ann_sampling_factor=5)),
-    # "bert4rec_ft_svd_10_factor_10": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=10, ann_sampling_factor=10)),
-    # "bert4rec_ft_svd_10_factor_20": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=10, ann_sampling_factor=20)),
-
-    # "bert4rec_ft_svd_20_factor_1": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=20, ann_sampling_factor=1)),
-    # "bert4rec_ft_svd_20_factor_2": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=20, ann_sampling_factor=2)),
-    # "bert4rec_ft_svd_20_factor_5": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=20, ann_sampling_factor=5)),
-    # "bert4rec_ft_svd_20_factor_10": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=20, ann_sampling_factor=10)),
-    # "bert4rec_ft_svd_20_factor_20": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=20, ann_sampling_factor=20)),
-
-    "bert4rec_ft_svd_50_factor_1": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=50, ann_sampling_factor=1)),
-    "bert4rec_ft_svd_50_factor_2": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=50, ann_sampling_factor=2)),
-    "bert4rec_ft_svd_50_factor_5": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=50, ann_sampling_factor=5)),
-    "bert4rec_ft_svd_50_factor_10": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=50, ann_sampling_factor=10)),
-    "bert4rec_ft_svd_50_factor_20": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=50, ann_sampling_factor=20)),
-
-    "bert4rec_ft_svd_100_factor_1": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=100, ann_sampling_factor=1)),
-    "bert4rec_ft_svd_100_factor_2": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=100, ann_sampling_factor=2)),
-    "bert4rec_ft_svd_100_factor_5": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=100, ann_sampling_factor=5)),
-    "bert4rec_ft_svd_100_factor_10": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=100, ann_sampling_factor=10)),
-    "bert4rec_ft_svd_100_factor_20": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=100, ann_sampling_factor=20)),
-
-    "bert4rec_ft_svd_200_factor_1": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=200, ann_sampling_factor=1)),
-    "bert4rec_ft_svd_200_factor_2": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=200, ann_sampling_factor=2)),
-    "bert4rec_ft_svd_200_factor_5": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=200, ann_sampling_factor=5)),
-    "bert4rec_ft_svd_200_factor_10": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=200, ann_sampling_factor=10)),
-    "bert4rec_ft_svd_200_factor_20": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=200, ann_sampling_factor=20)),
-
-    "bert4rec_ft_svd_400_factor_1": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=400, ann_sampling_factor=1)),
-    "bert4rec_ft_svd_400_factor_2": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=400, ann_sampling_factor=2)),
-    "bert4rec_ft_svd_400_factor_5": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=400, ann_sampling_factor=5)),
-    "bert4rec_ft_svd_400_factor_10": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=400, ann_sampling_factor=10)),
-    "bert4rec_ft_svd_400_factor_20": lambda: bert4rec_ft(SVDSimilaritySampler(sample_size=400, ann_sampling_factor=20)),
-
+   "BERT4RecFT":bert4rec_ft,
+   "BERT4Rec": regular_bert4rec,
+   "FirstOrderMC": FirstOrderMarkovChainRecommender,
+   "SASRec": vanilla_sasrec,
+   "Popularity": top_recommender,
+   "MF-BPR": lightfm_recommender
 }
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
