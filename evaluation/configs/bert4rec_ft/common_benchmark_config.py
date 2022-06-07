@@ -92,10 +92,10 @@ def lightfm_recommender(k=256, loss='bpr'):
 
 
 recommenders = {
-   "BERT4RecFT":bert4rec_ft,
    "BERT4Rec": regular_bert4rec,
-   "FirstOrderMC": FirstOrderMarkovChainRecommender,
    "SASRec": vanilla_sasrec,
+   "BERT4RecFT":bert4rec_ft,
+   "FirstOrderMC": FirstOrderMarkovChainRecommender,
    "Popularity": top_recommender,
    "MF-BPR": lightfm_recommender
 }
@@ -106,7 +106,6 @@ TARGET_ITEMS_SAMPLER = PopTargetItemsSampler(101)
 def get_recommenders(filter_seen: bool):
     result = {}
     all_recommenders = list(recommenders.keys())
-    random.shuffle(all_recommenders)
     for recommender_name in all_recommenders:
         if filter_seen:
             result[recommender_name] =\
