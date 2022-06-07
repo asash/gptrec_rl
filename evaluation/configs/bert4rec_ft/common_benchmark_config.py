@@ -60,6 +60,7 @@ def regular_bert4rec():
                                                val_sequence_splitter=lambda: ItemsMasking(force_last=True),
                                                metric=MeanPredLoss(), 
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
+                                               max_batches_per_epoch=100, 
                                                )
         return recommender
 
@@ -79,6 +80,7 @@ def vanilla_sasrec():
                                                debug=False, sequence_splitter=ShiftedSequenceSplitter, 
                                                targets_builder= lambda: NegativePerPositiveTargetBuilder(sequence_len),
                                                val_sequence_splitter=ShiftedSequenceSplitter,
+                                               max_batches_per_epoch=100, 
                                                metric=BCELoss(), 
                                                )
         return recommender
