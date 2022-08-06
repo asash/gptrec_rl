@@ -166,7 +166,8 @@ all_recommenders = list(recommenders_raw.keys())
 
 
 RECOMMENDERS = {
-        "top_recommender": lambda: TopRecommender(0.01),
+        #"top_recommender": lambda: TopRecommender(0.01),
+        "MF-BPR": LightFMRecommender(256) 
     }
 #for model in all_recommenders:
    # RECOMMENDERS[model] = recommenders_raw[model]
