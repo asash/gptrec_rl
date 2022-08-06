@@ -6,6 +6,7 @@ from tqdm import tqdm
 from aprec.datasets.mts_kion import get_mts_kion_dataset, get_submission_user_ids, get_users, get_items
 from aprec.recommenders.dnn_sequential_recommender.models.sasrec.sasrec import SASRec
 from aprec.recommenders.dnn_sequential_recommender.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
+from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_with_negatives import SVDSimilaritySampler
 from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_per_positive_target import NegativePerPositiveTargetBuilder
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import RecencySequenceSampling
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import SequenceContinuation
@@ -128,6 +129,35 @@ sasrec_biased = dnn(SASRec(max_history_len=50,
             target_builder=FullMatrixTargetsBuilder, 
             metric=KerasNDCG(40))
 
+
+def bert4rec_ft(negatives_sampler=SVDSimilaritySampler(sample_size=400)):
+        from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
+        from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
+        from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
+        from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_with_negatives import ItemsMaskingWithNegativesTargetsBuilder, RandomNegativesSampler
+        from aprec.recommenders.dnn_sequential_recommender.models.bert4recft.bert4recft import BERT4RecFT
+        from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_with_negatives import RandomNegativesSampler
+        from aprec.losses.bce import BCELoss
+        from aprec.losses.items_masking_loss_proxy import ItemsMaksingLossProxy
+        sequence_len = 200
+        model = BERT4RecFT(max_history_len=sequence_len)
+        batch_size = 256 
+        negatives_per_positive = negatives_sampler.get_sample_size()
+        metric = ItemsMaksingLossProxy(BCELoss(), negatives_per_positive, sequence_len)
+        metric.set_batch_size(batch_size)
+        recommender = DNNSequentialRecommender(model, train_epochs=100000, early_stop_epochs=200,
+                                               batch_size=batch_size,
+                                               training_time_limit=3600000, 
+                                               loss = ItemsMaksingLossProxy(BCELoss(), negatives_per_positive, sequence_len),
+                                               debug=False, sequence_splitter=lambda: ItemsMasking(), 
+                                               targets_builder= lambda: ItemsMaskingWithNegativesTargetsBuilder(negatives_sampler=RandomNegativesSampler(negatives_per_positive)),
+                                               val_sequence_splitter=lambda: ItemsMasking(force_last=True),
+                                               metric=metric,
+                                               pred_history_vectorizer=AddMaskHistoryVectorizer(),
+                                               max_batches_per_epoch=24
+                                               )
+        return recommender
+
  
 recommenders_raw = {
 
@@ -167,7 +197,8 @@ all_recommenders = list(recommenders_raw.keys())
 
 RECOMMENDERS = {
         #"top_recommender": lambda: TopRecommender(0.01),
-        "MF-BPR": lambda: LightFMRecommender(256)
+        #"MF-BPR": lambda: LightFMRecommender(256)
+        "bert4rec_ft": lambda: FilterSeenRecommender(bert4rec_ft())
     }
 #for model in all_recommenders:
    # RECOMMENDERS[model] = recommenders_raw[model]
