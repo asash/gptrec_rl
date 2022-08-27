@@ -39,7 +39,9 @@ def vit4rec():
                                                           targets_builder=target_builder, 
                                                           val_sequence_splitter = val_sequence_splitter,
                                                           metric=metric,
-                                                          debug=False)
+                                                          debug=False, 
+                                                          max_batches_per_epoch=128,
+                                                          )
 HISTORY_LEN=50
 
 recommenders = {
