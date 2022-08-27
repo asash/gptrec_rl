@@ -25,14 +25,14 @@ def vit4rec():
     sequence_splitter = lambda: RecencySequenceSampling(0.2, exponential_importance(0.8))
     target_builder=FullMatrixTargetsBuilder
     optimizer=Adam(beta_2=0.98)
-    training_time_limit=3600
+    training_time_limit=360000 
     metric=KerasNDCG(40) 
     max_epochs=10000
 
     return DNNSequentialRecommender(train_epochs=max_epochs, loss=loss,
                                                           model_arch=model_arch,
                                                           optimizer=optimizer,
-                                                          early_stop_epochs=100,
+                                                          early_stop_epochs=200,
                                                           batch_size=16,
                                                           training_time_limit=training_time_limit,
                                                           sequence_splitter=sequence_splitter, 
