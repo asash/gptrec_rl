@@ -46,25 +46,24 @@ def vit4rec(rss_alpha, loss_str ):
                                                           debug=False, 
                                                           max_batches_per_epoch=128,
                                                           )
-HISTORY_LEN=50
 
 recommenders = {
-    "VIT4Rec-RSS-BCE-0.95": vit4rec(0.95, "bce"), 
-    "VIT4Rec-RSS-BCE-0.99": vit4rec(0.99, "bce"), 
-    "VIT4Rec-RSS-BCE-1.0": vit4rec(1.0, "bce"), 
-    "VIT4Rec-RSS-BCE-0.9": vit4rec(0.9, "bce"), 
-    "VIT4Rec-RSS-BCE-0.85": vit4rec(0.85, "bce"), 
-    "VIT4Rec-RSS-BCE-0.8": vit4rec(0.8, "bce"), 
-    "VIT4Rec-RSS-BCE-0.7": vit4rec(0.7, "bce"), 
-    "VIT4Rec-RSS-BCE-0.6": vit4rec(0.6, "bce"), 
-    "VIT4Rec-RSS-Lambdarank-0.95": vit4rec(0.95, "lambdarank"), 
-    "VIT4Rec-RSS-Lambdarank-0.99": vit4rec(0.99, "lambdarank"), 
-    "VIT4Rec-RSS-Lambdarank-1.0": vit4rec(1.0, "lambdarank"), 
-    "VIT4Rec-RSS-Lambdarank-0.9": vit4rec(0.9, "lambdarank"), 
-    "VIT4Rec-RSS-Lambdarank-0.85": vit4rec(0.85, "lambdarank"), 
-    "VIT4Rec-RSS-Lambdarank-0.8": vit4rec(0.8, "lambdarank"), 
-    "VIT4Rec-RSS-Lambdarank-0.6": vit4rec(0.6, "lambdarank"), 
-    "VIT4Rec-RSS-Lambdarank-0.7": vit4rec(0.7, "lambdarank")
+    "VIT4Rec-RSS-BCE-0.95":lambda: vit4rec(0.95, "bce"), 
+    "VIT4Rec-RSS-BCE-0.99":lambda: vit4rec(0.99, "bce"), 
+    "VIT4Rec-RSS-BCE-1.0":lambda: vit4rec(1.0, "bce"), 
+    "VIT4Rec-RSS-BCE-0.9":lambda: vit4rec(0.9, "bce"), 
+    "VIT4Rec-RSS-BCE-0.85":lambda: vit4rec(0.85, "bce"), 
+    "VIT4Rec-RSS-BCE-0.8":lambda: vit4rec(0.8, "bce"), 
+    "VIT4Rec-RSS-BCE-0.7":lambda: vit4rec(0.7, "bce"), 
+    "VIT4Rec-RSS-BCE-0.6":lambda: vit4rec(0.6, "bce"), 
+    "VIT4Rec-RSS-Lambdarank-0.95":lambda: vit4rec(0.95, "lambdarank"), 
+    "VIT4Rec-RSS-Lambdarank-0.99":lambda: vit4rec(0.99, "lambdarank"), 
+    "VIT4Rec-RSS-Lambdarank-1.0":lambda: vit4rec(1.0, "lambdarank"), 
+    "VIT4Rec-RSS-Lambdarank-0.9":lambda: vit4rec(0.9, "lambdarank"), 
+    "VIT4Rec-RSS-Lambdarank-0.85":lambda: vit4rec(0.85, "lambdarank"), 
+    "VIT4Rec-RSS-Lambdarank-0.8":lambda: vit4rec(0.8, "lambdarank"), 
+    "VIT4Rec-RSS-Lambdarank-0.6":lambda: vit4rec(0.6, "lambdarank"), 
+    "VIT4Rec-RSS-Lambdarank-0.7":lambda: vit4rec(0.7, "lambdarank")
 }
 
 
