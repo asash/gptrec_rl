@@ -10,7 +10,7 @@ from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 
 USERS_FRACTIONS = [1.0]
 
-def vit4rec():
+def vit4rec(rss_alpha, loss_str ):
     from tensorflow.keras.optimizers import Adam
     from aprec.recommenders.dnn_sequential_recommender.models.vit4rec import Vit4Rec
     from aprec.recommenders.dnn_sequential_recommender.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
@@ -22,8 +22,11 @@ def vit4rec():
     from aprec.recommenders.metrics.ndcg import KerasNDCG
     model_arch= Vit4Rec()
     val_sequence_splitter=SequenceContinuation 
-    loss=BCELoss()
-    sequence_splitter = lambda: RecencySequenceSampling(0.2, exponential_importance(0.8))
+    if loss_str == 'bce':
+        loss=BCELoss()
+    elif loss_str == 'lambdarank':
+        loss=LambdaGammaRankLoss()
+    sequence_splitter = lambda: RecencySequenceSampling(0.2, exponential_importance(0.95))
     target_builder=FullMatrixTargetsBuilder
     optimizer=Adam(beta_2=0.98)
     training_time_limit=360000 
@@ -46,7 +49,22 @@ def vit4rec():
 HISTORY_LEN=50
 
 recommenders = {
-    "VIT4Rec-RSS-Lambdarank": vit4rec
+    "VIT4Rec-RSS-BCE-0.95": vit4rec(0.95, "bce"), 
+    "VIT4Rec-RSS-BCE-0.99": vit4rec(0.99, "bce"), 
+    "VIT4Rec-RSS-BCE-1.0": vit4rec(1.0, "bce"), 
+    "VIT4Rec-RSS-BCE-0.9": vit4rec(0.9, "bce"), 
+    "VIT4Rec-RSS-BCE-0.85": vit4rec(0.85, "bce"), 
+    "VIT4Rec-RSS-BCE-0.8": vit4rec(0.8, "bce"), 
+    "VIT4Rec-RSS-BCE-0.7": vit4rec(0.7, "bce"), 
+    "VIT4Rec-RSS-BCE-0.6": vit4rec(0.6, "bce"), 
+    "VIT4Rec-RSS-Lambdarank-0.95": vit4rec(0.95, "lambdarank"), 
+    "VIT4Rec-RSS-Lambdarank-0.99": vit4rec(0.99, "lambdarank"), 
+    "VIT4Rec-RSS-Lambdarank-1.0": vit4rec(1.0, "lambdarank"), 
+    "VIT4Rec-RSS-Lambdarank-0.9": vit4rec(0.9, "lambdarank"), 
+    "VIT4Rec-RSS-Lambdarank-0.85": vit4rec(0.85, "lambdarank"), 
+    "VIT4Rec-RSS-Lambdarank-0.8": vit4rec(0.8, "lambdarank"), 
+    "VIT4Rec-RSS-Lambdarank-0.6": vit4rec(0.6, "lambdarank"), 
+    "VIT4Rec-RSS-Lambdarank-0.7": vit4rec(0.7, "lambdarank")
 }
 
 
