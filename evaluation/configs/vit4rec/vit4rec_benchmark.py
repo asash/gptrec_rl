@@ -4,6 +4,7 @@ from aprec.evaluation.metrics.mrr import MRR
 from aprec.evaluation.metrics.map import MAP
 from aprec.evaluation.metrics.hit import HIT
 from aprec.evaluation.split_actions import LeaveOneOut
+from aprec.losses.bce import BCELoss
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 
 
@@ -21,7 +22,7 @@ def vit4rec():
     from aprec.recommenders.metrics.ndcg import KerasNDCG
     model_arch= Vit4Rec()
     val_sequence_splitter=SequenceContinuation 
-    loss=LambdaGammaRankLoss()
+    loss=BCELoss()
     sequence_splitter = lambda: RecencySequenceSampling(0.2, exponential_importance(0.8))
     target_builder=FullMatrixTargetsBuilder
     optimizer=Adam(beta_2=0.98)
