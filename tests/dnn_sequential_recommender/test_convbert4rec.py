@@ -5,7 +5,7 @@ class ConvBERT4Rec(unittest.TestCase):
         from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
         from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
         from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
-        from aprec.tests.test_dnn_sequential import USER_ID
+        from aprec.tests.dnn_sequential_recommender.test_dnn_sequential import USER_ID
         from aprec.utils.generator_limit import generator_limit
         from aprec.datasets.movielens20m import get_movielens20m_actions, get_movies_catalog
         from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender

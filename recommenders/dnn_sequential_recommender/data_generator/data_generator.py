@@ -9,6 +9,7 @@ from multiprocessing_on_dill.context import ForkProcess, ForkContext
 
 
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.random_fraction_splitter import RandomFractionSplitter
+from aprec.recommenders.dnn_sequential_recommender.targetsplitters.targetsplitter import TargetSplitter
 from aprec.utils.os_utils import shell
 
 class DataGenerator(Sequence):
@@ -20,7 +21,7 @@ class DataGenerator(Sequence):
                  user_id_required=False,
                  max_user_features=0,
                  user_features_required=False, 
-                 sequence_splitter = RandomFractionSplitter, 
+                 sequence_splitter: TargetSplitter = RandomFractionSplitter, 
                  targets_builder = FullMatrixTargetsBuilder(),
                  max_batches_per_epoch = None,
                  shuffle_data = True
@@ -40,6 +41,7 @@ class DataGenerator(Sequence):
         self.sequence_splitter = sequence_splitter()
         self.sequence_splitter.set_num_items(n_items)
         self.sequence_splitter.set_sequence_len(history_size)
+        self.sequence_splitter.set_actions(user_actions)
         self.targets_builder = targets_builder
         self.targets_builder.set_sequence_len(history_size)
         self.do_shuffle_data = shuffle_data
