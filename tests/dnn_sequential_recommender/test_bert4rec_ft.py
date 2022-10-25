@@ -1,8 +1,8 @@
 import unittest
 class TestOwnBERT4rec(unittest.TestCase):
     def test_bert4rec_ft_recommender(self):
-        from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_with_negatives import ItemsMaskingWithNegativesTargetsBuilder,\
-                         RandomNegativesSampler, SVDSimilaritySampler
+        from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_with_negatives import ItemsMaskingWithNegativesTargetsBuilder
+        from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_samplers import SVDSimilaritySampler
         from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
         from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
         from aprec.tests.dnn_sequential_recommender.test_dnn_sequential import USER_ID

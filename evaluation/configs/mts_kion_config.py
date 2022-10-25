@@ -6,7 +6,7 @@ from tqdm import tqdm
 from aprec.datasets.mts_kion import get_mts_kion_dataset, get_submission_user_ids, get_users, get_items
 from aprec.recommenders.dnn_sequential_recommender.models.sasrec.sasrec import SASRec
 from aprec.recommenders.dnn_sequential_recommender.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
-from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_with_negatives import SVDSimilaritySampler
+from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_samplers import SVDSimilaritySampler
 from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_per_positive_target import NegativePerPositiveTargetBuilder
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import RecencySequenceSampling
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import SequenceContinuation
@@ -134,9 +134,9 @@ def bert4rec_ft(negatives_sampler=SVDSimilaritySampler(sample_size=400)):
         from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
         from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
         from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
-        from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_with_negatives import ItemsMaskingWithNegativesTargetsBuilder, RandomNegativesSampler
+        from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_with_negatives import ItemsMaskingWithNegativesTargetsBuilder
         from aprec.recommenders.dnn_sequential_recommender.models.bert4recft.bert4recft import BERT4RecFT
-        from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_with_negatives import RandomNegativesSampler
+        from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_samplers import RandomNegativesSampler
         from aprec.losses.bce import BCELoss
         from aprec.losses.items_masking_loss_proxy import ItemsMaksingLossProxy
         sequence_len = 200
