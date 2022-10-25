@@ -5,6 +5,8 @@ from aprec.evaluation.metrics.mrr import MRR
 from aprec.evaluation.metrics.map import MAP
 from aprec.evaluation.metrics.hit import HIT
 from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_samplers import SVDSimilaritySampler
+from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_samplers.popularity_based_sampler import PopularityBasedSampler
+from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_samplers.random_negatives_sampler import RandomNegativesSampler
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.recommenders.first_order_mc import FirstOrderMarkovChainRecommender
@@ -20,7 +22,6 @@ def bert4rec_ft(negatives_sampler=SVDSimilaritySampler()):
         from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
         from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_with_negatives import ItemsMaskingWithNegativesTargetsBuilder
         from aprec.recommenders.dnn_sequential_recommender.models.bert4recft.bert4recft import BERT4RecFT
-        from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_samplers import RandomNegativesSampler
         from aprec.losses.bce import BCELoss
         from aprec.losses.items_masking_loss_proxy import ItemsMaksingLossProxy
         sequence_len = 100
@@ -34,7 +35,7 @@ def bert4rec_ft(negatives_sampler=SVDSimilaritySampler()):
                                                training_time_limit=3600000, 
                                                loss = ItemsMaksingLossProxy(BCELoss(), negatives_per_positive, sequence_len),
                                                debug=False, sequence_splitter=lambda: ItemsMasking(), 
-                                               targets_builder= lambda: ItemsMaskingWithNegativesTargetsBuilder(negatives_sampler=RandomNegativesSampler(negatives_per_positive)),
+                                               targets_builder= lambda: ItemsMaskingWithNegativesTargetsBuilder(negatives_sampler=negatives_sampler),
                                                val_sequence_splitter=lambda: ItemsMasking(force_last=True),
                                                metric=metric,
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
@@ -94,12 +95,30 @@ def lightfm_recommender(k=256, loss='bpr'):
 
 
 recommenders = {
-   "BERT4Rec": regular_bert4rec,
-   "SASRec": vanilla_sasrec,
-   "BERT4RecFT":bert4rec_ft,
    "FirstOrderMC": FirstOrderMarkovChainRecommender,
    "Popularity": top_recommender,
-   "MF-BPR": lightfm_recommender
+   "MF-BPR": lightfm_recommender,
+   "BERT4Rec": regular_bert4rec,
+   "BERT4RecScaleRandom1": lambda: bert4rec_ft(RandomNegativesSampler(1)),
+   "BERT4RecScaleRandom4": lambda: bert4rec_ft(RandomNegativesSampler(4)),
+   "BERT4RecScaleRandom64": lambda: bert4rec_ft(RandomNegativesSampler(64)),
+   "BERT4RecScaleRandom256": lambda: bert4rec_ft(RandomNegativesSampler(256)),
+   "BERT4RecScaleRandom1024": lambda: bert4rec_ft(RandomNegativesSampler(1024)),
+
+   "BERT4RecScalePopularity1": lambda: bert4rec_ft(PopularityBasedSampler(1)),
+   "BERT4RecScalePopularity4": lambda: bert4rec_ft(PopularityBasedSampler(4)),
+   "BERT4RecScalePopularity64": lambda: bert4rec_ft(PopularityBasedSampler(64)),
+   "BERT4RecScalePopularity256": lambda: bert4rec_ft(PopularityBasedSampler(256)),
+   "BERT4RecScalePopularity1024": lambda: bert4rec_ft(PopularityBasedSampler(1024)),
+
+   "BERT4RecScaleSVD1": lambda: bert4rec_ft(SVDSimilaritySampler(1)),
+   "BERT4RecScaleSVD4": lambda: bert4rec_ft(SVDSimilaritySampler(4)),
+   "BERT4RecScaleSVD64": lambda: bert4rec_ft(SVDSimilaritySampler(64)),
+   "BERT4RecScaleSVD256": lambda: bert4rec_ft(SVDSimilaritySampler(256)),
+   "BERT4RecScaleSVD1024": lambda: bert4rec_ft(SVDSimilaritySampler(1024)),
+
+
+
 }
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
