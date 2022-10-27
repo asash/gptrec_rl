@@ -9,6 +9,7 @@ class MixtureSampler(NegativesSampler):
             self.sample_size += sampler.get_sample_size()
             
     def set_n_items(self, n):
+        super().set_n_items(n)
         for sampler in self.samplers:
             sampler.set_n_items(n)
 
