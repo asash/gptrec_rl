@@ -135,6 +135,7 @@ class DNNSequentialRecommender(Recommender):
         self.pass_parameters()
         self.max_user_features, self.max_user_feature_val = self.get_max_user_features()
         train_users, train_user_ids, train_features, val_users, val_user_ids, val_features = self.train_val_split()
+        self.targets_builder.set_n_items(self.items.size())
         self.targets_builder.set_train_sequences(train_users)
 
         print("train_users: {}, val_users:{}, items:{}".format(len(train_users), len(val_users), self.items.size()))

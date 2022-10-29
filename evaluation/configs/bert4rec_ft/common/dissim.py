@@ -92,7 +92,15 @@ def lightfm_recommender(k=256, loss='bpr'):
 
 
 recommenders = {
-  "BERT4RecScalePopularityOnly": lambda: bert4rec_ft(AffinityDissimilaritySampler(258)),
+  "BERT4RecScaleDissim_0.5": lambda: bert4rec_ft(AffinityDissimilaritySampler(258, smoothing=0.5)),
+  "BERT4RecScaleDissim_1.0": lambda: bert4rec_ft(AffinityDissimilaritySampler(258, smoothing=1.0)),
+  "BERT4RecScaleDissim_2.0": lambda: bert4rec_ft(AffinityDissimilaritySampler(258, smoothing=2.0)),
+  "BERT4RecScaleDissim_4.0": lambda: bert4rec_ft(AffinityDissimilaritySampler(258, smoothing=4.0)),
+  "BERT4RecScaleDissim_8.0": lambda: bert4rec_ft(AffinityDissimilaritySampler(258, smoothing=8.0)),
+  "BERT4RecScaleDissim_16.0": lambda: bert4rec_ft(AffinityDissimilaritySampler(258, smoothing=16.0)),
+  "BERT4RecScaleDissim_32.0": lambda: bert4rec_ft(AffinityDissimilaritySampler(258, smoothing=32.0)),
+  "BERT4RecScaleDissim_64.0": lambda: bert4rec_ft(AffinityDissimilaritySampler(258, smoothing=64.0)),
+  "BERT4RecScaleDissim_128.0": lambda: bert4rec_ft(AffinityDissimilaritySampler(258, smoothing=128.0)),
 }
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]

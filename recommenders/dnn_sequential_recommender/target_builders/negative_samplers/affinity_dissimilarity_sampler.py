@@ -1,16 +1,19 @@
+import logging
 import numpy as np
-from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_samplers import NegativesSampler 
+import tqdm
+from .negatives_sampler import NegativesSampler 
 class AffinityDissimilaritySampler(NegativesSampler):
-    def __init__(self, sample_size=400, seed=31337):
+    def __init__(self, sample_size=400, seed=31337, smoothing=5):
         self.sample_size = sample_size
         self.random = np.random.default_rng(seed)
+        self.smoothing = smoothing
 
     def set_train_sequences(self, train_sequences):
-        EPS = 5 
+        EPS = self.smoothing 
         items_counter = np.zeros(self.n_items)
         item_pairs_counter = np.full((self.n_items, self.n_items), EPS) 
-
-        for i in range(len(train_sequences)):
+        logging.info("building dissimilarity matrix...")
+        for i in tqdm.tqdm(range(len(train_sequences)), ascii=True):
             items = {item[1] for item in train_sequences[i]}
             for item1 in items:
                 items_counter[item1] += 1
