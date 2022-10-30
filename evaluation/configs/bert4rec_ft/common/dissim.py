@@ -4,7 +4,8 @@ from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.evaluation.metrics.mrr import MRR
 from aprec.evaluation.metrics.map import MAP
 from aprec.evaluation.metrics.hit import HIT
-from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_samplers import AffinityDissimilaritySampler 
+from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_samplers import AffinityDissimilaritySampler
+from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_samplers.random_negatives_sampler import RandomNegativesSampler 
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.recommenders.lightfm import LightFMRecommender
@@ -13,7 +14,7 @@ from aprec.recommenders.top_recommender import TopRecommender
 USERS_FRACTIONS = [1.0]
 
 
-def bert4rec_ft(negatives_sampler):
+def bert4rec_ft(negatives_sampler, sequence_len=200):
         from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
         from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
         from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
@@ -21,7 +22,6 @@ def bert4rec_ft(negatives_sampler):
         from aprec.recommenders.dnn_sequential_recommender.models.bert4recft.bert4recft import BERT4RecFT
         from aprec.losses.bce import BCELoss
         from aprec.losses.items_masking_loss_proxy import ItemsMaksingLossProxy
-        sequence_len = 100
         model = BERT4RecFT(max_history_len=sequence_len)
         batch_size = 256 
         negatives_per_positive = negatives_sampler.get_sample_size()
@@ -40,8 +40,7 @@ def bert4rec_ft(negatives_sampler):
                                                )
         return recommender
 
-def regular_bert4rec():
-        sequence_len = 100
+def regular_bert4rec(sequence_len=200):
         from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
         from aprec.losses.mean_ypred_ploss import MeanPredLoss
         from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
@@ -92,15 +91,9 @@ def lightfm_recommender(k=256, loss='bpr'):
 
 
 recommenders = {
-  "BERT4RecScaleDissim_0.5": lambda: bert4rec_ft(AffinityDissimilaritySampler(258, smoothing=0.5)),
-  "BERT4RecScaleDissim_1.0": lambda: bert4rec_ft(AffinityDissimilaritySampler(258, smoothing=1.0)),
-  "BERT4RecScaleDissim_2.0": lambda: bert4rec_ft(AffinityDissimilaritySampler(258, smoothing=2.0)),
-  "BERT4RecScaleDissim_4.0": lambda: bert4rec_ft(AffinityDissimilaritySampler(258, smoothing=4.0)),
-  "BERT4RecScaleDissim_8.0": lambda: bert4rec_ft(AffinityDissimilaritySampler(258, smoothing=8.0)),
-  "BERT4RecScaleDissim_16.0": lambda: bert4rec_ft(AffinityDissimilaritySampler(258, smoothing=16.0)),
-  "BERT4RecScaleDissim_32.0": lambda: bert4rec_ft(AffinityDissimilaritySampler(258, smoothing=32.0)),
-  "BERT4RecScaleDissim_64.0": lambda: bert4rec_ft(AffinityDissimilaritySampler(258, smoothing=64.0)),
-  "BERT4RecScaleDissim_128.0": lambda: bert4rec_ft(AffinityDissimilaritySampler(258, smoothing=128.0)),
+  "BERT4RecScaleDissimDissim_1.0": lambda: bert4rec_ft(AffinityDissimilaritySampler(258, smoothing=1.0)),
+  "BERT4RecScaleDissimRandom": lambda: bert4rec_ft(RandomNegativesSampler(258)),
+  "BERT4Rec": lambda: regular_bert4rec(),
 }
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
