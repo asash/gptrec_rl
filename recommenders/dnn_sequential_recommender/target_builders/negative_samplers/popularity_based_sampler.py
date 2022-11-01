@@ -31,5 +31,6 @@ class PopularityBasedSampler(NegativesSampler):
             self.random.shuffle(self.pool)
             self.pos = 0 
         result = self.pool[self.pos: self.pos + self.sample_size]
+        values = [0] * len(result)
         self.pos += self.sample_size
-        return result
+        return result, values

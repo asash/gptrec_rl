@@ -6,6 +6,7 @@ class RandomNegativesSampler(NegativesSampler):
         self.sample_size = sample_size
         self.random = Random()
         self.random.seed(seed) 
+        self.values = [0] * self.sample_size 
     
     def sample_negatives(self, positive):
         result = []
@@ -13,4 +14,4 @@ class RandomNegativesSampler(NegativesSampler):
             sample = self.random.randint(0, self.n_items - 1)
             if sample != positive:
                 result.append(sample)
-        return result
+        return result, self.values

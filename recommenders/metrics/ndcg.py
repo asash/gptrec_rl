@@ -2,7 +2,9 @@ import math
 
 import tensorflow as tf
 
-class KerasNDCG(object):
+from aprec.losses.loss import ListWiseLoss
+
+class KerasNDCG(ListWiseLoss):
     def __init__(self, k):
         self.k = k
         discounts = []
@@ -15,6 +17,9 @@ class KerasNDCG(object):
     def dcg(self, scores):
        gain = tf.pow(2.0, scores) - 1
        return gain @ self.discounts
+
+    def calc_per_list(self, y_true, y_pred):
+        return self.__call__(y_true, y_pred) 
 
     def __call__(self, y_true, y_pred):
         eps = 0.000001

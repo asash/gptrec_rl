@@ -19,7 +19,8 @@ class TestAffinityDissimilarity(unittest.TestCase):
         catalog = get_movies_catalog()
         
         positive = item_ids.get_id('1') # Toy Story
-        negatives = [item_ids.reverse_id(id) for id in items_sampler.sample_negatives(positive)]
+        ids, scores = items_sampler.sample_negatives(positive)
+        negatives = [item_ids.reverse_id(id) for id in ids]
         print(negatives)
         print("sampled for Toy Story")
         for item in negatives:
@@ -31,7 +32,7 @@ class TestAffinityDissimilarity(unittest.TestCase):
         print("sampled for star wars:")
         title_cnt = Counter()
         for i in tqdm.tqdm(range(100000)):
-            sampled_negatives = items_sampler.sample_negatives(positive)
+            sampled_negatives, scores = items_sampler.sample_negatives(positive)
             negatives = [item_ids.reverse_id(item) for item in sampled_negatives]
             for item in negatives:
                 title = catalog.get_item(item).title

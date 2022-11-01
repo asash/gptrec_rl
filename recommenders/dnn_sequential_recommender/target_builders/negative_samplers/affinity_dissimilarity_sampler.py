@@ -7,6 +7,7 @@ class AffinityDissimilaritySampler(NegativesSampler):
         self.sample_size = sample_size
         self.random = np.random.default_rng(seed)
         self.smoothing = smoothing
+        self.values = [0] * self.sample_size
 
     def set_train_sequences(self, train_sequences):
         EPS = self.smoothing 
@@ -32,4 +33,4 @@ class AffinityDissimilaritySampler(NegativesSampler):
 
     def sample_negatives(self, positive):
         result = np.random.choice(self.all_items, self.sample_size, p=self.dissim[positive], replace=True)
-        return result
+        return result, self.values

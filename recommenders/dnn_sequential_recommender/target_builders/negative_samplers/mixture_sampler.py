@@ -19,7 +19,9 @@ class MixtureSampler(NegativesSampler):
     
     def sample_negatives(self, positive):
         result = []
+        scores = []
         for sampler in self.samplers:
-             negatives =  list(sampler.sample_negatives(positive))
-             result += negatives
-        return result
+             negatives, values =  sampler.sample_negatives(positive)
+             result += list(negatives)
+             scores += list(values)
+        return result, scores

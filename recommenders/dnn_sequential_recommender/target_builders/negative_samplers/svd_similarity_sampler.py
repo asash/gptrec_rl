@@ -16,6 +16,7 @@ class SVDSimilaritySampler(NegativesSampler):
         self.num_svd_components=num_svd_components
         self.random_seed = seed
         self.ann_sampling_factor = ann_sampling_factor
+        self.values = [0] * self.sample_size 
 
     def set_train_sequences(self, train_sequences):
         logging.warning("building svd similarty sampler...")
@@ -47,4 +48,4 @@ class SVDSimilaritySampler(NegativesSampler):
 
     def sample_negatives(self, positive):
         sample = self.random.choices(self.items[positive], weights=self.probs[positive], k=self.sample_size) 
-        return sample
+        return sample, self.values

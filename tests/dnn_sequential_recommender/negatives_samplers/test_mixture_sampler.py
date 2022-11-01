@@ -21,7 +21,8 @@ class TestMixtureSampler(unittest.TestCase):
         catalog = get_movies_catalog()
         
         positive = item_ids.get_id('1') # Toy Story
-        negatives = [item_ids.reverse_id(id) for id in items_sampler.sample_negatives(positive)]
+        ids, scores = items_sampler.sample_negatives(positive)
+        negatives = [item_ids.reverse_id(id) for id in ids]
         print(negatives)
         print("sampled for Toy Story")
         for item in negatives:
@@ -32,9 +33,10 @@ class TestMixtureSampler(unittest.TestCase):
         #self.assertEqual(negatives, ['32', '3114', '786', '1073', '736']) #Twelve Monkeys, Toy Story 2,Eraser,title=Willy Wonka & the Chocolate Factory,Twister 
         print("sampled for star wars:")
         title_cnt = Counter()
-        for i in tqdm.tqdm(range(100000)):
-            sampled_negatives = items_sampler.sample_negatives(positive)
-            negatives = [item_ids.reverse_id(item) for item in sampled_negatives]
+        for i in tqdm.tqdm(range(1000)):
+            ids, scores = items_sampler.sample_negatives(positive)
+            self.assertEqual(len(ids), len(scores))
+            negatives = [item_ids.reverse_id(item) for item in ids]
             for item in negatives:
                 title = catalog.get_item(item).title
                 title_cnt[title] += 1

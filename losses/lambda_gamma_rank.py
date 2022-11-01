@@ -1,8 +1,8 @@
 import tensorflow as tf
 
-from aprec.losses.loss import Loss
+from aprec.losses.loss import ListWiseLoss
 
-class LambdaGammaRankLoss(Loss):
+class LambdaGammaRankLoss(ListWiseLoss):
     #num items and batch size need to be specified before usage.
     #some models can do it automatically, therefore they are set to None by default
     def __init__(self, num_items=None, batch_size=None, sigma=1.0, ndcg_at=50, dtype=tf.float32, lambda_normalization=True,
@@ -18,6 +18,7 @@ class LambdaGammaRankLoss(Loss):
 
         self.params_ndcg_at = ndcg_at
         self.lambda_normalization = lambda_normalization
+        self.less_is_better = False
         self.setup()
 
     def set_num_items(self, num_items):
@@ -58,6 +59,17 @@ class LambdaGammaRankLoss(Loss):
         self.mask = tf.cast(tf.reshape(1 - tf.pad(tf.ones(self.ndcg_at),
                                                   [[0, self.pred_truncate_at - self.ndcg_at]]),
                                        (1, self.pred_truncate_at)), self.dtype)
+        
+    @tf.custom_gradient
+    def calc_per_list(self, y_true, y_pred):
+        result = tf.reduce_mean(tf.abs(y_pred))
+
+        def grad(dy):
+            lambdarank_lambdas = self.get_lambdas(y_true, y_pred)
+            bce_lambdas = self.get_bce_lambdas(y_true, y_pred)
+            return 0 * dy, ((1 - self.bce_grad_weight) * lambdarank_lambdas + (bce_lambdas * self.bce_grad_weight)) * dy
+        return result, grad
+
 
 
     @tf.custom_gradient

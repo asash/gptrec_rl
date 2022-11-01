@@ -4,3 +4,4 @@ from .svd_similarity_sampler import SVDSimilaritySampler
 from .random_negatives_sampler import RandomNegativesSampler
 from .mixture_sampler import MixtureSampler
 from .affinity_dissimilarity_sampler import AffinityDissimilaritySampler
+from .random_sampler_with_cosine_sim_values import RandomNegativesWithCosSimValues

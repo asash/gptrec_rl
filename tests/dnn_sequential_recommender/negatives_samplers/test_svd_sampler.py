@@ -13,7 +13,8 @@ class TestSVDSampler(unittest.TestCase):
         catalog = get_movies_catalog()
         
         positive = item_ids.get_id('1') # Toy Story
-        negatives = [item_ids.reverse_id(id) for id in items_sampler.sample_negatives(positive)]
+        ids, scores = items_sampler.sample_negatives(positive)
+        negatives = [item_ids.reverse_id(id) for id in ids]
         print(negatives)
         print("sampled for Toy Story")
         for item in negatives:
@@ -25,7 +26,8 @@ class TestSVDSampler(unittest.TestCase):
         print("sampled for star wars:")
         for i in range(10):
             positive = item_ids.get_id('260') # Star Wars EP VI 
-            negatives = [item_ids.reverse_id(id) for id in items_sampler.sample_negatives(positive)]
+            ids, scores = items_sampler.sample_negatives(positive)
+            negatives = [item_ids.reverse_id(id) for id in ids]
             print(negatives)
             for item in negatives:
                 sys.stdout.write(catalog.get_item(item).title + "\n")
