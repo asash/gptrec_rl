@@ -61,8 +61,8 @@ recommenders = {
   "BERT4RecScaleRandomCosSimNoPosLinear": lambda: bert4rec_ft(RandomNegativesWithCosSimValues(num_negatives), metric(), BCELoss(), add_positive=False),
   "BERT4RecScaleRandomCosSimSigmoid": lambda: bert4rec_ft(RandomNegativesWithCosSimValues(num_negatives), metric(), BCELoss(), activation='sigmoid'),
   "BERT4RecScaleRandomCosSimNoPosSigmoid": lambda: bert4rec_ft(RandomNegativesWithCosSimValues(num_negatives), metric(), BCELoss(), add_positive=False, activation='sigmoid'),
-  "BERT4RecScaleRandomCosSimSoftmax": lambda: bert4rec_ft(RandomNegativesWithCosSimValues(num_negatives), metric(), BCELoss(), activation='sigmoid'),
-  "BERT4RecScaleRandomCosSimNoPosSoftmax": lambda: bert4rec_ft(RandomNegativesWithCosSimValues(num_negatives), metric(), BCELoss(), add_positive=False, activation='sigmoid'),
+  "BERT4RecScaleRandomCosSimSoftmax": lambda: bert4rec_ft(RandomNegativesWithCosSimValues(num_negatives), metric(), BCELoss(), activation='softmax'),
+  "BERT4RecScaleRandomCosSimNoPosSoftmax": lambda: bert4rec_ft(RandomNegativesWithCosSimValues(num_negatives), metric(), BCELoss(), add_positive=False, activation='softmax'),
 }
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
