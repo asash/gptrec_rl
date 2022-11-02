@@ -21,7 +21,7 @@ class TestOwnBERT4rec(unittest.TestCase):
         sequence_len = 100
         add_positive = True
         negatives_per_positive = 5
-        model = BERT4RecFT(embedding_size=32, max_history_len=sequence_len)
+        model = BERT4RecFT(embedding_size=32, max_history_len=sequence_len, output_layer_activation='softmax')
         batch_size = 5
         n_targets = negatives_per_positive
         if add_positive:
