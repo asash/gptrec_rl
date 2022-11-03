@@ -12,10 +12,9 @@ class TestMixer(unittest.TestCase):
 
         from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
         from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
-        from aprec.tests.dnn_sequential_recommender.test_dnn_sequential import USER_ID
         from aprec.utils.generator_limit import generator_limit
 
-
+        USER_ID = '120'
         val_users = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
         model = RecsysMixer(embedding_size=32)
         recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=50000,

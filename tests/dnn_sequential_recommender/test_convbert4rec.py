@@ -5,7 +5,6 @@ class ConvBERT4Rec(unittest.TestCase):
         from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
         from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
         from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
-        from aprec.tests.dnn_sequential_recommender.test_dnn_sequential import USER_ID
         from aprec.utils.generator_limit import generator_limit
         from aprec.datasets.movielens20m import get_movielens20m_actions, get_movies_catalog
         from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
@@ -13,7 +12,8 @@ class ConvBERT4Rec(unittest.TestCase):
         from aprec.recommenders.dnn_sequential_recommender.models.convbert4rec.convbert4rec import ConvBERT4Rec
         from aprec.losses.mean_ypred_ploss import MeanPredLoss
 
-
+        
+        USER_ID = '120'
 
         val_users = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
         model = ConvBERT4Rec(embedding_size=32)
