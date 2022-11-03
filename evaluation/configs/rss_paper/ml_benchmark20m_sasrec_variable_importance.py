@@ -1,3 +1,5 @@
+from aprec.evaluation.split_actions import LeaveOneOut
+
 from aprec.recommenders.dnn_sequential_recommender.models.sasrec.sasrec import SASRec
 from aprec.recommenders.dnn_sequential_recommender.models.gru4rec import GRU4Rec
 from aprec.recommenders.dnn_sequential_recommender.models.caser import Caser
@@ -71,110 +73,34 @@ def vanilla_bert4rec(time_limit):
 HISTORY_LEN=50
 
 def vanilla_sasrec():
-    model_arch = SASRec(max_history_len=HISTORY_LEN, 
-                            dropout_rate=0.2,
-                            num_heads=1,
-                            num_blocks=2,
-                            vanilla=True, 
-                            embedding_size=50,
-                    )
+    model_arch = SASRec(max_history_len=HISTORY_LEN, vanilla=True)
 
     return dnn(model_arch,  BCELoss(),
             ShiftedSequenceSplitter,
             target_builder=lambda: NegativePerPositiveTargetBuilder(HISTORY_LEN), 
-            metric=BCELoss(),
-            )
+            metric=BCELoss())
 
-recommenders = {
-    "bert4rec-1h": lambda: vanilla_bert4rec(3600), 
-    "top": top_recommender, 
-    "mf-bpr": lambda: lightfm_recommender(128, 'bpr'),
+def sasrec_rss(recency_importance):
+        return dnn(
+            SASRec(max_history_len=HISTORY_LEN, vanilla=False),
+            LambdaGammaRankLoss(pred_truncate_at=4000),
+            lambda: RecencySequenceSampling(0.2, exponential_importance(recency_importance)),
+            target_builder=FullMatrixTargetsBuilder)
 
-    "SASRec-vanilla": vanilla_sasrec,
     
 
-    "GRU4rec-continuation-bce": lambda: dnn(
-            GRU4Rec(max_history_len=HISTORY_LEN),
-            BCELoss(),
-            SequenceContinuation,
-            target_builder=FullMatrixTargetsBuilder, 
-            ),
-
-    "Caser-continuation-bce": lambda: dnn(
-            Caser(max_history_len=HISTORY_LEN, requires_user_id=False),
-            BCELoss(),
-            SequenceContinuation,
-            target_builder=FullMatrixTargetsBuilder, 
-            ),
-
-    "Sasrec-continuation-bce": lambda: dnn(
-            SASRec(max_history_len=HISTORY_LEN, vanilla=False),
-            BCELoss(),
-            SequenceContinuation,
-            target_builder=FullMatrixTargetsBuilder, 
-            ),
-
-    "GRU4rec-rss-bce": lambda: dnn(
-            GRU4Rec(max_history_len=HISTORY_LEN),
-            BCELoss(),
-            lambda: RecencySequenceSampling(0.2, exponential_importance(0.8)),
-            target_builder=FullMatrixTargetsBuilder, 
-            ),
-    "Caser-rss-bce": lambda: dnn(
-            Caser(max_history_len=HISTORY_LEN, requires_user_id=False),
-            BCELoss(),
-            lambda: RecencySequenceSampling(0.2, exponential_importance(0.8)),
-            target_builder=FullMatrixTargetsBuilder, 
-            ),
-    "Sasrec-rss-bce": lambda: dnn(
-            SASRec(max_history_len=HISTORY_LEN, vanilla=False),
-            BCELoss(),
-            lambda: RecencySequenceSampling(0.2, exponential_importance(0.8)),
-            target_builder=FullMatrixTargetsBuilder, 
-            ),
-
-
-#LambdaRank
-    "GRU4rec-continuation-lambdarank": lambda: dnn(
-            GRU4Rec(max_history_len=HISTORY_LEN),
-            LambdaGammaRankLoss(pred_truncate_at=4000),
-            SequenceContinuation,
-            target_builder=FullMatrixTargetsBuilder, 
-            ),
-    "Caser-continuation-lambdarank": lambda: dnn(
-            Caser(max_history_len=HISTORY_LEN, requires_user_id=False),
-            LambdaGammaRankLoss(pred_truncate_at=4000),
-            SequenceContinuation,
-            target_builder=FullMatrixTargetsBuilder, 
-            ),
-    "Sasrec-continuation-lambdarank": lambda: dnn(
-            SASRec(max_history_len=HISTORY_LEN, vanilla=False),
-            LambdaGammaRankLoss(pred_truncate_at=4000),
-            SequenceContinuation,
-            target_builder=FullMatrixTargetsBuilder, 
-            ),
-
-        
-    "GRU4rec-rss-lambdarank": lambda: dnn(
-            GRU4Rec(max_history_len=HISTORY_LEN),
-            LambdaGammaRankLoss(pred_truncate_at=4000),
-            lambda: RecencySequenceSampling(0.2, exponential_importance(0.8)),
-            target_builder=FullMatrixTargetsBuilder, 
-            ),
-
-    "Caser-rss-lambdarank": lambda: dnn(
-            Caser(max_history_len=HISTORY_LEN, requires_user_id=False),
-            LambdaGammaRankLoss(pred_truncate_at=4000),
-            lambda: RecencySequenceSampling(0.2, exponential_importance(0.8)),
-            target_builder=FullMatrixTargetsBuilder, 
-            ),
-
-    "Sasrec-rss-lambdarank": lambda: dnn(
-            SASRec(max_history_len=HISTORY_LEN, vanilla=False),
-            LambdaGammaRankLoss(pred_truncate_at=4000),
-            lambda: RecencySequenceSampling(0.2, exponential_importance(0.8)),
-            target_builder=FullMatrixTargetsBuilder, 
-            )
+recommenders = {
+    "SASRec-vanilla": vanilla_sasrec,
+    "Sasrec-rss-lambdarank-0.01": lambda: sasrec_rss(0.01),
+    "Sasrec-rss-lambdarank-0.1": lambda: sasrec_rss(0.1),
+    "Sasrec-rss-lambdarank-0.2": lambda: sasrec_rss(0.2),
+    "Sasrec-rss-lambdarank-0.3": lambda: sasrec_rss(0.3),
+    "Sasrec-rss-lambdarank-0.4": lambda: sasrec_rss(0.4),
+    "Sasrec-rss-lambdarank-0.5": lambda: sasrec_rss(0.5),
+    "Sasrec-rss-lambdarank-0.6": lambda: sasrec_rss(0.6),
+    "Sasrec-rss-lambdarank-0.7": lambda: sasrec_rss(0.7),
+    "Sasrec-rss-lambdarank-0.9": lambda: sasrec_rss(0.9),
+    "Sasrec-rss-lambdarank-0.99": lambda: sasrec_rss(0.99),
 }
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
@@ -190,3 +116,10 @@ def get_recommenders(filter_seen: bool, filter_recommenders = set()):
         else:
             result[recommender_name] = recommenders[recommender_name]
     return result
+
+
+DATASET = "ml-20m_warm5"
+N_VAL_USERS=1024
+MAX_TEST_USERS=138493
+SPLIT_STRATEGY = LeaveOneOut(MAX_TEST_USERS)
+RECOMMENDERS = get_recommenders(filter_seen=True)
