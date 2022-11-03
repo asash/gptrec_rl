@@ -4,6 +4,7 @@ from aprec.api.item import Item
 from aprec.api.items_ranking_request import ItemsRankingRequest
 from aprec.api.user import User
 from aprec.api.action import Action
+import dill
 
 
 class Recommender():
@@ -52,10 +53,14 @@ class Recommender():
         raise (NotImplementedError)
 
     def save(self, filename):
-        raise NotImplementedError()
+        with open(filename, 'wb') as output:
+            dill.dump(self, output)
 
-    def load(self, filename):
-        raise NotImplementedError()
+    @staticmethod
+    def load(filename):
+        with open(filename, 'rb') as input:
+            recommender = dill.load(input) 
+        return recommender
 
 
 

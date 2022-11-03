@@ -1,3 +1,4 @@
+import dill as pickle
 import time
 from regex import B
 
@@ -49,7 +50,7 @@ class DNNSequentialRecommender(Recommender):
         self.model_arch = model_arch
         self.users = ItemId()
         self.items = ItemId()
-        self.user_actions = defaultdict(lambda: [])
+        self.user_actions = defaultdict(list)
         self.model = None
         self.user_vectors = None
         self.matrix = None
