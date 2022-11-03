@@ -64,6 +64,7 @@ def evaluate_recommender(recommender, test_actions,
                 user_doc["sampled_metrics"][metric.name] = sampled_metric_value
 
         user_docs.append(user_doc)
+    
 
     mkdir_p(f"{out_dir}/predictions/")
     predictions_filename = f"{out_dir}/predictions/{recommender_name}.json.gz"
@@ -74,6 +75,11 @@ def evaluate_recommender(recommender, test_actions,
             except:
                 pass
 
+    print('saving model...')
+    mkdir_p(f"{out_dir}/checkpoints/")
+    model_filename = f"{out_dir}/checkpoints/{recommender_name}.dill"
+    recommender.save(model_filename)
+ 
     result = {}
     sampled_result = {}
     for metric in metric_sum:
