@@ -39,7 +39,6 @@ class Recommender():
         pass
 
 
-
     def recommend_by_items(self, items_list, limit: int):
         raise (NotImplementedError)
 
@@ -51,6 +50,13 @@ class Recommender():
 
     def from_str(self):
         raise (NotImplementedError)
+
+    def save(self, filename):
+        raise NotImplementedError()
+
+    def load(self, filename):
+        raise NotImplementedError()
+
 
 
     #the directory where the recommender can save stuff, like logs

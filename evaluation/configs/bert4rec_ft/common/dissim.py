@@ -5,10 +5,6 @@ from aprec.evaluation.metrics.mrr import MRR
 from aprec.evaluation.metrics.map import MAP
 from aprec.evaluation.metrics.hit import HIT
 from aprec.losses.bce import BCELoss
-from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
-from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_samplers import PopularityBasedSampler
-from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_samplers import SVDSimilaritySampler
-from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_samplers import MixtureSampler
 from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_samplers import RandomNegativesWithCosSimValues
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.recommenders.lightfm import LightFMRecommender
