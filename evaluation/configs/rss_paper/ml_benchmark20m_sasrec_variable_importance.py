@@ -73,7 +73,7 @@ def vanilla_bert4rec(time_limit):
 HISTORY_LEN=50
 
 def vanilla_sasrec():
-    model_arch = SASRec(max_history_len=HISTORY_LEN, vanilla=True)
+    model_arch = SASRec(max_history_len=HISTORY_LEN, vanilla=True, num_heads=1)
 
     return dnn(model_arch,  BCELoss(),
             ShiftedSequenceSplitter,
@@ -82,7 +82,7 @@ def vanilla_sasrec():
 
 def sasrec_rss(recency_importance):
         return dnn(
-            SASRec(max_history_len=HISTORY_LEN, vanilla=False),
+            SASRec(max_history_len=HISTORY_LEN, vanilla=False, num_heads=1),
             LambdaGammaRankLoss(pred_truncate_at=4000),
             lambda: RecencySequenceSampling(0.2, exponential_importance(recency_importance)),
             target_builder=FullMatrixTargetsBuilder)
