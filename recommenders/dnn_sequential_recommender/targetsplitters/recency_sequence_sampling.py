@@ -12,11 +12,12 @@ class RecencySequenceSampling(TargetSplitter):
     #recency importance is a function that defines the chances of k-th element 
     #to be sampled as a positive in the sequence of the length n
 
-    def __init__(self, max_pct, recency_importance=exponential_importance(0.8), seed=31337) -> None:
+    def __init__(self, max_pct, recency_importance=exponential_importance(0.8), seed=31337, add_cls = False) -> None:
         super().__init__()
         self.max_pct = max_pct
         self.recency_iportnace = recency_importance
         self.random = np.random.default_rng(seed=seed)
+        self.add_cls = add_cls
 
     
     def split(self, sequence):
@@ -34,6 +35,14 @@ class RecencySequenceSampling(TargetSplitter):
                 input.append(sequence[i])
             else:
                 target.add(sequence[i])
+        
+        if self.add_cls:
+            if len(input) > 0:
+                last_input_timestamp = input[-1][0]
+            else:
+                last_input_timestamp = 1 
+            cls_token = self.num_items + 1 #self.num_items is used for padding
+            input.append((last_input_timestamp + 1, cls_token))
         return input, list(target)
 
 

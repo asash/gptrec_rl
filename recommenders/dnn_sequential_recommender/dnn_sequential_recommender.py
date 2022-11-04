@@ -338,7 +338,6 @@ class DNNSequentialRecommender(Recommender):
             user_features = self.user_features.get(self.users.get_id(user_id), list())
             features_vector = DataGenerator.get_features_matrix([user_features], self.max_user_features)
             model_inputs.append(features_vector)
-
         return model_inputs
 
 

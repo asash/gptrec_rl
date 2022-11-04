@@ -1,4 +1,6 @@
 from aprec.evaluation.split_actions import LeaveOneOut
+from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
+from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.default_history_vectorizer import DefaultHistoryVectrizer
 
 from aprec.recommenders.dnn_sequential_recommender.models.sasrec.sasrec import SASRec
 from aprec.recommenders.dnn_sequential_recommender.models.gru4rec import GRU4Rec
@@ -40,12 +42,21 @@ def lightfm_recommender(k, loss):
     return LightFMRecommender(k, loss, num_threads=32)
 
 
+
+def vanilla_bert4rec(time_limit):
+    recommender = VanillaBERT4Rec(training_time_limit=time_limit, num_train_steps=10000000)
+    return recommender
+
+HISTORY_LEN=50
+
 def dnn(model_arch, loss, sequence_splitter, 
-                val_sequence_splitter=SequenceContinuation, 
-                 target_builder=FullMatrixTargetsBuilder,
-                training_time_limit=3600,  
+                val_sequence_splitter, 
+                target_builder,
+                training_time_limit=5,  
                 max_epochs=10000, 
-                metric = None):
+                metric = None, 
+                pred_history_vectorizer = DefaultHistoryVectrizer()
+                ):
     from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
 
     from tensorflow.keras.optimizers import Adam
@@ -57,20 +68,28 @@ def dnn(model_arch, loss, sequence_splitter,
                                                           model_arch=model_arch,
                                                           optimizer=optimizer,
                                                           early_stop_epochs=100,
-                                                          batch_size=128,
+                                                          batch_size=5,
                                                           training_time_limit=training_time_limit,
                                                           sequence_splitter=sequence_splitter, 
                                                           targets_builder=target_builder, 
                                                           val_sequence_splitter = val_sequence_splitter,
                                                           metric=metric,
+                                                          pred_history_vectorizer=pred_history_vectorizer,
                                                           debug=True
                                                           )
 
-def vanilla_bert4rec(time_limit):
-    recommender = VanillaBERT4Rec(training_time_limit=time_limit, num_train_steps=10000000)
-    return recommender
-
-HISTORY_LEN=50
+def sasrec_rss(recency_importance, add_cls=False):
+        target_splitter = lambda: RecencySequenceSampling(0.2, exponential_importance(recency_importance), add_cls=add_cls)
+        val_splitter = lambda: SequenceContinuation(add_cls=add_cls)
+        pred_history_vectorizer = AddMaskHistoryVectorizer() if add_cls else DefaultHistoryVectrizer()
+        return dnn(
+            SASRec(max_history_len=50, vanilla=False, num_heads=1),
+            LambdaGammaRankLoss(pred_truncate_at=1000),
+            val_sequence_splitter=val_splitter,
+            sequence_splitter=target_splitter,
+            target_builder=FullMatrixTargetsBuilder, 
+            pred_history_vectorizer=pred_history_vectorizer
+            )
 
 def vanilla_sasrec():
     model_arch = SASRec(max_history_len=HISTORY_LEN, vanilla=True, num_heads=1)
@@ -78,29 +97,16 @@ def vanilla_sasrec():
     return dnn(model_arch,  BCELoss(),
             ShiftedSequenceSplitter,
             target_builder=lambda: NegativePerPositiveTargetBuilder(HISTORY_LEN), 
+            val_sequence_splitter=SequenceContinuation,
             metric=BCELoss())
 
-def sasrec_rss(recency_importance):
-        return dnn(
-            SASRec(max_history_len=HISTORY_LEN, vanilla=False, num_heads=1),
-            LambdaGammaRankLoss(pred_truncate_at=4000),
-            lambda: RecencySequenceSampling(0.2, exponential_importance(recency_importance)),
-            target_builder=FullMatrixTargetsBuilder)
 
-    
+
 
 recommenders = {
     "SASRec-vanilla": vanilla_sasrec,
-    "Sasrec-rss-lambdarank-0.01": lambda: sasrec_rss(0.01),
-    "Sasrec-rss-lambdarank-0.1": lambda: sasrec_rss(0.1),
-    "Sasrec-rss-lambdarank-0.2": lambda: sasrec_rss(0.2),
-    "Sasrec-rss-lambdarank-0.3": lambda: sasrec_rss(0.3),
-    "Sasrec-rss-lambdarank-0.4": lambda: sasrec_rss(0.4),
-    "Sasrec-rss-lambdarank-0.5": lambda: sasrec_rss(0.5),
-    "Sasrec-rss-lambdarank-0.6": lambda: sasrec_rss(0.6),
-    "Sasrec-rss-lambdarank-0.7": lambda: sasrec_rss(0.7),
-    "Sasrec-rss-lambdarank-0.9": lambda: sasrec_rss(0.9),
-    "Sasrec-rss-lambdarank-0.99": lambda: sasrec_rss(0.99),
+    "Sasrec-rss-lambdarank-0.5": lambda: sasrec_rss(0.5, add_cls=True),
+    "Sasrec-rss-lambdarank-0.5": lambda: sasrec_rss(0.5, add_cls=False),
 }
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
