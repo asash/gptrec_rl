@@ -323,8 +323,8 @@ class DNNSequentialRecommender(Recommender):
                 user_result.append((item_id, float("-inf")))
         user_result.sort(key = lambda x: -x[1])
         self.item_ranking_results[user_id] = user_result
-
-    def get_all_item_scores(self, user_id):
+    
+    def get_model_inputs(self, user_id):
         actions = self.user_actions[self.users.get_id(user_id)]
         items_list = [action[1] for action in actions]
         model_actions = [(0, action) for action in items_list]
@@ -339,6 +339,11 @@ class DNNSequentialRecommender(Recommender):
             features_vector = DataGenerator.get_features_matrix([user_features], self.max_user_features)
             model_inputs.append(features_vector)
 
+        return model_inputs
+
+
+    def get_all_item_scores(self, user_id):
+        model_inputs = self.get_model_inputs(user_id) 
         if hasattr(self.model, 'score_all_items'):
             scores = self.model.score_all_items(model_inputs)[0].numpy()
         else: 

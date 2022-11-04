@@ -6,8 +6,7 @@ def multihead_attention(queries,
                         keys,
                         num_heads,
                         attention_layers,
-                        causality=False,
-                        ):
+                        causality=False):
     Q = attention_layers["query_proj"](queries)  # (N, T_q, C)
     K = attention_layers["key_proj"](keys)  # (N, T_k, C)
     V = attention_layers["val_proj"](keys)  # (N, T_k, C)
@@ -48,6 +47,8 @@ def multihead_attention(queries,
     query_masks = tf.tile(query_masks, [num_heads, 1])  # (h*N, T_q)
     query_masks = tf.tile(tf.expand_dims(query_masks, -1), [1, 1, tf.shape(keys)[1]])  # (h*N, T_q, T_k)
     outputs *= query_masks  # broadcasting. (N, T_q, C)
+    
+    attention_weights = outputs
 
     # Dropouts
     outputs = attention_layers["dropout"](outputs)
@@ -57,4 +58,4 @@ def multihead_attention(queries,
 
     # Restore shape
     outputs = tf.concat(tf.split(outputs, num_heads, axis=0), axis=2)  # (N, T_q, C)
-    return outputs
+    return outputs, attention_weights

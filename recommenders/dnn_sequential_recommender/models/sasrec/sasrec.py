@@ -115,7 +115,7 @@ class OwnSasrecModel(tensorflow.keras.Model):
         x = self.attention_blocks[i]["first_norm"](seq)
         queries = x
         keys = seq
-        x = multihead_attention(queries, keys, self.num_heads, self.attention_blocks[i]["attention_layers"],
+        x, attentions = multihead_attention(queries, keys, self.num_heads, self.attention_blocks[i]["attention_layers"],
                                      causality=True)
         x =x + queries
         x = self.attention_blocks[i]["second_norm"](x)
@@ -126,12 +126,12 @@ class OwnSasrecModel(tensorflow.keras.Model):
         x = self.attention_blocks[i]["dropout"](x)
         x += residual
         x *= mask
-        return x
+        return x, attentions
 
     def call(self, inputs,  **kwargs):
         input_ids = inputs[0]
         training = kwargs['training']
-        seq_emb = self.get_seq_embedding(input_ids, training)
+        seq_emb, attentions = self.get_seq_embedding(input_ids, training)
 
         if self.vanilla or (self.sampled_target is not None):
             target_ids = inputs[1]
@@ -155,7 +155,7 @@ class OwnSasrecModel(tensorflow.keras.Model):
     
     def score_all_items(self, inputs):
         input_ids = inputs[0]
-        seq_emb = self.get_seq_embedding(input_ids)
+        seq_emb, attentions = self.get_seq_embedding(input_ids)
         seq_emb = seq_emb[:, -1, :]
         target_ids = self.all_items
         target_embeddings = self.get_target_embeddings(target_ids)
@@ -175,13 +175,15 @@ class OwnSasrecModel(tensorflow.keras.Model):
     def get_seq_embedding(self, input_ids, training=None):
         seq = self.item_embeddings_layer(input_ids)
         mask = tf.expand_dims(tf.cast(tf.not_equal(input_ids, self.num_items), dtype=tf.float32), -1)
-        pos_embeddings = self.postion_embedding_layer(self.positions)
+        pos_embeddings = self.postion_embedding_layer(self.positions)[:input_ids.shape[0]]
         seq += pos_embeddings
         seq = self.embedding_dropout(seq)
         seq *= mask
+        attentions = []
         for i in range(self.num_blocks):
-            seq = self.block(seq, mask, i)
+            seq, attention = self.block(seq, mask, i)
+            attentions.append(attention)
         seq_emb = self.seq_norm(seq)
-        return seq_emb
+        return seq_emb, attentions 
 
 
