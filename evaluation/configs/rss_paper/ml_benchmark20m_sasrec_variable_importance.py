@@ -52,7 +52,7 @@ HISTORY_LEN=50
 def dnn(model_arch, loss, sequence_splitter, 
                 val_sequence_splitter, 
                 target_builder,
-                training_time_limit=5,  
+                training_time_limit=3600,  
                 max_epochs=10000, 
                 metric = None, 
                 pred_history_vectorizer = DefaultHistoryVectrizer()
