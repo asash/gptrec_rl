@@ -55,8 +55,7 @@ def dnn(model_arch, loss, sequence_splitter,
                 training_time_limit=3600,  
                 max_epochs=10000, 
                 metric = None, 
-                pred_history_vectorizer = DefaultHistoryVectrizer()
-                ):
+                pred_history_vectorizer = DefaultHistoryVectrizer()):
     from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
 
     from tensorflow.keras.optimizers import Adam
@@ -88,8 +87,7 @@ def sasrec_rss(recency_importance, add_cls=False):
             sequence_splitter=target_splitter,
             val_sequence_splitter=val_splitter,
             target_builder=FullMatrixTargetsBuilder, 
-            pred_history_vectorizer=pred_history_vectorizer
-            )
+            pred_history_vectorizer=pred_history_vectorizer)
 
 def vanilla_sasrec():
     model_arch = SASRec(max_history_len=HISTORY_LEN, vanilla=True, num_heads=1)
@@ -104,9 +102,9 @@ def vanilla_sasrec():
 
 
 recommenders = {
-    "SASRec-vanilla": vanilla_sasrec,
     "Sasrec-rss-lambdarank-0.5": lambda: sasrec_rss(0.5, add_cls=True),
     "Sasrec-rss-lambdarank-0.5": lambda: sasrec_rss(0.5, add_cls=False),
+    "SASRec-vanilla": vanilla_sasrec,
 }
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
