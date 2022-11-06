@@ -1,4 +1,5 @@
 import unittest
+from aprec.datasets.movielens20m import get_movies_catalog
 from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
 from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
 from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.default_history_vectorizer import DefaultHistoryVectrizer
@@ -42,7 +43,7 @@ def sasrec_rss(recency_importance, add_cls=False):
         val_splitter = lambda: SequenceContinuation(add_cls=add_cls)
         pred_history_vectorizer = AddMaskHistoryVectorizer() if add_cls else DefaultHistoryVectrizer()
         return dnn(
-            SASRec(max_history_len=50, vanilla=False, num_heads=1),
+            SASRec(max_history_len=50, vanilla=False, num_heads=1, pos_emb_comb='mult', pos_embedding='exp'),
             LambdaGammaRankLoss(pred_truncate_at=1000),
             val_sequence_splitter=val_splitter,
             sequence_splitter=target_splitter,
@@ -68,8 +69,9 @@ class TestSasrecRss(unittest.TestCase):
             recommender.add_action(action)
         recommender.rebuild_model()
         recs = recommender.recommend(USER_ID, 10)
-        print(recs)
-
+        catalog = get_movies_catalog()
+        for rec in recs:
+            print(catalog.get_item(rec[0]), "\t", rec[1])
 
         
 

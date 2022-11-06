@@ -1,9 +1,9 @@
-import tensorflow.keras
-from tensorflow.keras.regularizers import l2
+import tensorflow.keras as keras
 from tensorflow.keras import layers
 from tensorflow.keras import activations
 
 from aprec.recommenders.dnn_sequential_recommender.models.sequential_recsys_model import SequentialRecsysModel
+from aprec.recommenders.metrics.ndcg import KerasNDCG
 from .sasrec_multihead_attention import multihead_attention
 import tensorflow as tf
 
@@ -16,6 +16,8 @@ class SASRec(SequentialRecsysModel):
                  dropout_rate=0.2,
                  num_blocks=2,
                  num_heads=1,
+                 pos_embedding = 'default', 
+                 pos_emb_comb = 'add',
                  reuse_item_embeddings=True, #use same item embeddings for
                                              # sequence embedding and for the embedding matrix
                  encode_output_embeddings=False, #encode item embeddings with a dense layer
@@ -31,6 +33,8 @@ class SASRec(SequentialRecsysModel):
         self.encode_output_embeddings = encode_output_embeddings
         self.sampled_targets = sampled_targets
         self.vanilla = vanilla
+        self.pos_embedding = pos_embedding
+        self.pos_emb_comb = pos_emb_comb
 
 
     encode_embedding_with_dense_layer = False,
@@ -45,16 +49,81 @@ class SASRec(SequentialRecsysModel):
                                self.reuse_item_embeddings,
                                self.encode_output_embeddings,
                                self.sampled_targets, 
-                               vanilla=self.vanilla
+                               vanilla=self.vanilla,
+                               pos_embedding=self.pos_embedding, 
+                               pos_emb_comb = self.pos_emb_comb
         )
         return model
+class SinePositionEncoding(keras.layers.Layer):
+    def __init__(
+        self,
+        seq_length, 
+        hidden_size,
+        max_wavelength=10000,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.max_wavelength = max_wavelength
+        self.seq_length = seq_length
+        self.hidden_size = hidden_size
+    
+    def call(self, positions):
+        seq_length = self.seq_length
+        hidden_size = self.hidden_size
+        position = tf.cast(tf.range(seq_length), self.compute_dtype)
+        min_freq = tf.cast(1 / self.max_wavelength, dtype=self.compute_dtype)
+        timescales = tf.pow(
+            min_freq,
+            tf.cast(2 * (tf.range(hidden_size) // 2), self.compute_dtype)
+            / tf.cast(hidden_size, self.compute_dtype),
+        )
+        angles = tf.expand_dims(position, 1) * tf.expand_dims(timescales, 0)
+        cos_mask = tf.cast(tf.range(hidden_size) % 2, self.compute_dtype)
+        sin_mask = 1 - cos_mask
+        positional_encodings = (
+            tf.sin(angles) * sin_mask + tf.cos(angles) * cos_mask
+        )
+        return tf.gather(positional_encodings, positions)
 
-class OwnSasrecModel(tensorflow.keras.Model):
+class ExpPositionEncoding(keras.layers.Layer):
+    def __init__(self, seq_len, emb_size, **kwargs):
+        super().__init__(**kwargs)
+        self.seq_len = seq_len
+        self.emb_size = emb_size
+        pows_initalizer = tf.random_uniform_initializer(-3, 3)
+        self.pow = tf.Variable(initial_value=pows_initalizer(shape=(emb_size, )), trainable=True)
+        
+    
+    def __call__(self, positions):
+        w = tf.exp(self.pow)
+        for i in range(len(positions.shape)):
+            w = tf.expand_dims(w, 0)
+        tiles = list(positions.shape) + [1]
+        w = tf.tile(w, tiles)
+        positions_norm = tf.cast((positions+1), 'float32')/(self.seq_len+1)
+        pos = tf.tile(tf.expand_dims(positions_norm, -1), [1] * len(positions.shape) + [self.emb_size])
+        return tf.pow(pos, w)
+    
+def get_pos_embedding(seq_len, emb_size, kind):
+    if kind == 'default':
+        return layers.Embedding(seq_len, output_dim=emb_size, dtype='float32')
+
+    if kind == 'exp':
+        return ExpPositionEncoding(seq_len, emb_size)
+    
+    if kind == 'sin':
+        return SinePositionEncoding(seq_len, emb_size)
+    
+    
+
+class OwnSasrecModel(keras.Model):
     def __init__(self, num_items, batch_size, output_layer_activation='linear', embedding_size=64,
                  max_history_length=64, dropout_rate=0.5, num_blocks=2, num_heads=1,
                  reuse_item_embeddings=False,
                  encode_output_embeddings=False,
                  sampled_target=None,
+                 pos_embedding = 'default', 
+                 pos_emb_comb = 'add',
                  vanilla = False, #vanilla implementation; 
                                   #at the training time we calculate one positive and one negative per sequence element
                  *args, **kwargs):
@@ -74,8 +143,9 @@ class OwnSasrecModel(tensorflow.keras.Model):
         self.vanilla = vanilla
         self.positions = tf.constant(tf.tile(tf.expand_dims(tf.range(self.max_history_length), 0), [self.batch_size, 1]))
         self.item_embeddings_layer = layers.Embedding(self.num_items + 2, output_dim=self.embedding_size, dtype='float32')
-        self.postion_embedding_layer = layers.Embedding(self.max_history_length, self.embedding_size, dtype='float32')
+        self.postion_embedding_layer = get_pos_embedding(self.max_history_length, self.embedding_size, pos_embedding)
         self.embedding_dropout = layers.Dropout(self.dropout_rate)
+        self.pos_embedding_comb = pos_emb_comb
 
         self.attention_blocks = []
         for i in range(self.num_blocks):
@@ -168,7 +238,10 @@ class OwnSasrecModel(tensorflow.keras.Model):
         seq = self.item_embeddings_layer(input_ids)
         mask = tf.expand_dims(tf.cast(tf.not_equal(input_ids, self.num_items), dtype=tf.float32), -1)
         pos_embeddings = self.postion_embedding_layer(self.positions)[:input_ids.shape[0]]
-        seq += pos_embeddings
+        if self.pos_embedding_comb == 'add':
+            seq += pos_embeddings
+        elif self.pos_embedding_comb == 'mult':
+            seq *= pos_embeddings
         seq = self.embedding_dropout(seq)
         seq *= mask
         attentions = []

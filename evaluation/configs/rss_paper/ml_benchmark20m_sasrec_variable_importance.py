@@ -47,7 +47,7 @@ def vanilla_bert4rec(time_limit):
     recommender = VanillaBERT4Rec(training_time_limit=time_limit, num_train_steps=10000000)
     return recommender
 
-HISTORY_LEN=50
+HISTORY_LEN=200
 
 def dnn(model_arch, loss, sequence_splitter, 
                 val_sequence_splitter, 
@@ -68,6 +68,7 @@ def dnn(model_arch, loss, sequence_splitter,
                                                           optimizer=optimizer,
                                                           early_stop_epochs=200,
                                                           batch_size=256,
+                                                          max_batches_per_epoch=24,
                                                           training_time_limit=training_time_limit,
                                                           sequence_splitter=sequence_splitter, 
                                                           targets_builder=target_builder, 
@@ -76,20 +77,23 @@ def dnn(model_arch, loss, sequence_splitter,
                                                           pred_history_vectorizer=pred_history_vectorizer,
                                                           debug=True)
 
-def sasrec_rss(recency_importance, add_cls=False):
+def sasrec_rss(recency_importance, add_cls=False, pos_embedding='default', pos_embeddding_comb='add'):
         target_splitter = lambda: RecencySequenceSampling(0.2, exponential_importance(recency_importance), add_cls=add_cls)
         val_splitter = lambda: SequenceContinuation(add_cls=add_cls)
         pred_history_vectorizer = AddMaskHistoryVectorizer() if add_cls else DefaultHistoryVectrizer()
         return dnn(
-            SASRec(max_history_len=50, vanilla=False, num_heads=1),
-            LambdaGammaRankLoss(pred_truncate_at=1000),
+            SASRec(max_history_len=HISTORY_LEN, vanilla=False, num_heads=1, 
+                   pos_embedding=pos_embedding,
+                   pos_emb_comb=pos_embeddding_comb, 
+                   embedding_size=256),
+            LambdaGammaRankLoss(pred_truncate_at=4000),
             sequence_splitter=target_splitter,
             val_sequence_splitter=val_splitter,
             target_builder=FullMatrixTargetsBuilder, 
             pred_history_vectorizer=pred_history_vectorizer)
 
 def vanilla_sasrec():
-    model_arch = SASRec(max_history_len=HISTORY_LEN, vanilla=True, num_heads=1)
+    model_arch = SASRec(max_history_len=HISTORY_LEN, vanilla=True, num_heads=1, embedding_size=256)
 
     return dnn(model_arch,  BCELoss(),
             ShiftedSequenceSplitter,
@@ -101,8 +105,18 @@ def vanilla_sasrec():
 
 
 recommenders = {
-    "Sasrec-rss-lambdarank-0.5-cls": lambda: sasrec_rss(0.5, add_cls=True),
-    "Sasrec-rss-lambdarank-0.5-nocls": lambda: sasrec_rss(0.5, add_cls=False),
+    "Sasrec-rss-lambdarank-0.8-cls-exp-mult": lambda: sasrec_rss(0.8, add_cls=True, pos_embedding='exp', pos_embeddding_comb='mult'),
+    "Sasrec-rss-lambdarank-0.8-nocls-exp-mult": lambda: sasrec_rss(0.8, add_cls=False, pos_embedding='exp', pos_embeddding_comb='mult'),
+    "Sasrec-rss-lambdarank-0.8-cls-sin-mult": lambda: sasrec_rss(0.8, add_cls=True, pos_embedding='sin', pos_embeddding_comb='mult'),
+    "Sasrec-rss-lambdarank-0.8-nocls-sin-mult": lambda: sasrec_rss(0.8, add_cls=False, pos_embedding='sin', pos_embeddding_comb='mult'),
+    "Sasrec-rss-lambdarank-0.8-cls-default-mult": lambda: sasrec_rss(0.8, add_cls=True, pos_embedding='default', pos_embeddding_comb='mult'),
+    "Sasrec-rss-lambdarank-0.8-nocls-default-mult": lambda: sasrec_rss(0.8, add_cls=False, pos_embedding='default', pos_embeddding_comb='mult'),
+    "Sasrec-rss-lambdarank-0.8-cls-exp-add": lambda: sasrec_rss(0.8, add_cls=True, pos_embedding='exp', pos_embeddding_comb='add'),
+    "Sasrec-rss-lambdarank-0.8-nocls-exp-add": lambda: sasrec_rss(0.8, add_cls=False, pos_embedding='exp', pos_embeddding_comb='add'),
+    "Sasrec-rss-lambdarank-0.8-cls-sin-add": lambda: sasrec_rss(0.8, add_cls=True, pos_embedding='sin', pos_embeddding_comb='add'),
+    "Sasrec-rss-lambdarank-0.8-nocls-sin-add": lambda: sasrec_rss(0.8, add_cls=False, pos_embedding='sin', pos_embeddding_comb='add'),
+    "Sasrec-rss-lambdarank-0.8-cls-default-add": lambda: sasrec_rss(0.8, add_cls=True, pos_embedding='default', pos_embeddding_comb='add'),
+    "Sasrec-rss-lambdarank-0.8-nocls-default-add": lambda: sasrec_rss(0.8, add_cls=False, pos_embedding='default', pos_embeddding_comb='add'),
     "SASRec-vanilla": vanilla_sasrec,
 }
 
