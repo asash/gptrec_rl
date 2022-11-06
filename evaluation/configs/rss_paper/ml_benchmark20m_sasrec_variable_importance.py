@@ -101,8 +101,8 @@ def vanilla_sasrec():
 
 
 recommenders = {
-    "Sasrec-rss-lambdarank-0.5": lambda: sasrec_rss(0.5, add_cls=True),
-    "Sasrec-rss-lambdarank-0.5": lambda: sasrec_rss(0.5, add_cls=False),
+    "Sasrec-rss-lambdarank-0.5-cls": lambda: sasrec_rss(0.5, add_cls=True),
+    "Sasrec-rss-lambdarank-0.5-nocls": lambda: sasrec_rss(0.5, add_cls=False),
     "SASRec-vanilla": vanilla_sasrec,
 }
 
