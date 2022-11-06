@@ -85,8 +85,8 @@ def sasrec_rss(recency_importance, add_cls=False):
         return dnn(
             SASRec(max_history_len=50, vanilla=False, num_heads=1),
             LambdaGammaRankLoss(pred_truncate_at=1000),
-            val_sequence_splitter=val_splitter,
             sequence_splitter=target_splitter,
+            val_sequence_splitter=val_splitter,
             target_builder=FullMatrixTargetsBuilder, 
             pred_history_vectorizer=pred_history_vectorizer
             )

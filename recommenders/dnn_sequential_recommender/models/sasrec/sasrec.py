@@ -49,8 +49,6 @@ class SASRec(SequentialRecsysModel):
         )
         return model
 
-
-
 class OwnSasrecModel(tensorflow.keras.Model):
     def __init__(self, num_items, batch_size, output_layer_activation='linear', embedding_size=64,
                  max_history_length=64, dropout_rate=0.5, num_blocks=2, num_heads=1,
@@ -74,15 +72,9 @@ class OwnSasrecModel(tensorflow.keras.Model):
         self.reuse_item_embeddings=reuse_item_embeddings
         self.encode_output_embeddings = encode_output_embeddings
         self.vanilla = vanilla
-
         self.positions = tf.constant(tf.tile(tf.expand_dims(tf.range(self.max_history_length), 0), [self.batch_size, 1]))
-
-        self.item_embeddings_layer = layers.Embedding(self.num_items + 1, output_dim=self.embedding_size,
-                                                       dtype='float32')
-        self.postion_embedding_layer = layers.Embedding(self.max_history_length,
-                                                        self.embedding_size,
-                                                         dtype='float32')
-
+        self.item_embeddings_layer = layers.Embedding(self.num_items + 2, output_dim=self.embedding_size, dtype='float32')
+        self.postion_embedding_layer = layers.Embedding(self.max_history_length, self.embedding_size, dtype='float32')
         self.embedding_dropout = layers.Dropout(self.dropout_rate)
 
         self.attention_blocks = []
@@ -185,5 +177,3 @@ class OwnSasrecModel(tensorflow.keras.Model):
             attentions.append(attention)
         seq_emb = self.seq_norm(seq)
         return seq_emb, attentions 
-
-
