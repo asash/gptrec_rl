@@ -66,16 +66,15 @@ def dnn(model_arch, loss, sequence_splitter,
     return DNNSequentialRecommender(train_epochs=max_epochs, loss=loss,
                                                           model_arch=model_arch,
                                                           optimizer=optimizer,
-                                                          early_stop_epochs=100,
-                                                          batch_size=5,
+                                                          early_stop_epochs=200,
+                                                          batch_size=256,
                                                           training_time_limit=training_time_limit,
                                                           sequence_splitter=sequence_splitter, 
                                                           targets_builder=target_builder, 
                                                           val_sequence_splitter = val_sequence_splitter,
                                                           metric=metric,
                                                           pred_history_vectorizer=pred_history_vectorizer,
-                                                          debug=True
-                                                          )
+                                                          debug=True)
 
 def sasrec_rss(recency_importance, add_cls=False):
         target_splitter = lambda: RecencySequenceSampling(0.2, exponential_importance(recency_importance), add_cls=add_cls)
