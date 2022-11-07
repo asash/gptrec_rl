@@ -106,17 +106,9 @@ def vanilla_sasrec():
 
 
 recommenders = {
-    "Sasrec-rss-lambdarank-0.8-nocls-exp-mult-sm1": lambda: sasrec_rss(0.8, add_cls=False, pos_smoothing=1, pos_embedding='exp', pos_embeddding_comb='mult'),
-    "Sasrec-rss-lambdarank-0.8-nocls-exp-mult-sm0.5": lambda: sasrec_rss(0.8, add_cls=False, pos_smoothing=0.5, pos_embedding='exp', pos_embeddding_comb='mult'),
-    "Sasrec-rss-lambdarank-0.8-nocls-exp-mult-sm2": lambda: sasrec_rss(0.8, add_cls=False, pos_smoothing=2, pos_embedding='exp', pos_embeddding_comb='mult'),
-    "Sasrec-rss-lambdarank-0.8-nocls-exp-mult-sm0.25": lambda: sasrec_rss(0.8, add_cls=False, pos_smoothing=0.25, pos_embedding='exp', pos_embeddding_comb='mult'),
-    "Sasrec-rss-lambdarank-0.8-nocls-exp-mult-sm4": lambda: sasrec_rss(0.8, add_cls=False, pos_smoothing=4, pos_embedding='exp', pos_embeddding_comb='mult'),
-    "Sasrec-rss-lambdarank-0.8-nocls-exp-mult-sm0.125": lambda: sasrec_rss(0.8, add_cls=False, pos_smoothing=0.125, pos_embedding='exp', pos_embeddding_comb='mult'),
-    "Sasrec-rss-lambdarank-0.8-nocls-exp-mult-sm8": lambda: sasrec_rss(0.8, add_cls=False, pos_smoothing=8, pos_embedding='exp', pos_embeddding_comb='mult'),
-    "Sasrec-rss-lambdarank-0.8-nocls-exp-mult-sm0.0625": lambda: sasrec_rss(0.8, add_cls=False, pos_smoothing=0.0625, pos_embedding='exp', pos_embeddding_comb='mult'),
-
-
-   # "Sasrec-rss-lambdarank-0.8-cls-exp-mult": lambda: sasrec_rss(0.8, add_cls=True, pos_embedding='exp', pos_embeddding_comb='mult'),
+#    "Sasrec-rss-lambdarank-0.8-nocls-exp-mult-sm8": lambda: sasrec_rss(0.8, add_cls=False, pos_smoothing=8, pos_embedding='exp', pos_embeddding_comb='mult'),
+    "Sasrec-rss-lambdarank-0.8-noemb": lambda: sasrec_rss(0.8, add_cls=False, pos_embeddding_comb='ignore'),
+    # "Sasrec-rss-lambdarank-0.8-cls-exp-mult": lambda: sasrec_rss(0.8, add_cls=True, pos_embedding='exp', pos_embeddding_comb='mult'),
     #"Sasrec-rss-lambdarank-0.8-cls-sin-mult": lambda: sasrec_rss(0.8, add_cls=True, pos_embedding='sin', pos_embeddding_comb='mult'),
     #"Sasrec-rss-lambdarank-0.8-nocls-sin-mult": lambda: sasrec_rss(0.8, add_cls=False, pos_embedding='sin', pos_embeddding_comb='mult'),
     #"Sasrec-rss-lambdarank-0.8-cls-default-mult": lambda: sasrec_rss(0.8, add_cls=True, pos_embedding='default', pos_embeddding_comb='mult'),

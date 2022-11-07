@@ -248,9 +248,13 @@ class OwnSasrecModel(keras.Model):
             positions =  tf.maximum(0, smoothing + tf.cast(positions, 'float32'))
         pos_embeddings = self.postion_embedding_layer(positions)[:input_ids.shape[0]]
         if self.pos_embedding_comb == 'add':
-            seq += pos_embeddings
+             seq += pos_embeddings
         elif self.pos_embedding_comb == 'mult':
-            seq *= pos_embeddings
+             seq *= pos_embeddings
+
+        elif self.pos_embedding_comb == 'ignore':
+             seq = seq
+
         seq = self.embedding_dropout(seq)
         seq *= mask
         attentions = []
