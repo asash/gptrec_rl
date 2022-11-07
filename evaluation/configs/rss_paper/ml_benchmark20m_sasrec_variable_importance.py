@@ -85,7 +85,7 @@ def sasrec_rss(recency_importance, add_cls=False, pos_embedding='default', pos_e
             SASRec(max_history_len=HISTORY_LEN, vanilla=False, num_heads=1, 
                    pos_embedding=pos_embedding,
                    pos_emb_comb=pos_embeddding_comb, 
-                   embedding_size=256),
+                   embedding_size=512),
             LambdaGammaRankLoss(pred_truncate_at=4000),
             sequence_splitter=target_splitter,
             val_sequence_splitter=val_splitter,
@@ -93,7 +93,7 @@ def sasrec_rss(recency_importance, add_cls=False, pos_embedding='default', pos_e
             pred_history_vectorizer=pred_history_vectorizer)
 
 def vanilla_sasrec():
-    model_arch = SASRec(max_history_len=HISTORY_LEN, vanilla=True, num_heads=1, embedding_size=256)
+    model_arch = SASRec(max_history_len=HISTORY_LEN, vanilla=True, num_heads=1, embedding_size=512)
 
     return dnn(model_arch,  BCELoss(),
             ShiftedSequenceSplitter,
@@ -105,17 +105,17 @@ def vanilla_sasrec():
 
 
 recommenders = {
-    "Sasrec-rss-lambdarank-0.8-cls-exp-mult": lambda: sasrec_rss(0.8, add_cls=True, pos_embedding='exp', pos_embeddding_comb='mult'),
-    "Sasrec-rss-lambdarank-0.8-nocls-exp-mult": lambda: sasrec_rss(0.8, add_cls=False, pos_embedding='exp', pos_embeddding_comb='mult'),
-    "Sasrec-rss-lambdarank-0.8-cls-sin-mult": lambda: sasrec_rss(0.8, add_cls=True, pos_embedding='sin', pos_embeddding_comb='mult'),
-    "Sasrec-rss-lambdarank-0.8-nocls-sin-mult": lambda: sasrec_rss(0.8, add_cls=False, pos_embedding='sin', pos_embeddding_comb='mult'),
-    "Sasrec-rss-lambdarank-0.8-cls-default-mult": lambda: sasrec_rss(0.8, add_cls=True, pos_embedding='default', pos_embeddding_comb='mult'),
-    "Sasrec-rss-lambdarank-0.8-nocls-default-mult": lambda: sasrec_rss(0.8, add_cls=False, pos_embedding='default', pos_embeddding_comb='mult'),
-    "Sasrec-rss-lambdarank-0.8-cls-exp-add": lambda: sasrec_rss(0.8, add_cls=True, pos_embedding='exp', pos_embeddding_comb='add'),
-    "Sasrec-rss-lambdarank-0.8-nocls-exp-add": lambda: sasrec_rss(0.8, add_cls=False, pos_embedding='exp', pos_embeddding_comb='add'),
-    "Sasrec-rss-lambdarank-0.8-cls-sin-add": lambda: sasrec_rss(0.8, add_cls=True, pos_embedding='sin', pos_embeddding_comb='add'),
-    "Sasrec-rss-lambdarank-0.8-nocls-sin-add": lambda: sasrec_rss(0.8, add_cls=False, pos_embedding='sin', pos_embeddding_comb='add'),
-    "Sasrec-rss-lambdarank-0.8-cls-default-add": lambda: sasrec_rss(0.8, add_cls=True, pos_embedding='default', pos_embeddding_comb='add'),
+   # "Sasrec-rss-lambdarank-0.8-cls-exp-mult": lambda: sasrec_rss(0.8, add_cls=True, pos_embedding='exp', pos_embeddding_comb='mult'),
+    #"Sasrec-rss-lambdarank-0.8-nocls-exp-mult": lambda: sasrec_rss(0.8, add_cls=False, pos_embedding='exp', pos_embeddding_comb='mult'),
+    #"Sasrec-rss-lambdarank-0.8-cls-sin-mult": lambda: sasrec_rss(0.8, add_cls=True, pos_embedding='sin', pos_embeddding_comb='mult'),
+    #"Sasrec-rss-lambdarank-0.8-nocls-sin-mult": lambda: sasrec_rss(0.8, add_cls=False, pos_embedding='sin', pos_embeddding_comb='mult'),
+    #"Sasrec-rss-lambdarank-0.8-cls-default-mult": lambda: sasrec_rss(0.8, add_cls=True, pos_embedding='default', pos_embeddding_comb='mult'),
+    #"Sasrec-rss-lambdarank-0.8-nocls-default-mult": lambda: sasrec_rss(0.8, add_cls=False, pos_embedding='default', pos_embeddding_comb='mult'),
+    #"Sasrec-rss-lambdarank-0.8-cls-exp-add": lambda: sasrec_rss(0.8, add_cls=True, pos_embedding='exp', pos_embeddding_comb='add'),
+    #"Sasrec-rss-lambdarank-0.8-nocls-exp-add": lambda: sasrec_rss(0.8, add_cls=False, pos_embedding='exp', pos_embeddding_comb='add'),
+    #"Sasrec-rss-lambdarank-0.8-cls-sin-add": lambda: sasrec_rss(0.8, add_cls=True, pos_embedding='sin', pos_embeddding_comb='add'),
+    #"Sasrec-rss-lambdarank-0.8-nocls-sin-add": lambda: sasrec_rss(0.8, add_cls=False, pos_embedding='sin', pos_embeddding_comb='add'),
+    #"Sasrec-rss-lambdarank-0.8-cls-default-add": lambda: sasrec_rss(0.8, add_cls=True, pos_embedding='default', pos_embeddding_comb='add'),
     "Sasrec-rss-lambdarank-0.8-nocls-default-add": lambda: sasrec_rss(0.8, add_cls=False, pos_embedding='default', pos_embeddding_comb='add'),
     "SASRec-vanilla": vanilla_sasrec,
 }
