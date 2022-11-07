@@ -77,15 +77,16 @@ def dnn(model_arch, loss, sequence_splitter,
                                                           pred_history_vectorizer=pred_history_vectorizer,
                                                           debug=True)
 
-def sasrec_rss(recency_importance, add_cls=False, pos_embedding='default', pos_embeddding_comb='add'):
+def sasrec_rss(recency_importance, add_cls=False, pos_smoothing=0, pos_embedding='default', pos_embeddding_comb='add'):
         target_splitter = lambda: RecencySequenceSampling(0.2, exponential_importance(recency_importance), add_cls=add_cls)
         val_splitter = lambda: SequenceContinuation(add_cls=add_cls)
         pred_history_vectorizer = AddMaskHistoryVectorizer() if add_cls else DefaultHistoryVectrizer()
         return dnn(
             SASRec(max_history_len=HISTORY_LEN, vanilla=False, num_heads=1, 
                    pos_embedding=pos_embedding,
-                   pos_emb_comb=pos_embeddding_comb, 
-                   embedding_size=512),
+                   pos_emb_comb=pos_embeddding_comb,
+                   pos_smoothing=pos_smoothing, 
+                   embedding_size=256),
             LambdaGammaRankLoss(pred_truncate_at=4000),
             sequence_splitter=target_splitter,
             val_sequence_splitter=val_splitter,
@@ -93,7 +94,7 @@ def sasrec_rss(recency_importance, add_cls=False, pos_embedding='default', pos_e
             pred_history_vectorizer=pred_history_vectorizer)
 
 def vanilla_sasrec():
-    model_arch = SASRec(max_history_len=HISTORY_LEN, vanilla=True, num_heads=1, embedding_size=512)
+    model_arch = SASRec(max_history_len=HISTORY_LEN, vanilla=True, num_heads=1, embedding_size=256)
 
     return dnn(model_arch,  BCELoss(),
             ShiftedSequenceSplitter,
@@ -105,8 +106,17 @@ def vanilla_sasrec():
 
 
 recommenders = {
+    "Sasrec-rss-lambdarank-0.8-nocls-exp-mult-sm1": lambda: sasrec_rss(0.8, add_cls=False, pos_smoothing=1, pos_embedding='exp', pos_embeddding_comb='mult'),
+    "Sasrec-rss-lambdarank-0.8-nocls-exp-mult-sm0.5": lambda: sasrec_rss(0.8, add_cls=False, pos_smoothing=0.5, pos_embedding='exp', pos_embeddding_comb='mult'),
+    "Sasrec-rss-lambdarank-0.8-nocls-exp-mult-sm2": lambda: sasrec_rss(0.8, add_cls=False, pos_smoothing=2, pos_embedding='exp', pos_embeddding_comb='mult'),
+    "Sasrec-rss-lambdarank-0.8-nocls-exp-mult-sm0.25": lambda: sasrec_rss(0.8, add_cls=False, pos_smoothing=0.25, pos_embedding='exp', pos_embeddding_comb='mult'),
+    "Sasrec-rss-lambdarank-0.8-nocls-exp-mult-sm4": lambda: sasrec_rss(0.8, add_cls=False, pos_smoothing=4, pos_embedding='exp', pos_embeddding_comb='mult'),
+    "Sasrec-rss-lambdarank-0.8-nocls-exp-mult-sm0.125": lambda: sasrec_rss(0.8, add_cls=False, pos_smoothing=0.125, pos_embedding='exp', pos_embeddding_comb='mult'),
+    "Sasrec-rss-lambdarank-0.8-nocls-exp-mult-sm8": lambda: sasrec_rss(0.8, add_cls=False, pos_smoothing=8, pos_embedding='exp', pos_embeddding_comb='mult'),
+    "Sasrec-rss-lambdarank-0.8-nocls-exp-mult-sm0.0625": lambda: sasrec_rss(0.8, add_cls=False, pos_smoothing=0.0625, pos_embedding='exp', pos_embeddding_comb='mult'),
+
+
    # "Sasrec-rss-lambdarank-0.8-cls-exp-mult": lambda: sasrec_rss(0.8, add_cls=True, pos_embedding='exp', pos_embeddding_comb='mult'),
-    #"Sasrec-rss-lambdarank-0.8-nocls-exp-mult": lambda: sasrec_rss(0.8, add_cls=False, pos_embedding='exp', pos_embeddding_comb='mult'),
     #"Sasrec-rss-lambdarank-0.8-cls-sin-mult": lambda: sasrec_rss(0.8, add_cls=True, pos_embedding='sin', pos_embeddding_comb='mult'),
     #"Sasrec-rss-lambdarank-0.8-nocls-sin-mult": lambda: sasrec_rss(0.8, add_cls=False, pos_embedding='sin', pos_embeddding_comb='mult'),
     #"Sasrec-rss-lambdarank-0.8-cls-default-mult": lambda: sasrec_rss(0.8, add_cls=True, pos_embedding='default', pos_embeddding_comb='mult'),
@@ -116,8 +126,7 @@ recommenders = {
     #"Sasrec-rss-lambdarank-0.8-cls-sin-add": lambda: sasrec_rss(0.8, add_cls=True, pos_embedding='sin', pos_embeddding_comb='add'),
     #"Sasrec-rss-lambdarank-0.8-nocls-sin-add": lambda: sasrec_rss(0.8, add_cls=False, pos_embedding='sin', pos_embeddding_comb='add'),
     #"Sasrec-rss-lambdarank-0.8-cls-default-add": lambda: sasrec_rss(0.8, add_cls=True, pos_embedding='default', pos_embeddding_comb='add'),
-    "Sasrec-rss-lambdarank-0.8-nocls-default-add": lambda: sasrec_rss(0.8, add_cls=False, pos_embedding='default', pos_embeddding_comb='add'),
-    "SASRec-vanilla": vanilla_sasrec,
+    #"Sasrec-rss-lambdarank-0.8-nocls-default-add": lambda: sasrec_rss(0.8, add_cls=False, pos_embedding='default', pos_embeddding_comb='add'),
 }
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]

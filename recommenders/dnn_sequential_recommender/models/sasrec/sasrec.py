@@ -18,6 +18,7 @@ class SASRec(SequentialRecsysModel):
                  num_heads=1,
                  pos_embedding = 'default', 
                  pos_emb_comb = 'add',
+                 pos_smoothing = 0,
                  reuse_item_embeddings=True, #use same item embeddings for
                                              # sequence embedding and for the embedding matrix
                  encode_output_embeddings=False, #encode item embeddings with a dense layer
@@ -34,6 +35,7 @@ class SASRec(SequentialRecsysModel):
         self.sampled_targets = sampled_targets
         self.vanilla = vanilla
         self.pos_embedding = pos_embedding
+        self.pos_smoothing = pos_smoothing
         self.pos_emb_comb = pos_emb_comb
 
 
@@ -51,6 +53,7 @@ class SASRec(SequentialRecsysModel):
                                self.sampled_targets, 
                                vanilla=self.vanilla,
                                pos_embedding=self.pos_embedding, 
+                               pos_smoothing=self.pos_smoothing,
                                pos_emb_comb = self.pos_emb_comb
         )
         return model
@@ -124,6 +127,7 @@ class OwnSasrecModel(keras.Model):
                  sampled_target=None,
                  pos_embedding = 'default', 
                  pos_emb_comb = 'add',
+                 pos_smoothing = 0,
                  vanilla = False, #vanilla implementation; 
                                   #at the training time we calculate one positive and one negative per sequence element
                  *args, **kwargs):
@@ -146,6 +150,7 @@ class OwnSasrecModel(keras.Model):
         self.postion_embedding_layer = get_pos_embedding(self.max_history_length, self.embedding_size, pos_embedding)
         self.embedding_dropout = layers.Dropout(self.dropout_rate)
         self.pos_embedding_comb = pos_emb_comb
+        self.pos_smoothing = pos_smoothing
 
         self.attention_blocks = []
         for i in range(self.num_blocks):
@@ -237,7 +242,11 @@ class OwnSasrecModel(keras.Model):
     def get_seq_embedding(self, input_ids, training=None):
         seq = self.item_embeddings_layer(input_ids)
         mask = tf.expand_dims(tf.cast(tf.not_equal(input_ids, self.num_items), dtype=tf.float32), -1)
-        pos_embeddings = self.postion_embedding_layer(self.positions)[:input_ids.shape[0]]
+        positions  = self.positions
+        if training and self.pos_smoothing:
+            smoothing = tf.random.normal(shape=positions.shape, mean=0, stddev=self.pos_smoothing)
+            positions =  tf.maximum(0, smoothing + tf.cast(positions, 'float32'))
+        pos_embeddings = self.postion_embedding_layer(positions)[:input_ids.shape[0]]
         if self.pos_embedding_comb == 'add':
             seq += pos_embeddings
         elif self.pos_embedding_comb == 'mult':
