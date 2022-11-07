@@ -77,7 +77,10 @@ def dnn(model_arch, loss, sequence_splitter,
                                                           pred_history_vectorizer=pred_history_vectorizer,
                                                           debug=True)
 
-def sasrec_rss(recency_importance, add_cls=False, pos_smoothing=0, pos_embedding='default', pos_embeddding_comb='add'):
+def sasrec_rss(recency_importance, add_cls=False, pos_smoothing=0,
+               pos_embedding='default', pos_embeddding_comb='add', 
+               causal_attention = True
+               ):
         target_splitter = lambda: RecencySequenceSampling(0.2, exponential_importance(recency_importance), add_cls=add_cls)
         val_splitter = lambda: SequenceContinuation(add_cls=add_cls)
         pred_history_vectorizer = AddMaskHistoryVectorizer() if add_cls else DefaultHistoryVectrizer()
@@ -86,6 +89,7 @@ def sasrec_rss(recency_importance, add_cls=False, pos_smoothing=0, pos_embedding
                    pos_embedding=pos_embedding,
                    pos_emb_comb=pos_embeddding_comb,
                    pos_smoothing=pos_smoothing, 
+                   causal_attention=causal_attention,
                    embedding_size=256),
             LambdaGammaRankLoss(pred_truncate_at=4000),
             sequence_splitter=target_splitter,
@@ -107,7 +111,9 @@ def vanilla_sasrec():
 
 recommenders = {
 #    "Sasrec-rss-lambdarank-0.8-nocls-exp-mult-sm8": lambda: sasrec_rss(0.8, add_cls=False, pos_smoothing=8, pos_embedding='exp', pos_embeddding_comb='mult'),
-    "Sasrec-rss-lambdarank-0.8-noemb": lambda: sasrec_rss(0.8, add_cls=False, pos_embeddding_comb='ignore'),
+    "Sasrec-rss-lambdarank-0.8-noemb-bidirectional": lambda: sasrec_rss(0.8, add_cls=False, pos_embeddding_comb='ignore', causal_attention=False),
+    "Sasrec-rss-lambdarank-0.8-exp-bidirectional": lambda: sasrec_rss(0.8, add_cls=False, pos_embeddding_comb='mult', pos_embedding='exp'  causal_attention=False),
+    "Sasrec-rss-lambdarank-0.8-noemb-causal": lambda: sasrec_rss(0.8, add_cls=False, pos_embeddding_comb='ignore', causal_attention=True),
     # "Sasrec-rss-lambdarank-0.8-cls-exp-mult": lambda: sasrec_rss(0.8, add_cls=True, pos_embedding='exp', pos_embeddding_comb='mult'),
     #"Sasrec-rss-lambdarank-0.8-cls-sin-mult": lambda: sasrec_rss(0.8, add_cls=True, pos_embedding='sin', pos_embeddding_comb='mult'),
     #"Sasrec-rss-lambdarank-0.8-nocls-sin-mult": lambda: sasrec_rss(0.8, add_cls=False, pos_embedding='sin', pos_embeddding_comb='mult'),

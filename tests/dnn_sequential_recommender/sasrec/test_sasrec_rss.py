@@ -44,7 +44,7 @@ def sasrec_rss(recency_importance, add_cls=False):
         pred_history_vectorizer = AddMaskHistoryVectorizer() if add_cls else DefaultHistoryVectrizer()
         return dnn(
             SASRec(max_history_len=50, vanilla=False, 
-                   num_heads=1, pos_emb_comb='ignore', pos_embedding='exp',
+                   num_heads=1, pos_emb_comb='ignore', pos_embedding='exp', causal_attention=False,
                    pos_smoothing=1),
             LambdaGammaRankLoss(pred_truncate_at=1000),
             val_sequence_splitter=val_splitter,

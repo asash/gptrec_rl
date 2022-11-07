@@ -16,6 +16,7 @@ class SASRec(SequentialRecsysModel):
                  dropout_rate=0.2,
                  num_blocks=2,
                  num_heads=1,
+                 causal_attention = True,
                  pos_embedding = 'default', 
                  pos_emb_comb = 'add',
                  pos_smoothing = 0,
@@ -37,6 +38,7 @@ class SASRec(SequentialRecsysModel):
         self.pos_embedding = pos_embedding
         self.pos_smoothing = pos_smoothing
         self.pos_emb_comb = pos_emb_comb
+        self.causal_attention = causal_attention
 
 
     encode_embedding_with_dense_layer = False,
@@ -54,7 +56,8 @@ class SASRec(SequentialRecsysModel):
                                vanilla=self.vanilla,
                                pos_embedding=self.pos_embedding, 
                                pos_smoothing=self.pos_smoothing,
-                               pos_emb_comb = self.pos_emb_comb
+                               pos_emb_comb = self.pos_emb_comb,
+                               causal_attention = self.causal_attention
         )
         return model
 class SinePositionEncoding(keras.layers.Layer):
@@ -127,6 +130,7 @@ class OwnSasrecModel(keras.Model):
                  sampled_target=None,
                  pos_embedding = 'default', 
                  pos_emb_comb = 'add',
+                 causal_attention = True,
                  pos_smoothing = 0,
                  vanilla = False, #vanilla implementation; 
                                   #at the training time we calculate one positive and one negative per sequence element
@@ -152,6 +156,7 @@ class OwnSasrecModel(keras.Model):
         self.embedding_dropout = layers.Dropout(self.dropout_rate)
         self.pos_embedding_comb = pos_emb_comb
         self.pos_smoothing = pos_smoothing
+        self.causal_attention = causal_attention
 
         self.attention_blocks = []
         for i in range(self.num_blocks):
@@ -184,7 +189,7 @@ class OwnSasrecModel(keras.Model):
         queries = x
         keys = seq
         x, attentions = multihead_attention(queries, keys, self.num_heads, self.attention_blocks[i]["attention_layers"],
-                                     causality=True)
+                                     causality=self.causal_attention)
         x =x + queries
         x = self.attention_blocks[i]["second_norm"](x)
         residual = x
