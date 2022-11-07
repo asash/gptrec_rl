@@ -147,7 +147,8 @@ class OwnSasrecModel(keras.Model):
         self.vanilla = vanilla
         self.positions = tf.constant(tf.tile(tf.expand_dims(tf.range(self.max_history_length), 0), [self.batch_size, 1]))
         self.item_embeddings_layer = layers.Embedding(self.num_items + 2, output_dim=self.embedding_size, dtype='float32')
-        self.postion_embedding_layer = get_pos_embedding(self.max_history_length, self.embedding_size, pos_embedding)
+        if pos_emb_comb != 'ignore':
+            self.postion_embedding_layer = get_pos_embedding(self.max_history_length, self.embedding_size, pos_embedding)
         self.embedding_dropout = layers.Dropout(self.dropout_rate)
         self.pos_embedding_comb = pos_emb_comb
         self.pos_smoothing = pos_smoothing
@@ -246,7 +247,8 @@ class OwnSasrecModel(keras.Model):
         if training and self.pos_smoothing:
             smoothing = tf.random.normal(shape=positions.shape, mean=0, stddev=self.pos_smoothing)
             positions =  tf.maximum(0, smoothing + tf.cast(positions, 'float32'))
-        pos_embeddings = self.postion_embedding_layer(positions)[:input_ids.shape[0]]
+        if self.pos_embedding_comb != 'ignore':
+            pos_embeddings = self.postion_embedding_layer(positions)[:input_ids.shape[0]]
         if self.pos_embedding_comb == 'add':
              seq += pos_embeddings
         elif self.pos_embedding_comb == 'mult':

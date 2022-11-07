@@ -234,7 +234,7 @@ class DNNSequentialRecommender(Recommender):
             return self.train_epoch_debug(generator, val_generator)
 
     def train_epoch_debug(self, generator, val_generator):
-        pbar = tqdm(generator, ascii=True)
+        pbar = tqdm(generator, ascii=True, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}' )
         variables = self.model.variables
         loss_sum = 0
         metric_sum = 0
