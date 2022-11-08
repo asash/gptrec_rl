@@ -101,7 +101,7 @@ recommenders = {
             ),
 
     "Caser-continuation-bce": lambda: dnn(
-            Caser(max_history_len=HISTORY_LEN, requires_user_id=False),
+            Caser(max_history_len=HISTORY_LEN),
             BCELoss(),
             SequenceContinuation,
             target_builder=FullMatrixTargetsBuilder, 
@@ -121,7 +121,7 @@ recommenders = {
             target_builder=FullMatrixTargetsBuilder, 
             ),
     "Caser-rss-bce": lambda: dnn(
-            Caser(max_history_len=HISTORY_LEN, requires_user_id=False),
+            Caser(max_history_len=HISTORY_LEN),
             BCELoss(),
             lambda: RecencySequenceSampling(0.2, exponential_importance(0.8)),
             target_builder=FullMatrixTargetsBuilder, 
@@ -142,7 +142,7 @@ recommenders = {
             target_builder=FullMatrixTargetsBuilder, 
             ),
     "Caser-continuation-lambdarank": lambda: dnn(
-            Caser(max_history_len=HISTORY_LEN, requires_user_id=False),
+            Caser(max_history_len=HISTORY_LEN),
             LambdaGammaRankLoss(pred_truncate_at=4000),
             SequenceContinuation,
             target_builder=FullMatrixTargetsBuilder, 
@@ -163,7 +163,7 @@ recommenders = {
             ),
 
     "Caser-rss-lambdarank": lambda: dnn(
-            Caser(max_history_len=HISTORY_LEN, requires_user_id=False),
+            Caser(max_history_len=HISTORY_LEN),
             LambdaGammaRankLoss(pred_truncate_at=4000),
             lambda: RecencySequenceSampling(0.2, exponential_importance(0.8)),
             target_builder=FullMatrixTargetsBuilder, 

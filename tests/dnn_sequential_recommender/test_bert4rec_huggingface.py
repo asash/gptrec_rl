@@ -15,7 +15,7 @@ class TestOwnBERT4rec(unittest.TestCase):
         from aprec.recommenders.dnn_sequential_recommender.models.bert4rec.bert4rec import BERT4Rec
 
         bert4rec = BERT4Rec()
-        bert4rec.set_common_params(10, 10, None, None, 32, None)
+        bert4rec.set_common_params(10, 10, 32)
         model = bert4rec.get_model()
         print(model.bert)
 

@@ -11,7 +11,7 @@ class TestCaserNoUid(unittest.TestCase):
 
 
         val_users = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
-        model = Caser(requires_user_id=False)
+        model = Caser()
         recommender = DNNSequentialRecommender(model, train_epochs=10,
                                                early_stop_epochs=5, batch_size=5, training_time_limit=10)
         recommender.set_val_users(val_users)
