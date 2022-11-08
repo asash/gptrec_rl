@@ -47,7 +47,7 @@ def vanilla_bert4rec(time_limit):
     recommender = VanillaBERT4Rec(training_time_limit=time_limit, num_train_steps=10000000)
     return recommender
 
-HISTORY_LEN=200
+HISTORY_LEN=50
 
 def dnn(model_arch, loss, sequence_splitter, 
                 val_sequence_splitter, 
@@ -67,8 +67,8 @@ def dnn(model_arch, loss, sequence_splitter,
                                                           model_arch=model_arch,
                                                           optimizer=optimizer,
                                                           early_stop_epochs=200,
-                                                          batch_size=256,
-                                                          max_batches_per_epoch=24,
+                                                          batch_size=512,
+                                                          max_batches_per_epoch=48,
                                                           training_time_limit=training_time_limit,
                                                           sequence_splitter=sequence_splitter, 
                                                           targets_builder=target_builder, 
@@ -90,7 +90,7 @@ def sasrec_rss(recency_importance, add_cls=False, pos_smoothing=0,
                    pos_emb_comb=pos_embeddding_comb,
                    pos_smoothing=pos_smoothing, 
                    causal_attention=causal_attention,
-                   embedding_size=256),
+                   embedding_size=64),
             LambdaGammaRankLoss(pred_truncate_at=4000),
             sequence_splitter=target_splitter,
             val_sequence_splitter=val_splitter,
@@ -98,7 +98,7 @@ def sasrec_rss(recency_importance, add_cls=False, pos_smoothing=0,
             pred_history_vectorizer=pred_history_vectorizer)
 
 def vanilla_sasrec():
-    model_arch = SASRec(max_history_len=HISTORY_LEN, vanilla=True, num_heads=1, embedding_size=256)
+    model_arch = SASRec(max_history_len=HISTORY_LEN, vanilla=True, num_heads=1, embedding_size=64)
 
     return dnn(model_arch,  BCELoss(),
             ShiftedSequenceSplitter,
@@ -111,9 +111,9 @@ def vanilla_sasrec():
 
 recommenders = {
 #    "Sasrec-rss-lambdarank-0.8-nocls-exp-mult-sm8": lambda: sasrec_rss(0.8, add_cls=False, pos_smoothing=8, pos_embedding='exp', pos_embeddding_comb='mult'),
-    "Sasrec-rss-lambdarank-0.8-noemb-bidirectional": lambda: sasrec_rss(0.8, add_cls=False, pos_embeddding_comb='ignore', causal_attention=False),
-    "Sasrec-rss-lambdarank-0.8-exp-bidirectional": lambda: sasrec_rss(0.8, add_cls=False, pos_embeddding_comb='mult', pos_embedding='exp', causal_attention=False),
-    "Sasrec-rss-lambdarank-0.8-noemb-causal": lambda: sasrec_rss(0.8, add_cls=False, pos_embeddding_comb='ignore', causal_attention=True),
+    "Sasrec-rss-lambdarank-0.8-default-bidirectional": lambda: sasrec_rss(0.8, pos_embeddding_comb='add', pos_embedding='default', causal_attention=False),
+    "Sasrec-rss-lambdarank-0.8-default-causal": lambda: sasrec_rss(0.8, pos_embeddding_comb='add', pos_embedding='default', causal_attention=True),
+    "Sasrec-rss-vanilla": lambda: vanilla_sasrec(),
     # "Sasrec-rss-lambdarank-0.8-cls-exp-mult": lambda: sasrec_rss(0.8, add_cls=True, pos_embedding='exp', pos_embeddding_comb='mult'),
     #"Sasrec-rss-lambdarank-0.8-cls-sin-mult": lambda: sasrec_rss(0.8, add_cls=True, pos_embedding='sin', pos_embeddding_comb='mult'),
     #"Sasrec-rss-lambdarank-0.8-nocls-sin-mult": lambda: sasrec_rss(0.8, add_cls=False, pos_embedding='sin', pos_embeddding_comb='mult'),
