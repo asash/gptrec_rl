@@ -92,11 +92,11 @@ class SinePositionEncoding(keras.layers.Layer):
         return tf.gather(positional_encodings, positions)
 
 class ExpPositionEncoding(keras.layers.Layer):
-    def __init__(self, seq_len, emb_size, **kwargs):
+    def __init__(self, seq_len, emb_size, init=3, **kwargs):
         super().__init__(**kwargs)
         self.seq_len = seq_len
         self.emb_size = emb_size
-        pows_initalizer = tf.random_uniform_initializer(-3, 3)
+        pows_initalizer = tf.random_uniform_initializer(-init, init)
         self.pow = tf.Variable(initial_value=pows_initalizer(shape=(emb_size, )), trainable=True)
         
     

@@ -35,6 +35,7 @@ class DatasetsRegister(object):
         "gowalla_warm5": lambda: filter_cold_users(get_gowalla_dataset(), 5), 
         "yelp_warm5": lambda: filter_cold_users(get_yelp_dataset(), 5),
         "netflix_warm5": lambda: filter_cold_users(DatasetsRegister.read_from_cache("netflix"), 5), 
+        "mts_kion_warm5": lambda: filter_cold_users(get_mts_kion_dataset(), 5),
 
         "ml-20m_warm10": lambda: filter_cold_users(get_movielens20m_actions(min_rating=0.0), 10), 
         "booking_warm10": lambda: filter_cold_users(get_booking_dataset(unix_timestamps=True, mark_control=False)[0], 10), 
