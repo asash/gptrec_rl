@@ -75,10 +75,6 @@ def evaluate_recommender(recommender, test_actions,
             except:
                 pass
 
-    print('saving model...')
-    mkdir_p(f"{out_dir}/checkpoints/")
-    model_filename = f"{out_dir}/checkpoints/{recommender_name}.dill"
-    recommender.save(model_filename)
  
     result = {}
     sampled_result = {}
@@ -88,6 +84,15 @@ def evaluate_recommender(recommender, test_actions,
             sampled_result[metric] = sampled_metric_sum[metric]/len(test_actions_by_user)
     if evaluate_on_samples:
         result["sampled_metrics"] = sampled_result
+
+    print('saving model...')
+    try:
+        mkdir_p(f"{out_dir}/checkpoints/")
+        model_filename = f"{out_dir}/checkpoints/{recommender_name}.dill"
+        recommender.save(model_filename)
+    except Exception:
+        print("Failed saving model...")
+        print(traceback.format_exc())
     return result
 
 class RecommendersEvaluator(object):
