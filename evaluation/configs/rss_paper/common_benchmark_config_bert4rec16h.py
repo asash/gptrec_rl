@@ -63,7 +63,7 @@ def dnn(model_arch, loss, sequence_splitter,
                                                           )
 
 def vanilla_bert4rec(time_limit):
-    recommender = VanillaBERT4Rec(training_time_limit=time_limit, num_train_steps=10000000)
+    recommender = VanillaBERT4Rec(training_time_limit=time_limit, num_train_steps=10000000, batch_size=128)
     return recommender
 
 HISTORY_LEN=50
