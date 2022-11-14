@@ -320,9 +320,12 @@ class DNNSequentialRecommender(Recommender):
         results = []
         start = 0
         end = min(start + self.eval_batch_size, len(recommendation_requests))
+        print("generating recommendation in batches...")
+        pbar = tqdm(total = len(recommendation_requests), ascii=True, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}')
         while (start < end):
             req = recommendation_requests[start:end]
             results += self.recommend_multiple(req, limit)
+            pbar.update(end - start)
             start = end  
             end = min(start + self.eval_batch_size, len(recommendation_requests))
         return results
