@@ -1,12 +1,17 @@
+import math
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.targetsplitter import TargetSplitter
 import numpy as np
-from random import Random
 
 def exponential_importance(p):
     return lambda n, k: p**(n - k)
 
 def linear_importance(a=1, b=1):
     return lambda n, k: a*k+b
+
+def pow_importance(p, c=0):
+    def func(n, k):
+        return math.pow((k+1)/(n+1), math.exp(p)) +c
+    return func
 
 class RecencySequenceSampling(TargetSplitter):
     #recency importance is a function that defines the chances of k-th element 
