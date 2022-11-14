@@ -1,4 +1,6 @@
 import unittest
+
+from aprec.api.items_ranking_request import ItemsRankingRequest
 class TestOwnBERT4rec(unittest.TestCase):
     def test_bert_nlp_model(self):
         from transformers import TFBertModel, BertConfig
@@ -44,12 +46,31 @@ class TestOwnBERT4rec(unittest.TestCase):
                                                val_sequence_splitter=lambda: ItemsMasking(force_last=True),
                                                metric=MeanPredLoss(), 
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
+                                               eval_batch_size=8
                                                )
         recommender.set_val_users(val_users)
         recommender = FilterSeenRecommender(recommender)
         for action in generator_limit(get_movielens20m_actions(), 10000):
             recommender.add_action(action)
         recommender.rebuild_model()
+        ranking_request = ItemsRankingRequest('120', ['608', '294', '648'])
+        recommender.add_test_items_ranking_request(ranking_request)
+        batch1 = [('120', None), ('10', None)]
+        recs1 = recommender.recommender.recommend_multiple(batch1, 10)        
+
+        batch2 = [(str(i), None) for i in range(1, 25)]
+        batch_result = recommender.recommend_batch(batch2, 10)
+        one_by_one_result = []
+        for user_id, features in batch2:
+            one_by_one_result.append(recommender.recommend(user_id, 10))
+            
+        for i in range(len(batch2)):
+            for j in range(len(batch_result[i])):
+                batch_item, batch_score = batch_result[i][j]
+                one_by_one_item, one_by_one_score = one_by_one_result[i][j]
+                self.assertEquals(batch_item, one_by_one_item)
+                self.assertAlmostEquals(batch_score, one_by_one_score, places=4)
+
         recs = recommender.recommend(USER_ID, 10)
         catalog = get_movies_catalog()
         for rec in recs:

@@ -38,7 +38,8 @@ class DNNSequentialRecommender(Recommender):
                  pred_history_vectorizer:HistoryVectorizer = DefaultHistoryVectrizer(),
                  data_generator_processes = 8, 
                  data_generator_queue_size = 16,
-                 max_batches_per_epoch=10
+                 max_batches_per_epoch=10,
+                 eval_batch_size = 1024
                  ):
         super().__init__()
         self.model_arch = model_arch
@@ -69,6 +70,7 @@ class DNNSequentialRecommender(Recommender):
         self.data_generator_processes = data_generator_processes
         self.data_generator_queue_size = data_generator_queue_size
         self.max_batches_per_epoch = max_batches_per_epoch
+        self.eval_batch_size=eval_batch_size
 
         #we use following two dicts for sampled metrics
         self.item_ranking_requrests = {}
@@ -280,7 +282,7 @@ class DNNSequentialRecommender(Recommender):
         user_result = []
         for item_id in request.item_ids:
             if (self.items.has_item(item_id)) and (self.items.get_id(item_id) < len(scores)):
-                user_result.append((item_id, scores[self.items.get_id(item_id)]))
+                user_result.append((item_id, float(scores[self.items.get_id(item_id)])))
             else:
                 user_result.append((item_id, float("-inf")))
         user_result.sort(key = lambda x: -x[1])
@@ -294,12 +296,44 @@ class DNNSequentialRecommender(Recommender):
         session = session.reshape(1, self.model_arch.max_history_length)
         model_inputs = [session]
         return model_inputs
+    
+    def recommend_multiple(self, recommendation_requets, limit):
+        user_ids = [user_id for user_id, features in recommendation_requets]
+        model_inputs = list(map(lambda id: self.get_model_inputs(id)[0], user_ids))
+        model_inputs = tf.concat(model_inputs, 0)
+        scoring_func = self.get_scoring_func()
+        predictions = scoring_func([model_inputs])
+        list(map(self.process_item_ranking_request, user_ids, predictions))
+        best_predictions = tf.math.top_k(predictions, k=limit)
+        result = []
+        for i in range(len(user_ids)):
+            result.append(list(zip(self.decode_item_ids(best_predictions.indices[i]), best_predictions.values[i].numpy())))
+        return result
 
+    def decode_item_ids(self, ids):
+        result = []
+        for id in ids:
+            result.append(self.items.reverse_id(int(id)))
+        return result
+
+    def recommend_batch(self, recommendation_requests, limit):
+        results = []
+        start = 0
+        end = min(start + self.eval_batch_size, len(recommendation_requests))
+        while (start < end):
+            req = recommendation_requests[start:end]
+            results += self.recommend_multiple(req, limit)
+            start = end  
+            end = min(start + self.eval_batch_size, len(recommendation_requests))
+        return results
+
+    def get_scoring_func(self):
+        if hasattr(self.model, 'score_all_items'):
+            return self.model.score_all_items
+        else: 
+            return self.model
 
     def get_all_item_scores(self, user_id):
         model_inputs = self.get_model_inputs(user_id) 
-        if hasattr(self.model, 'score_all_items'):
-            scores = self.model.score_all_items(model_inputs)[0].numpy()
-        else: 
-            scores = self.model(model_inputs)[0].numpy()
-        return scores
+        scoring_func = self.get_scoring_func()
+        return scoring_func(model_inputs)[0].numpy()

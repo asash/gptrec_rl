@@ -4,10 +4,11 @@ from collections import defaultdict
 
 INF = float('inf')
 class FilterSeenRecommender(Recommender):
-    def __init__(self, recommender):
+    def __init__(self, recommender, extra_items=200):
         super().__init__()
         self.recommender = recommender
         self.user_seen = defaultdict(set)
+        self.extra_items=extra_items
 
     def name(self):
         return self.recommender.name() + "FilterSeen"
@@ -55,6 +56,17 @@ class FilterSeenRecommender(Recommender):
         metadata['proxy_model'] = 'filter_seen_recommender'
         return metadata
 
+    def recommend_batch(self, recommendation_requests, limit):
+        raw_result = self.recommender.recommend_batch(recommendation_requests, limit + self.extra_items)
+        results = []
+        for (req, recs) in zip(recommendation_requests, raw_result):
+            filtered = filter(lambda item_score: item_score[0] not in self.user_seen[req[0]], recs)
+            results.append(list(filtered)[:limit])
+        return results
+
+
+
+            
 
     def  set_out_dir(self, out_dir):
         self.recommender.set_out_dir(out_dir)

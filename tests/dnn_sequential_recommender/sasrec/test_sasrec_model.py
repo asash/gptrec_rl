@@ -19,7 +19,22 @@ class TestSasrecModel(unittest.TestCase):
         recommender = FilterSeenRecommender(recommender)
         for action in generator_limit(get_movielens20m_actions(), 10000):
             recommender.add_action(action)
+
         recommender.rebuild_model()
+
+        batch2 = [(str(i), None) for i in range(1, 25)]
+        batch_result = recommender.recommend_batch(batch2, 10)
+        one_by_one_result = []
+        for user_id, features in batch2:
+            one_by_one_result.append(recommender.recommend(user_id, 10))
+        for i in range(len(batch2)):
+            for j in range(len(batch_result[i])):
+                batch_item, batch_score = batch_result[i][j]
+                one_by_one_item, one_by_one_score = one_by_one_result[i][j]
+                self.assertEquals(batch_item, one_by_one_item)
+                self.assertAlmostEquals(batch_score, one_by_one_score, places=3)
+
+
         recs = recommender.recommend(USER_ID, 10)
         print(recs)
 
