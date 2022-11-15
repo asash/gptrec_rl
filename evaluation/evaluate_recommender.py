@@ -1,6 +1,6 @@
 import copy
 import gzip
-import json
+import ujson
 import os
 import random
 import sys
@@ -65,16 +65,15 @@ def evaluate_recommender(recommender, test_actions,
 
         user_docs.append(user_doc)
     
-
     mkdir_p(f"{out_dir}/predictions/")
     predictions_filename = f"{out_dir}/predictions/{recommender_name}.json.gz"
+    print("saving recommendations...")
     with gzip.open(predictions_filename, "w") as output:
-        for user_doc in user_docs:
+        for user_doc in tqdm(user_docs,ascii=True, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}'):
             try:
-                output.write(json.dumps(user_doc).encode("utf-8") + b"\n")
+                output.write(ujson.dumps(user_doc).encode("utf-8") + b"\n")
             except:
                 pass
-
  
     result = {}
     sampled_result = {}

@@ -32,15 +32,15 @@ def dnn(model_arch, loss, sequence_splitter,
     return DNNSequentialRecommender(train_epochs=max_epochs, loss=loss,
                                                           model_arch=model_arch,
                                                           optimizer=optimizer,
-                                                          early_stop_epochs=100,
-                                                          batch_size=128,
+                                                          batch_size=1024,
+                                                          max_batches_per_epoch=48,
+                                                          early_stop_epochs=max_epochs,
                                                           training_time_limit=training_time_limit,
                                                           sequence_splitter=sequence_splitter, 
                                                           targets_builder=target_builder, 
                                                           val_sequence_splitter = val_sequence_splitter,
                                                           metric=metric,
-                                                          debug=False
-                                                          )
+                                                          debug=False)
 HISTORY_LEN=50
 
 recommenders = {

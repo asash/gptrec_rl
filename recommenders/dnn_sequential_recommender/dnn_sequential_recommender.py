@@ -306,8 +306,10 @@ class DNNSequentialRecommender(Recommender):
         list(map(self.process_item_ranking_request, user_ids, predictions))
         best_predictions = tf.math.top_k(predictions, k=limit)
         result = []
+        ind = best_predictions.indices.numpy()
+        vals = best_predictions.values.numpy()
         for i in range(len(user_ids)):
-            result.append(list(zip(self.decode_item_ids(best_predictions.indices[i]), best_predictions.values[i].numpy())))
+            result.append(list(zip(self.decode_item_ids(ind[i]), vals[i])))
         return result
 
     def decode_item_ids(self, ids):
