@@ -202,7 +202,7 @@ class RecommendersEvaluator(object):
             evaluation_result['model_inference_time'] = evaluate_time_end - evaluate_time_start
             evaluation_result['model_metadata'] = copy.deepcopy(recommender.get_metadata())
             print("done")
-            print(json.dumps(evaluation_result))
+            print(ujson.dumps(evaluation_result))
             result_queue.put(evaluation_result)
 
             for callback in self.callbacks:

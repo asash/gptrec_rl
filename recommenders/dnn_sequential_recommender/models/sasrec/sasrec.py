@@ -204,7 +204,7 @@ class OwnSasrecModel(keras.Model):
     def call(self, inputs,  **kwargs):
         input_ids = inputs[0]
         training = kwargs['training']
-        seq_emb, attentions = self.get_seq_embedding(input_ids, training)
+        seq_emb, attentions = self.get_seq_embedding(input_ids, bs=self.batch_size, training=training)
 
         if self.vanilla or (self.sampled_target is not None):
             target_ids = inputs[1]
@@ -245,10 +245,12 @@ class OwnSasrecModel(keras.Model):
             target_embeddings = self.output_item_embeddings_encode(target_embeddings)
         return target_embeddings
 
-    def get_seq_embedding(self, input_ids, training=None):
+    def get_seq_embedding(self, input_ids, bs=None, training=None):
         seq = self.item_embeddings_layer(input_ids)
         mask = tf.expand_dims(tf.cast(tf.not_equal(input_ids, self.num_items), dtype=tf.float32), -1)
-        positions  = tf.tile(self.positions, [seq.shape[0], 1])
+        if bs is None:
+            bs = seq.shape[0]
+        positions  = tf.tile(self.positions, [bs, 1])
         if training and self.pos_smoothing:
             smoothing = tf.random.normal(shape=positions.shape, mean=0, stddev=self.pos_smoothing)
             positions =  tf.maximum(0, smoothing + tf.cast(positions, 'float32'))

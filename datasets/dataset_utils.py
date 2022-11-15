@@ -2,8 +2,10 @@ from collections import Counter
 import gzip
 import logging
 import os
+import mmh3
 
-from aprec.utils.os_utils import get_dir, mkdir_p, mkdir_p_local, shell
+from aprec.utils.os_utils import get_dir, mkdir_p, shell
+
 
 
 def filter_popular_items(actions_generator, max_actions):
@@ -22,6 +24,9 @@ def filter_cold_users(actions_generator, min_actions_per_user = 0):
         actions.append(action)
         user_counter[action.user_id] += 1
     return filter(lambda action: user_counter[action.user_id] >= min_actions_per_user, actions)
+
+def take_user_fraction(actions_generator, fraction):
+    return filter(lambda action: abs(mmh3.hash(action.user_id) / 2**31) < fraction, actions_generator)
 
 def unzip(zipped_file, unzip_dir):
     full_dir_name = os.path.join(get_dir(), unzip_dir)

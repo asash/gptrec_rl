@@ -11,7 +11,7 @@ from aprec.datasets.gowalla import get_gowalla_dataset
 from aprec.datasets.netflix import get_netflix_dataset
 from aprec.datasets.yelp import get_yelp_dataset
 from aprec.datasets.mts_kion import get_mts_kion_dataset
-from aprec.datasets.dataset_utils import filter_cold_users
+from aprec.datasets.dataset_utils import filter_cold_users, take_user_fraction 
 from aprec.utils.os_utils import mkdir_p_local
 
 class DatasetsRegister(object):
@@ -34,20 +34,30 @@ class DatasetsRegister(object):
         "booking_warm5": lambda: filter_cold_users(get_booking_dataset(unix_timestamps=True, mark_control=False)[0], 5), 
         "gowalla_warm5": lambda: filter_cold_users(get_gowalla_dataset(), 5), 
         "yelp_warm5": lambda: filter_cold_users(get_yelp_dataset(), 5),
-        "netflix_warm5": lambda: filter_cold_users(DatasetsRegister.read_from_cache("netflix"), 5), 
+        "netflix_warm5": lambda: filter_cold_users(DatasetsRegister.get_from_cache("netflix")(), 5), 
         "mts_kion_warm5": lambda: filter_cold_users(get_mts_kion_dataset(), 5),
+
 
         "ml-20m_warm10": lambda: filter_cold_users(get_movielens20m_actions(min_rating=0.0), 10), 
         "booking_warm10": lambda: filter_cold_users(get_booking_dataset(unix_timestamps=True, mark_control=False)[0], 10), 
         "gowalla_warm10": lambda: filter_cold_users(get_gowalla_dataset(), 10), 
         "yelp_warm10": lambda: filter_cold_users(get_yelp_dataset(), 10),
-        "netflix_warm10": lambda: filter_cold_users(DatasetsRegister.read_from_cache("netflix"), 10), 
-    }
+        "netflix_warm10": lambda: filter_cold_users(DatasetsRegister.get_from_cache("netflix")(), 10), 
 
+
+        "ml-20m_warm5_fraction_0.01": lambda: take_user_fraction(DatasetsRegister.get_from_cache("ml-20m_warm5")(), 0.01), 
+        "ml-20m_warm5_fraction_0.001": lambda: take_user_fraction(DatasetsRegister.get_from_cache("ml-20m_warm5")(), 0.001), 
+    }
+    
     @staticmethod
-    def get_from_cache(dataset_id):
+    def get_dataset_file(dataset_id):
         cache_dir = mkdir_p_local(DatasetsRegister.DATA_DIR)
         dataset_file = os.path.join(cache_dir, dataset_id + ".pickle")
+        return dataset_file
+ 
+    @staticmethod
+    def get_from_cache(dataset_id):
+        dataset_file = DatasetsRegister.get_dataset_file(dataset_id)
         if not os.path.isfile(dataset_file):
             DatasetsRegister.cache_dataset(dataset_file, dataset_id)
         return lambda: DatasetsRegister.read_from_cache(dataset_file)
