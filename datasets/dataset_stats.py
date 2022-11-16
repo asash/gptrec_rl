@@ -39,6 +39,20 @@ def max_session_len(users, items, session_lens):
 def p80_session_len(user, items, session_lens):
     return float(np.percentile(session_lens, 80))
 
+def at_least_50_actions(user, items, session_lens):
+    n = len(list(filter(lambda l: l>=50, session_lens)))
+    return n
+
+def at_least_20_actions(user, items, session_lens):
+    n = len(list(filter(lambda l: l>=20, session_lens)))
+    return n
+
+def at_least_10_actions(user, items, session_lens):
+    n = len(list(filter(lambda l: l>=10, session_lens)))
+    return n
+
+
+
 def sparsity(users, items, session_lens):
     sum_interacted = 0
     for user in users:
@@ -55,6 +69,9 @@ all_metrics = {
     "min_session_len": min_session_len, 
     "max_session_len": max_session_len, 
     "p80_session_len": p80_session_len,
+    "at_least_50_actions": at_least_50_actions,
+    "at_least_20_actions": at_least_20_actions,
+    "at_least_10_actions": at_least_10_actions,
     "sparsity": sparsity 
 }
 
