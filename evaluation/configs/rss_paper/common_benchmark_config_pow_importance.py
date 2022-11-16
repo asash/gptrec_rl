@@ -40,6 +40,7 @@ def dnn(model_arch, loss, sequence_splitter,
                                                           targets_builder=target_builder, 
                                                           val_sequence_splitter = val_sequence_splitter,
                                                           metric=metric,
+                                                          data_generator_processes=4,
                                                           debug=False)
 HISTORY_LEN=50
 
