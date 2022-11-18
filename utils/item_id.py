@@ -1,4 +1,5 @@
 from collections import Counter, defaultdict
+from pathlib import PosixPath
 
 
 class ItemId(object):
@@ -26,4 +27,20 @@ class ItemId(object):
     def reverse_id(self, id):
         return self.reverse[id] 
 
-
+    def save(self, file_name):
+        with open(file_name, "w") as output:
+            for item in self.straight:
+                output.write(f"{item} {self.straight[item]}\n")
+    
+    @staticmethod
+    def load(file_name):
+        straight, reverse = {}, {}
+        for line in open(file_name):
+            external, internal = line.rstrip().split(" ")
+            internal = int(internal)
+            straight[external] = internal 
+            reverse[internal] = external
+        result = ItemId()
+        result.straight = straight
+        result.reverse = reverse
+        return result

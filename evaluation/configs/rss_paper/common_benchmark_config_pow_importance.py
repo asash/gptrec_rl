@@ -45,7 +45,7 @@ def dnn(model_arch, loss, sequence_splitter,
 HISTORY_LEN=50
 
 recommenders = {
-    f"Sasrec-rss-lambdarank-pow:{p}": lambda: dnn(
+    f"Sasrec-rss-lambdarank-pow:{p}": lambda p=p: dnn(
             SASRec(max_history_len=HISTORY_LEN, vanilla=False),
             LambdaGammaRankLoss(pred_truncate_at=4000),
             lambda: RecencySequenceSampling(0.2, pow_importance(p)),

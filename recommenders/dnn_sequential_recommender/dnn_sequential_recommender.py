@@ -22,9 +22,6 @@ from aprec.losses.bce import BCELoss
 
 from tensorflow.keras.optimizers import Adam
 
-import numpy as np
-
-
 class DNNSequentialRecommender(Recommender):
     def __init__(self, model_arch: SequentialRecsysModel, loss: Loss = BCELoss(),
                  train_epochs=300, optimizer=Adam(),

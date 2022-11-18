@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import subprocess
 import shlex
 import logging
@@ -25,6 +26,7 @@ def shell(cmd):
 
 def mkdir_p(dir_path):
     shell("mkdir -p {}".format(dir_path))
+    return Path(dir_path)
 
 def mkdir_p_local(relative_dir_path):
     """create folder inside of library if does not exists"""
