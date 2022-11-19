@@ -50,7 +50,7 @@ recommenders = {
             LambdaGammaRankLoss(pred_truncate_at=4000),
             lambda: RecencySequenceSampling(0.2, pow_importance(p)),
             target_builder=FullMatrixTargetsBuilder, 
-    ) for p in [-2, -1, 0, 1, 1.5, 1.75, 2, 2.25, 2.5, 3, 4, 5, 6]
+    ) for p in [4, 5, 6]
 }
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
