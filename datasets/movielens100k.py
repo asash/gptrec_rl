@@ -4,9 +4,11 @@ import logging
 from aprec.utils.os_utils import get_dir, console_logging, shell
 from aprec.api.action import Action
 from aprec.datasets.download_file import download_file
+from requests.exceptions import ConnectionError
 
 DATASET_NAME = 'ml-100k'
 MOVIELENS_URL = "http://files.grouplens.org/datasets/movielens/{}.zip".format(DATASET_NAME)
+MOVIELENS_BACKUP_URL = "https://web.archive.org/web/20220128015818/https://files.grouplens.org/datasets/movielens/ml-100k.zip"
 MOVIELENS_DIR = "data/movielens100k"
 MOVIELENS_FILE = "movielens.zip"
 MOVIELENS_FILE_ABSPATH = os.path.join(get_dir(), MOVIELENS_DIR, MOVIELENS_FILE)
@@ -26,7 +28,11 @@ def extract_movielens_dataset():
 
 
 def prepare_data():
-    download_file(MOVIELENS_URL,  MOVIELENS_FILE, MOVIELENS_DIR)
+    try:
+        download_file(MOVIELENS_URL,  MOVIELENS_FILE, MOVIELENS_DIR)
+    except ConnectionError:
+        download_file(MOVIELENS_BACKUP_URL,  MOVIELENS_FILE, MOVIELENS_DIR)
+        
     extract_movielens_dataset()
 
 
