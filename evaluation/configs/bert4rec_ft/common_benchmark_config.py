@@ -31,7 +31,8 @@ def bert4rec_ft(negatives_sampler=SVDSimilaritySampler(), use_ann=False):
         metric.set_batch_size(batch_size)
         recommender = DNNSequentialRecommender(model, train_epochs=100000, early_stop_epochs=200,
                                                batch_size=batch_size,
-                                               training_time_limit=3600000, 
+                                             #  training_time_limit=3600000, 
+                                               training_time_limit=10, 
                                                loss = ItemsMaksingLossProxy(BCELoss(), negatives_per_positive, sequence_len),
                                                debug=True, sequence_splitter=lambda: ItemsMasking(), 
                                                targets_builder= lambda: ItemsMaskingWithNegativesTargetsBuilder(negatives_sampler=negatives_sampler),
@@ -39,6 +40,7 @@ def bert4rec_ft(negatives_sampler=SVDSimilaritySampler(), use_ann=False):
                                                metric=metric,
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
                                                max_batches_per_epoch=24,
+                                               eval_batch_size=256,
                                                use_ann_for_inference=use_ann)
         return recommender
 
