@@ -100,7 +100,7 @@ recommenders = {
 }
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
-TARGET_ITEMS_SAMPLER = PopTargetItemsSampler(101)
+#TARGET_ITEMS_SAMPLER = PopTargetItemsSampler(101)
 
 def get_recommenders(filter_seen: bool):
     result = {}
