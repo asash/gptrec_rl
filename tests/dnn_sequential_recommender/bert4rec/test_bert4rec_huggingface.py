@@ -36,7 +36,8 @@ class TestOwnBERT4rec(unittest.TestCase):
         USER_ID = '120'
 
         val_users = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
-        model = BERT4Rec(embedding_size=32)
+        embedding_size=32
+        model = BERT4Rec(embedding_size=embedding_size)
         recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=50000,
                                                batch_size=5,
                                                training_time_limit=10, 
@@ -70,6 +71,9 @@ class TestOwnBERT4rec(unittest.TestCase):
                 one_by_one_item, one_by_one_score = one_by_one_result[i][j]
                 self.assertEquals(batch_item, one_by_one_item)
                 self.assertAlmostEquals(batch_score, one_by_one_score, places=4)
+
+        embedding_matrix = model.get_embwedding_matrix()
+        self.assertEqual(embedding_matrix.shape, (model.items.size(), self.embedding_size))
 
         recs = recommender.recommend(USER_ID, 10)
         catalog = get_movies_catalog()

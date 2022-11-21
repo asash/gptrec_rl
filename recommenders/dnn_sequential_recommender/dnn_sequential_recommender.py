@@ -19,6 +19,7 @@ from aprec.recommenders.dnn_sequential_recommender.data_generator.data_generator
 from aprec.recommenders.dnn_sequential_recommender.models.sequential_recsys_model import SequentialRecsysModel
 from aprec.losses.loss import Loss
 from aprec.losses.bce import BCELoss
+import faiss
 
 from tensorflow.keras.optimizers import Adam
 
@@ -36,8 +37,8 @@ class DNNSequentialRecommender(Recommender):
                  data_generator_processes = 8, 
                  data_generator_queue_size = 16,
                  max_batches_per_epoch=10,
-                 eval_batch_size = 1024
-                 ):
+                 eval_batch_size = 1024, 
+                 use_ann_for_inference = False):
         super().__init__()
         self.model_arch = model_arch
         self.users = ItemId()
@@ -72,6 +73,7 @@ class DNNSequentialRecommender(Recommender):
         #we use following two dicts for sampled metrics
         self.item_ranking_requrests = {}
         self.item_ranking_results = {}
+        self.use_ann_for_inference = use_ann_for_inference
 
     def get_metadata(self):
         return self.metadata
@@ -183,6 +185,16 @@ class DNNSequentialRecommender(Recommender):
                          f"val_{self.metric.__name__}_history": val_metric_history}
         print(self.get_metadata())
         print(f"taken best model from epoch{best_epoch}. best_val_{self.metric.__name__}: {best_metric_val}")
+        if self.use_ann_for_inference:
+            self.build_ann_index()
+    
+    def build_ann_index(self):
+        embedding_matrix = self.model.get_embedding_matrix().numpy()
+        self.index = faiss.IndexFlatIP(embedding_matrix.shape[-1])
+        self.index.add(embedding_matrix)
+        pass
+         
+        
 
     def pass_parameters(self):
         self.loss.set_num_items(self.items.size())
@@ -258,11 +270,17 @@ class DNNSequentialRecommender(Recommender):
         return model
 
     def recommend(self, user_id, limit, features=None):
-        scores = self.get_all_item_scores(user_id)
-        if user_id in self.item_ranking_requrests:
-            self.process_item_ranking_request(user_id, scores)
-        best_ids = tf.nn.top_k(scores, limit).indices.numpy()
-        result = [(self.items.reverse_id(id), scores[id]) for id in best_ids]
+        if self.use_ann_for_inference:
+            model_inputs = self.get_model_inputs(user_id) 
+            user_emb = self.model.get_sequence_embeddings([model_inputs]).numpy()
+            scores, items = self.index.search(user_emb, limit)
+            result = [(self.items.reverse_id(items[0][i]), scores[0][i]) for i in range(len(items[0]))]
+        else:    
+            scores = self.get_all_item_scores(user_id)
+            if user_id in self.item_ranking_requrests:
+                self.process_item_ranking_request(user_id, scores)
+            best_ids = tf.nn.top_k(scores, limit).indices.numpy()
+            result = [(self.items.reverse_id(id), scores[id]) for id in best_ids]
         return result
 
     def get_item_rankings(self):
@@ -298,13 +316,17 @@ class DNNSequentialRecommender(Recommender):
         user_ids = [user_id for user_id, features in recommendation_requets]
         model_inputs = list(map(lambda id: self.get_model_inputs(id)[0], user_ids))
         model_inputs = tf.concat(model_inputs, 0)
-        scoring_func = self.get_scoring_func()
-        predictions = scoring_func([model_inputs])
-        list(map(self.process_item_ranking_request, user_ids, predictions))
-        best_predictions = tf.math.top_k(predictions, k=limit)
         result = []
-        ind = best_predictions.indices.numpy()
-        vals = best_predictions.values.numpy()
+        if not(self.use_ann_for_inference):
+            scoring_func = self.get_scoring_func()
+            predictions = scoring_func([model_inputs])
+            list(map(self.process_item_ranking_request, user_ids, predictions))
+            best_predictions = tf.math.top_k(predictions, k=limit)
+            ind = best_predictions.indices.numpy()
+            vals = best_predictions.values.numpy()
+        else:
+            embs =  self.model.get_sequence_embeddings([model_inputs]).numpy()
+            vals, ind = self.index.search(embs, limit)
         for i in range(len(user_ids)):
             result.append(list(zip(self.decode_item_ids(ind[i]), vals[i])))
         return result

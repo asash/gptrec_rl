@@ -65,9 +65,18 @@ class BERT4RecFTModel(Model):
         result = tf.einsum("ijk,ijmk->ijm", bert_output[0], emb_matrix)
         result = self.output_layer_activation(result)
         return result
-
-    def score_all_items(self, inputs):
+    
+    def get_embedding_matrix(self):
+        return self.bert.embeddings.weight[:-3,:]
+    
+    def get_sequence_embeddings(self, inputs):
         sequence = inputs[0] 
         bert_output = self.bert(sequence, position_ids=self.position_ids_for_pred)[0][:,-1,:]             
-        result = tf.einsum("ij,kj->ki", self.bert.embeddings.weight, bert_output)
-        return result[:,:-3]
+        return bert_output
+ 
+
+    def score_all_items(self, inputs): 
+        embedding_matrix = self.get_embedding_matrix()
+        sequence_embeddings = self.get_sequence_embeddings(inputs)
+        result = tf.einsum("ij,kj->ki", embedding_matrix, sequence_embeddings)
+        return result
