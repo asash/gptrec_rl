@@ -33,15 +33,13 @@ def bert4rec_ft(negatives_sampler=SVDSimilaritySampler(), use_ann=False):
                                                batch_size=batch_size,
                                                training_time_limit=3600000, 
                                                loss = ItemsMaksingLossProxy(BCELoss(), negatives_per_positive, sequence_len),
-                                               debug=False, sequence_splitter=lambda: ItemsMasking(), 
+                                               debug=True, sequence_splitter=lambda: ItemsMasking(), 
                                                targets_builder= lambda: ItemsMaskingWithNegativesTargetsBuilder(negatives_sampler=negatives_sampler),
                                                val_sequence_splitter=lambda: ItemsMasking(force_last=True),
                                                metric=metric,
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
                                                max_batches_per_epoch=24,
-                                               use_ann_for_inference=use_ann, 
-                                               debug=True
-                                               )
+                                               use_ann_for_inference=use_ann)
         return recommender
 
 def regular_bert4rec():
