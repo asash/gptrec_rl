@@ -95,8 +95,8 @@ def lightfm_recommender(k=256, loss='bpr'):
 
 
 recommenders = {
-   "BERT4RecScaleRandom400": lambda: bert4rec_ft(RandomNegativesSampler(400, use_ann=False)),
-   "BERT4RecScaleRandom400": lambda: bert4rec_ft(RandomNegativesSampler(400, use_ann=True)),
+   "BERT4RecScaleRandom400": lambda: bert4rec_ft(RandomNegativesSampler(400), use_ann=False),
+   "BERT4RecScaleRandom400": lambda: bert4rec_ft(RandomNegativesSampler(400), use_ann=True),
 }
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
