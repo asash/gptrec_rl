@@ -9,7 +9,6 @@ from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_samp
 from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_samplers.random_negatives_sampler import RandomNegativesSampler
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
-from aprec.recommenders.first_order_mc import FirstOrderMarkovChainRecommender
 from aprec.recommenders.lightfm import LightFMRecommender
 from aprec.recommenders.top_recommender import TopRecommender
 
@@ -40,7 +39,9 @@ def bert4rec_ft(negatives_sampler=SVDSimilaritySampler(), use_ann=False):
                                                metric=metric,
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
                                                max_batches_per_epoch=24,
-                                               use_ann_for_inference=use_ann)
+                                               use_ann_for_inference=use_ann, 
+                                               debug=True
+                                               )
         return recommender
 
 def regular_bert4rec():
@@ -95,8 +96,8 @@ def lightfm_recommender(k=256, loss='bpr'):
 
 
 recommenders = {
-   "BERT4RecScaleRandom400": lambda: bert4rec_ft(RandomNegativesSampler(400), use_ann=False),
-   "BERT4RecScaleRandom400": lambda: bert4rec_ft(RandomNegativesSampler(400), use_ann=True),
+   "BERT4RecScaleRandom400noANN": lambda: bert4rec_ft(RandomNegativesSampler(400), use_ann=False),
+   "BERT4RecScaleRandom400ANN": lambda: bert4rec_ft(RandomNegativesSampler(400), use_ann=True),
 }
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
