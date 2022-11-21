@@ -95,7 +95,7 @@ def lightfm_recommender(k=256, loss='bpr'):
 
 
 recommenders = {
-   "BERT4RecScaleRandom400noANN": lambda: bert4rec_ft(RandomNegativesSampler(400), use_ann=False),
+#   "BERT4RecScaleRandom400noANN": lambda: bert4rec_ft(RandomNegativesSampler(400), use_ann=False),
    "BERT4RecScaleRandom400ANN": lambda: bert4rec_ft(RandomNegativesSampler(400), use_ann=True),
 }
 
