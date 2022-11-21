@@ -16,7 +16,7 @@ from aprec.recommenders.top_recommender import TopRecommender
 USERS_FRACTIONS = [1.0]
 
 
-def bert4rec_ft(negatives_sampler=SVDSimilaritySampler()):
+def bert4rec_ft(negatives_sampler=SVDSimilaritySampler(), use_ann=False):
         from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
         from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
         from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
@@ -39,8 +39,8 @@ def bert4rec_ft(negatives_sampler=SVDSimilaritySampler()):
                                                val_sequence_splitter=lambda: ItemsMasking(force_last=True),
                                                metric=metric,
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
-                                               max_batches_per_epoch=24
-                                               )
+                                               max_batches_per_epoch=24,
+                                               use_ann_for_inference=use_ann)
         return recommender
 
 def regular_bert4rec():
@@ -95,30 +95,8 @@ def lightfm_recommender(k=256, loss='bpr'):
 
 
 recommenders = {
-   "FirstOrderMC": FirstOrderMarkovChainRecommender,
-   "Popularity": top_recommender,
-   "MF-BPR": lightfm_recommender,
-   "BERT4Rec": regular_bert4rec,
-   "BERT4RecScaleRandom1": lambda: bert4rec_ft(RandomNegativesSampler(1)),
-   "BERT4RecScaleRandom4": lambda: bert4rec_ft(RandomNegativesSampler(4)),
-   "BERT4RecScaleRandom64": lambda: bert4rec_ft(RandomNegativesSampler(64)),
-   "BERT4RecScaleRandom256": lambda: bert4rec_ft(RandomNegativesSampler(256)),
-   "BERT4RecScaleRandom1024": lambda: bert4rec_ft(RandomNegativesSampler(1024)),
-
-   "BERT4RecScalePopularity1": lambda: bert4rec_ft(PopularityBasedSampler(1)),
-   "BERT4RecScalePopularity4": lambda: bert4rec_ft(PopularityBasedSampler(4)),
-   "BERT4RecScalePopularity64": lambda: bert4rec_ft(PopularityBasedSampler(64)),
-   "BERT4RecScalePopularity256": lambda: bert4rec_ft(PopularityBasedSampler(256)),
-   "BERT4RecScalePopularity1024": lambda: bert4rec_ft(PopularityBasedSampler(1024)),
-
-   "BERT4RecScaleSVD1": lambda: bert4rec_ft(SVDSimilaritySampler(1)),
-   "BERT4RecScaleSVD4": lambda: bert4rec_ft(SVDSimilaritySampler(4)),
-   "BERT4RecScaleSVD64": lambda: bert4rec_ft(SVDSimilaritySampler(64)),
-   "BERT4RecScaleSVD256": lambda: bert4rec_ft(SVDSimilaritySampler(256)),
-   "BERT4RecScaleSVD1024": lambda: bert4rec_ft(SVDSimilaritySampler(1024)),
-
-
-
+   "BERT4RecScaleRandom400": lambda: bert4rec_ft(RandomNegativesSampler(400, use_ann=False)),
+   "BERT4RecScaleRandom400": lambda: bert4rec_ft(RandomNegativesSampler(400, use_ann=True)),
 }
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
