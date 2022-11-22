@@ -1,3 +1,4 @@
+import gc
 import time
 from collections import defaultdict
 import tensorflow as tf
@@ -19,6 +20,8 @@ from aprec.recommenders.dnn_sequential_recommender.data_generator.data_generator
 from aprec.recommenders.dnn_sequential_recommender.models.sequential_recsys_model import SequentialRecsysModel
 from aprec.losses.loss import Loss
 from aprec.losses.bce import BCELoss
+import tensorflow.keras.backend as K
+import tensorflow as tf
 import faiss
 
 from tensorflow.keras.optimizers import Adam
@@ -187,6 +190,9 @@ class DNNSequentialRecommender(Recommender):
         print(f"taken best model from epoch{best_epoch}. best_val_{self.metric.__name__}: {best_metric_val}")
         if self.use_ann_for_inference:
             self.build_ann_index()
+        gc.collect()
+        K.clear_session()
+        tf.compat.v1.reset_default_graph()
     
     def build_ann_index(self):
         embedding_matrix = self.model.get_embedding_matrix().numpy()
@@ -244,6 +250,9 @@ class DNNSequentialRecommender(Recommender):
             val_loss_sum += loss_val
             num_val_samples += y_true.shape[0]
         val_metric = val_metric_sum / num_batches
+        gc.collect()
+        K.clear_session()
+        tf.compat.v1.reset_default_graph()
         return float(val_metric)
 
     def train_epoch_prod(self, generator, val_generator):
