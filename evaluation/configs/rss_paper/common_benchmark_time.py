@@ -86,7 +86,7 @@ def vanilla_sasrec():
             )
 
 def sasrec_lambdarank_time(time):
-    lambda time=time: dnn(
+    return lambda time=time: dnn(
             SASRec(max_history_len=HISTORY_LEN, vanilla=False),
                     LambdaGammaRankLoss(pred_truncate_at=4000),
                     lambda: RecencySequenceSampling(0.2, exponential_importance(0.8)),
