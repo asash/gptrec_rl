@@ -101,7 +101,7 @@ recommenders = {
 #            "Sasrec-rss-lambdarank-8m": sasrec_lambdarank_time(60*8),
 #            "Sasrec-rss-lambdarank-16m": sasrec_lambdarank_time(60*16),
 #            "Sasrec-rss-lambdarank-30m": sasrec_lambdarank_time(60*30),
-            "Sasrec-rss-lambdarank-1h": sasrec_lambdarank_time(3600),
+#            "Sasrec-rss-lambdarank-1h": sasrec_lambdarank_time(3600),
             "Sasrec-rss-lambdarank-2h": sasrec_lambdarank_time(3600*2),
             "Sasrec-rss-lambdarank-4h": sasrec_lambdarank_time(3600*4),
             "Sasrec-rss-lambdarank-8h": sasrec_lambdarank_time(3600*8),
