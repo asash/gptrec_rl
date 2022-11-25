@@ -112,7 +112,7 @@ class TwoBERTsModel(Model):
         reranker_candidate_embs = tf.gather(self.bert_reranker.embeddings.weight, candidates)
 
         reranker_sequence_embedding = self.bert_reranker(sequence, position_ids=self.position_ids_for_pred).last_hidden_state[:,-1]
-        reranker_scores = tf.einsum("bce, be -> bc", reranker_candidate_embs, reranker_sequence_embedding)
+        reranker_scores = tf.sigmoid(tf.einsum("bce, be -> bc", reranker_candidate_embs, reranker_sequence_embedding))
         batch_size= sequence.shape[0] 
         batch_indices = tf.reshape(tf.tile(tf.expand_dims(tf.range(batch_size), 1), [1, self.num_samples]),
                                         (self.num_samples * batch_size, 1))
