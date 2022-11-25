@@ -101,12 +101,13 @@ def two_berts(relative_position_encoding=False, num_samples=200, sequence_len=20
         from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
         model = TwoBERTS(max_history_len=sequence_len, num_samples=num_samples, embedding_size=256)
         recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=100000,
-                                               batch_size=256,
+                                               batch_size=64,
                                                training_time_limit=3600 * 5, 
                                                loss = MeanPredLoss(),
                                                sequence_splitter=lambda: ItemsMasking(masking_prob=masking_prob, max_predictions_per_seq=max_predictions_per_seq), 
                                                targets_builder= lambda: ItemsMaskingTargetsBuilder(relative_positions_encoding=relative_position_encoding),
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
+                                               max_batches_per_epoch=48,
                                                )
         return recommender
 
