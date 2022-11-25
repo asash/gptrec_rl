@@ -92,17 +92,17 @@ def top_recommender():
 def lightfm_recommender(k=256, loss='bpr'):
     return LightFMRecommender(k, loss, num_threads=32)
 
-def two_berts(relative_position_encoding=False, num_samples=200, sequence_len=50, masking_prob=0.2, max_predictions_per_seq=20):
+def two_berts(relative_position_encoding=False, num_samples=200, sequence_len=200, masking_prob=0.2, max_predictions_per_seq=20):
         from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
         from aprec.recommenders.dnn_sequential_recommender.models.bert4recft.two_berts import TwoBERTS
         from aprec.losses.mean_ypred_ploss import MeanPredLoss
         from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
         from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
         from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
-        model = TwoBERTS( max_history_len=sequence_len, num_samples=num_samples)
-        recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=200,
-                                               batch_size=64,
-                                               training_time_limit=3600000, 
+        model = TwoBERTS(max_history_len=sequence_len, num_samples=num_samples, embedding_size=256)
+        recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=100000,
+                                               batch_size=256,
+                                               training_time_limit=3600 * 5, 
                                                loss = MeanPredLoss(),
                                                sequence_splitter=lambda: ItemsMasking(masking_prob=masking_prob, max_predictions_per_seq=max_predictions_per_seq), 
                                                targets_builder= lambda: ItemsMaskingTargetsBuilder(relative_positions_encoding=relative_position_encoding),
