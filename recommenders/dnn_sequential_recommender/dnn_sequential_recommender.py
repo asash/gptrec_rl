@@ -4,7 +4,9 @@ from collections import defaultdict
 import tensorflow as tf
 
 from tqdm import tqdm
+from aprec.api.action import Action
 from aprec.api.items_ranking_request import ItemsRankingRequest
+from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.default_history_vectorizer import DefaultHistoryVectrizer
 from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.history_vectorizer import HistoryVectorizer
 from aprec.recommenders.dnn_sequential_recommender.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
@@ -30,17 +32,17 @@ class DNNSequentialRecommender(Recommender):
     def __init__(self, model_arch: SequentialRecsysModel, loss: Loss = BCELoss(),
                  train_epochs=300, optimizer=Adam(),
                  sequence_splitter:TargetSplitter = RandomFractionSplitter, 
-                 val_sequence_splitter:TargetSplitter = SequenceContinuation,
                  targets_builder: TargetBuilder = FullMatrixTargetsBuilder,
                  batch_size=1000, early_stop_epochs=100, target_decay=1.0,
-                 training_time_limit=None, debug=False,
-                 metric = KerasNDCG(40), 
+                 training_time_limit=None,
                  train_history_vectorizer:HistoryVectorizer = DefaultHistoryVectrizer(), 
                  pred_history_vectorizer:HistoryVectorizer = DefaultHistoryVectrizer(),
                  data_generator_processes = 8, 
                  data_generator_queue_size = 16,
                  max_batches_per_epoch=10,
                  eval_batch_size = 1024, 
+                 val_rec_limit=40,
+                 val_metric = NDCG(40),
                  use_ann_for_inference = False):
         super().__init__()
         self.model_arch = model_arch
@@ -63,9 +65,6 @@ class DNNSequentialRecommender(Recommender):
         self.users_with_actions = set()
         self.sequence_splitter = sequence_splitter
         self.targets_builder = targets_builder()
-        self.debug = debug
-        self.metric = metric 
-        self.val_sequence_splitter = val_sequence_splitter
         self.train_history_vectorizer = train_history_vectorizer
         self.pred_history_vectorizer = pred_history_vectorizer
         self.data_generator_processes = data_generator_processes
@@ -76,6 +75,8 @@ class DNNSequentialRecommender(Recommender):
         #we use following two dicts for sampled metrics
         self.item_ranking_requrests = {}
         self.item_ranking_results = {}
+        self.val_rec_limit = val_rec_limit
+        self.val_metric = val_metric
         self.use_ann_for_inference = use_ann_for_inference
 
     def get_metadata(self):
@@ -109,26 +110,26 @@ class DNNSequentialRecommender(Recommender):
     def sort_actions(self):
         for user_id in self.user_actions:
             self.user_actions[user_id].sort()
+            
+    def get_val_ground_truth(self):
+        result = []
+        for user_id in self.val_users:
+            last_action = self.user_actions[self.users.get_id(user_id)][-1]
+            user_result = Action(user_id=user_id, item_id=self.items.reverse_id(last_action[1]), timestamp=last_action[0])
+            result.append([user_result])
+        return result
 
     def rebuild_model(self):
         self.sort_actions()
         self.pass_parameters()
-        train_users, val_users = self.train_val_split()
+        train_users = self.train_val_split()
+        self.val_recommendation_requets = [(user_id, None) for user_id in self.val_users]
+        self.val_ground_truth = self.get_val_ground_truth()
         self.targets_builder.set_n_items(self.items.size())
         self.targets_builder.set_train_sequences(train_users)
-        print("train_users: {}, val_users:{}, items:{}".format(len(train_users), len(val_users), self.items.size()))
-
-        val_generator = DataGenerator(val_users, 
-                                      self.model_arch.max_history_length,
-                                      self.items.size(),
-                                      self.train_history_vectorizer,
-                                      batch_size=self.batch_size,
-                                      sequence_splitter=self.val_sequence_splitter, 
-                                      targets_builder=self.targets_builder,
-                                      shuffle_data=False)
-
-        self.model = self.get_model(val_generator)
-        if self.metric.less_is_better:
+        print("train_users: {}, val_users:{}, items:{}".format(len(train_users), len(self.val_users), self.items.size()))
+        self.model = self.get_model()
+        if self.val_metric.less_is_better:
             best_metric_val = float('inf')
         else:
             best_metric_val = float('-inf')
@@ -138,10 +139,6 @@ class DNNSequentialRecommender(Recommender):
         best_weights = self.model.get_weights()
         val_metric_history = []
         start_time = time.time()
-
-        if not self.debug:
-            self.model.compile(optimizer=self.optimizer, loss=self.loss, metrics=[self.metric])
-
 
         data_generator_async_factory = DataGeneratorAsyncFactory(self.data_generator_processes, self.data_generator_queue_size,
                                       train_users,
@@ -157,22 +154,21 @@ class DNNSequentialRecommender(Recommender):
 
 
         for epoch in range(self.train_epochs):
-            val_generator.reset_iterator()
             generator = data_generator_async_factory.next_generator() 
             print(f"epoch: {epoch}")
-            val_metric = self.train_epoch(generator, val_generator)
+            val_metric = self.train_epoch(generator)
 
             total_trainig_time = time.time() - start_time
             val_metric_history.append((total_trainig_time, val_metric))
 
             steps_since_improved += 1
-            if (self.metric.less_is_better and val_metric < best_metric_val) or\
-                        (not self.metric.less_is_better and val_metric > best_metric_val):
+            if (self.val_metric.less_is_better and val_metric < best_metric_val) or\
+                        (not self.val_metric.less_is_better and val_metric > best_metric_val):
                 steps_since_improved = 0
                 best_metric_val = val_metric
                 best_epoch = epoch
                 best_weights = self.model.get_weights()
-            print(f"val_{self.metric.__name__}: {val_metric:.5f}, best_{self.metric.__name__}: {best_metric_val:.5f}, steps_since_improved: {steps_since_improved},"
+            print(f"val_{self.val_metric.name}: {val_metric:.5f}, best_{self.val_metric.name}: {best_metric_val:.5f}, steps_since_improved: {steps_since_improved},"
                   f" total_training_time: {total_trainig_time}")
             if steps_since_improved >= self.early_stop_epochs:
                 print(f"early stopped at epoch {epoch}")
@@ -184,10 +180,10 @@ class DNNSequentialRecommender(Recommender):
 
         data_generator_async_factory.close()
         self.model.set_weights(best_weights)
-        self.metadata = {"epochs_trained": best_epoch + 1, f"best_val_{self.metric.__name__}": best_metric_val,
-                         f"val_{self.metric.__name__}_history": val_metric_history}
+        self.metadata = {"epochs_trained": best_epoch + 1, f"best_val_{self.val_metric.name}": best_metric_val,
+                         f"val_{self.val_metric.name}_history": val_metric_history}
         print(self.get_metadata())
-        print(f"taken best model from epoch{best_epoch}. best_val_{self.metric.__name__}: {best_metric_val}")
+        print(f"taken best model from epoch{best_epoch}. best_val_{self.val_metric.name}: {best_metric_val}")
         if self.use_ann_for_inference:
             self.build_ann_index()
         gc.collect()
@@ -200,8 +196,6 @@ class DNNSequentialRecommender(Recommender):
         self.index.add(embedding_matrix)
         pass
          
-        
-
     def pass_parameters(self):
         self.loss.set_num_items(self.items.size())
         self.loss.set_batch_size(self.batch_size)
@@ -213,13 +207,7 @@ class DNNSequentialRecommender(Recommender):
     def add_test_items_ranking_request(self, request: ItemsRankingRequest):
         self.item_ranking_requrests[request.user_id] = request 
 
-    def train_epoch(self, generator, val_generator):
-        if not self.debug:
-            return self.train_epoch_prod(generator, val_generator)
-        else:
-            return self.train_epoch_debug(generator, val_generator)
-
-    def train_epoch_debug(self, generator, val_generator):
+    def train_epoch(self, generator):
         pbar = tqdm(generator, ascii=True, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}' )
         variables = self.model.variables
         loss_sum = 0
@@ -232,50 +220,27 @@ class DNNSequentialRecommender(Recommender):
                 loss_val = tf.reduce_mean(self.loss(y_true, y_pred))
             grad = tape.gradient(loss_val, variables)
             self.optimizer.apply_gradients(zip(grad, variables))
-            metric = self.metric(y_true, y_pred)
             loss_sum += loss_val
-            metric_sum += metric
-            pbar.set_description(f"loss: {loss_sum/num_batches:.5f}, "
-                                 f"{self.metric.__name__}: {metric_sum/num_batches:.5f}")
-        val_loss_sum = 0
-        val_metric_sum = 0
-        num_val_samples = 0
-        num_batches = 0
-        for X, y_true in val_generator:
-            num_batches += 1
-            y_pred = self.model(X)
-            loss_val = self.loss(y_true, y_pred)
-            metric = self.metric(y_true, y_pred)
-            val_metric_sum += metric
-            val_loss_sum += loss_val
-            num_val_samples += y_true.shape[0]
-        val_metric = val_metric_sum / num_batches
-        gc.collect()
-        K.clear_session()
-        tf.compat.v1.reset_default_graph()
-        return float(val_metric)
-
-    def train_epoch_prod(self, generator, val_generator):
-        train_history = self.model.fit(generator, validation_data=val_generator)
-        return train_history.history[f"val_{self.metric.__name__}"][-1]
+            pbar.set_description(f"loss: {loss_sum/num_batches:.5f}")
+        val_recs = self.recommend_batch(self.val_recommendation_requets, self.val_rec_limit, is_val=True)
+        metric_sum = 0.0
+        for rec, truth in zip(val_recs, self.val_ground_truth):
+            metric_sum += self.val_metric(rec, truth) 
+        result = metric_sum / len(val_recs)
+        return result 
 
     def train_val_split(self):
         all_user_ids = self.users_with_actions
         val_user_ids = [self.users.get_id(val_user) for val_user in self.val_users]
         train_user_ids = list(all_user_ids)
-        val_users = self.user_actions_by_id_list(val_user_ids)
         train_users = self.user_actions_by_id_list(train_user_ids, val_user_ids)
-        return train_users, val_users
+        return train_users
 
-    def get_model(self, val_generator):
+    def get_model(self):
         self.model_arch.set_common_params(num_items=self.items.size(),
                                           num_users=self.users.size(),
                                           batch_size=self.batch_size)
         model = self.model_arch.get_model()
-
-        #call the model first time in order to build it
-        X, y = val_generator[0]
-        model(X)
         return model
 
     def recommend(self, user_id, limit, features=None):
@@ -312,8 +277,11 @@ class DNNSequentialRecommender(Recommender):
         user_result.sort(key = lambda x: -x[1])
         self.item_ranking_results[user_id] = user_result
     
-    def get_model_inputs(self, user_id):
-        actions = self.user_actions[self.users.get_id(user_id)]
+    def get_model_inputs(self, user_id, is_val=False):
+        if not is_val:
+            actions = self.user_actions[self.users.get_id(user_id)]
+        else:
+            actions = self.user_actions[self.users.get_id(user_id)][:-1]
         items_list = [action[1] for action in actions]
         model_actions = [(0, action) for action in items_list]
         session = self.pred_history_vectorizer(model_actions)
@@ -321,9 +289,9 @@ class DNNSequentialRecommender(Recommender):
         model_inputs = [session]
         return model_inputs
     
-    def recommend_multiple(self, recommendation_requets, limit):
+    def recommend_multiple(self, recommendation_requets, limit, is_val=False):
         user_ids = [user_id for user_id, features in recommendation_requets]
-        model_inputs = list(map(lambda id: self.get_model_inputs(id)[0], user_ids))
+        model_inputs = list(map(lambda id: self.get_model_inputs(id, is_val)[0], user_ids))
         model_inputs = tf.concat(model_inputs, 0)
         result = []
         if not(self.use_ann_for_inference):
@@ -346,7 +314,7 @@ class DNNSequentialRecommender(Recommender):
             result.append(self.items.reverse_id(int(id)))
         return result
 
-    def recommend_batch(self, recommendation_requests, limit):
+    def recommend_batch(self, recommendation_requests, limit, is_val=False):
         results = []
         start = 0
         end = min(start + self.eval_batch_size, len(recommendation_requests))
@@ -354,7 +322,7 @@ class DNNSequentialRecommender(Recommender):
         pbar = tqdm(total = len(recommendation_requests), ascii=True, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}')
         while (start < end):
             req = recommendation_requests[start:end]
-            results += self.recommend_multiple(req, limit)
+            results += self.recommend_multiple(req, limit, is_val)
             pbar.update(end - start)
             start = end  
             end = min(start + self.eval_batch_size, len(recommendation_requests))

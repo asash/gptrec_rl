@@ -22,13 +22,10 @@ class TestTwoBerts(unittest.TestCase):
                                                batch_size=5,
                                                training_time_limit=10, 
                                                loss = MeanPredLoss(),
-                                               debug=True, sequence_splitter=lambda: ItemsMasking(), 
+                                               sequence_splitter=lambda: ItemsMasking(), 
                                                targets_builder= lambda: ItemsMaskingTargetsBuilder(relative_positions_encoding=True),
-                                               val_sequence_splitter=lambda: ItemsMasking(force_last=True),
-                                               metric=MeanPredLoss(), 
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
-                                               eval_batch_size=8
-                                               )
+                                               eval_batch_size=8)
         recommender.set_val_users(val_users)
         recommender = FilterSeenRecommender(recommender)
         for action in generator_limit(get_movielens20m_actions(), 10000):
