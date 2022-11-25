@@ -104,7 +104,7 @@ def two_berts(relative_position_encoding=False, num_samples=200, sequence_len=50
                                                batch_size=64,
                                                training_time_limit=3600000, 
                                                loss = MeanPredLoss(),
-                                               debug=True, sequence_splitter=lambda: ItemsMasking(masking_prob=masking_prob, max_predictions_per_seq=max_predictions_per_seq), 
+                                               sequence_splitter=lambda: ItemsMasking(masking_prob=masking_prob, max_predictions_per_seq=max_predictions_per_seq), 
                                                targets_builder= lambda: ItemsMaskingTargetsBuilder(relative_positions_encoding=relative_position_encoding),
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
                                                )
