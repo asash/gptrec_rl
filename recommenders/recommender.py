@@ -11,6 +11,7 @@ class Recommender():
     def __init__(self):
         self.items_ranking_requests = []
         self.val_users = set() 
+        self.tensorboard_dir=None
 
     def name(self):
         raise NotImplementedError
@@ -67,6 +68,10 @@ class Recommender():
     #the directory where the recommender can save stuff, like logs
     def set_out_dir(self, out_dir):
         self.out_dir = out_dir
+    
+    #recommenders may save tensorboard logs there
+    def set_tensorboard_dir(self, tensorboard_dir):
+        self.tensorboard_dir = tensorboard_dir
 
     def get_metadata(self):
         return {}

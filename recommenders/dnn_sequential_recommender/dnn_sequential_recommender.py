@@ -1,4 +1,5 @@
 import gc
+import tempfile
 import time
 from collections import defaultdict
 import tensorflow as tf
@@ -120,6 +121,9 @@ class DNNSequentialRecommender(Recommender):
         return result
 
     def rebuild_model(self):
+        tensorboard_dir = self.get_tensorboard_dir()
+        print(f"writing tensorboard logs to {tensorboard_dir}")
+        self.tensorboard_writer = tf.summary.create_file_writer(tensorboard_dir)
         self.sort_actions()
         self.pass_parameters()
         train_users = self.train_val_split()
@@ -156,7 +160,7 @@ class DNNSequentialRecommender(Recommender):
         for epoch in range(self.train_epochs):
             generator = data_generator_async_factory.next_generator() 
             print(f"epoch: {epoch}")
-            val_metric = self.train_epoch(generator)
+            train_loss, val_metric = self.train_epoch(generator)
 
             total_trainig_time = time.time() - start_time
             val_metric_history.append((total_trainig_time, val_metric))
@@ -170,6 +174,12 @@ class DNNSequentialRecommender(Recommender):
                 best_weights = self.model.get_weights()
             print(f"val_{self.val_metric.name}: {val_metric:.5f}, best_{self.val_metric.name}: {best_metric_val:.5f}, steps_since_improved: {steps_since_improved},"
                   f" total_training_time: {total_trainig_time}")
+            with self.tensorboard_writer.as_default(step=(epoch + 1)*self.max_batches_per_epoch*self.batch_size):
+                tf.summary.scalar(f"val_{self.val_metric.name}", val_metric)
+                tf.summary.scalar(f"best_{self.val_metric.name}", best_metric_val)
+                tf.summary.scalar(f"evaluations_without_improvement", steps_since_improved)
+                tf.summary.scalar(f"loss", train_loss)
+                
             if steps_since_improved >= self.early_stop_epochs:
                 print(f"early stopped at epoch {epoch}")
                 break
@@ -226,8 +236,9 @@ class DNNSequentialRecommender(Recommender):
         metric_sum = 0.0
         for rec, truth in zip(val_recs, self.val_ground_truth):
             metric_sum += self.val_metric(rec, truth) 
-        result = metric_sum / len(val_recs)
-        return result 
+        train_loss = loss_sum/num_batches
+        val_metric = metric_sum / len(val_recs)
+        return train_loss, val_metric 
 
     def train_val_split(self):
         all_user_ids = self.users_with_actions
@@ -307,6 +318,12 @@ class DNNSequentialRecommender(Recommender):
         for i in range(len(user_ids)):
             result.append(list(zip(self.decode_item_ids(ind[i]), vals[i])))
         return result
+    
+    def get_tensorboard_dir(self):
+        if self.tensorboard_dir is not None:
+            return self.tensorboard_dir
+        else:
+            return tempfile.mkdtemp()
 
     def decode_item_ids(self, ids):
         result = []

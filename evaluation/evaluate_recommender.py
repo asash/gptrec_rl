@@ -15,6 +15,7 @@ from aprec.utils.os_utils import mkdir_p
 from aprec.evaluation.filter_cold_start import filter_cold_start
 from aprec.evaluation.evaluation_utils import group_by_user
 from multiprocessing_on_dill.context import ForkProcess, ForkContext
+from tensorboard import program
 
 def evaluate_recommender(recommender, test_actions,
                          metrics, out_dir, recommender_name,
@@ -22,6 +23,9 @@ def evaluate_recommender(recommender, test_actions,
                          recommendations_limit=900,
                          evaluate_on_samples = False,
                          ):
+    tensorboard_dir = f"{out_dir}/tensorboard/{recommender_name}"
+    mkdir_p(tensorboard_dir)
+    recommender.set_tensorboard_dir(tensorboard_dir)
 
     test_actions_by_user = group_by_user(test_actions)
     metric_sum = defaultdict(lambda: 0.0)
@@ -110,6 +114,13 @@ class RecommendersEvaluator(object):
         self.data_splitter = data_splitter
         self.callbacks = callbacks
         self.out_dir = out_dir
+        tensorboard_dir = f"{out_dir}/tensorboard/"
+        mkdir_p(tensorboard_dir)
+        tb = program.TensorBoard()
+        tb.configure(argv=[None, '--logdir', tensorboard_dir])
+        url = tb.launch()
+        print(f"TensorBoard is listening listening on {url}")
+
         self.features_from_test = None
         self.n_val_users = n_val_users
         print("splitting actions...")
@@ -168,7 +179,10 @@ class RecommendersEvaluator(object):
             sys.stdout.write("!!!!!!!!!   ")
             print("evaluating {}".format(recommender_name))
             recommender = self.recommenders[recommender_name]()
+            tensorboard_dir = f"{self.out_dir}/tensorboard/{recommender_name}"
+            mkdir_p(tensorboard_dir)
             recommender.set_out_dir(self.out_dir)
+            recommender.set_tensorboard_dir(tensorboard_dir)
             print("adding train actions...")
             for action in tqdm(self.train, ascii=True):
                 recommender.add_action(action)

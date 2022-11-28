@@ -64,9 +64,8 @@ class FilterSeenRecommender(Recommender):
             results.append(list(filtered)[:limit])
         return results
 
-
-
-            
+    def set_tensorboard_dir(self, tensorboard_dir):
+        self.recommender.set_tensorboard_dir(tensorboard_dir)
 
     def  set_out_dir(self, out_dir):
         self.recommender.set_out_dir(out_dir)
