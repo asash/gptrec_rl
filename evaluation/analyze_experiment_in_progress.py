@@ -47,7 +47,7 @@ def parse_experiment(experiment_log):
                 metrics = []
                 experiment_finished = False
                 epoch = 0
-            if 'val_ndcg_at_' in line:
+            if ('val_ndcg_at_' in line) or ('val_ndcg@' in line):
                     epoch += 1
                     epoch_metrics = get_metrics(line)
                     epoch_metrics['epoch'] = epoch
