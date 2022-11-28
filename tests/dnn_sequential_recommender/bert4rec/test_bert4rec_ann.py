@@ -26,18 +26,14 @@ class TestOwnBERT4rec(unittest.TestCase):
         n_targets = negatives_per_positive
         if add_positive:
             n_targets += 1
-        metric = ItemsMaksingLossProxy(KerasNDCG(n_targets), negatives_per_positive, sequence_len, add_positive=add_positive)
-        metric.set_batch_size(batch_size)
         recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=50000,
                                                batch_size=batch_size,
                                                training_time_limit=5, 
                                                loss = ItemsMaksingLossProxy(LambdaGammaRankLoss(), negatives_per_positive, sequence_len, add_positive=add_positive),
-                                               debug=True, sequence_splitter=lambda: ItemsMasking(), 
+                                               sequence_splitter=lambda: ItemsMasking(), 
                                                targets_builder= lambda: ItemsMaskingWithNegativesTargetsBuilder(relative_positions_encoding=True, 
                                                                                  add_positive=add_positive,                               
                                                                                  negatives_sampler=RandomNegativesWithCosSimValues(negatives_per_positive)),
-                                               val_sequence_splitter=lambda: ItemsMasking(force_last=True),
-                                               metric=metric,
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
                                                max_batches_per_epoch=5,
                                                use_ann_for_inference=True)

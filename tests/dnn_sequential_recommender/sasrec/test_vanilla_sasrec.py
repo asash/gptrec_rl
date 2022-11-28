@@ -17,9 +17,8 @@ class TestVanillaSasrec(unittest.TestCase):
         recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=50000,
                                                batch_size=5,
                                                training_time_limit=10, 
-                                               debug=True, sequence_splitter=ShiftedSequenceSplitter, 
+                                               sequence_splitter=ShiftedSequenceSplitter, 
                                                targets_builder=NegativePerPositiveTargetBuilder,
-                                               metric=BCELoss()
                                                )
         recommender.set_val_users(val_users)
         recommender = FilterSeenRecommender(recommender)

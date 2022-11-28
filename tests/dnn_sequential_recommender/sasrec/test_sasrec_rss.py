@@ -10,19 +10,15 @@ from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_spl
 from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import RecencySequenceSampling, exponential_importance
 
 def dnn(model_arch, loss, sequence_splitter, 
-                val_sequence_splitter, 
                 target_builder,
                 training_time_limit=5,  
                 max_epochs=10000, 
-                metric = None, 
                 pred_history_vectorizer = DefaultHistoryVectrizer()
                 ):
     from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
 
     from tensorflow.keras.optimizers import Adam
     from aprec.recommenders.metrics.ndcg import KerasNDCG
-    if metric is None:
-        metric=KerasNDCG(40)
     optimizer=Adam(beta_2=0.98)
     return DNNSequentialRecommender(train_epochs=max_epochs, loss=loss,
                                                           model_arch=model_arch,
@@ -32,22 +28,17 @@ def dnn(model_arch, loss, sequence_splitter,
                                                           training_time_limit=training_time_limit,
                                                           sequence_splitter=sequence_splitter, 
                                                           targets_builder=target_builder, 
-                                                          val_sequence_splitter = val_sequence_splitter,
-                                                          metric=metric,
                                                           pred_history_vectorizer=pred_history_vectorizer,
-                                                          debug=True
                                                           )
 
 def sasrec_rss(recency_importance, add_cls=False):
         target_splitter = lambda: RecencySequenceSampling(0.2, exponential_importance(recency_importance), add_cls=add_cls)
-        val_splitter = lambda: SequenceContinuation(add_cls=add_cls)
         pred_history_vectorizer = AddMaskHistoryVectorizer() if add_cls else DefaultHistoryVectrizer()
         return dnn(
             SASRec(max_history_len=50, vanilla=False, 
                    num_heads=1, pos_emb_comb='ignore', pos_embedding='exp', causal_attention=False,
                    pos_smoothing=1),
             LambdaGammaRankLoss(pred_truncate_at=1000),
-            val_sequence_splitter=val_splitter,
             sequence_splitter=target_splitter,
             target_builder=FullMatrixTargetsBuilder, 
             pred_history_vectorizer=pred_history_vectorizer

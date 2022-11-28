@@ -50,18 +50,13 @@ def vanilla_bert4rec(time_limit):
 HISTORY_LEN=50
 
 def dnn(model_arch, loss, sequence_splitter, 
-                val_sequence_splitter, 
                 target_builder,
                 training_time_limit=3600,  
                 max_epochs=10000, 
-                metric = None, 
                 pred_history_vectorizer = DefaultHistoryVectrizer()):
     from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
 
     from tensorflow.keras.optimizers import Adam
-    from aprec.recommenders.metrics.ndcg import KerasNDCG
-    if metric is None:
-        metric=KerasNDCG(40)
     optimizer=Adam(beta_2=0.98)
     return DNNSequentialRecommender(train_epochs=max_epochs, loss=loss,
                                                           model_arch=model_arch,
@@ -72,17 +67,13 @@ def dnn(model_arch, loss, sequence_splitter,
                                                           training_time_limit=training_time_limit,
                                                           sequence_splitter=sequence_splitter, 
                                                           targets_builder=target_builder, 
-                                                          val_sequence_splitter = val_sequence_splitter,
-                                                          metric=metric,
-                                                          pred_history_vectorizer=pred_history_vectorizer,
-                                                          debug=True)
+                                                          pred_history_vectorizer=pred_history_vectorizer)
 
 def sasrec_rss(recency_importance, add_cls=False, pos_smoothing=0,
                pos_embedding='default', pos_embeddding_comb='add', 
                causal_attention = True
                ):
         target_splitter = lambda: RecencySequenceSampling(0.2, exponential_importance(recency_importance), add_cls=add_cls)
-        val_splitter = lambda: SequenceContinuation(add_cls=add_cls)
         pred_history_vectorizer = AddMaskHistoryVectorizer() if add_cls else DefaultHistoryVectrizer()
         return dnn(
             SASRec(max_history_len=HISTORY_LEN, vanilla=False, num_heads=1, 
@@ -93,7 +84,6 @@ def sasrec_rss(recency_importance, add_cls=False, pos_smoothing=0,
                    embedding_size=64),
             LambdaGammaRankLoss(pred_truncate_at=4000),
             sequence_splitter=target_splitter,
-            val_sequence_splitter=val_splitter,
             target_builder=FullMatrixTargetsBuilder, 
             pred_history_vectorizer=pred_history_vectorizer)
 
@@ -102,9 +92,7 @@ def vanilla_sasrec():
 
     return dnn(model_arch,  BCELoss(),
             ShiftedSequenceSplitter,
-            target_builder=lambda: NegativePerPositiveTargetBuilder(HISTORY_LEN), 
-            val_sequence_splitter=SequenceContinuation,
-            metric=BCELoss())
+            target_builder=lambda: NegativePerPositiveTargetBuilder(HISTORY_LEN))
 
 
 

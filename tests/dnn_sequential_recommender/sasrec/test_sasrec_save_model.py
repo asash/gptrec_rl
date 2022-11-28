@@ -16,7 +16,7 @@ def train_model(conn):
        def gen_model():
                return DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=50000,
                                               batch_size=5,
-                                              training_time_limit=3, debug=True, sequence_splitter=SequenceContinuation)
+                                              training_time_limit=3, sequence_splitter=SequenceContinuation)
            
        recommender = gen_model()
 

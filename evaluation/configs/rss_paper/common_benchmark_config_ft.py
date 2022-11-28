@@ -34,10 +34,8 @@ def bert4rec_ft(negatives_sampler=SVDSimilaritySampler()):
                                                batch_size=batch_size,
                                                training_time_limit=3600000, 
                                                loss = ItemsMaksingLossProxy(BCELoss(), negatives_per_positive, sequence_len),
-                                               debug=False, sequence_splitter=lambda: ItemsMasking(), 
+                                               sequence_splitter=lambda: ItemsMasking(), 
                                                targets_builder= lambda: ItemsMaskingWithNegativesTargetsBuilder(negatives_sampler=negatives_sampler),
-                                               val_sequence_splitter=lambda: ItemsMasking(force_last=True),
-                                               metric=metric,
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
                                                max_batches_per_epoch=24
                                                )
@@ -56,10 +54,8 @@ def regular_bert4rec():
                                                batch_size=64,
                                                training_time_limit=3600000, 
                                                loss = MeanPredLoss(),
-                                               debug=False, sequence_splitter=lambda: ItemsMasking(), 
+                                               sequence_splitter=lambda: ItemsMasking(), 
                                                targets_builder= lambda: ItemsMaskingTargetsBuilder(),
-                                               val_sequence_splitter=lambda: ItemsMasking(force_last=True),
-                                               metric=MeanPredLoss(), 
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
                                                max_batches_per_epoch=100, 
                                                )
@@ -78,11 +74,9 @@ def vanilla_sasrec():
                                                training_time_limit=3600000, 
                                                optimizer=Adam(beta_2=0.98),
                                                loss = BCELoss(),
-                                               debug=False, sequence_splitter=ShiftedSequenceSplitter, 
+                                               sequence_splitter=ShiftedSequenceSplitter, 
                                                targets_builder= lambda: NegativePerPositiveTargetBuilder(sequence_len),
-                                               val_sequence_splitter=ShiftedSequenceSplitter,
                                                max_batches_per_epoch=100, 
-                                               metric=BCELoss(), 
                                                )
         return recommender
 

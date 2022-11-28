@@ -63,7 +63,7 @@ class MatrixFactorizationRecommender(Recommender):
         result = []
         for idx in range(len(recommendation_requests)):
             request_result = []
-            for item_id, score in zip(predictions.indices[idx][0], predictions.values[idx][0]):
+            for item_id, score in zip(predictions.indices[idx], predictions.values[idx]):
                 request_result.append((self.items.reverse_id(int(item_id)), float(score)))
             result.append(request_result)
         return result

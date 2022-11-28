@@ -39,17 +39,12 @@ def lightfm_recommender(k, loss):
 
 
 def dnn(model_arch, loss, sequence_splitter, 
-                val_sequence_splitter=SequenceContinuation, 
                  target_builder=FullMatrixTargetsBuilder,
                 training_time_limit=3600,  
-                max_epochs=10000, 
-                metric = None):
+                max_epochs=10000):
     from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
 
     from tensorflow.keras.optimizers import Adam
-    from aprec.recommenders.metrics.ndcg import KerasNDCG
-    if metric is None:
-        metric=KerasNDCG(40)
     optimizer=Adam(beta_2=0.98)
     return DNNSequentialRecommender(train_epochs=max_epochs, loss=loss,
                                                           model_arch=model_arch,
@@ -59,9 +54,6 @@ def dnn(model_arch, loss, sequence_splitter,
                                                           training_time_limit=training_time_limit,
                                                           sequence_splitter=sequence_splitter, 
                                                           targets_builder=target_builder, 
-                                                          val_sequence_splitter = val_sequence_splitter,
-                                                          metric=metric,
-                                                          debug=False
                                                           )
 
 def vanilla_bert4rec(time_limit):

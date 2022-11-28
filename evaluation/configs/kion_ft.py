@@ -48,16 +48,12 @@ def bert4rec_ft(negatives_sampler=SVDSimilaritySampler(sample_size=400)):
         model = BERT4RecFT(max_history_len=sequence_len)
         batch_size = 256 
         negatives_per_positive = negatives_sampler.get_sample_size()
-        metric = ItemsMaksingLossProxy(BCELoss(), negatives_per_positive, sequence_len)
-        metric.set_batch_size(batch_size)
         recommender = DNNSequentialRecommender(model, train_epochs=100000, early_stop_epochs=200,
                                                batch_size=batch_size,
                                                training_time_limit=3600000, 
                                                loss = ItemsMaksingLossProxy(BCELoss(), negatives_per_positive, sequence_len),
-                                               debug=False, sequence_splitter=lambda: ItemsMasking(), 
+                                               sequence_splitter=lambda: ItemsMasking(), 
                                                targets_builder= lambda: ItemsMaskingWithNegativesTargetsBuilder(negatives_sampler=RandomNegativesSampler(negatives_per_positive)),
-                                               val_sequence_splitter=lambda: ItemsMasking(force_last=True),
-                                               metric=metric,
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
                                                max_batches_per_epoch=24
                                                )

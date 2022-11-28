@@ -42,10 +42,8 @@ class TestOwnBERT4rec(unittest.TestCase):
                                                batch_size=5,
                                                training_time_limit=10, 
                                                loss = MeanPredLoss(),
-                                               debug=True, sequence_splitter=lambda: ItemsMasking(), 
+                                               sequence_splitter=lambda: ItemsMasking(), 
                                                targets_builder= lambda: ItemsMaskingTargetsBuilder(relative_positions_encoding=True),
-                                               val_sequence_splitter=lambda: ItemsMasking(force_last=True),
-                                               metric=MeanPredLoss(), 
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
                                                eval_batch_size=8
                                                )
@@ -71,9 +69,6 @@ class TestOwnBERT4rec(unittest.TestCase):
                 one_by_one_item, one_by_one_score = one_by_one_result[i][j]
                 self.assertEquals(batch_item, one_by_one_item)
                 self.assertAlmostEquals(batch_score, one_by_one_score, places=4)
-
-        embedding_matrix = model.get_embwedding_matrix()
-        self.assertEqual(embedding_matrix.shape, (model.items.size(), self.embedding_size))
 
         recs = recommender.recommend(USER_ID, 10)
         catalog = get_movies_catalog()

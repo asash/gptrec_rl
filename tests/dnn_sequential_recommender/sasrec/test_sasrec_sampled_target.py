@@ -17,7 +17,7 @@ class TestSasrecSampledTarget(unittest.TestCase):
         recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=50000,
                                                batch_size=5,
                                                training_time_limit=7, 
-                                               debug=True, sequence_splitter=SequenceContinuation, 
+                                               sequence_splitter=SequenceContinuation, 
                                                targets_builder=SampledMatrixBuilder)
         recommender.set_val_users(val_users)
         recommender = FilterSeenRecommender(recommender)

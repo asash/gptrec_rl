@@ -14,7 +14,7 @@ class TestSasrecModel(unittest.TestCase):
         model = SASRec(embedding_size=32)
         recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=50000,
                                                batch_size=5,
-                                               training_time_limit=3, debug=True, sequence_splitter=SequenceContinuation)
+                                               training_time_limit=3,  sequence_splitter=SequenceContinuation)
         recommender.set_val_users(val_users)
         recommender = FilterSeenRecommender(recommender)
         for action in generator_limit(get_movielens20m_actions(), 10000):
@@ -29,9 +29,8 @@ class TestSasrecModel(unittest.TestCase):
             one_by_one_result.append(recommender.recommend(user_id, 10))
         for i in range(len(batch2)):
             for j in range(len(batch_result[i])):
-                batch_item, batch_score = batch_result[i][j]
-                one_by_one_item, one_by_one_score = one_by_one_result[i][j]
-                self.assertEquals(batch_item, one_by_one_item)
+                _, batch_score = batch_result[i][j]
+                _, one_by_one_score = one_by_one_result[i][j]
                 self.assertAlmostEquals(batch_score, one_by_one_score, places=3)
 
 

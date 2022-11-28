@@ -294,7 +294,7 @@ class DNNSequentialRecommender(Recommender):
         model_inputs = list(map(lambda id: self.get_model_inputs(id, is_val)[0], user_ids))
         model_inputs = tf.concat(model_inputs, 0)
         result = []
-        if not(self.use_ann_for_inference):
+        if is_val or not(self.use_ann_for_inference):
             scoring_func = self.get_scoring_func()
             predictions = scoring_func([model_inputs])
             list(map(self.process_item_ranking_request, user_ids, predictions))

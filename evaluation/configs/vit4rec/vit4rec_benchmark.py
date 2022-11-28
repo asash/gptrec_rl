@@ -21,7 +21,6 @@ def vit4rec(rss_alpha, loss_str ):
     from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
     from aprec.recommenders.metrics.ndcg import KerasNDCG
     model_arch= Vit4Rec()
-    val_sequence_splitter=SequenceContinuation 
     if loss_str == 'bce':
         loss=BCELoss()
     elif loss_str == 'lambdarank':
@@ -30,7 +29,6 @@ def vit4rec(rss_alpha, loss_str ):
     target_builder=FullMatrixTargetsBuilder
     optimizer=Adam(beta_2=0.98)
     training_time_limit=360000 
-    metric=KerasNDCG(40) 
     max_epochs=10000
 
     return DNNSequentialRecommender(train_epochs=max_epochs, loss=loss,
@@ -41,9 +39,6 @@ def vit4rec(rss_alpha, loss_str ):
                                                           training_time_limit=training_time_limit,
                                                           sequence_splitter=sequence_splitter, 
                                                           targets_builder=target_builder, 
-                                                          val_sequence_splitter = val_sequence_splitter,
-                                                          metric=metric,
-                                                          debug=False, 
                                                           max_batches_per_epoch=128,
                                                           )
 

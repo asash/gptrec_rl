@@ -44,10 +44,8 @@ def bert4rec(relative_position_encoding, sequence_len=50, rss = lambda n, k: 1, 
                                                batch_size=128,
                                                training_time_limit=3600000, 
                                                loss = MeanPredLoss(),
-                                               debug=True, sequence_splitter=lambda: ItemsMasking(masking_prob=masking_prob, recency_importance=rss), 
+                                               sequence_splitter=lambda: ItemsMasking(masking_prob=masking_prob, recency_importance=rss), 
                                                targets_builder= lambda: ItemsMaskingTargetsBuilder(relative_positions_encoding=relative_position_encoding),
-                                               val_sequence_splitter=lambda: ItemsMasking(force_last=True),
-                                               metric=MeanPredLoss(), 
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
                                                )
         return recommender
