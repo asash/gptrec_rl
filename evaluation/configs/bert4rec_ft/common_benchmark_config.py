@@ -3,6 +3,8 @@ from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.evaluation.metrics.mrr import MRR
 from aprec.evaluation.metrics.map import MAP
 from aprec.evaluation.metrics.hit import HIT
+from aprec.losses.bce import BCELoss
+from aprec.losses.softmax_crossentropy import SoftmaxCrossEntropy
 from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_samplers import SVDSimilaritySampler
 from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_samplers.popularity_based_sampler import PopularityBasedSampler
 from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_samplers.random_negatives_sampler import RandomNegativesSampler
@@ -14,28 +16,23 @@ from aprec.recommenders.top_recommender import TopRecommender
 USERS_FRACTIONS = [1.0]
 
 
-def bert4rec_ft(negatives_sampler=SVDSimilaritySampler(), use_ann=False):
+def bert4rec_ft(negatives_sampler, loss, use_ann=False):
         from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
         from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
         from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
         from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_with_negatives import ItemsMaskingWithNegativesTargetsBuilder
         from aprec.recommenders.dnn_sequential_recommender.models.bert4recft.bert4recft import BERT4RecFT
-        from aprec.losses.bce import BCELoss
         from aprec.losses.items_masking_loss_proxy import ItemsMaksingLossProxy
         sequence_len = 100
         model = BERT4RecFT(max_history_len=sequence_len)
         batch_size = 256 
         negatives_per_positive = negatives_sampler.get_sample_size()
-        metric = ItemsMaksingLossProxy(BCELoss(), negatives_per_positive, sequence_len)
-        metric.set_batch_size(batch_size)
         recommender = DNNSequentialRecommender(model, train_epochs=100000, early_stop_epochs=200,
                                                batch_size=batch_size,
                                                training_time_limit=3600000, 
-                                               loss = ItemsMaksingLossProxy(BCELoss(), negatives_per_positive, sequence_len),
-                                               debug=True, sequence_splitter=lambda: ItemsMasking(), 
+                                               loss = ItemsMaksingLossProxy(loss, negatives_per_positive, sequence_len),
+                                               sequence_splitter=lambda: ItemsMasking(), 
                                                targets_builder= lambda: ItemsMaskingWithNegativesTargetsBuilder(negatives_sampler=negatives_sampler),
-                                               val_sequence_splitter=lambda: ItemsMasking(force_last=True),
-                                               metric=metric,
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
                                                max_batches_per_epoch=24,
                                                eval_batch_size=128,
@@ -112,9 +109,8 @@ def two_berts(relative_position_encoding=False, num_samples=200, sequence_len=20
         return recommender
 
 recommenders = {
-#   "BERT4RecScaleRandom400noANN": lambda: bert4rec_ft(RandomNegativesSampler(400), use_ann=False),
-#   "BERT4RecScaleRandom400ANN": lambda: bert4rec_ft(RandomNegativesSampler(400), use_ann=True),
-    "two_berts": two_berts
+   "BERT4RecScaleRandom400BCE": lambda: bert4rec_ft(RandomNegativesSampler(400), BCELoss()),
+   "BERT4RecScaleRandom400SoftMaxCE": lambda: bert4rec_ft(RandomNegativesSampler(400), SoftmaxCrossEntropy()),
 }
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
