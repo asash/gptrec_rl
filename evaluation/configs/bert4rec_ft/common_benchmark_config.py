@@ -109,8 +109,8 @@ def two_berts(relative_position_encoding=False, num_samples=200, sequence_len=20
         return recommender
 
 recommenders = {
-   "BERT4RecScaleRandom400BCE": lambda: bert4rec_ft(RandomNegativesSampler(400), BCELoss()),
    "BERT4RecScaleRandom400SoftMaxCE": lambda: bert4rec_ft(RandomNegativesSampler(400), SoftmaxCrossEntropy()),
+   "BERT4RecScaleRandom400BCE": lambda: bert4rec_ft(RandomNegativesSampler(400), BCELoss()),
 }
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
