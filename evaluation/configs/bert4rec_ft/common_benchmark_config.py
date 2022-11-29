@@ -63,9 +63,9 @@ def full_bert(loss, num_samples_normalization=False, batch_size=256):
 
 
 recommenders = {
+   "BERT4RecFullSoftMaxCENormalized": lambda: full_bert(SoftmaxCrossEntropy(), num_samples_normalization=True),
    "BERT4RecFullLambdaGammmaRankNormalized": lambda: full_bert(LambdaGammaRankLoss(pred_truncate_at=1024, bce_grad_weight=0.5), batch_size=64, num_samples_normalization=True),
    "BERT4RecFullBCENormalized": lambda: full_bert(BCELoss(), num_samples_normalization=True),
-   "BERT4RecFullSoftMaxCENormalized": lambda: full_bert(SoftmaxCrossEntropy(), num_samples_normalization=True),
    "BERT4RecFullLambdaRankNormalized": lambda: full_bert(LambdaGammaRankLoss(pred_truncate_at=1024), batch_size=64, num_samples_normalization=True),
 
    "BERT4RecFullLambdaRank": lambda: full_bert(LambdaGammaRankLoss(pred_truncate_at=1024), batch_size=64),
