@@ -39,7 +39,7 @@ def bert4rec_ft(negatives_sampler, loss, use_ann=False, batch_size=256):
                                                use_ann_for_inference=use_ann)
         return recommender
 
-def full_bert(loss, batch_size=256):
+def full_bert(loss, num_samples_normalization=False, batch_size=256):
         sequence_len = 100
         from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
         from aprec.losses.mean_ypred_ploss import MeanPredLoss
@@ -47,7 +47,7 @@ def full_bert(loss, batch_size=256):
         from aprec.recommenders.dnn_sequential_recommender.models.bert4recft.full_bert import FullBERT
         from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
         from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
-        model = FullBERT(max_history_len=sequence_len, loss=loss)
+        model = FullBERT(max_history_len=sequence_len, loss=loss, num_samples_normalization=num_samples_normalization)
         recommender = DNNSequentialRecommender(model, train_epochs=100000, early_stop_epochs=200,
                                                batch_size=batch_size,
                                                training_time_limit=3600000, 
@@ -63,6 +63,10 @@ def full_bert(loss, batch_size=256):
 
 
 recommenders = {
+   "BERT4RecFullLambdaRankNormalized": lambda: full_bert(LambdaGammaRankLoss(pred_truncate_at=1024), batch_size=64, num_samples_normalization=True),
+   "BERT4RecFullSoftMaxCENormalized": lambda: full_bert(SoftmaxCrossEntropy(), num_samples_normalization=True),
+   "BERT4RecFullBCENormalized": lambda: full_bert(BCELoss(), num_samples_normalization=True),
+
    "BERT4RecFullLambdaRank": lambda: full_bert(LambdaGammaRankLoss(pred_truncate_at=1024), batch_size=64),
    "BERT4RecFullSoftMaxCE": lambda: full_bert(SoftmaxCrossEntropy()),
    "BERT4RecFullBCE": lambda: full_bert(BCELoss()),
