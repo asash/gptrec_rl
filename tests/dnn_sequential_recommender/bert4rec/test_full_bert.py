@@ -2,6 +2,7 @@ import unittest
 
 from aprec.api.items_ranking_request import ItemsRankingRequest
 from aprec.losses.bce import BCELoss
+from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
 class TestTwoBerts(unittest.TestCase):
     def test_two_berts(self):
         from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
@@ -18,13 +19,13 @@ class TestTwoBerts(unittest.TestCase):
 
         val_users = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
         embedding_size=32
-        model = FullBERT(embedding_size=embedding_size, loss=BCELoss())
+        model = FullBERT(embedding_size=embedding_size, loss=LambdaGammaRankLoss())
         recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=50000,
                                                batch_size=5,
                                                training_time_limit=10, 
                                                loss = MeanPredLoss(),
                                                sequence_splitter=lambda: ItemsMasking(), 
-                                               targets_builder= lambda: ItemsMaskingTargetsBuilder(relative_positions_encoding=True),
+                                               targets_builder= lambda: ItemsMaskingTargetsBuilder(relative_positions_encoding=False),
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
                                                eval_batch_size=8)
         recommender.set_val_users(val_users)

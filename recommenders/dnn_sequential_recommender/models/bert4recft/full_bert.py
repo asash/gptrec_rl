@@ -60,14 +60,16 @@ class FullBertModel(Model):
         self.num_items = bert_config.vocab_size - NUM_SPECIAL_ITEMS 
         self.output_layer_activation = tf.keras.activations.get(outputput_layer_activation)
         self.token_type_ids = tf.constant(tf.zeros(shape=(batch_size, bert_config.max_position_embeddings)))
-        self.position_ids_for_pred = tf.constant(np.array(list(range(1, sequence_length +1))).reshape(1, sequence_length))
         self.bert = TFBertMainLayer(bert_config, add_pooling_layer=False)
         self.loss = loss
         self.loss.set_num_items(self.num_items)
         self.loss.set_batch_size(self.batch_size*self.sequence_length)
+        self.position_ids_for_pred = tf.constant(np.array(list(range(1, sequence_length +1))).reshape(1, sequence_length))
 
     def call(self, inputs, **kwargs):
+        masked_sequences = inputs[0]
         labels = inputs[1]
+        positions = inputs[2]
         positive_idx = tf.expand_dims(tf.nn.relu(labels), -1) #avoid boundary problems, negative values will be filteret later anyway
         sample_num = tf.expand_dims(tf.tile(tf.expand_dims(tf.range(0, len(labels),dtype='int64'), -1), [1, self.sequence_length]), -1)
         sequence_pos = tf.expand_dims(tf.tile(tf.expand_dims(tf.range(0, self.sequence_length, dtype='int64'), 0), [len(labels), 1]), -1)
@@ -79,8 +81,7 @@ class FullBertModel(Model):
         ground_truth = tf.reshape(ground_truth, (ground_truth.shape[0] * ground_truth.shape[1], ground_truth.shape[2]))
         ground_truth = tf.constant(ground_truth)
 
-        masked_sequences = inputs[0]
-        bert_output = self.bert(masked_sequences).last_hidden_state
+        bert_output = self.bert(masked_sequences, position_ids = positions).last_hidden_state
         embeddings = self.bert.embeddings.weight[:-NUM_SPECIAL_ITEMS]
         logits = tf.einsum("bse, ne -> bsn", bert_output, embeddings)
         logits = tf.reshape(logits, (logits.shape[0]*logits.shape[1], logits.shape[2]))
