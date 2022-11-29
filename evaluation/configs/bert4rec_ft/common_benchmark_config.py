@@ -4,6 +4,7 @@ from aprec.evaluation.metrics.mrr import MRR
 from aprec.evaluation.metrics.map import MAP
 from aprec.evaluation.metrics.hit import HIT
 from aprec.losses.bce import BCELoss
+from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
 from aprec.losses.softmax_crossentropy import SoftmaxCrossEntropy
 from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_samplers import SVDSimilaritySampler
 from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_samplers.popularity_based_sampler import PopularityBasedSampler
@@ -39,78 +40,38 @@ def bert4rec_ft(negatives_sampler, loss, use_ann=False):
                                                use_ann_for_inference=use_ann)
         return recommender
 
-def regular_bert4rec():
+def full_bert(loss):
         sequence_len = 100
         from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
         from aprec.losses.mean_ypred_ploss import MeanPredLoss
         from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
-        from aprec.recommenders.dnn_sequential_recommender.models.bert4rec.bert4rec import BERT4Rec
+        from aprec.recommenders.dnn_sequential_recommender.models.bert4recft.full_bert import FullBERT
         from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
         from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
-        model = BERT4Rec( max_history_len=sequence_len)
+        model = FullBERT(max_history_len=sequence_len, loss=loss)
+        batch_size = 256 
         recommender = DNNSequentialRecommender(model, train_epochs=100000, early_stop_epochs=200,
-                                               batch_size=64,
+                                               batch_size=batch_size,
                                                training_time_limit=3600000, 
                                                loss = MeanPredLoss(),
-                                               debug=False, sequence_splitter=lambda: ItemsMasking(), 
+                                               sequence_splitter=lambda: ItemsMasking(), 
                                                targets_builder= lambda: ItemsMaskingTargetsBuilder(),
-                                               val_sequence_splitter=lambda: ItemsMasking(force_last=True),
-                                               metric=MeanPredLoss(), 
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
-                                               max_batches_per_epoch=100, 
+                                               max_batches_per_epoch=24, 
+                                               eval_batch_size=24, 
+                                               use_ann_for_inference=False
                                                )
         return recommender
 
-def vanilla_sasrec():
-        sequence_len = 100
-        from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
-        from aprec.losses.bce import BCELoss
-        from aprec.recommenders.dnn_sequential_recommender.models.sasrec.sasrec import SASRec
-        from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_per_positive_target import NegativePerPositiveTargetBuilder
-        from tensorflow.keras.optimizers import Adam
-        model = SASRec(max_history_len=sequence_len, vanilla=True)
-        recommender = DNNSequentialRecommender(model, train_epochs=100000, early_stop_epochs=200,
-                                               batch_size=64,
-                                               training_time_limit=3600000, 
-                                               optimizer=Adam(beta_2=0.98),
-                                               loss = BCELoss(),
-                                               debug=False, sequence_splitter=ShiftedSequenceSplitter, 
-                                               targets_builder= lambda: NegativePerPositiveTargetBuilder(sequence_len),
-                                               val_sequence_splitter=ShiftedSequenceSplitter,
-                                               max_batches_per_epoch=100, 
-                                               metric=BCELoss(), 
-                                               )
-        return recommender
-
-
-def top_recommender():
-    return TopRecommender()
-
-def lightfm_recommender(k=256, loss='bpr'):
-    return LightFMRecommender(k, loss, num_threads=32)
-
-def two_berts(relative_position_encoding=False, num_samples=200, sequence_len=200, masking_prob=0.2, max_predictions_per_seq=20):
-        from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
-        from aprec.recommenders.dnn_sequential_recommender.models.bert4recft.two_berts import TwoBERTS
-        from aprec.losses.mean_ypred_ploss import MeanPredLoss
-        from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
-        from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
-        from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
-        model = TwoBERTS(max_history_len=sequence_len, num_samples=num_samples, embedding_size=256)
-        recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=100000,
-                                               batch_size=32,
-                                               training_time_limit=3600 * 5, 
-                                               loss = MeanPredLoss(),
-                                               sequence_splitter=lambda: ItemsMasking(masking_prob=masking_prob, max_predictions_per_seq=max_predictions_per_seq), 
-                                               targets_builder= lambda: ItemsMaskingTargetsBuilder(relative_positions_encoding=relative_position_encoding),
-                                               pred_history_vectorizer=AddMaskHistoryVectorizer(),
-                                               max_batches_per_epoch=48,
-                                               )
-        return recommender
 
 recommenders = {
-   "BERT4RecScaleRandom400SoftMaxCE": lambda: bert4rec_ft(RandomNegativesSampler(400), SoftmaxCrossEntropy()),
-   "BERT4RecScaleRandom400BCE": lambda: bert4rec_ft(RandomNegativesSampler(400), BCELoss()),
+   "BERT4RecFullSoftMaxCE": lambda: full_bert(SoftmaxCrossEntropy()),
+   "BERT4RecFullBCE": lambda: full_bert(BCELoss()),
+   "BERT4RecFullLambdaRank": lambda: full_bert(LambdaGammaRankLoss()),
+
+   "BERT4RecSampling400SoftMaxCE": lambda: bert4rec_ft(RandomNegativesSampler(400), SoftmaxCrossEntropy()),
+   "BERT4RecSampling400BCE": lambda: bert4rec_ft(RandomNegativesSampler(400), BCELoss()),
+   "BERT4RecSampling400LambdaGammaRankLoss": lambda: bert4rec_ft(RandomNegativesSampler(400), LambdaGammaRankLoss()),
 }
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
