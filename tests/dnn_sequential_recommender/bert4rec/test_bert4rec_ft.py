@@ -1,4 +1,5 @@
 import unittest
+from aprec.losses.bce import BCELoss
 
 from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
 from aprec.recommenders.metrics.ndcg import KerasNDCG
