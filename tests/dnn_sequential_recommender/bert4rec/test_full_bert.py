@@ -19,7 +19,7 @@ class TestTwoBerts(unittest.TestCase):
 
         val_users = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
         embedding_size=32
-        model = FullBERT(embedding_size=embedding_size, loss=LambdaGammaRankLoss())
+        model = FullBERT(embedding_size=embedding_size, loss=LambdaGammaRankLoss(), num_samples_normalization=True)
         recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=50000,
                                                batch_size=5,
                                                training_time_limit=10, 

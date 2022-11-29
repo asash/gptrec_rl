@@ -21,6 +21,7 @@ class FullBERT(SequentialRecsysModel):
                  num_hidden_layers = 3,
                  type_vocab_size = 2,
                  loss = BCELoss(),
+                 num_samples_normalization=False,
                  ):
         super().__init__(output_layer_activation, embedding_size, max_history_len)
         self.embedding_size = embedding_size
@@ -34,6 +35,7 @@ class FullBERT(SequentialRecsysModel):
         self.num_hidden_layers = num_hidden_layers 
         self.type_vocab_size = type_vocab_size      
         self.loss = loss
+        self.num_samples_normalization = num_samples_normalization
 
 
     def get_model(self):
@@ -49,11 +51,11 @@ class FullBERT(SequentialRecsysModel):
             num_hidden_layers=self.num_hidden_layers, 
             type_vocab_size=self.type_vocab_size, 
         )
-        return FullBertModel(self.batch_size, self.output_layer_activation, bert_config, self.max_history_length, self.loss)
+        return FullBertModel(self.batch_size, self.output_layer_activation, bert_config, self.max_history_length, self.loss, self.num_samples_normalization)
 
 
 class FullBertModel(Model):
-    def __init__(self, batch_size, outputput_layer_activation, bert_config, sequence_length, loss: ListWiseLoss, *args, **kwargs):
+    def __init__(self, batch_size, outputput_layer_activation, bert_config, sequence_length, loss: ListWiseLoss, num_samples_normalization:bool,  *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.batch_size = batch_size
         self.sequence_length = sequence_length
@@ -65,6 +67,7 @@ class FullBertModel(Model):
         self.loss.set_num_items(self.num_items)
         self.loss.set_batch_size(self.batch_size*self.sequence_length)
         self.position_ids_for_pred = tf.constant(np.array(list(range(1, sequence_length +1))).reshape(1, sequence_length))
+        self.num_samples_normalization = num_samples_normalization
 
     def call(self, inputs, **kwargs):
         masked_sequences = inputs[0]
@@ -78,15 +81,24 @@ class FullBertModel(Model):
         use_mask = tf.tile(tf.expand_dims(tf.cast(labels!=-100,'float32'), -1),[1, 1, self.num_items])
         ground_truth = tf.scatter_nd(indices, values, [len(labels), self.sequence_length, self.num_items])
         ground_truth = use_mask*ground_truth + -100 * (1-use_mask)
-        ground_truth = tf.reshape(ground_truth, (ground_truth.shape[0] * ground_truth.shape[1], ground_truth.shape[2]))
-        ground_truth = tf.constant(ground_truth)
 
         bert_output = self.bert(masked_sequences, position_ids = positions).last_hidden_state
         embeddings = self.bert.embeddings.weight[:-NUM_SPECIAL_ITEMS]
         logits = tf.einsum("bse, ne -> bsn", bert_output, embeddings)
+        return self.get_loss(ground_truth,logits)
+
+    def get_loss(self, ground_truth, logits):
+        input_shape = ground_truth.shape
+        num_masked_samples = tf.reduce_sum(tf.cast(ground_truth[:,:,0] != -100, 'float32'), -1)
+        ground_truth = tf.reshape(ground_truth, (ground_truth.shape[0] * ground_truth.shape[1], ground_truth.shape[2]))
         logits = tf.reshape(logits, (logits.shape[0]*logits.shape[1], logits.shape[2]))
-        return self.loss.loss_per_list(ground_truth,logits)
-                
+        if self.num_samples_normalization:
+            sample_weights = tf.expand_dims(tf.expand_dims(tf.math.divide_no_nan(1.0, num_masked_samples), -1), -1)
+            sample_weights = tf.tile(sample_weights, [1, input_shape[1], input_shape[2]])
+            sample_weights = tf.reshape(sample_weights, (sample_weights.shape[0] * sample_weights.shape[1], sample_weights.shape[2]))
+            return self.loss.loss_per_list(ground_truth, logits, sample_weights)
+        else:
+            return self.loss.loss_per_list(ground_truth, logits)
    
     def score_all_items(self, inputs): 
         sequence = inputs[0] 

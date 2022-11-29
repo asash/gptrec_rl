@@ -15,7 +15,7 @@ class Loss():
 
 class ListWiseLoss(Loss):
     @tf.custom_gradient
-    def loss_per_list(self, y_true, y_pred):
+    def loss_per_list(self, y_true, y_pred, sample_weights=None):
         with tf.GradientTape() as g:
             g.watch(y_pred)
             ignore_mask = tf.cast(y_true == -100, 'float32') #-100 is the default ignore value
@@ -25,10 +25,18 @@ class ListWiseLoss(Loss):
             listwise_loss = self.calc_per_list(listwise_ytrue, y_pred)
             use_loss_mask = tf.squeeze(use_mask[:,:1], axis=1)
             average_loss =  tf.reduce_sum(listwise_loss * use_loss_mask) / tf.reduce_sum(use_loss_mask)
-            loss_grads = g.gradient(average_loss, y_pred) / self.num_items
-
+            loss_grads = g.gradient(average_loss, y_pred)
+            
+        if sample_weights != None:    
+            weighted_mask =  use_loss_mask * sample_weights[:,0]
+            average_loss =  tf.reduce_sum(listwise_loss * weighted_mask) / tf.reduce_sum(weighted_mask)
+            
         def grad(dy): #ensure that we don't utilize gradients for ignored items 
-            return 0*dy, dy * use_mask * loss_grads
+            result = dy * use_mask * loss_grads
+            if sample_weights != None:
+                result = sample_weights * result
+                return 0*dy, result, 0*dy 
+            return 0*dy, result 
 
         return average_loss, grad
 
