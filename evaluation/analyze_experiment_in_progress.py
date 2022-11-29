@@ -28,13 +28,6 @@ def get_metrics(line):
     return result
 
 
-def get_metrics_internal(result, line):
-    metrics = line.split(",")
-    for metric in metrics:
-        name, value = metric.split(":")
-        result[name.strip()] = float(value.strip())
-    return result 
-
 def parse_experiment(experiment_log):
     current_recommender = None
     result = []
@@ -51,9 +44,6 @@ def parse_experiment(experiment_log):
                     epoch += 1
                     epoch_metrics = get_metrics(line)
                     epoch_metrics['epoch'] = epoch
-            if 'best_ndcg' in line:
-                epoch_metrics = get_metrics_internal(epoch_metrics, line)
-                metrics.append(epoch_metrics)
 
             try:
                 experiment_results = json.loads(line)

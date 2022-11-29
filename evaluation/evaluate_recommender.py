@@ -184,7 +184,7 @@ class RecommendersEvaluator(object):
             recommender.set_out_dir(self.out_dir)
             recommender.set_tensorboard_dir(tensorboard_dir)
             print("adding train actions...")
-            for action in tqdm(self.train, ascii=True):
+            for action in tqdm(self.train, ascii=True, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}',  position=0, leave=True, ncols=70):
                 recommender.add_action(action)
             recommender.set_val_users(self.val_user_ids)
             print("rebuilding model...")

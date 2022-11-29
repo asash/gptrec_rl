@@ -5,6 +5,7 @@ from collections import defaultdict, Counter
 
 class ItemItemRecommender(Recommender):
     def __init__ (self, keep_max_items=200):
+        super().__init__()
         self.users = ItemId()
         self.items = ItemId()
         self.item_cnt = Counter()

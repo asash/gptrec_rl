@@ -7,6 +7,7 @@ class FilterSeenRecommender(Recommender):
     def __init__(self, recommender, extra_items=200):
         super().__init__()
         self.recommender = recommender
+        self.recommender.flags['filter_seen'] = True
         self.user_seen = defaultdict(set)
         self.extra_items=extra_items
 

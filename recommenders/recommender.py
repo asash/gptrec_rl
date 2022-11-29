@@ -11,7 +11,8 @@ class Recommender():
     def __init__(self):
         self.items_ranking_requests = []
         self.val_users = set() 
-        self.tensorboard_dir=None
+        self.tensorboard_dir = None
+        self.flags = {}
 
     def name(self):
         raise NotImplementedError

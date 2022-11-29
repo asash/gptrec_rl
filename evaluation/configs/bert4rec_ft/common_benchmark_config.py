@@ -17,7 +17,7 @@ from aprec.recommenders.top_recommender import TopRecommender
 USERS_FRACTIONS = [1.0]
 
 
-def bert4rec_ft(negatives_sampler, loss, use_ann=False):
+def bert4rec_ft(negatives_sampler, loss, use_ann=False, batch_size=256):
         from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
         from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
         from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
@@ -26,7 +26,6 @@ def bert4rec_ft(negatives_sampler, loss, use_ann=False):
         from aprec.losses.items_masking_loss_proxy import ItemsMaksingLossProxy
         sequence_len = 100
         model = BERT4RecFT(max_history_len=sequence_len)
-        batch_size = 256 
         negatives_per_positive = negatives_sampler.get_sample_size()
         recommender = DNNSequentialRecommender(model, train_epochs=100000, early_stop_epochs=200,
                                                batch_size=batch_size,
@@ -35,12 +34,12 @@ def bert4rec_ft(negatives_sampler, loss, use_ann=False):
                                                sequence_splitter=lambda: ItemsMasking(), 
                                                targets_builder= lambda: ItemsMaskingWithNegativesTargetsBuilder(negatives_sampler=negatives_sampler),
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
-                                               max_batches_per_epoch=24,
+                                               max_batches_per_epoch=48,
                                                eval_batch_size=128,
                                                use_ann_for_inference=use_ann)
         return recommender
 
-def full_bert(loss):
+def full_bert(loss, batch_size=256):
         sequence_len = 100
         from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
         from aprec.losses.mean_ypred_ploss import MeanPredLoss
@@ -49,7 +48,6 @@ def full_bert(loss):
         from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
         from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
         model = FullBERT(max_history_len=sequence_len, loss=loss)
-        batch_size = 256 
         recommender = DNNSequentialRecommender(model, train_epochs=100000, early_stop_epochs=200,
                                                batch_size=batch_size,
                                                training_time_limit=3600000, 
@@ -57,21 +55,21 @@ def full_bert(loss):
                                                sequence_splitter=lambda: ItemsMasking(), 
                                                targets_builder= lambda: ItemsMaskingTargetsBuilder(),
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
-                                               max_batches_per_epoch=24, 
-                                               eval_batch_size=24, 
+                                               max_batches_per_epoch=48, 
+                                               eval_batch_size=128, 
                                                use_ann_for_inference=False
                                                )
         return recommender
 
 
 recommenders = {
+   "BERT4RecFullLambdaRank": lambda: full_bert(LambdaGammaRankLoss(pred_truncate_at=1024), batch_size=64),
    "BERT4RecFullSoftMaxCE": lambda: full_bert(SoftmaxCrossEntropy()),
    "BERT4RecFullBCE": lambda: full_bert(BCELoss()),
-   "BERT4RecFullLambdaRank": lambda: full_bert(LambdaGammaRankLoss()),
 
+   "BERT4RecSampling400LambdaGammaRankLoss": lambda: bert4rec_ft(RandomNegativesSampler(400), LambdaGammaRankLoss(), batch_size=64),
    "BERT4RecSampling400SoftMaxCE": lambda: bert4rec_ft(RandomNegativesSampler(400), SoftmaxCrossEntropy()),
    "BERT4RecSampling400BCE": lambda: bert4rec_ft(RandomNegativesSampler(400), BCELoss()),
-   "BERT4RecSampling400LambdaGammaRankLoss": lambda: bert4rec_ft(RandomNegativesSampler(400), LambdaGammaRankLoss()),
 }
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
