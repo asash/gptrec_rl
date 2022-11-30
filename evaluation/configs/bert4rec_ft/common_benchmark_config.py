@@ -39,7 +39,7 @@ def bert4rec_ft(negatives_sampler, loss, use_ann=False, batch_size=256):
                                                use_ann_for_inference=use_ann)
         return recommender
 
-def full_bert(loss, num_samples_normalization=False, batch_size=256):
+def full_bert(loss, num_samples_normalization=False, batch_size=64):
         sequence_len = 100
         from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
         from aprec.losses.mean_ypred_ploss import MeanPredLoss
