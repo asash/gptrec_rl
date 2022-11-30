@@ -63,18 +63,17 @@ def full_bert(loss, num_samples_normalization=False, batch_size=256):
 
 
 recommenders = {
-   "BERT4RecFullSoftMaxCENormalized": lambda: full_bert(SoftmaxCrossEntropy(), num_samples_normalization=True),
-   "BERT4RecFullLambdaGammmaRankNormalized": lambda: full_bert(LambdaGammaRankLoss(pred_truncate_at=1024, bce_grad_weight=0.5), batch_size=64, num_samples_normalization=True),
-   "BERT4RecFullBCENormalized": lambda: full_bert(BCELoss(), num_samples_normalization=True),
-   "BERT4RecFullLambdaRankNormalized": lambda: full_bert(LambdaGammaRankLoss(pred_truncate_at=1024), batch_size=64, num_samples_normalization=True),
+   #"BERT4RecFullLambdaGammmaRankNormalized": lambda: full_bert(LambdaGammaRankLoss(pred_truncate_at=1024, bce_grad_weight=0.5), batch_size=64, num_samples_normalization=True),
+   #"BERT4RecFullLambdaRankNormalized": lambda: full_bert(LambdaGammaRankLoss(pred_truncate_at=1024), batch_size=64, num_samples_normalization=True),
+   #"BERT4RecFullLambdaRank": lambda: full_bert(LambdaGammaRankLoss(pred_truncate_at=1024), batch_size=64),
 
-   "BERT4RecFullLambdaRank": lambda: full_bert(LambdaGammaRankLoss(pred_truncate_at=1024), batch_size=64),
+   "BERT4RecSampling400BCE": lambda: bert4rec_ft(RandomNegativesSampler(400), BCELoss()),
    "BERT4RecFullSoftMaxCE": lambda: full_bert(SoftmaxCrossEntropy()),
+   "BERT4RecFullSoftMaxCENormalized": lambda: full_bert(SoftmaxCrossEntropy(), num_samples_normalization=True),
+   "BERT4RecFullBCENormalized": lambda: full_bert(BCELoss(), num_samples_normalization=True),
    "BERT4RecFullBCE": lambda: full_bert(BCELoss()),
-
    "BERT4RecSampling400LambdaGammaRankLoss": lambda: bert4rec_ft(RandomNegativesSampler(400), LambdaGammaRankLoss(), batch_size=64),
    "BERT4RecSampling400SoftMaxCE": lambda: bert4rec_ft(RandomNegativesSampler(400), SoftmaxCrossEntropy()),
-   "BERT4RecSampling400BCE": lambda: bert4rec_ft(RandomNegativesSampler(400), BCELoss()),
 }
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
