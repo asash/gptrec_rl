@@ -212,9 +212,12 @@ class DNNSequentialRecommender(Recommender):
             with self.tensorboard_writer.as_default(step=(epoch + 1)*self.max_batches_per_epoch*self.batch_size):
                 tf.summary.scalar(f"val_{self.val_metric.name}", val_metric)
                 tf.summary.scalar(f"train_{self.val_metric.name}", train_metric)
+                tf.summary.scalar(f"{self.val_metric.name}_train_val_diff", train_metric - val_metric)
                 tf.summary.scalar(f"best_{self.val_metric.name}", best_metric_val)
                 tf.summary.scalar(f"tevaluations_without_improvement", steps_metric_not_improved)
-                tf.summary.scalar(f"loss", train_loss)
+                tf.summary.scalar(f"train_loss", train_loss)
+                tf.summary.scalar(f"val_loss", val_loss)
+                tf.summary.scalar(f"train_val_loss_diff", train_loss - val_loss)
                 tf.summary.scalar(f"steps_metric_not_improved", steps_metric_not_improved)
                 tf.summary.scalar(f"steps_loss_not_improved", steps_loss_not_improved)
                 tf.summary.scalar(f"steps_to_early_stop", steps_to_early_stop)
