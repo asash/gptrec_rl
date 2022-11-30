@@ -55,7 +55,7 @@ def full_bert(loss, num_samples_normalization=False, batch_size=64):
                                                sequence_splitter=lambda: ItemsMasking(), 
                                                targets_builder= lambda: ItemsMaskingTargetsBuilder(),
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
-                                               max_batches_per_epoch=48, 
+                                               max_batches_per_epoch=192, 
                                                eval_batch_size=128, 
                                                use_ann_for_inference=False
                                                )
