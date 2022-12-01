@@ -1,6 +1,7 @@
 import unittest
 
 from aprec.api.items_ranking_request import ItemsRankingRequest
+from aprec.evaluation.metrics.entropy import Entropy
 from aprec.evaluation.metrics.highest_score import HighestScore
 from aprec.evaluation.metrics.model_confidence import Confidence
 from aprec.losses.bce import BCELoss
@@ -31,7 +32,7 @@ class TestTwoBerts(unittest.TestCase):
                                                targets_builder= lambda: ItemsMaskingTargetsBuilder(relative_positions_encoding=False),
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
                                                eval_batch_size=8,
-                                               extra_val_metrics = [HIT(10), HighestScore(), Confidence('Softmax'), Confidence('Sigmoid')]
+                                               extra_val_metrics = [HIT(10), HighestScore(), Confidence('Softmax'), Confidence('Sigmoid'), Entropy('Softmax', 10)]
                                                )
         recommender.set_val_users(val_users)
         recommender = FilterSeenRecommender(recommender)

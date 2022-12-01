@@ -1,4 +1,5 @@
 import random
+from aprec.evaluation.metrics.entropy import Entropy
 from aprec.evaluation.metrics.highest_score import HighestScore
 from aprec.evaluation.metrics.model_confidence import Confidence
 from aprec.evaluation.metrics.ndcg import NDCG
@@ -18,6 +19,18 @@ from aprec.recommenders.top_recommender import TopRecommender
 
 USERS_FRACTIONS = [1.0]
 
+EXTRA_VAL_METRICS = [HIT(10),
+                                                                  NDCG(10),
+                                                                  HighestScore(), 
+                                                                  Confidence('Softmax'),
+                                                                  Confidence('Sigmoid'), 
+                                                                  Entropy('Sigmoid', 2), 
+                                                                  Entropy('Sigmoid', 5), 
+                                                                  Entropy('Sigmoid', 10), 
+                                                                  Entropy('Softmax', 2), 
+                                                                  Entropy('Softmax', 5), 
+                                                                  Entropy('Softmax', 10)]
+ 
 
 def bert4rec_ft(negatives_sampler, loss, use_ann=False, batch_size=256):
         from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
@@ -38,7 +51,7 @@ def bert4rec_ft(negatives_sampler, loss, use_ann=False, batch_size=256):
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
                                                max_batches_per_epoch=48,
                                                eval_batch_size=128,
-                                               extra_val_metrics=[HIT(10), HighestScore(), Confidence('Softmax'), Confidence('Sigmoid')],
+                                               extra_val_metrics=EXTRA_VAL_METRICS,
                                                use_ann_for_inference=use_ann)
         return recommender
 
@@ -61,7 +74,7 @@ def full_bert(loss, num_samples_normalization=False, batch_size=64):
                                                max_batches_per_epoch=192, 
                                                eval_batch_size=128, 
                                                use_ann_for_inference=False, 
-                                               extra_val_metrics=[HIT(10), HighestScore(), Confidence('Softmax'), Confidence('Sigmoid')]
+                                               extra_val_metrics=EXTRA_VAL_METRICS,
                                                )
         return recommender
 
