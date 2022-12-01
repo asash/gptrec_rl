@@ -23,4 +23,4 @@ class Entropy(Metric):
             return 0
         scores = self.activation(np.array([rec[1] for rec in recommendations[:self.k]]))
         scores = scores/np.sum(scores) #normalize, so that we can treat them as probs
-        return entropy(scores) / len(scores)
+        return entropy(scores, base=2) / len(scores)
