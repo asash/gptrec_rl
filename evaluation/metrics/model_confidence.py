@@ -1,7 +1,9 @@
 from aprec.evaluation.metrics.metric import Metric
 from scipy.special import softmax
-from scipy.stats import logistic
+import numpy as np
 
+def sigmoid(x):  
+    return np.exp(-np.logaddexp(0, -x))
 
 class Confidence(Metric):
     def __init__(self, activation):
@@ -9,7 +11,7 @@ class Confidence(Metric):
         if activation == 'Softmax':
             self.activation = softmax
         elif activation == 'Sigmoid':
-            self.activation = logistic.cdf
+            self.activation = sigmoid 
         else:
             raise Exception(f"unknown activation {activation}")
             
@@ -18,4 +20,4 @@ class Confidence(Metric):
         if len(recommendations) == 0:
             return 0
         scores = [rec[1] for rec in recommendations]
-        return softmax(scores)[0]
+        return self.activation(scores)[0]
