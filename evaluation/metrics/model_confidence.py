@@ -19,5 +19,5 @@ class Confidence(Metric):
     def __call__(self, recommendations, actual_actions):
         if len(recommendations) == 0:
             return 0
-        scores = [rec[1] for rec in recommendations]
+        scores = np.array([rec[1] for rec in recommendations])
         return self.activation(scores)[0]
