@@ -1,6 +1,8 @@
 import unittest
 
 from aprec.api.items_ranking_request import ItemsRankingRequest
+from aprec.evaluation.metrics.highest_score import HighestScore
+from aprec.evaluation.metrics.model_confidence import Confidence
 from aprec.losses.bce import BCELoss
 from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
 class TestTwoBerts(unittest.TestCase):
@@ -13,6 +15,7 @@ class TestTwoBerts(unittest.TestCase):
         from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
         from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
         from aprec.recommenders.dnn_sequential_recommender.models.bert4recft.full_bert import FullBERT
+        from aprec.evaluation.metrics.hit import HIT
         from aprec.losses.mean_ypred_ploss import MeanPredLoss
 
         USER_ID = '120'
@@ -27,7 +30,9 @@ class TestTwoBerts(unittest.TestCase):
                                                sequence_splitter=lambda: ItemsMasking(), 
                                                targets_builder= lambda: ItemsMaskingTargetsBuilder(relative_positions_encoding=False),
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
-                                               eval_batch_size=8)
+                                               eval_batch_size=8,
+                                               extra_val_metrics = [HIT(10), HighestScore(), Confidence('Softmax'), Confidence('Sigmoid')]
+                                               )
         recommender.set_val_users(val_users)
         recommender = FilterSeenRecommender(recommender)
         for action in generator_limit(get_movielens20m_actions(), 10000):

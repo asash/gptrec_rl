@@ -44,7 +44,8 @@ class DNNSequentialRecommender(Recommender):
                  max_batches_per_epoch=10,
                  eval_batch_size = 1024, 
                  val_rec_limit=40,
-                 val_metric = NDCG(40),
+                 val_metric = NDCG(40), #Used for early stopping
+                 extra_val_metrics = [], #Used for logging only
                  use_ann_for_inference = False):
         super().__init__()
         self.model_arch = model_arch
@@ -73,6 +74,7 @@ class DNNSequentialRecommender(Recommender):
         self.data_generator_queue_size = data_generator_queue_size
         self.max_batches_per_epoch = max_batches_per_epoch
         self.eval_batch_size=eval_batch_size
+        self.extra_val_metrics = extra_val_metrics 
 
         #we use following two dicts for sampled metrics
         self.item_ranking_requrests = {}
@@ -182,7 +184,7 @@ class DNNSequentialRecommender(Recommender):
         for epoch in range(self.train_epochs):
             generator = data_generator_async_factory.next_generator() 
             print(f"epoch: {epoch}")
-            train_loss, train_metric, val_loss ,val_metric = self.train_epoch(generator, val_generator)
+            train_loss, train_metric, extra_train_metrics, val_loss ,val_metric, extra_val_metrics = self.train_epoch(generator, val_generator)
 
             total_trainig_time = time.time() - start_time
             val_metric_history.append((total_trainig_time, val_metric))
@@ -210,18 +212,21 @@ class DNNSequentialRecommender(Recommender):
             print(f"\tsteps_to_stop: {steps_to_early_stop}")
             print(f"\ttotal_training_time: {total_trainig_time}")
             with self.tensorboard_writer.as_default(step=(epoch + 1)*self.max_batches_per_epoch*self.batch_size):
-                tf.summary.scalar(f"val_{self.val_metric.name}", val_metric)
-                tf.summary.scalar(f"train_{self.val_metric.name}", train_metric)
-                tf.summary.scalar(f"{self.val_metric.name}_train_val_diff", train_metric - val_metric)
-                tf.summary.scalar(f"best_{self.val_metric.name}", best_metric_val)
-                tf.summary.scalar(f"tevaluations_without_improvement", steps_metric_not_improved)
-                tf.summary.scalar(f"train_loss", train_loss)
-                tf.summary.scalar(f"val_loss", val_loss)
-                tf.summary.scalar(f"train_val_loss_diff", train_loss - val_loss)
-                tf.summary.scalar(f"steps_metric_not_improved", steps_metric_not_improved)
-                tf.summary.scalar(f"steps_loss_not_improved", steps_loss_not_improved)
+                tf.summary.scalar(f"{self.val_metric.name}/val", val_metric)
+                tf.summary.scalar(f"{self.val_metric.name}/train", train_metric)
+                tf.summary.scalar(f"{self.val_metric.name}/train_val_diff", train_metric - val_metric)
+                tf.summary.scalar(f"{self.val_metric.name}/best_val", best_metric_val)
+                tf.summary.scalar(f"{self.val_metric.name}/steps_metric_not_improved", steps_metric_not_improved)
+                tf.summary.scalar(f"loss/train", train_loss)
+                tf.summary.scalar(f"loss/val", val_loss)
+                tf.summary.scalar(f"loss/train_val_diff", train_loss - val_loss)
+                tf.summary.scalar(f"loss/evaluations_without_improvement", steps_loss_not_improved)
                 tf.summary.scalar(f"steps_to_early_stop", steps_to_early_stop)
-                
+                for metric in self.extra_val_metrics:
+                    tf.summary.scalar(f"{metric.name}/val", extra_train_metrics[metric.name])
+                    tf.summary.scalar(f"{metric.name}/train", extra_val_metrics[metric.name])
+                    tf.summary.scalar(f"{metric.name}/val_train_diff", extra_train_metrics[metric.name] - extra_val_metrics[metric.name])
+
             if steps_to_early_stop <= 0:
                 print(f"early stopped at epoch {epoch}")
                 break
@@ -288,10 +293,10 @@ class DNNSequentialRecommender(Recommender):
             val_loss_sum += loss_val
         val_loss = val_loss_sum / num_val_batches 
 
-        val_metric = self.get_metric(self.val_recommendation_requets, self.val_seen, self.val_ground_truth)
-        train_metric = self.get_metric(self.train_sample_recommendation_requests, self.train_sample_seen, self.train_sample_ground_truth)
+        val_metric, extra_val_metrics = self.get_metric(self.val_recommendation_requets, self.val_seen, self.val_ground_truth)
+        train_metric, extra_train_metrics = self.get_metric(self.train_sample_recommendation_requests, self.train_sample_seen, self.train_sample_ground_truth)
 
-        return train_loss, train_metric, val_loss, val_metric 
+        return train_loss, train_metric, extra_train_metrics, val_loss, val_metric, extra_val_metrics
 
     def get_metric(self, recommendation_requests, seen_items, ground_truth):
         extra_recs = 0
@@ -300,15 +305,20 @@ class DNNSequentialRecommender(Recommender):
         
         recs = self.recommend_batch(recommendation_requests, self.val_rec_limit + extra_recs, is_val=True)
         metric_sum = 0.0
+        extra_metric_sums = defaultdict(lambda: 0.0)
         for rec, seen, truth in zip(recs, seen_items, ground_truth):
             if self.flags.get('filter_seen', False):
                 filtered_rec = [recommended_item for recommended_item in rec if recommended_item[0] not in seen]
                 metric_sum += self.val_metric(filtered_rec, truth) 
+                for extra_metric in self.extra_val_metrics:
+                    extra_metric_sums[extra_metric.name] += extra_metric(filtered_rec, truth)
             else:
                 metric_sum += self.val_metric(rec, truth) 
-                
         val_metric = metric_sum / len(recs)
-        return val_metric
+        extra_metrics = {}
+        for extra_metric in self.extra_val_metrics:
+            extra_metrics[extra_metric.name] = extra_metric_sums[extra_metric.name] / len(recs)
+        return val_metric, extra_metrics
 
     def train_val_split(self):
         all_user_ids = self.users_with_actions

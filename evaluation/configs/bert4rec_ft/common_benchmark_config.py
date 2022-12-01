@@ -1,4 +1,6 @@
 import random
+from aprec.evaluation.metrics.highest_score import HighestScore
+from aprec.evaluation.metrics.model_confidence import Confidence
 from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.evaluation.metrics.mrr import MRR
 from aprec.evaluation.metrics.map import MAP
@@ -36,6 +38,7 @@ def bert4rec_ft(negatives_sampler, loss, use_ann=False, batch_size=256):
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
                                                max_batches_per_epoch=48,
                                                eval_batch_size=128,
+                                               extra_val_metrics=[HIT(10), HighestScore(), Confidence('Softmax'), Confidence('Sigmoid')]
                                                use_ann_for_inference=use_ann)
         return recommender
 
@@ -57,7 +60,8 @@ def full_bert(loss, num_samples_normalization=False, batch_size=64):
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
                                                max_batches_per_epoch=192, 
                                                eval_batch_size=128, 
-                                               use_ann_for_inference=False
+                                               use_ann_for_inference=False, 
+                                               extra_val_metrics=[HIT(10), HighestScore(), Confidence('Softmax'), Confidence('Sigmoid')]
                                                )
         return recommender
 
