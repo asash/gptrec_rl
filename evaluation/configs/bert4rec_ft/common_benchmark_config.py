@@ -77,13 +77,14 @@ recommenders = {
    #"BERT4RecFullLambdaGammmaRankNormalized": lambda: full_bert(LambdaGammaRankLoss(pred_truncate_at=1024, bce_grad_weight=0.5), batch_size=64, num_samples_normalization=True),
    #"BERT4RecFullLambdaRankNormalized": lambda: full_bert(LambdaGammaRankLoss(pred_truncate_at=1024), batch_size=64, num_samples_normalization=True),
    #"BERT4RecFullLambdaRank": lambda: full_bert(LambdaGammaRankLoss(pred_truncate_at=1024), batch_size=64),
-   "BERT4RecFulLogitNormNormalized": lambda: full_bert(LogitNormLoss(), num_samples_normalization=True),
+   #"BERT4RecFulLogitNormNormalized": lambda: full_bert(LogitNormLoss(), num_samples_normalization=True),
    #"BERT4RecFullSoftMaxCE": lambda: full_bert(SoftmaxCrossEntropy()),
    #"BERT4RecFullSoftMaxCENormalized": lambda: full_bert(SoftmaxCrossEntropy(), num_samples_normalization=True),
    #"BERT4RecSampling400BCE": lambda: bert4rec_ft(RandomNegativesSampler(400), BCELoss()),
    #"BERT4RecFullBCENormalized": lambda: full_bert(BCELoss(), num_samples_normalization=True),
    #"BERT4RecFullBCE": lambda: full_bert(BCELoss()),
-   #"BERT4RecSampling400LambdaGammaRankLoss": lambda: bert4rec_ft(RandomNegativesSampler(400), LambdaGammaRankLoss(), batch_size=64),
+   "BERT4RecSampling200": lambda: bert4rec_ft(RandomNegativesSampler(200), LambdaGammaRankLoss(), batch_size=64),
+   "BERT4RecSampling400LambdaGammaRankLoss": lambda: bert4rec_ft(RandomNegativesSampler(400), LambdaGammaRankLoss(), batch_size=64),
    #"BERT4RecSampling400SoftMaxCE": lambda: bert4rec_ft(RandomNegativesSampler(400), SoftmaxCrossEntropy()),
 }
 
