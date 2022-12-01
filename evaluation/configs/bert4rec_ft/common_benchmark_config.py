@@ -8,6 +8,7 @@ from aprec.evaluation.metrics.map import MAP
 from aprec.evaluation.metrics.hit import HIT
 from aprec.losses.bce import BCELoss
 from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
+from aprec.losses.logit_norm import LogitNormLoss
 from aprec.losses.softmax_crossentropy import SoftmaxCrossEntropy
 from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_samplers import SVDSimilaritySampler
 from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_samplers.popularity_based_sampler import PopularityBasedSampler
@@ -19,17 +20,10 @@ from aprec.recommenders.top_recommender import TopRecommender
 
 USERS_FRACTIONS = [1.0]
 
-EXTRA_VAL_METRICS = [HIT(10),
-                                                                  NDCG(10),
-                                                                  HighestScore(), 
-                                                                  Confidence('Softmax'),
-                                                                  Confidence('Sigmoid'), 
-                                                                  Entropy('Sigmoid', 2), 
-                                                                  Entropy('Sigmoid', 5), 
-                                                                  Entropy('Sigmoid', 10), 
-                                                                  Entropy('Softmax', 2), 
-                                                                  Entropy('Softmax', 5), 
-                                                                  Entropy('Softmax', 10)]
+EXTRA_VAL_METRICS = [HIT(10), NDCG(10), HighestScore(), 
+                     Confidence('Softmax'), Confidence('Sigmoid'), 
+                     Entropy('Sigmoid', 2),  Entropy('Sigmoid', 5),  Entropy('Sigmoid', 10),
+                     Entropy('Softmax', 2), Entropy('Softmax', 5), Entropy('Softmax', 10)]
  
 
 def bert4rec_ft(negatives_sampler, loss, use_ann=False, batch_size=256):
@@ -83,9 +77,9 @@ recommenders = {
    #"BERT4RecFullLambdaGammmaRankNormalized": lambda: full_bert(LambdaGammaRankLoss(pred_truncate_at=1024, bce_grad_weight=0.5), batch_size=64, num_samples_normalization=True),
    #"BERT4RecFullLambdaRankNormalized": lambda: full_bert(LambdaGammaRankLoss(pred_truncate_at=1024), batch_size=64, num_samples_normalization=True),
    #"BERT4RecFullLambdaRank": lambda: full_bert(LambdaGammaRankLoss(pred_truncate_at=1024), batch_size=64),
-
-   "BERT4RecFullSoftMaxCE": lambda: full_bert(SoftmaxCrossEntropy()),
-   "BERT4RecFullSoftMaxCENormalized": lambda: full_bert(SoftmaxCrossEntropy(), num_samples_normalization=True),
+   "BERT4RecFulLogitNormNormalized": lambda: full_bert(LogitNormLoss(), num_samples_normalization=True),
+   #"BERT4RecFullSoftMaxCE": lambda: full_bert(SoftmaxCrossEntropy()),
+   #"BERT4RecFullSoftMaxCENormalized": lambda: full_bert(SoftmaxCrossEntropy(), num_samples_normalization=True),
    #"BERT4RecSampling400BCE": lambda: bert4rec_ft(RandomNegativesSampler(400), BCELoss()),
    #"BERT4RecFullBCENormalized": lambda: full_bert(BCELoss(), num_samples_normalization=True),
    #"BERT4RecFullBCE": lambda: full_bert(BCELoss()),
