@@ -1,7 +1,12 @@
+import os
 import unittest
 
 from aprec.api.items_ranking_request import ItemsRankingRequest
 class TestOwnBERT4rec(unittest.TestCase):
+    def setUp(self) -> None:
+        os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+        return super().setUp()
+
     def test_bert_nlp_model(self):
         from transformers import TFBertModel, BertConfig
         from transformers import BertTokenizer
@@ -74,7 +79,5 @@ class TestOwnBERT4rec(unittest.TestCase):
         catalog = get_movies_catalog()
         for rec in recs:
             print(catalog.get_item(rec[0]), "\t", rec[1])
-
-
 if __name__ == "__main__":
     unittest.main()

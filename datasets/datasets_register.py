@@ -8,6 +8,7 @@ from aprec.datasets.movielens100k import get_movielens100k_actions
 from aprec.datasets.movielens20m import get_movielens20m_actions
 from aprec.datasets.movielens25m import get_movielens25m_actions
 from aprec.datasets.gowalla import get_gowalla_dataset
+from aprec.datasets.movies_dataset import get_movies_dataset, get_movies_dataset_with_bands
 from aprec.datasets.netflix import get_netflix_dataset
 from aprec.datasets.yelp import get_yelp_dataset
 from aprec.datasets.mts_kion import get_mts_kion_dataset
@@ -23,6 +24,8 @@ class DatasetsRegister(object):
         "BERT4rec.beauty": lambda: get_bert4rec_dataset("beauty"),
         "ml-20m": lambda: get_movielens20m_actions(min_rating=0.0),
         "ml-25m": lambda: get_movielens25m_actions(min_rating=0.0),
+        "movies_dtaset": lambda: get_movies_dataset(),
+        "movies_dtaset_with_budget_band": lambda: get_movies_dataset_with_bands(),
         "ml-100k": lambda: get_movielens100k_actions(min_rating=0.0),
         "booking": lambda: get_booking_dataset(unix_timestamps=True, mark_control=False)[0],
         "gowalla": get_gowalla_dataset,

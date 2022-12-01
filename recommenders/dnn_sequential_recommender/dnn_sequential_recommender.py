@@ -46,6 +46,7 @@ class DNNSequentialRecommender(Recommender):
                  val_rec_limit=40,
                  val_metric = NDCG(40), #Used for early stopping
                  extra_val_metrics = [], #Used for logging only
+                 val_callbacks = [],
                  use_ann_for_inference = False):
         super().__init__()
         self.model_arch = model_arch
@@ -75,6 +76,7 @@ class DNNSequentialRecommender(Recommender):
         self.max_batches_per_epoch = max_batches_per_epoch
         self.eval_batch_size=eval_batch_size
         self.extra_val_metrics = extra_val_metrics 
+        self.val_callbacks = val_callbacks
 
         #we use following two dicts for sampled metrics
         self.item_ranking_requrests = {}
@@ -293,12 +295,12 @@ class DNNSequentialRecommender(Recommender):
             val_loss_sum += loss_val
         val_loss = val_loss_sum / num_val_batches 
 
-        val_metric, extra_val_metrics = self.get_metric(self.val_recommendation_requets, self.val_seen, self.val_ground_truth)
+        val_metric, extra_val_metrics = self.get_metric(self.val_recommendation_requets, self.val_seen, self.val_ground_truth, callbacks=True)
         train_metric, extra_train_metrics = self.get_metric(self.train_sample_recommendation_requests, self.train_sample_seen, self.train_sample_ground_truth)
 
         return train_loss, train_metric, extra_train_metrics, val_loss, val_metric, extra_val_metrics
 
-    def get_metric(self, recommendation_requests, seen_items, ground_truth):
+    def get_metric(self, recommendation_requests, seen_items, ground_truth, callbacks=False):
         extra_recs = 0
         if self.flags.get('filter_seen', False):
             extra_recs += self.model_arch.max_history_length
@@ -306,14 +308,23 @@ class DNNSequentialRecommender(Recommender):
         recs = self.recommend_batch(recommendation_requests, self.val_rec_limit + extra_recs, is_val=True)
         metric_sum = 0.0
         extra_metric_sums = defaultdict(lambda: 0.0)
+        callback_recs, callback_truth = [], [] 
         for rec, seen, truth in zip(recs, seen_items, ground_truth):
             if self.flags.get('filter_seen', False):
                 filtered_rec = [recommended_item for recommended_item in rec if recommended_item[0] not in seen]
+                callback_recs.append(filtered_rec)
+                callback_truth.append(truth)
                 metric_sum += self.val_metric(filtered_rec, truth) 
                 for extra_metric in self.extra_val_metrics:
                     extra_metric_sums[extra_metric.name] += extra_metric(filtered_rec, truth)
             else:
+                callback_recs.append(rec)
+                callback_truth.append(truth)
                 metric_sum += self.val_metric(rec, truth) 
+
+        for callback in self.val_callbacks:
+            callback(callback_recs, callback_truth)
+            
         val_metric = metric_sum / len(recs)
         extra_metrics = {}
         for extra_metric in self.extra_val_metrics:

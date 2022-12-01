@@ -22,7 +22,7 @@ class DataGenerator(Sequence):
                  sequence_splitter: TargetSplitter = RandomFractionSplitter, 
                  targets_builder = FullMatrixTargetsBuilder(),
                  max_batches_per_epoch = None,
-                 shuffle_data = True
+                 shuffle_data = True, 
                  ):
         self.user_actions = user_actions
         self.history_size = history_size
