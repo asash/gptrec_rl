@@ -225,7 +225,7 @@ class DNNSequentialRecommender(Recommender):
                 for metric in self.extra_val_metrics:
                     tf.summary.scalar(f"{metric.name}/val", extra_train_metrics[metric.name])
                     tf.summary.scalar(f"{metric.name}/train", extra_val_metrics[metric.name])
-                    tf.summary.scalar(f"{metric.name}/val_train_diff", extra_train_metrics[metric.name] - extra_val_metrics[metric.name])
+                    tf.summary.scalar(f"{metric.name}/train_val_diff", extra_train_metrics[metric.name] - extra_val_metrics[metric.name])
 
             if steps_to_early_stop <= 0:
                 print(f"early stopped at epoch {epoch}")
