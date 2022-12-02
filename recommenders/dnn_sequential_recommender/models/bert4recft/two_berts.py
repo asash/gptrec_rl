@@ -2,6 +2,7 @@ import numpy as np
 from tensorflow.keras import Model
 import tensorflow as tf
 from aprec.losses.bce import BCELoss
+from aprec.losses.loss import ListWiseLoss
 from aprec.losses.softmax_crossentropy import SoftmaxCrossEntropy
 from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss 
 
@@ -21,8 +22,8 @@ class TwoBERTS(SequentialRecsysModel):
                  num_hidden_layers = 3,
                  type_vocab_size = 2, 
                  num_samples=256, 
-                 retriever_loss = SoftmaxCrossEntropy(),
-                 reranker_loss = BCELoss() 
+                 retriever_loss: ListWiseLoss = SoftmaxCrossEntropy(),
+                 reranker_loss: ListWiseLoss = LambdaGammaRankLoss()
                 ):
         super().__init__(output_layer_activation, embedding_size, max_history_len)
         self.embedding_size = embedding_size
@@ -76,8 +77,8 @@ class TwoBERTsModel(Model):
         self.position_ids_for_pred = tf.constant(np.array(list(range(1, sequence_length +1))).reshape(1, sequence_length))
         self.bert_retriever = TFBertMainLayer(bert_config, add_pooling_layer=False, name="retriever")
         self.bert_reranker = TFBertMainLayer(bert_config, add_pooling_layer=False, name="reranker")
-        self.retriever_loss = retriever_loss
-        self.reranker_loss = reranker_loss
+        self.retriever_loss: ListWiseLoss = retriever_loss
+        self.reranker_loss: ListWiseLoss = reranker_loss
         self.position_ids_for_pred = tf.constant(np.array(list(range(1, sequence_length +1))).reshape(1, sequence_length))
 
     def call(self, inputs, **kwargs):
@@ -96,7 +97,7 @@ class TwoBERTsModel(Model):
         retriever_result = tf.transpose(retriever_result, [0, 2, 1])
         ground_truth = tf.concat([positives_ground_truth, negatives_ground_truth], -1)
         ground_truth = tf.transpose(ground_truth, [0, 2, 1])
-        retriever_losses = self.retriever_loss.calc_per_list(ground_truth, retriever_result)
+        retriever_losses = self.retriever_loss.loss_per_list(ground_truth, retriever_result)
         loss_mask = tf.cast(labels != -100, 'float32')
         retriever_losses_masked = retriever_losses*loss_mask
         retriever_loss = tf.math.divide_no_nan(tf.reduce_sum(retriever_losses_masked), tf.reduce_sum(loss_mask))
@@ -111,7 +112,7 @@ class TwoBERTsModel(Model):
         reranker_candidate_embs = tf.gather(self.bert_reranker.embeddings.weight, retrieved_candidates)
         reranker_result = tf.einsum("ijk,ijmk->ijm", reranker_bert_output, reranker_candidate_embs) 
         reranker_result = tf.transpose(reranker_result, [0, 2, 1])
-        reranker_losses = self.reranker_loss.calc_per_list(reranker_ground_truth, reranker_result)
+        reranker_losses = self.reranker_loss.loss_per_list(reranker_ground_truth, reranker_result)
         reranker_losses_masked = reranker_losses*loss_mask
         reranker_loss = tf.math.divide_no_nan(tf.reduce_sum(reranker_losses_masked), tf.reduce_sum(loss_mask))
         return (retriever_loss + reranker_loss) / 2 
