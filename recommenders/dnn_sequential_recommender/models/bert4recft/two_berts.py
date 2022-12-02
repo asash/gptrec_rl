@@ -2,6 +2,8 @@ import numpy as np
 from tensorflow.keras import Model
 import tensorflow as tf
 from aprec.losses.bce import BCELoss
+from aprec.losses.softmax_crossentropy import SoftmaxCrossEntropy
+from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss 
 
 from aprec.recommenders.dnn_sequential_recommender.models.sequential_recsys_model import SequentialRecsysModel
 from transformers import BertConfig, TFBertMainLayer
@@ -18,7 +20,9 @@ class TwoBERTS(SequentialRecsysModel):
                  num_attention_heads = 2,
                  num_hidden_layers = 3,
                  type_vocab_size = 2, 
-                 num_samples=256
+                 num_samples=256, 
+                 retriever_loss = SoftmaxCrossEntropy(),
+                 reranker_loss = LambdaGammaRankLoss() 
                 ):
         super().__init__(output_layer_activation, embedding_size, max_history_len)
         self.embedding_size = embedding_size
@@ -32,6 +36,8 @@ class TwoBERTS(SequentialRecsysModel):
         self.num_hidden_layers = num_hidden_layers 
         self.type_vocab_size = type_vocab_size      
         self.num_samples = num_samples
+        self.retriever_loss = retriever_loss
+        self.reranker_loss = reranker_loss
 
 
     def get_model(self):
@@ -47,11 +53,18 @@ class TwoBERTS(SequentialRecsysModel):
             num_hidden_layers=self.num_hidden_layers, 
             type_vocab_size=self.type_vocab_size, 
         )
-        return TwoBERTsModel(self.batch_size, self.num_samples, self.output_layer_activation, bert_config, self.max_history_length)
+        return TwoBERTsModel(self.batch_size, self.num_samples,
+                             self.output_layer_activation,
+                             bert_config, self.max_history_length, 
+                             self.retriever_loss,
+                             self.reranker_loss 
+                             )
 
 
 class TwoBERTsModel(Model):
     def __init__(self, batch_size, num_samples, outputput_layer_activation, bert_config, sequence_length, 
+                        retriever_loss, 
+                        reranker_loss,
                         *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.batch_size = batch_size
@@ -63,8 +76,8 @@ class TwoBERTsModel(Model):
         self.position_ids_for_pred = tf.constant(np.array(list(range(1, sequence_length +1))).reshape(1, sequence_length))
         self.bert_retriever = TFBertMainLayer(bert_config, add_pooling_layer=False, name="retriever")
         self.bert_reranker = TFBertMainLayer(bert_config, add_pooling_layer=False, name="reranker")
-        self.retriever_loss = BCELoss()
-        self.reranker_loss = BCELoss()
+        self.retriever_loss = retriever_loss()
+        self.reranker_loss = reranker_loss()
         self.position_ids_for_pred = tf.constant(np.array(list(range(1, sequence_length +1))).reshape(1, sequence_length))
 
     def call(self, inputs, **kwargs):
