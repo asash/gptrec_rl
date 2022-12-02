@@ -18,7 +18,7 @@ class TwoBERTS(SequentialRecsysModel):
                  num_attention_heads = 2,
                  num_hidden_layers = 3,
                  type_vocab_size = 2, 
-                 num_samples=400
+                 num_samples=256
                 ):
         super().__init__(output_layer_activation, embedding_size, max_history_len)
         self.embedding_size = embedding_size
