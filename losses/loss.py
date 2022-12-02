@@ -27,13 +27,13 @@ class ListWiseLoss(Loss):
             average_loss =  tf.reduce_sum(listwise_loss * use_loss_mask) / tf.reduce_sum(use_loss_mask)
             loss_grads = g.gradient(average_loss, y_pred)
             
-        if sample_weights != None:    
+        if sample_weights:    
             weighted_mask =  use_loss_mask * sample_weights[:,0]
             average_loss =  tf.reduce_sum(listwise_loss * weighted_mask) / tf.reduce_sum(weighted_mask)
             
         def grad(dy): #ensure that we don't utilize gradients for ignored items 
             result = dy * use_mask * loss_grads
-            if sample_weights != None:
+            if sample_weights:
                 result = sample_weights * result
                 return 0*dy, result, 0*dy 
             return 0*dy, result 

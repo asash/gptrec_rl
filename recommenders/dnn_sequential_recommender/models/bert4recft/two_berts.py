@@ -78,7 +78,12 @@ class TwoBERTsModel(Model):
         self.bert_retriever = TFBertMainLayer(bert_config, add_pooling_layer=False, name="retriever")
         self.bert_reranker = TFBertMainLayer(bert_config, add_pooling_layer=False, name="reranker")
         self.retriever_loss: ListWiseLoss = retriever_loss
+        self.retriever_loss.set_num_items(num_samples + 1)
+        self.retriever_loss.set_batch_size(batch_size * sequence_length)
+        
         self.reranker_loss: ListWiseLoss = reranker_loss
+        self.reranker_loss.set_num_items(num_samples)
+        self.reranker_loss.set_batch_size(batch_size * sequence_length)
         self.position_ids_for_pred = tf.constant(np.array(list(range(1, sequence_length +1))).reshape(1, sequence_length))
 
     def call(self, inputs, **kwargs):
@@ -88,33 +93,32 @@ class TwoBERTsModel(Model):
         positive_candidates = tf.expand_dims(labels, -1)
         positives_ground_truth = tf.ones_like(positive_candidates, dtype='float32')
         candidates_shape = (self.batch_size, self.sequence_length, self.num_samples)
-        negative_candidates = tf.random.uniform(candidates_shape, 0, self.num_items, dtype='int64')
+        non_masked_candidates = tf.cast(positive_candidates != -100, 'int64')
+        negative_candidates = tf.random.uniform(candidates_shape, 0, self.num_items, dtype='int64') * non_masked_candidates - 100 * (1-non_masked_candidates)
         negatives_ground_truth = tf.zeros_like(negative_candidates, dtype='float32')
         candidates = tf.concat([positive_candidates, negative_candidates], -1)
         retriever_bert_output = self.bert_retriever(sequences, position_ids=positions).last_hidden_state              
-        emb_matrix = tf.gather(self.bert_retriever.embeddings.weight, candidates)
+        emb_matrix = tf.gather(self.bert_retriever.embeddings.weight, tf.nn.relu(candidates))
         retriever_result = tf.einsum("ijk,ijmk->ijm", retriever_bert_output, emb_matrix)
-        retriever_result = tf.transpose(retriever_result, [0, 2, 1])
+        retriever_result = tf.reshape(retriever_result, [retriever_result.shape[0]*retriever_result.shape[1], retriever_result.shape[2]])
         ground_truth = tf.concat([positives_ground_truth, negatives_ground_truth], -1)
-        ground_truth = tf.transpose(ground_truth, [0, 2, 1])
-        retriever_losses = self.retriever_loss.loss_per_list(ground_truth, retriever_result)
-        loss_mask = tf.cast(labels != -100, 'float32')
-        retriever_losses_masked = retriever_losses*loss_mask
-        retriever_loss = tf.math.divide_no_nan(tf.reduce_sum(retriever_losses_masked), tf.reduce_sum(loss_mask))
+        ground_truth = ground_truth * tf.cast(non_masked_candidates, 'float32') - tf.cast(100*(1-non_masked_candidates), 'float32')
+        ground_truth = tf.reshape(ground_truth, [ground_truth.shape[0]*ground_truth.shape[1], ground_truth.shape[2]])
+        retriever_loss = self.retriever_loss.loss_per_list(ground_truth, retriever_result)
+
         all_retriever_embeddings = self.bert_retriever.embeddings.weight[:-NUM_SPECIAL_ITEMS]
         all_items_retriever_scores = tf.einsum("ijk,nk->ijn", retriever_bert_output, all_retriever_embeddings)
         retrieved_candidates = tf.cast(tf.math.top_k(all_items_retriever_scores, self.num_samples, sorted=False).indices, 'int64')
         tiled_positives = tf.tile(positive_candidates, [1, 1, self.num_samples])
         reranker_ground_truth = tf.cast(tiled_positives == retrieved_candidates, 'float32')
-        reranker_ground_truth = tf.transpose(reranker_ground_truth, [0, 2, 1])
+        reranker_ground_truth = reranker_ground_truth * tf.cast(non_masked_candidates, 'float32') - tf.cast(100*(1-non_masked_candidates), 'float32')
+        reranker_ground_truth = tf.reshape(reranker_ground_truth, [reranker_ground_truth.shape[0] * reranker_ground_truth.shape[1], reranker_ground_truth.shape[2]])
         
         reranker_bert_output = self.bert_reranker(sequences, position_ids=positions).last_hidden_state              
         reranker_candidate_embs = tf.gather(self.bert_reranker.embeddings.weight, retrieved_candidates)
         reranker_result = tf.einsum("ijk,ijmk->ijm", reranker_bert_output, reranker_candidate_embs) 
-        reranker_result = tf.transpose(reranker_result, [0, 2, 1])
-        reranker_losses = self.reranker_loss.loss_per_list(reranker_ground_truth, reranker_result)
-        reranker_losses_masked = reranker_losses*loss_mask
-        reranker_loss = tf.math.divide_no_nan(tf.reduce_sum(reranker_losses_masked), tf.reduce_sum(loss_mask))
+        reranker_result = tf.reshape(reranker_result, [reranker_result.shape[0]*reranker_result.shape[1], reranker_result.shape[2]])
+        reranker_loss = self.reranker_loss.loss_per_list(reranker_ground_truth, reranker_result)
         return (retriever_loss + reranker_loss) / 2 
     
     def score_all_items(self, inputs): 
