@@ -98,7 +98,7 @@ class TwoBERTsModel(Model):
         reranker_candidate_embs = tf.gather(self.bert_reranker.embeddings.weight, retrieved_candidates)
         reranker_result = tf.einsum("ijk,ijmk->ijm", reranker_bert_output, reranker_candidate_embs) 
         reranker_result = tf.transpose(reranker_result, [0, 2, 1])
-        reranker_losses = self.retriever_loss.calc_per_list(reranker_ground_truth, reranker_result)
+        reranker_losses = self.reranker_loss.calc_per_list(reranker_ground_truth, reranker_result)
         reranker_losses_masked = reranker_losses*loss_mask
         reranker_loss = tf.math.divide_no_nan(tf.reduce_sum(reranker_losses_masked), tf.reduce_sum(loss_mask))
         return (retriever_loss + reranker_loss) / 2 

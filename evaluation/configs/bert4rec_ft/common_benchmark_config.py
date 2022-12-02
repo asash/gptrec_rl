@@ -10,6 +10,7 @@ from aprec.losses.bce import BCELoss
 from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
 from aprec.losses.logit_norm import LogitNormLoss
 from aprec.losses.softmax_crossentropy import SoftmaxCrossEntropy
+from aprec.recommenders.dnn_sequential_recommender.models.bert4recft.two_berts import TwoBERTS
 from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_samplers import SVDSimilaritySampler
 from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_samplers.popularity_based_sampler import PopularityBasedSampler
 from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_samplers.random_negatives_sampler import RandomNegativesSampler
@@ -72,8 +73,34 @@ def full_bert(loss, num_samples_normalization=False, batch_size=64):
                                                )
         return recommender
 
+def two_berts(batch_size=64):
+        sequence_len = 100
+        from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
+        from aprec.losses.mean_ypred_ploss import MeanPredLoss
+        from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
+        from aprec.recommenders.dnn_sequential_recommender.models.bert4recft.full_bert import FullBERT
+        from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
+        from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
+        model = TwoBERTS(max_history_len=sequence_len)
+        recommender = DNNSequentialRecommender(model, train_epochs=100000, early_stop_epochs=200,
+                                               batch_size=batch_size,
+                                               training_time_limit=3600000, 
+                                               loss = MeanPredLoss(),
+                                               sequence_splitter=lambda: ItemsMasking(), 
+                                               targets_builder= lambda: ItemsMaskingTargetsBuilder(),
+                                               pred_history_vectorizer=AddMaskHistoryVectorizer(),
+                                               max_batches_per_epoch=192, 
+                                               eval_batch_size=128, 
+                                               use_ann_for_inference=False, 
+                                               extra_val_metrics=EXTRA_VAL_METRICS,
+                                               )
+        return recommender
+
+
 
 recommenders = {
+   "TwoBerts": lambda: two_berts(),
+   #"BERT4RecSampling200": lambda: bert4rec_ft(RandomNegativesSampler(200), LambdaGammaRankLoss(), batch_size=64),
    #"BERT4RecFullLambdaGammmaRankNormalized": lambda: full_bert(LambdaGammaRankLoss(pred_truncate_at=1024, bce_grad_weight=0.5), batch_size=64, num_samples_normalization=True),
    #"BERT4RecFullLambdaRankNormalized": lambda: full_bert(LambdaGammaRankLoss(pred_truncate_at=1024), batch_size=64, num_samples_normalization=True),
    #"BERT4RecFullLambdaRank": lambda: full_bert(LambdaGammaRankLoss(pred_truncate_at=1024), batch_size=64),
@@ -83,8 +110,8 @@ recommenders = {
    #"BERT4RecSampling400BCE": lambda: bert4rec_ft(RandomNegativesSampler(400), BCELoss()),
    #"BERT4RecFullBCENormalized": lambda: full_bert(BCELoss(), num_samples_normalization=True),
    #"BERT4RecFullBCE": lambda: full_bert(BCELoss()),
-   "BERT4RecSampling200": lambda: bert4rec_ft(RandomNegativesSampler(200), LambdaGammaRankLoss(), batch_size=64),
-   "BERT4RecSampling400LambdaGammaRankLoss": lambda: bert4rec_ft(RandomNegativesSampler(400), LambdaGammaRankLoss(), batch_size=64),
+   #"BERT4RecSampling200": lambda: bert4rec_ft(RandomNegativesSampler(200), LambdaGammaRankLoss(), batch_size=64),
+   #"BERT4RecSampling400LambdaGammaRankLoss": lambda: bert4rec_ft(RandomNegativesSampler(400), LambdaGammaRankLoss(), batch_size=64),
    #"BERT4RecSampling400SoftMaxCE": lambda: bert4rec_ft(RandomNegativesSampler(400), SoftmaxCrossEntropy()),
 }
 
