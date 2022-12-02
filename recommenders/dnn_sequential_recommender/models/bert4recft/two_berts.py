@@ -76,8 +76,8 @@ class TwoBERTsModel(Model):
         self.position_ids_for_pred = tf.constant(np.array(list(range(1, sequence_length +1))).reshape(1, sequence_length))
         self.bert_retriever = TFBertMainLayer(bert_config, add_pooling_layer=False, name="retriever")
         self.bert_reranker = TFBertMainLayer(bert_config, add_pooling_layer=False, name="reranker")
-        self.retriever_loss = retriever_loss()
-        self.reranker_loss = reranker_loss()
+        self.retriever_loss = retriever_loss
+        self.reranker_loss = reranker_loss
         self.position_ids_for_pred = tf.constant(np.array(list(range(1, sequence_length +1))).reshape(1, sequence_length))
 
     def call(self, inputs, **kwargs):
