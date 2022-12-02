@@ -22,7 +22,7 @@ class TwoBERTS(SequentialRecsysModel):
                  type_vocab_size = 2, 
                  num_samples=256, 
                  retriever_loss = SoftmaxCrossEntropy(),
-                 reranker_loss = LambdaGammaRankLoss() 
+                 reranker_loss = SoftmaxCrossEntropy() 
                 ):
         super().__init__(output_layer_activation, embedding_size, max_history_len)
         self.embedding_size = embedding_size
