@@ -74,7 +74,7 @@ def full_bert(loss, num_samples_normalization=False, batch_size=64):
         return recommender
 
 def quantum_bert(batch_size=64):
-        sequence_len = 100
+        sequence_len = 200
         from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
         from aprec.losses.mean_ypred_ploss import MeanPredLoss
         from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking

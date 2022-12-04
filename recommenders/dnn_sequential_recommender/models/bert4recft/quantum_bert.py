@@ -13,7 +13,7 @@ from transformers import BertConfig, TFBertMainLayer
 NUM_SPECIAL_ITEMS = 3 # +1 for mask item, +1 for padding, +1 for ignore_item
 class QuantumBERT(SequentialRecsysModel):
     def __init__(self, output_layer_activation = 'linear',
-                 embedding_size = 64, max_history_len = 100,
+                 embedding_size = 256, max_history_len = 200,
                  attention_probs_dropout_prob = 0.2,
                  hidden_act = "gelu",
                  hidden_dropout_prob = 0.2,
