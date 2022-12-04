@@ -73,6 +73,29 @@ def full_bert(loss, num_samples_normalization=False, batch_size=64):
                                                )
         return recommender
 
+def quantum_bert(batch_size=64):
+        sequence_len = 100
+        from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
+        from aprec.losses.mean_ypred_ploss import MeanPredLoss
+        from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
+        from aprec.recommenders.dnn_sequential_recommender.models.bert4recft.quantum_bert import QuantumBERT
+        from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
+        from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
+        model = QuantumBERT(max_history_len=sequence_len)
+        recommender = DNNSequentialRecommender(model, train_epochs=100000, early_stop_epochs=200,
+                                               batch_size=batch_size,
+                                               training_time_limit=3600000, 
+                                               loss = MeanPredLoss(),
+                                               sequence_splitter=lambda: ItemsMasking(), 
+                                               targets_builder= lambda: ItemsMaskingTargetsBuilder(),
+                                               pred_history_vectorizer=AddMaskHistoryVectorizer(),
+                                               max_batches_per_epoch=192, 
+                                               eval_batch_size=128, 
+                                               use_ann_for_inference=False, 
+                                               extra_val_metrics=EXTRA_VAL_METRICS,
+                                               )
+        return recommender
+
 def two_berts(batch_size=64):
         sequence_len = 100
         from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
@@ -99,7 +122,8 @@ def two_berts(batch_size=64):
 
 
 recommenders = {
-   "TwoBerts": lambda: two_berts(),
+   "QuantumBERT": lambda: quantum_bert(),
+   #"TwoBerts": lambda: two_berts(),
    #"BERT4RecSampling200": lambda: bert4rec_ft(RandomNegativesSampler(200), LambdaGammaRankLoss(), batch_size=64),
    #"BERT4RecFullLambdaGammmaRankNormalized": lambda: full_bert(LambdaGammaRankLoss(pred_truncate_at=1024, bce_grad_weight=0.5), batch_size=64, num_samples_normalization=True),
    #"BERT4RecFullLambdaRankNormalized": lambda: full_bert(LambdaGammaRankLoss(pred_truncate_at=1024), batch_size=64, num_samples_normalization=True),

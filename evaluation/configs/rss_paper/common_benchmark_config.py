@@ -10,7 +10,7 @@ from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_seque
 from aprec.recommenders.vanilla_bert4rec import VanillaBERT4Rec
 from aprec.losses.bce import BCELoss
 from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
-
+import tensorflow as tf
 
 
 from aprec.evaluation.metrics.ndcg import NDCG
@@ -43,9 +43,7 @@ def dnn(model_arch, loss, sequence_splitter,
                 training_time_limit=3600,  
                 max_epochs=10000):
     from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
-
-    from tensorflow.keras.optimizers import Adam
-    optimizer=Adam(beta_2=0.98)
+    optimizer=tf.keras.optimizers.Adam(beta_2=0.98)
     return DNNSequentialRecommender(train_epochs=max_epochs, loss=loss,
                                                           model_arch=model_arch,
                                                           optimizer=optimizer,
