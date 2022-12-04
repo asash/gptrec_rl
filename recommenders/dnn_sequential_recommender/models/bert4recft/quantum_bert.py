@@ -79,7 +79,7 @@ class QuantumBERTModel(tf.keras.Model):
         use_loss = tf.expand_dims(tf.cast(labels != -100, 'float32'), -1)
         loss = tf.losses.binary_crossentropy(truth, attribute_probs)*use_loss
         result = tf.math.divide_no_nan(tf.reduce_sum(loss), tf.reduce_sum(use_loss)*self.embedding_size)
-        return loss
+        return result
 
     def attributes_one_hot(self, labels, attributes, seq=True):
         idx_batch_dim = tf.tile(tf.expand_dims(tf.expand_dims(tf.range(0, labels.shape[0], dtype='int32'), -1), -1), [1, labels.shape[1], self.embedding_size])
