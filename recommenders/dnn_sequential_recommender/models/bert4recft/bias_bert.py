@@ -29,7 +29,7 @@ class BiasBERT(SequentialRecsysModel):
                  num_attention_heads = 2,
                  num_hidden_layers = 3,
                  type_vocab_size = 2,
-                 loss = SoftmaxCrossEntropy()
+                 loss = BCELoss()
                  ):
         super().__init__(output_layer_activation, embedding_size, max_history_len)
         self.embedding_size = embedding_size
