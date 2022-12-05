@@ -225,8 +225,8 @@ class DNNSequentialRecommender(Recommender):
                 tf.summary.scalar(f"loss/evaluations_without_improvement", steps_loss_not_improved)
                 tf.summary.scalar(f"steps_to_early_stop", steps_to_early_stop)
                 for metric in self.extra_val_metrics:
-                    tf.summary.scalar(f"{metric.name}/val", extra_train_metrics[metric.name])
-                    tf.summary.scalar(f"{metric.name}/train", extra_val_metrics[metric.name])
+                    tf.summary.scalar(f"{metric.name}/train", extra_train_metrics[metric.name])
+                    tf.summary.scalar(f"{metric.name}/val", extra_val_metrics[metric.name])
                     tf.summary.scalar(f"{metric.name}/train_val_diff", extra_train_metrics[metric.name] - extra_val_metrics[metric.name])
 
             if steps_to_early_stop <= 0:

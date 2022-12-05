@@ -82,9 +82,9 @@ def quantum_bert(batch_size=64):
         from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
         from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
         model = QuantumBERT(max_history_len=sequence_len)
-        recommender = DNNSequentialRecommender(model, train_epochs=100000, early_stop_epochs=200,
+        recommender = DNNSequentialRecommender(model, train_epochs=100000, early_stop_epochs=10000,
                                                batch_size=batch_size,
-                                               training_time_limit=3600000, 
+                                               training_time_limit=24*3600, 
                                                loss = MeanPredLoss(),
                                                sequence_splitter=lambda: ItemsMasking(), 
                                                targets_builder= lambda: ItemsMaskingTargetsBuilder(),
