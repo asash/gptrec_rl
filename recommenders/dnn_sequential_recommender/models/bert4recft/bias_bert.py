@@ -72,7 +72,7 @@ class BiasBERTModel(tf.keras.Model):
         self.token_type_ids = tf.constant(tf.zeros(shape=(batch_size, bert_config.max_position_embeddings)))
         #self.bert = TFBertMainLayer(bert_config, add_pooling_layer=False)
         self.position_ids_for_pred = tf.constant(np.array(list(range(1, sequence_length +1))).reshape(1, sequence_length))
-        self.bias_agg_hidden = tf.keras.layers.Dense(64, 'gelu')
+        self.bias_agg_hidden = tf.keras.layers.Dense(32, 'gelu')
         self.bias_agg_output = tf.keras.layers.Dense(1)
         self.loss=loss
 
