@@ -44,8 +44,7 @@ class BiasBERT(SequentialRecsysModel):
         self.num_hidden_layers = num_hidden_layers 
         self.type_vocab_size = type_vocab_size       
         self.loss = loss
-        self.loss.set_num_items(self.num_items)
-        self.loss.set_batch_size(self.batch_size*self.sequence_length)
+
 
 
     def get_model(self):
@@ -75,6 +74,8 @@ class BiasBERTModel(tf.keras.Model):
         #self.bert = TFBertMainLayer(bert_config, add_pooling_layer=False)
         self.position_ids_for_pred = tf.constant(np.array(list(range(1, sequence_length +1))).reshape(1, sequence_length))
         self.loss = loss
+        self.loss.set_num_items(self.num_items)
+        self.loss.set_batch_size(self.batch_size*self.sequence_length)
 
         w_init = tf.random_normal_initializer()
         self.pop_bias_weight = tf.Variable(
