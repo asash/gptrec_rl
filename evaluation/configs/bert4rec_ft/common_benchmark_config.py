@@ -85,7 +85,7 @@ def quantum_bert(batch_size=64):
                                                )
         return recommender
 
-def bias_bert(batch_size=16):
+def bias_bert(batch_size=8):
         sequence_len = 200
         from aprec.recommenders.dnn_sequential_recommender.models.bert4recft.bias_bert import BiasBERT
         from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
@@ -102,7 +102,7 @@ def bias_bert(batch_size=16):
                                                sequence_splitter=lambda: ItemsMasking(), 
                                                targets_builder= lambda: ItemsMaskingTargetsBuilder(),
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
-                                               max_batches_per_epoch=192, 
+                                               max_batches_per_epoch=5, 
                                                eval_batch_size=128, 
                                                use_ann_for_inference=False, 
                                                extra_val_metrics=EXTRA_VAL_METRICS,
