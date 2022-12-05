@@ -100,8 +100,8 @@ class BiasBERTModel(tf.keras.Model):
                 transitions[seq[src][1],seq[dst][1]] += 1
             pass
         smoothed_transitions, pop_bias = self.get_smoothed_transitions(transitions)
-        self.smoothed_transitions_src = smoothed_transitions
-        self.smoothed_transitions_dst = np.transpose(smoothed_transitions)
+        self.smoothed_transitions_src = tf.constant(smoothed_transitions.todense())
+        self.smoothed_transitions_dst = tf.constant(np.transpose(smoothed_transitions).todense())
         self.pop_biases = pop_bias.T
         self.pop_biases_norm = tf.constant(pop_bias.T/np.sum(pop_bias), 'float32')
 
@@ -133,13 +133,13 @@ class BiasBERTModel(tf.keras.Model):
     def get_biases(self, masked_sequences):
         seqs = tf.nn.relu(masked_sequences)
         pad = tf.cast(tf.fill((masked_sequences.shape[0], 1), self.pad), 'int64')
-        shift_src = tf.reshape(tf.concat([pad, seqs[:, :-1]], 1), -1)
-        shift_dst = tf.reshape(tf.concat([seqs[:, 1:], pad], 1), -1)
-        mc_src_probs = self.smoothed_transitions_src[shift_src] /  (self.pop_biases + 1E-9)
-        mc_dst_probs = self.smoothed_transitions_dst[shift_dst] / (self.pop_biases + 1E-9)
-        bias_sum = self.src_bias_weight * mc_src_probs + self.dst_bias_weight*mc_dst_probs
-        pop_bias = self.pop_biases_norm*self.pop_bias_weight
-        result = tf.reshape(bias_sum + pop_bias, masked_sequences.shape + pop_bias.shape[1])
+        shift_src = tf.concat([pad, seqs[:, :-1]], 1)
+        shift_dst = tf.concat([seqs[:, 1:], pad], 1)
+        mc_src_probs = tf.math.divide_no_nan(tf.gather(self.smoothed_transitions_src, shift_src), self.pop_biases)
+        mc_dst_probs = tf.math.divide_no_nan(tf.gather(self.smoothed_transitions_dst, shift_dst), self.pop_biases)
+        bias_sum = self.src_bias_weight * tf.cast(mc_src_probs, 'float32') + self.dst_bias_weight*tf.cast(mc_dst_probs, 'float32')
+        pop_bias = tf.expand_dims(self.pop_biases_norm*self.pop_bias_weight, 0)
+        result = pop_bias + bias_sum 
         return result[:, :,:-len(SPECIAL_ITEMS)]
 
 
