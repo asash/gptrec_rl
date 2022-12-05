@@ -2,6 +2,7 @@ import numpy as np
 import tensorflow as tf
 from aprec.losses.bce import BCELoss
 from aprec.losses.items_masking_loss_proxy import ItemsMaksingLossProxy
+from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
 from aprec.losses.loss import ListWiseLoss
 from aprec.losses.softmax_crossentropy import SoftmaxCrossEntropy
 from aprec.recommenders.dnn_sequential_recommender.models.bert4recft.special_items import SPECIAL_ITEMS
@@ -29,7 +30,7 @@ class BiasBERT(SequentialRecsysModel):
                  num_attention_heads = 2,
                  num_hidden_layers = 3,
                  type_vocab_size = 2,
-                 loss = BCELoss()
+                 loss = LambdaGammaRankLoss()
                  ):
         super().__init__(output_layer_activation, embedding_size, max_history_len)
         self.embedding_size = embedding_size
