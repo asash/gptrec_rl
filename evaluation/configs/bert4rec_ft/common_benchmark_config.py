@@ -103,7 +103,7 @@ def bias_bert(batch_size=32):
                                                targets_builder= lambda: ItemsMaskingTargetsBuilder(),
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
                                                max_batches_per_epoch=192, 
-                                               eval_batch_size=128, 
+                                               eval_batch_size=32, 
                                                use_ann_for_inference=False, 
                                                extra_val_metrics=EXTRA_VAL_METRICS,
                                                )
