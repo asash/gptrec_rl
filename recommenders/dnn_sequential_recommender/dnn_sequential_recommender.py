@@ -136,6 +136,7 @@ class DNNSequentialRecommender(Recommender):
         self.sort_actions()
         self.pass_parameters()
         train_users, val_users = self.train_val_split()
+        
         self.val_recommendation_requets = [(user_id, None) for user_id in self.val_users]
         self.val_seen, self.val_ground_truth = self.leave_one_out(self.val_users)
 
@@ -148,6 +149,9 @@ class DNNSequentialRecommender(Recommender):
         self.targets_builder.set_train_sequences(train_users)
         print("train_users: {}, val_users:{}, items:{}".format(len(train_users), len(self.val_users), self.items.size()))
         self.model = self.get_model()
+        if hasattr(self.model, 'fit_biases'):
+            self.model.fit_biases(train_users)
+        
         if self.val_metric.less_is_better:
             best_metric_val = float('inf')
         else:
@@ -228,6 +232,8 @@ class DNNSequentialRecommender(Recommender):
                     tf.summary.scalar(f"{metric.name}/train", extra_train_metrics[metric.name])
                     tf.summary.scalar(f"{metric.name}/val", extra_val_metrics[metric.name])
                     tf.summary.scalar(f"{metric.name}/train_val_diff", extra_train_metrics[metric.name] - extra_val_metrics[metric.name])
+                if hasattr(self.model, 'log'):
+                    self.model.log()
 
             if steps_to_early_stop <= 0:
                 print(f"early stopped at epoch {epoch}")
