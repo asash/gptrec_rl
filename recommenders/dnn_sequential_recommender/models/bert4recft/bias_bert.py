@@ -30,7 +30,7 @@ class BiasBERT(SequentialRecsysModel):
                  num_attention_heads = 2,
                  num_hidden_layers = 3,
                  type_vocab_size = 2,
-                 loss = LambdaGammaRankLoss()
+                 loss = SoftmaxCrossEntropy()
                  ):
         super().__init__(output_layer_activation, embedding_size, max_history_len)
         self.embedding_size = embedding_size
@@ -44,7 +44,6 @@ class BiasBERT(SequentialRecsysModel):
         self.num_hidden_layers = num_hidden_layers 
         self.type_vocab_size = type_vocab_size       
         self.loss = loss
-
 
 
     def get_model(self):
@@ -73,25 +72,9 @@ class BiasBERTModel(tf.keras.Model):
         self.token_type_ids = tf.constant(tf.zeros(shape=(batch_size, bert_config.max_position_embeddings)))
         #self.bert = TFBertMainLayer(bert_config, add_pooling_layer=False)
         self.position_ids_for_pred = tf.constant(np.array(list(range(1, sequence_length +1))).reshape(1, sequence_length))
-        self.loss = loss
-        self.loss.set_num_items(self.num_items)
-        self.loss.set_batch_size(self.batch_size*self.sequence_length)
-
-        w_init = tf.random_normal_initializer()
-        self.pop_bias_weight = tf.Variable(
-            initial_value=w_init(shape=(), dtype="float32"),
-            trainable=True,
-        )
-
-        self.src_bias_weight = tf.Variable(
-            initial_value=w_init(shape=(), dtype="float32"),
-            trainable=True,
-        )
-       
-        self.dst_bias_weight = tf.Variable(
-            initial_value=w_init(shape=(), dtype="float32"),
-            trainable=True,
-        )
+        self.bias_agg_hidden = tf.keras.layers.Dense(64, 'gelu')
+        self.bias_agg_output = tf.keras.layers.Dense(1)
+        self.loss=loss
 
     def fit_biases(self, train_users):
         print("fitting one step transition biases...")
@@ -107,7 +90,7 @@ class BiasBERTModel(tf.keras.Model):
         self.smoothed_transitions_src = tf.constant(smoothed_transitions.todense())
         self.smoothed_transitions_dst = tf.constant(np.transpose(smoothed_transitions).todense())
         self.pop_biases = pop_bias.T
-        self.pop_biases_norm = tf.constant(pop_bias.T/np.sum(pop_bias), 'float32')
+        self.pop_biases_norm = tf.expand_dims(tf.constant(pop_bias.T/np.sum(pop_bias), 'float32'), 0)
 
     def get_smoothed_transitions(self, transitions):
         nz_rows, nz_cols = transitions.nonzero()
@@ -139,11 +122,12 @@ class BiasBERTModel(tf.keras.Model):
         pad = tf.cast(tf.fill((masked_sequences.shape[0], 1), self.pad), 'int64')
         shift_src = tf.concat([pad, seqs[:, :-1]], 1)
         shift_dst = tf.concat([seqs[:, 1:], pad], 1)
-        mc_src_probs = tf.math.divide_no_nan(tf.gather(self.smoothed_transitions_src, shift_src), self.pop_biases)
-        mc_dst_probs = tf.math.divide_no_nan(tf.gather(self.smoothed_transitions_dst, shift_dst), self.pop_biases)
-        bias_sum = self.src_bias_weight * tf.cast(mc_src_probs, 'float32') + self.dst_bias_weight*tf.cast(mc_dst_probs, 'float32')
-        pop_bias = tf.expand_dims(self.pop_biases_norm*self.pop_bias_weight, 0)
-        result = pop_bias + bias_sum 
+        mc_src_probs = tf.cast(tf.math.divide_no_nan(tf.gather(self.smoothed_transitions_src, shift_src), self.pop_biases), 'float32')
+        mc_dst_probs = tf.cast(tf.math.divide_no_nan(tf.gather(self.smoothed_transitions_dst, shift_dst), self.pop_biases), 'float32')
+        pop_bias = tf.tile(self.pop_biases_norm, [mc_src_probs.shape[0], mc_src_probs.shape[1], 1])
+        concat = tf.stack([mc_src_probs, mc_dst_probs, pop_bias], -1)
+        bias_hidden = self.bias_agg_hidden(concat)
+        result = tf.squeeze(self.bias_agg_output(bias_hidden), -1)
         return result[:, :,:-len(SPECIAL_ITEMS)]
 
 
@@ -161,7 +145,8 @@ class BiasBERTModel(tf.keras.Model):
         #return tf.einsum("ne, be -> bn", self.bert.embeddings.weight[:self.num_items], sequence_embeddings)
     
     def log(self):
-        tf.summary.scalar('biases/popularity_weight', self.pop_bias_weight)
-        tf.summary.scalar('biases/src_weight', self.src_bias_weight)
-        tf.summary.scalar('biases/dst_weight', self.dst_bias_weight)
+        pass
+        #tf.summary.scalar('biases/popularity_weight', self.pop_bias_weight)
+        #tf.summary.scalar('biases/src_weight', self.src_bias_weight)
+        #tf.summary.scalar('biases/dst_weight', self.dst_bias_weight)
 
