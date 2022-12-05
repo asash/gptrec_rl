@@ -85,7 +85,7 @@ def quantum_bert(batch_size=64):
                                                )
         return recommender
 
-def bias_bert(batch_size=64):
+def bias_bert(batch_size=32):
         sequence_len = 200
         from aprec.recommenders.dnn_sequential_recommender.models.bert4recft.bias_bert import BiasBERT
         from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
