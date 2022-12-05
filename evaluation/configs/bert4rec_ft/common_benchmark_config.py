@@ -6,19 +6,7 @@ from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.evaluation.metrics.mrr import MRR
 from aprec.evaluation.metrics.map import MAP
 from aprec.evaluation.metrics.hit import HIT
-from aprec.losses.bce import BCELoss
-from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
-from aprec.losses.logit_norm import LogitNormLoss
-from aprec.losses.softmax_crossentropy import SoftmaxCrossEntropy
-from aprec.recommenders.dnn_sequential_recommender.models.bert4recft.bias_bert import BiasBERT
-from aprec.recommenders.dnn_sequential_recommender.models.bert4recft.two_berts import TwoBERTS
-from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_samplers import SVDSimilaritySampler
-from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_samplers.popularity_based_sampler import PopularityBasedSampler
-from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_samplers.random_negatives_sampler import RandomNegativesSampler
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
-from aprec.recommenders.lightfm import LightFMRecommender
-from aprec.recommenders.top_recommender import TopRecommender
 
 USERS_FRACTIONS = [1.0]
 
@@ -99,6 +87,7 @@ def quantum_bert(batch_size=64):
 
 def bias_bert(batch_size=64):
         sequence_len = 200
+        from aprec.recommenders.dnn_sequential_recommender.models.bert4recft.bias_bert import BiasBERT
         from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
         from aprec.losses.mean_ypred_ploss import MeanPredLoss
         from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
@@ -123,6 +112,7 @@ def bias_bert(batch_size=64):
 
 
 def two_berts(batch_size=64):
+        from aprec.recommenders.dnn_sequential_recommender.models.bert4recft.two_berts import TwoBERTS
         sequence_len = 100
         from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
         from aprec.losses.mean_ypred_ploss import MeanPredLoss
