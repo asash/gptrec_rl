@@ -62,6 +62,7 @@ def sasrec_rss(recency_importance, add_cls=False, pos_smoothing=0,
             BCELoss(),
             sequence_splitter=target_splitter,
             target_builder=FullMatrixTargetsBuilder, 
+            batch_size=1024,
             pred_history_vectorizer=pred_history_vectorizer)
 
 def vanilla_sasrec():
@@ -86,8 +87,7 @@ def vanilla_sasrec():
 
 recommenders = {
 #    "Sasrec-rss-lambdarank-0.8-nocls-exp-mult-sm8": lambda: sasrec_rss(0.8, add_cls=False, pos_smoothing=8, pos_embedding='exp', pos_embeddding_comb='mult'),
-#    "Sasrec-rss-lambdarank-0.8-default-bidirectional": lambda: sasrec_rss(0.8, pos_embeddding_comb='add', pos_embedding='default', causal_attention=False),
-#    "Sasrec-rss-lambdarank-0.8-default-causal": lambda: sasrec_rss(0.8, pos_embeddding_comb='add', pos_embedding='default', causal_attention=True),
+    "Sasrec-rss-bce-0.8-default-causal": lambda: sasrec_rss(0.8, pos_embeddding_comb='add', pos_embedding='default', causal_attention=True),
     "Sasrec-rss-vanilla": lambda: vanilla_sasrec(),
     # "Sasrec-rss-lambdarank-0.8-cls-exp-mult": lambda: sasrec_rss(0.8, add_cls=True, pos_embedding='exp', pos_embeddding_comb='mult'),
     #"Sasrec-rss-lambdarank-0.8-cls-sin-mult": lambda: sasrec_rss(0.8, add_cls=True, pos_embedding='sin', pos_embeddding_comb='mult'),
