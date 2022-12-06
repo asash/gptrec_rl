@@ -1,8 +1,9 @@
 from aprec.evaluation.split_actions import LeaveOneOut
 from aprec.recommenders.sequential.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
 from aprec.recommenders.sequential.history_vectorizers.default_history_vectorizer import DefaultHistoryVectrizer
+from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecConfig
+from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
 
-from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecModelBuilder
 from aprec.recommenders.sequential.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
 from aprec.recommenders.sequential.target_builders.negative_per_positive_target import NegativePerPositiveTargetBuilder
 from aprec.recommenders.sequential.targetsplitters.last_item_splitter import SequenceContinuation
@@ -22,6 +23,7 @@ from aprec.evaluation.metrics.hit import HIT
 
 
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
+from aprec.tests.test_configs import TestConfigs
 
 USERS_FRACTIONS = [1.0]
 
@@ -45,53 +47,57 @@ def vanilla_bert4rec(time_limit):
     recommender = VanillaBERT4Rec(training_time_limit=time_limit, num_train_steps=10000000)
     return recommender
 
-HISTORY_LEN=50
 
-def dnn(model_arch, loss, sequence_splitter, 
+def dnn(model_config, loss, sequence_splitter, 
                 target_builder,
                 training_time_limit=3600,  
                 max_epochs=10000, 
-                pred_history_vectorizer = DefaultHistoryVectrizer()):
-    from aprec.recommenders.sequential.sequential_recommender import DNNSequentialRecommender
+                pred_history_vectorizer = DefaultHistoryVectrizer(),
+                sequence_length=50
+                ):
+    from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender
 
-    from tensorflow.keras.optimizers import Adam
-    optimizer=Adam(beta_2=0.98)
-    return DNNSequentialRecommender(train_epochs=max_epochs, loss=loss,
-                                                          model_arch=model_arch,
-                                                          optimizer=optimizer,
-                                                          early_stop_epochs=max_epochs,
-                                                          batch_size=256,
-                                                          max_batches_per_epoch=48,
-                                                          training_time_limit=training_time_limit,
-                                                          sequence_splitter=sequence_splitter, 
-                                                          targets_builder=target_builder, 
-                                                          pred_history_vectorizer=pred_history_vectorizer)
+    config = SequentialRecommenderConfig(model_config,                       
+                                train_epochs=max_epochs, loss=loss,
+                                early_stop_epochs=max_epochs,
+                                batch_size=256,
+                                max_batches_per_epoch=48,
+                                training_time_limit=training_time_limit,
+                                sequence_splitter=sequence_splitter, 
+                                targets_builder=target_builder, 
+                                pred_history_vectorizer=pred_history_vectorizer,
+                                sequence_length=sequence_length
+                                )
+    
+    return SequentialRecommender(config)
 
 def sasrec_rss(recency_importance, add_cls=False, pos_smoothing=0,
                pos_embedding='default', pos_embeddding_comb='add', 
-               causal_attention = True
-               ):
+               causal_attention = True):
         target_splitter = lambda: RecencySequenceSampling(0.2, exponential_importance(recency_importance), add_cls=add_cls)
-        val_splitter = lambda: SequenceContinuation(add_cls=add_cls)
         pred_history_vectorizer = AddMaskHistoryVectorizer() if add_cls else DefaultHistoryVectrizer()
-        return dnn(
-            SASRecModelBuilder(max_history_len=HISTORY_LEN, vanilla=False, num_heads=1, 
+        model_config = SASRecConfig(vanilla=False, num_heads=1, 
                    pos_embedding=pos_embedding,
                    pos_emb_comb=pos_embeddding_comb,
                    pos_smoothing=pos_smoothing, 
-                   causal_attention=causal_attention,
-                   embedding_size=64),
+                   causal_attention=causal_attention) 
+
+        return dnn(
+            model_config,
             LambdaGammaRankLoss(pred_truncate_at=4000),
             sequence_splitter=target_splitter,
             target_builder=FullMatrixTargetsBuilder, 
             pred_history_vectorizer=pred_history_vectorizer)
 
 def vanilla_sasrec():
-    model_arch = SASRecModelBuilder(max_history_len=HISTORY_LEN, vanilla=True, num_heads=1, embedding_size=64)
+    sequence_length = 50
+    model_config = SASRecConfig(vanilla=True )
 
-    return dnn(model_arch,  BCELoss(),
+    return dnn(model_config,  BCELoss(),
             ShiftedSequenceSplitter,
-            target_builder=lambda: NegativePerPositiveTargetBuilder(HISTORY_LEN))
+            target_builder=lambda: NegativePerPositiveTargetBuilder(sequence_length),
+            sequence_length=sequence_length
+            )
 
 
 
@@ -133,3 +139,6 @@ N_VAL_USERS=1024
 MAX_TEST_USERS=138493
 SPLIT_STRATEGY = LeaveOneOut(MAX_TEST_USERS)
 RECOMMENDERS = get_recommenders(filter_seen=True)
+
+if __name__ == "__main__":
+    TestConfigs().validate_config(__file__)

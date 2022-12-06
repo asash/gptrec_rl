@@ -1,85 +1,42 @@
-from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecModelBuilder
-from aprec.recommenders.sequential.models.gru4rec import GRU4Rec
-from aprec.recommenders.sequential.models.caser import Caser
-from aprec.recommenders.sequential.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
-from aprec.recommenders.sequential.target_builders.negative_per_positive_target import NegativePerPositiveTargetBuilder
-from aprec.recommenders.sequential.targetsplitters.last_item_splitter import SequenceContinuation
-from aprec.recommenders.sequential.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
-from aprec.recommenders.sequential.targetsplitters.recency_sequence_sampling import RecencySequenceSampling
-from aprec.recommenders.sequential.targetsplitters.recency_sequence_sampling import exponential_importance
-from aprec.recommenders.vanilla_bert4rec import VanillaBERT4Rec
-from aprec.losses.bce import BCELoss
-from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
-
-
-
 from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.evaluation.metrics.mrr import MRR
 from aprec.evaluation.metrics.map import MAP
 from aprec.evaluation.metrics.hit import HIT
-
-
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
+
 
 USERS_FRACTIONS = [1.0]
 
-def top_recommender():
-     from aprec.recommenders.top_recommender import TopRecommender
-     return TopRecommender()
 
-
-def svd_recommender(k):
-    from aprec.recommenders.svd import SvdRecommender
-    return SvdRecommender(k)
-
-
-def lightfm_recommender(k, loss):
-    from aprec.recommenders.lightfm import LightFMRecommender
-    return LightFMRecommender(k, loss, num_threads=32)
-
-
-def dnn(model_arch, loss, sequence_splitter, 
-                 target_builder=FullMatrixTargetsBuilder,
+def dnn(model_config, loss, sequence_splitter, 
+                target_builder,
                 training_time_limit=3600,  
-                max_epochs=10000):
-    from aprec.recommenders.sequential.sequential_recommender import DNNSequentialRecommender
+                max_epochs=10000,
+                sequence_len=50
+                ):
 
-    from tensorflow.keras.optimizers import Adam
-    optimizer=Adam(beta_2=0.98)
-    return DNNSequentialRecommender(train_epochs=max_epochs, loss=loss,
-                                                          model_arch=model_arch,
-                                                          optimizer=optimizer,
+    from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender
+    from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
+    recommender_config = SequentialRecommenderConfig(model_config=model_config,
+                                                         train_epochs=max_epochs, loss=loss,
                                                           early_stop_epochs=100000000,
                                                           batch_size=128,
                                                           training_time_limit=training_time_limit,
                                                           sequence_splitter=sequence_splitter, 
-                                                          targets_builder=target_builder, 
+                                                          targets_builder=target_builder,
+                                                          sequence_length=sequence_len
                                                           )
+    return SequentialRecommender(recommender_config)
 
-def vanilla_bert4rec(time_limit):
-    recommender = VanillaBERT4Rec(training_time_limit=time_limit, num_train_steps=10000000)
-    return recommender
-
-HISTORY_LEN=50
-
-def vanilla_sasrec():
-    model_arch = SASRecModelBuilder(max_history_len=HISTORY_LEN, 
-                            dropout_rate=0.2,
-                            num_heads=1,
-                            num_blocks=2,
-                            vanilla=True, 
-                            embedding_size=50,
-                    )
-
-    return dnn(model_arch,  BCELoss(),
-            ShiftedSequenceSplitter,
-            target_builder=lambda: NegativePerPositiveTargetBuilder(HISTORY_LEN), 
-            metric=BCELoss(),
-            )
 
 def sasrec_lambdarank_time(time):
+    from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
+    from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecConfig
+    from aprec.recommenders.sequential.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
+    from aprec.recommenders.sequential.targetsplitters.recency_sequence_sampling import RecencySequenceSampling, exponential_importance
+    from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
     return lambda time=time: dnn(
-            SASRecModelBuilder(max_history_len=HISTORY_LEN, vanilla=False),
+                    SASRecConfig(vanilla=False),
                     LambdaGammaRankLoss(pred_truncate_at=4000),
                     lambda: RecencySequenceSampling(0.2, exponential_importance(0.8)),
                     target_builder=FullMatrixTargetsBuilder,

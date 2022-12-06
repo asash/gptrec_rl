@@ -1,5 +1,7 @@
 import unittest
 
+import tensorflow as tf
+
 class TestConfigs(unittest.TestCase):
     def test_configs(self):
         import os
@@ -34,8 +36,11 @@ class TestConfigs(unittest.TestCase):
         import importlib.util
         import os
         import sys
-
-
+        memory_usage_start = 0
+        gpu_devices = tf.config.list_physical_devices('GPU')
+        if gpu_devices:
+            memory_usage_start = tf.config.experimental.get_memory_usage('GPU:0')
+        
 
         sys.stderr.write(f"validating {filename}... ")
         config_name = os.path.basename(filename[:-3])
@@ -66,13 +71,23 @@ class TestConfigs(unittest.TestCase):
         if hasattr(config, "TARGET_ITEMS_SAMPLER"):
             self.assertTrue(isinstance(config.TARGET_ITEMS_SAMPLER, TargetItemSampler))
 
+        if gpu_devices:
+            memory_usage_end = tf.config.experimental.get_memory_usage('GPU:0')
+            pass
+
+        self.assertEqual(memory_usage_start, memory_usage_end, "config should not use GPU memory if models are not initialized")
+
         model_cnt = 0 
         for recommender_name in config.RECOMMENDERS:
             recommender = config.RECOMMENDERS[recommender_name]()
             self.assertTrue(isinstance(recommender, Recommender), f"bad recommender type of {recommender_name}")
             del(recommender)
             model_cnt += 1
-        sys.stderr.write(f"{model_cnt} models found\n")
+        sys.stderr.write(f"{model_cnt} models found:\n")
+
+        for recommender_name in config.RECOMMENDERS:
+            sys.stderr.write(f"\t{recommender_name}\n")
+
 
 
 
