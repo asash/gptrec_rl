@@ -1,61 +1,25 @@
 from aprec.evaluation.split_actions import LeaveOneOut
-from aprec.recommenders.sequential.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
-from aprec.recommenders.sequential.history_vectorizers.default_history_vectorizer import DefaultHistoryVectrizer
-from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecConfig
-from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
-
-from aprec.recommenders.sequential.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
-from aprec.recommenders.sequential.target_builders.negative_per_positive_target import NegativePerPositiveTargetBuilder
-from aprec.recommenders.sequential.targetsplitters.last_item_splitter import SequenceContinuation
-from aprec.recommenders.sequential.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
-from aprec.recommenders.sequential.targetsplitters.recency_sequence_sampling import RecencySequenceSampling
-from aprec.recommenders.sequential.targetsplitters.recency_sequence_sampling import exponential_importance
-from aprec.recommenders.vanilla_bert4rec import VanillaBERT4Rec
-from aprec.losses.bce import BCELoss
-from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
-
-
 
 from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.evaluation.metrics.mrr import MRR
 from aprec.evaluation.metrics.map import MAP
 from aprec.evaluation.metrics.hit import HIT
 
-
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
-from aprec.tests.test_configs import TestConfigs
+
 
 USERS_FRACTIONS = [1.0]
-
-def top_recommender():
-     from aprec.recommenders.top_recommender import TopRecommender
-     return TopRecommender()
-
-
-def svd_recommender(k):
-    from aprec.recommenders.svd import SvdRecommender
-    return SvdRecommender(k)
-
-
-def lightfm_recommender(k, loss):
-    from aprec.recommenders.lightfm import LightFMRecommender
-    return LightFMRecommender(k, loss, num_threads=32)
-
-
-
-def vanilla_bert4rec(time_limit):
-    recommender = VanillaBERT4Rec(training_time_limit=time_limit, num_train_steps=10000000)
-    return recommender
 
 
 def dnn(model_config, loss, sequence_splitter, 
                 target_builder,
+                pred_history_vectorizer,
                 training_time_limit=3600,  
                 max_epochs=10000, 
-                pred_history_vectorizer = DefaultHistoryVectrizer(),
                 sequence_length=50
                 ):
     from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender
+    from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
 
     config = SequentialRecommenderConfig(model_config,                       
                                 train_epochs=max_epochs, loss=loss,
@@ -74,6 +38,16 @@ def dnn(model_config, loss, sequence_splitter,
 def sasrec_rss(recency_importance, add_cls=False, pos_smoothing=0,
                pos_embedding='default', pos_embeddding_comb='add', 
                causal_attention = True):
+        from aprec.recommenders.sequential.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
+        from aprec.recommenders.sequential.history_vectorizers.default_history_vectorizer import DefaultHistoryVectrizer
+        from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecConfig
+
+        from aprec.recommenders.sequential.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
+        from aprec.recommenders.sequential.targetsplitters.recency_sequence_sampling import RecencySequenceSampling
+        from aprec.recommenders.sequential.targetsplitters.recency_sequence_sampling import exponential_importance
+        from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
+
+
         target_splitter = lambda: RecencySequenceSampling(0.2, exponential_importance(recency_importance), add_cls=add_cls)
         pred_history_vectorizer = AddMaskHistoryVectorizer() if add_cls else DefaultHistoryVectrizer()
         model_config = SASRecConfig(vanilla=False, num_heads=1, 
@@ -90,14 +64,20 @@ def sasrec_rss(recency_importance, add_cls=False, pos_smoothing=0,
             pred_history_vectorizer=pred_history_vectorizer)
 
 def vanilla_sasrec():
+    from aprec.losses.bce import BCELoss
+    from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecConfig
+    from aprec.recommenders.sequential.target_builders.negative_per_positive_target import NegativePerPositiveTargetBuilder
+    from aprec.recommenders.sequential.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
+    from aprec.recommenders.sequential.history_vectorizers.default_history_vectorizer import DefaultHistoryVectrizer
+
     sequence_length = 50
     model_config = SASRecConfig(vanilla=True )
 
     return dnn(model_config,  BCELoss(),
             ShiftedSequenceSplitter,
             target_builder=lambda: NegativePerPositiveTargetBuilder(sequence_length),
-            sequence_length=sequence_length
-            )
+            sequence_length=sequence_length, 
+            pred_history_vectorizer= DefaultHistoryVectrizer())
 
 
 
@@ -141,4 +121,6 @@ SPLIT_STRATEGY = LeaveOneOut(MAX_TEST_USERS)
 RECOMMENDERS = get_recommenders(filter_seen=True)
 
 if __name__ == "__main__":
+
+    from aprec.tests.test_configs import TestConfigs
     TestConfigs().validate_config(__file__)
