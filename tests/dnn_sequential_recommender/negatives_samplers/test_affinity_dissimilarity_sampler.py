@@ -8,7 +8,7 @@ import tqdm
 class TestAffinityDissimilarity(unittest.TestCase):
     def test_affinity_dissimilarity_sampler(self):
         from aprec.datasets.movielens20m import get_movies_catalog
-        from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_samplers import AffinityDissimilaritySampler 
+        from aprec.recommenders.sequential.target_builders.negative_samplers import AffinityDissimilaritySampler 
         from aprec.tests.ml_sequences import ml_sequences
         sequences, item_ids = ml_sequences(10000)
         items_sampler = AffinityDissimilaritySampler(5)

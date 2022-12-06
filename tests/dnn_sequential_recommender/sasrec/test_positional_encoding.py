@@ -4,7 +4,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 
-from aprec.recommenders.dnn_sequential_recommender.models.sasrec.sasrec import ExpPositionEncoding, SinePositionEncoding
+from aprec.recommenders.sequential.models.sasrec.sasrec import ExpPositionEncoding, SinePositionEncoding
 
 
 class TestSinEmbedding(unittest.TestCase):

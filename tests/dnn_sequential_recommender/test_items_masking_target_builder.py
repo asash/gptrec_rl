@@ -5,7 +5,7 @@ import sys
 
 class TestItemsMaskingTargetBuilder(unittest.TestCase):
     def test_target_builder(self):
-        from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
+        from aprec.recommenders.sequential.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
         targets_builder = ItemsMaskingTargetsBuilder(relative_positions_encoding=False)
         targets_builder.set_sequence_len(5)
         targets_builder.set_n_items(10)
@@ -20,8 +20,8 @@ class TestItemsMaskingTargetBuilder(unittest.TestCase):
         self.assertTrue(np.all(extra_inputs[1] == expected_positions))
 
     def test_target_builder_random_negatives(self):
-        from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_with_negatives import ItemsMaskingWithNegativesTargetsBuilder
-        from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_samplers import RandomNegativesSampler 
+        from aprec.recommenders.sequential.target_builders.items_masking_with_negatives import ItemsMaskingWithNegativesTargetsBuilder
+        from aprec.recommenders.sequential.target_builders.negative_samplers import RandomNegativesSampler 
         n_items = 10
         negatves_sampler = RandomNegativesSampler(3) 
         targets_builder = ItemsMaskingWithNegativesTargetsBuilder(relative_positions_encoding=False, negatives_sampler=negatves_sampler)

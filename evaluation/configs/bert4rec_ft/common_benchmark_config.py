@@ -17,11 +17,11 @@ EXTRA_VAL_METRICS = [HIT(10), NDCG(10), HighestScore(),
  
 
 def bert4rec_ft(negatives_sampler, loss, use_ann=False, batch_size=256):
-        from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
-        from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
-        from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
-        from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_with_negatives import ItemsMaskingWithNegativesTargetsBuilder
-        from aprec.recommenders.dnn_sequential_recommender.models.bert4recft.bert4recft import BERT4RecFT
+        from aprec.recommenders.sequential.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
+        from aprec.recommenders.sequential.targetsplitters.items_masking import ItemsMasking
+        from aprec.recommenders.sequential.sequential_recommender import DNNSequentialRecommender
+        from aprec.recommenders.sequential.target_builders.items_masking_with_negatives import ItemsMaskingWithNegativesTargetsBuilder
+        from aprec.recommenders.sequential.models.bert4recft.bert4recft import BERT4RecFT
         from aprec.losses.items_masking_loss_proxy import ItemsMaksingLossProxy
         sequence_len = 100
         model = BERT4RecFT(max_history_len=sequence_len)
@@ -41,12 +41,12 @@ def bert4rec_ft(negatives_sampler, loss, use_ann=False, batch_size=256):
 
 def full_bert(loss, num_samples_normalization=False, batch_size=64):
         sequence_len = 100
-        from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
+        from aprec.recommenders.sequential.sequential_recommender import DNNSequentialRecommender
         from aprec.losses.mean_ypred_ploss import MeanPredLoss
-        from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
-        from aprec.recommenders.dnn_sequential_recommender.models.bert4recft.full_bert import FullBERT
-        from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
-        from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
+        from aprec.recommenders.sequential.targetsplitters.items_masking import ItemsMasking
+        from aprec.recommenders.sequential.models.bert4recft.full_bert import FullBERT
+        from aprec.recommenders.sequential.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
+        from aprec.recommenders.sequential.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
         model = FullBERT(max_history_len=sequence_len, loss=loss, num_samples_normalization=num_samples_normalization)
         recommender = DNNSequentialRecommender(model, train_epochs=100000, early_stop_epochs=200,
                                                batch_size=batch_size,
@@ -64,12 +64,12 @@ def full_bert(loss, num_samples_normalization=False, batch_size=64):
 
 def quantum_bert(batch_size=64):
         sequence_len = 200
-        from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
+        from aprec.recommenders.sequential.sequential_recommender import DNNSequentialRecommender
         from aprec.losses.mean_ypred_ploss import MeanPredLoss
-        from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
-        from aprec.recommenders.dnn_sequential_recommender.models.bert4recft.quantum_bert import QuantumBERT
-        from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
-        from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
+        from aprec.recommenders.sequential.targetsplitters.items_masking import ItemsMasking
+        from aprec.recommenders.sequential.models.bert4recft.quantum_bert import QuantumBERT
+        from aprec.recommenders.sequential.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
+        from aprec.recommenders.sequential.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
         model = QuantumBERT(max_history_len=sequence_len)
         recommender = DNNSequentialRecommender(model, train_epochs=100000, early_stop_epochs=10000,
                                                batch_size=batch_size,
@@ -87,13 +87,13 @@ def quantum_bert(batch_size=64):
 
 def bias_bert(batch_size=32):
         sequence_len = 100
-        from aprec.recommenders.dnn_sequential_recommender.models.bert4recft.bias_bert import BiasBERT
-        from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
+        from aprec.recommenders.sequential.models.bert4recft.bias_bert import BiasBERT
+        from aprec.recommenders.sequential.sequential_recommender import DNNSequentialRecommender
         from aprec.losses.mean_ypred_ploss import MeanPredLoss
-        from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
-        from aprec.recommenders.dnn_sequential_recommender.models.bert4recft.quantum_bert import QuantumBERT
-        from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
-        from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
+        from aprec.recommenders.sequential.targetsplitters.items_masking import ItemsMasking
+        from aprec.recommenders.sequential.models.bert4recft.quantum_bert import QuantumBERT
+        from aprec.recommenders.sequential.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
+        from aprec.recommenders.sequential.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
         model = BiasBERT(max_history_len=sequence_len)
         recommender = DNNSequentialRecommender(model, train_epochs=100000, early_stop_epochs=100,
                                                batch_size=batch_size,
@@ -112,14 +112,14 @@ def bias_bert(batch_size=32):
 
 
 def two_berts(batch_size=64):
-        from aprec.recommenders.dnn_sequential_recommender.models.bert4recft.two_berts import TwoBERTS
+        from aprec.recommenders.sequential.models.bert4recft.two_berts import TwoBERTS
         sequence_len = 100
-        from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
+        from aprec.recommenders.sequential.sequential_recommender import DNNSequentialRecommender
         from aprec.losses.mean_ypred_ploss import MeanPredLoss
-        from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
-        from aprec.recommenders.dnn_sequential_recommender.models.bert4recft.full_bert import FullBERT
-        from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
-        from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
+        from aprec.recommenders.sequential.targetsplitters.items_masking import ItemsMasking
+        from aprec.recommenders.sequential.models.bert4recft.full_bert import FullBERT
+        from aprec.recommenders.sequential.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
+        from aprec.recommenders.sequential.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
         model = TwoBERTS(max_history_len=sequence_len)
         recommender = DNNSequentialRecommender(model, train_epochs=100000, early_stop_epochs=100000,
                                                batch_size=batch_size,

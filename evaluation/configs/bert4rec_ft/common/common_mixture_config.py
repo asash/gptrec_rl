@@ -4,8 +4,8 @@ from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.evaluation.metrics.mrr import MRR
 from aprec.evaluation.metrics.map import MAP
 from aprec.evaluation.metrics.hit import HIT
-from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_samplers import SVDSimilaritySampler, PopularityBasedSampler, MixtureSampler, RandomNegativesSampler
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
+from aprec.recommenders.sequential.target_builders.negative_samplers import SVDSimilaritySampler, PopularityBasedSampler, MixtureSampler, RandomNegativesSampler
+from aprec.recommenders.sequential.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.recommenders.lightfm import LightFMRecommender
 from aprec.recommenders.top_recommender import TopRecommender
@@ -14,11 +14,11 @@ USERS_FRACTIONS = [1.0]
 
 
 def bert4rec_ft(negatives_sampler=SVDSimilaritySampler()):
-        from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
-        from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
-        from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
-        from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_with_negatives import ItemsMaskingWithNegativesTargetsBuilder
-        from aprec.recommenders.dnn_sequential_recommender.models.bert4recft.bert4recft import BERT4RecFT
+        from aprec.recommenders.sequential.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
+        from aprec.recommenders.sequential.targetsplitters.items_masking import ItemsMasking
+        from aprec.recommenders.sequential.sequential_recommender import DNNSequentialRecommender
+        from aprec.recommenders.sequential.target_builders.items_masking_with_negatives import ItemsMaskingWithNegativesTargetsBuilder
+        from aprec.recommenders.sequential.models.bert4recft.bert4recft import BERT4RecFT
         from aprec.losses.bce import BCELoss
         from aprec.losses.items_masking_loss_proxy import ItemsMaksingLossProxy
         sequence_len = 100
@@ -38,12 +38,12 @@ def bert4rec_ft(negatives_sampler=SVDSimilaritySampler()):
 
 def regular_bert4rec():
         sequence_len = 100
-        from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
+        from aprec.recommenders.sequential.sequential_recommender import DNNSequentialRecommender
         from aprec.losses.mean_ypred_ploss import MeanPredLoss
-        from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
-        from aprec.recommenders.dnn_sequential_recommender.models.bert4rec.bert4rec import BERT4Rec
-        from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
-        from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
+        from aprec.recommenders.sequential.targetsplitters.items_masking import ItemsMasking
+        from aprec.recommenders.sequential.models.bert4rec.bert4rec import BERT4Rec
+        from aprec.recommenders.sequential.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
+        from aprec.recommenders.sequential.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
         model = BERT4Rec( max_history_len=sequence_len)
         recommender = DNNSequentialRecommender(model, train_epochs=100000, early_stop_epochs=200,
                                                batch_size=64,
@@ -60,12 +60,12 @@ def regular_bert4rec():
 
 def vanilla_sasrec():
         sequence_len = 200
-        from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
+        from aprec.recommenders.sequential.sequential_recommender import DNNSequentialRecommender
         from aprec.losses.bce import BCELoss
-        from aprec.recommenders.dnn_sequential_recommender.models.sasrec.sasrec import SASRec
-        from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_per_positive_target import NegativePerPositiveTargetBuilder
+        from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecModelBuilder
+        from aprec.recommenders.sequential.target_builders.negative_per_positive_target import NegativePerPositiveTargetBuilder
         from tensorflow.keras.optimizers import Adam
-        model = SASRec(max_history_len=sequence_len, vanilla=True)
+        model = SASRecModelBuilder(max_history_len=sequence_len, vanilla=True)
         recommender = DNNSequentialRecommender(model, train_epochs=100000, early_stop_epochs=200,
                                                batch_size=64,
                                                training_time_limit=3600000, 

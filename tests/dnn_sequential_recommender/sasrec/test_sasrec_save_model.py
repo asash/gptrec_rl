@@ -3,31 +3,32 @@ from multiprocessing import Process, Pipe
 from aprec.recommenders.recommender import Recommender
 
 def train_model(conn):
-       from aprec.recommenders.dnn_sequential_recommender.models.sasrec.sasrec import SASRec
-       from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
-       from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import SequenceContinuation
-       import tempfile
-       from aprec.datasets.movielens20m import get_movielens20m_actions
-       from aprec.utils.generator_limit import generator_limit
-       USER_ID = '120'
+    from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecConfig
+    from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender
+    from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
+    from aprec.recommenders.sequential.targetsplitters.last_item_splitter import SequenceContinuation
 
-       val_users = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
-       model = SASRec(embedding_size=32)
-       def gen_model():
-               return DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=50000,
+
+    import tempfile
+    from aprec.datasets.movielens20m import get_movielens20m_actions
+    from aprec.utils.generator_limit import generator_limit
+    USER_ID = '120'
+
+    val_users = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
+    model_config = SASRecConfig()
+    recommender_config = SequentialRecommenderConfig(model_config, 
+                                              train_epochs=10000, early_stop_epochs=50000,
                                               batch_size=5,
                                               training_time_limit=3, sequence_splitter=SequenceContinuation)
-           
-       recommender = gen_model()
-
-       recommender.set_val_users(val_users)
-       for action in generator_limit(get_movielens20m_actions(), 10000):
-           recommender.add_action(action)
-       recommender.rebuild_model()
-       checkpoint_file = tempfile.NamedTemporaryFile(suffix='.dill', delete=False).name 
-       recommender.save(checkpoint_file) 
-       recs = recommender.recommend(USER_ID, 10)
-       conn.send((checkpoint_file, recs, ))
+    recommender = SequentialRecommender(recommender_config)
+    recommender.set_val_users(val_users)
+    for action in generator_limit(get_movielens20m_actions(), 10000):
+         recommender.add_action(action)
+    recommender.rebuild_model()
+    checkpoint_file = tempfile.NamedTemporaryFile(suffix='.dill', delete=False).name 
+    recommender.save(checkpoint_file) 
+    recs = recommender.recommend(USER_ID, 10)
+    conn.send((checkpoint_file, recs, ))
 
 
 
@@ -42,7 +43,8 @@ class TestSasrecModel(unittest.TestCase):
         print(checkpoint)
         print(recs)
 
-        recovered_recommender = Recommender.load(checkpoint)
+        from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender
+        recovered_recommender = SequentialRecommender.load(checkpoint)
         recommendations_from_recovered = recovered_recommender.recommend('120', 10)
         self.assertEqual(recs, recommendations_from_recovered)
 

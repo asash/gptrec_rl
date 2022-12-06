@@ -1,21 +1,21 @@
 import numpy as np
 from numpy import random
-from aprec.recommenders.dnn_sequential_recommender.models.sasrec.sasrec import SASRec
-from aprec.recommenders.dnn_sequential_recommender.models.gru4rec import GRU4Rec
-from aprec.recommenders.dnn_sequential_recommender.models.caser import Caser
-from aprec.recommenders.dnn_sequential_recommender.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
-from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_per_positive_target import NegativePerPositiveTargetBuilder
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import SequenceContinuation
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.random_splitter import RandomSplitter
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import RecencySequenceSampling, linear_importance
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import exponential_importance
+from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecModelBuilder
+from aprec.recommenders.sequential.models.gru4rec import GRU4Rec
+from aprec.recommenders.sequential.models.caser import Caser
+from aprec.recommenders.sequential.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
+from aprec.recommenders.sequential.target_builders.negative_per_positive_target import NegativePerPositiveTargetBuilder
+from aprec.recommenders.sequential.targetsplitters.last_item_splitter import SequenceContinuation
+from aprec.recommenders.sequential.targetsplitters.random_splitter import RandomSplitter
+from aprec.recommenders.sequential.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
+from aprec.recommenders.sequential.targetsplitters.recency_sequence_sampling import RecencySequenceSampling, linear_importance
+from aprec.recommenders.sequential.targetsplitters.recency_sequence_sampling import exponential_importance
 from aprec.evaluation.samplers.random_sampler import RandomTargetItemSampler
 from aprec.recommenders.first_order_mc import FirstOrderMarkovChainRecommender
 from aprec.recommenders.metrics.ndcg import KerasNDCG
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.svd import SvdRecommender
-from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
+from aprec.recommenders.sequential.sequential_recommender import DNNSequentialRecommender
 from aprec.recommenders.lightfm import LightFMRecommender
 from aprec.recommenders.vanilla_bert4rec import VanillaBERT4Rec
 from aprec.losses.bce import BCELoss
@@ -74,7 +74,7 @@ def vanilla_bert4rec(time_limit):
 HISTORY_LEN=50
 def vanilla_sasrec():
         return  dnn(
-            SASRec(max_history_len=HISTORY_LEN, 
+            SASRecModelBuilder(max_history_len=HISTORY_LEN, 
                             dropout_rate=0.2,
                             num_heads=1,
                             num_blocks=2,
@@ -102,7 +102,7 @@ def get_recommender(model, bias):
         arch = Caser(max_history_len=HISTORY_LEN, requires_user_id=False)
         loss = BCELoss()
     if model == 'SASRec-lambdarank':
-        arch = SASRec(max_history_len=HISTORY_LEN, vanilla=False)
+        arch = SASRecModelBuilder(max_history_len=HISTORY_LEN, vanilla=False)
         loss=LambdaGammaRankLoss(pred_truncate_at=4000)
     if model == 'GRU4rec-lambdarank':
         arch = GRU4Rec(max_history_len=HISTORY_LEN)

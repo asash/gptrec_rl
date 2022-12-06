@@ -1,8 +1,8 @@
-from aprec.recommenders.dnn_sequential_recommender.models.sasrec.sasrec import SASRec
-from aprec.recommenders.dnn_sequential_recommender.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import SequenceContinuation
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import RecencySequenceSampling
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import pow_importance
+from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecModelBuilder
+from aprec.recommenders.sequential.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
+from aprec.recommenders.sequential.targetsplitters.last_item_splitter import SequenceContinuation
+from aprec.recommenders.sequential.targetsplitters.recency_sequence_sampling import RecencySequenceSampling
+from aprec.recommenders.sequential.targetsplitters.recency_sequence_sampling import pow_importance
 from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
 
 
@@ -20,7 +20,7 @@ def dnn(model_arch, loss, sequence_splitter,
                  target_builder=FullMatrixTargetsBuilder,
                 training_time_limit=3600,  
                 max_epochs=10000):
-    from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
+    from aprec.recommenders.sequential.sequential_recommender import DNNSequentialRecommender
 
     from tensorflow.keras.optimizers import Adam
     optimizer=Adam(beta_2=0.98)
@@ -38,7 +38,7 @@ HISTORY_LEN=50
 
 recommenders = {
     f"Sasrec-rss-lambdarank-pow:{p}": lambda p=p: dnn(
-            SASRec(max_history_len=HISTORY_LEN, vanilla=False),
+            SASRecModelBuilder(max_history_len=HISTORY_LEN, vanilla=False),
             LambdaGammaRankLoss(pred_truncate_at=4000),
             lambda: RecencySequenceSampling(0.2, pow_importance(p)),
             target_builder=FullMatrixTargetsBuilder, 

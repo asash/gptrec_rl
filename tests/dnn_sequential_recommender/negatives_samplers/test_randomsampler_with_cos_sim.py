@@ -6,7 +6,7 @@ import tqdm
 class TestRandomSamplerCosSim(unittest.TestCase):
     def test_random_sampler_cos_sim(self):
         from aprec.datasets.movielens20m import get_movies_catalog
-        from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_samplers import RandomNegativesWithCosSimValues
+        from aprec.recommenders.sequential.target_builders.negative_samplers import RandomNegativesWithCosSimValues
         from aprec.tests.ml_sequences import ml_sequences
         sequences, item_ids = ml_sequences(1000000)
         items_sampler = RandomNegativesWithCosSimValues(5)

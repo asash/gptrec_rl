@@ -1,13 +1,13 @@
 import unittest
 from aprec.datasets.movielens20m import get_movies_catalog
 from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
-from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
-from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.default_history_vectorizer import DefaultHistoryVectrizer
-from aprec.recommenders.dnn_sequential_recommender.models.sasrec.sasrec import SASRec
-from aprec.recommenders.dnn_sequential_recommender.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import SequenceContinuation
+from aprec.recommenders.sequential.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
+from aprec.recommenders.sequential.history_vectorizers.default_history_vectorizer import DefaultHistoryVectrizer
+from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecConfig
+from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig 
+from aprec.recommenders.sequential.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
 
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import RecencySequenceSampling, exponential_importance
+from aprec.recommenders.sequential.targetsplitters.recency_sequence_sampling import RecencySequenceSampling, exponential_importance
 
 def dnn(model_arch, loss, sequence_splitter, 
                 target_builder,
@@ -15,32 +15,27 @@ def dnn(model_arch, loss, sequence_splitter,
                 max_epochs=10000, 
                 pred_history_vectorizer = DefaultHistoryVectrizer()
                 ):
-    from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
+    from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender, SequentialRecommenderConfig
 
-    from tensorflow.keras.optimizers import Adam
-    from aprec.recommenders.metrics.ndcg import KerasNDCG
-    optimizer=Adam(beta_2=0.98)
-    return DNNSequentialRecommender(train_epochs=max_epochs, loss=loss,
+    config = SequentialRecommenderConfig(train_epochs=max_epochs, loss=loss,
                                                           model_arch=model_arch,
-                                                          optimizer=optimizer,
                                                           early_stop_epochs=100,
                                                           batch_size=5,
                                                           training_time_limit=training_time_limit,
                                                           sequence_splitter=sequence_splitter, 
                                                           targets_builder=target_builder, 
-                                                          pred_history_vectorizer=pred_history_vectorizer,
-                                                          )
+                                                          pred_history_vectorizer=pred_history_vectorizer) 
+    return SequentialRecommender(config)
 
 def sasrec_rss(recency_importance, add_cls=False):
         target_splitter = lambda: RecencySequenceSampling(0.2, exponential_importance(recency_importance), add_cls=add_cls)
         pred_history_vectorizer = AddMaskHistoryVectorizer() if add_cls else DefaultHistoryVectrizer()
+        sasrec_config = SASRecConfig(vanilla=False, num_heads=1, pos_emb_comb='ignore', pos_embedding='exp', causal_attention=False, pos_smoothing=1)
         return dnn(
-            SASRec(max_history_len=50, vanilla=False, 
-                   num_heads=1, pos_emb_comb='ignore', pos_embedding='exp', causal_attention=False,
-                   pos_smoothing=1),
-            LambdaGammaRankLoss(pred_truncate_at=1000),
-            sequence_splitter=target_splitter,
-            target_builder=FullMatrixTargetsBuilder, 
+                sasrec_config, 
+                LambdaGammaRankLoss(pred_truncate_at=1000),
+                sequence_splitter=target_splitter,
+                target_builder=FullMatrixTargetsBuilder, 
             pred_history_vectorizer=pred_history_vectorizer
             )
 

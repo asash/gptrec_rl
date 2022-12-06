@@ -12,12 +12,12 @@ USERS_FRACTIONS = [1.0]
 
 def vit4rec(rss_alpha, loss_str ):
     from tensorflow.keras.optimizers import Adam
-    from aprec.recommenders.dnn_sequential_recommender.models.vit4rec import Vit4Rec
-    from aprec.recommenders.dnn_sequential_recommender.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
-    from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import SequenceContinuation
-    from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import RecencySequenceSampling
-    from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import exponential_importance
-    from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
+    from aprec.recommenders.sequential.models.vit4rec import Vit4Rec
+    from aprec.recommenders.sequential.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
+    from aprec.recommenders.sequential.targetsplitters.last_item_splitter import SequenceContinuation
+    from aprec.recommenders.sequential.targetsplitters.recency_sequence_sampling import RecencySequenceSampling
+    from aprec.recommenders.sequential.targetsplitters.recency_sequence_sampling import exponential_importance
+    from aprec.recommenders.sequential.sequential_recommender import DNNSequentialRecommender
     from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
     from aprec.recommenders.metrics.ndcg import KerasNDCG
     model_arch= Vit4Rec()

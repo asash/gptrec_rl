@@ -1,14 +1,14 @@
 from aprec.evaluation.samplers.pop_sampler import PopTargetItemsSampler
 from aprec.losses.mean_ypred_ploss import MeanPredLoss
-from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
-from aprec.recommenders.dnn_sequential_recommender.models.bert4rec.bert4rec import BERT4Rec
-from aprec.recommenders.dnn_sequential_recommender.models.albert4rec.albert4rec import ALBERT4Rec
-from aprec.recommenders.dnn_sequential_recommender.models.mixer import RecsysMixer
-from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
+from aprec.recommenders.sequential.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
+from aprec.recommenders.sequential.models.bert4rec.bert4rec import BERT4Rec
+from aprec.recommenders.sequential.models.albert4rec.albert4rec import ALBERT4Rec
+from aprec.recommenders.sequential.models.mixer import RecsysMixer
+from aprec.recommenders.sequential.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
+from aprec.recommenders.sequential.targetsplitters.items_masking import ItemsMasking
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.svd import SvdRecommender
-from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
+from aprec.recommenders.sequential.sequential_recommender import DNNSequentialRecommender
 from aprec.recommenders.lightfm import LightFMRecommender
 
 

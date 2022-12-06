@@ -1,16 +1,16 @@
 from aprec.evaluation.split_actions import LeaveOneOut
-from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
-from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.default_history_vectorizer import DefaultHistoryVectrizer
+from aprec.recommenders.sequential.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
+from aprec.recommenders.sequential.history_vectorizers.default_history_vectorizer import DefaultHistoryVectrizer
 
-from aprec.recommenders.dnn_sequential_recommender.models.sasrec.sasrec import SASRec
-from aprec.recommenders.dnn_sequential_recommender.models.gru4rec import GRU4Rec
-from aprec.recommenders.dnn_sequential_recommender.models.caser import Caser
-from aprec.recommenders.dnn_sequential_recommender.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
-from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_per_positive_target import NegativePerPositiveTargetBuilder
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.last_item_splitter import SequenceContinuation
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import RecencySequenceSampling
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import exponential_importance
+from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecModelBuilder
+from aprec.recommenders.sequential.models.gru4rec import GRU4Rec
+from aprec.recommenders.sequential.models.caser import Caser
+from aprec.recommenders.sequential.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
+from aprec.recommenders.sequential.target_builders.negative_per_positive_target import NegativePerPositiveTargetBuilder
+from aprec.recommenders.sequential.targetsplitters.last_item_splitter import SequenceContinuation
+from aprec.recommenders.sequential.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
+from aprec.recommenders.sequential.targetsplitters.recency_sequence_sampling import RecencySequenceSampling
+from aprec.recommenders.sequential.targetsplitters.recency_sequence_sampling import exponential_importance
 from aprec.recommenders.vanilla_bert4rec import VanillaBERT4Rec
 from aprec.losses.bce import BCELoss
 from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
@@ -54,7 +54,7 @@ def dnn(model_arch, loss, sequence_splitter,
                 training_time_limit=3600,  
                 max_epochs=10000, 
                 pred_history_vectorizer = DefaultHistoryVectrizer()):
-    from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
+    from aprec.recommenders.sequential.sequential_recommender import DNNSequentialRecommender
 
     from tensorflow.keras.optimizers import Adam
     from aprec.recommenders.metrics.ndcg import KerasNDCG
@@ -77,7 +77,7 @@ def sasrec_rss(recency_importance, add_cls=False, pos_smoothing=0,
         target_splitter = lambda: RecencySequenceSampling(0.2, exponential_importance(recency_importance), add_cls=add_cls)
         pred_history_vectorizer = AddMaskHistoryVectorizer() if add_cls else DefaultHistoryVectrizer()
         return dnn(
-            SASRec(max_history_len=HISTORY_LEN, vanilla=False, num_heads=1, 
+            SASRecModelBuilder(max_history_len=HISTORY_LEN, vanilla=False, num_heads=1, 
                    pos_embedding=pos_embedding,
                    pos_emb_comb=pos_embeddding_comb,
                    pos_smoothing=pos_smoothing, 
@@ -89,7 +89,7 @@ def sasrec_rss(recency_importance, add_cls=False, pos_smoothing=0,
             pred_history_vectorizer=pred_history_vectorizer)
 
 def vanilla_sasrec():
-    model_arch = SASRec(max_history_len=HISTORY_LEN, vanilla=True, num_heads=1, embedding_size=64)
+    model_arch = SASRecModelBuilder(max_history_len=HISTORY_LEN, vanilla=True, num_heads=1, embedding_size=64)
 
     return dnn(model_arch,  BCELoss(),
             ShiftedSequenceSplitter,

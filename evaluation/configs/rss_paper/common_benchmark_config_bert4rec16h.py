@@ -1,4 +1,4 @@
-from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import exponential_importance
+from aprec.recommenders.sequential.targetsplitters.recency_sequence_sampling import exponential_importance
 from aprec.recommenders.top_recommender import TopRecommender
 from aprec.recommenders.svd import SvdRecommender
 from aprec.recommenders.lightfm import LightFMRecommender

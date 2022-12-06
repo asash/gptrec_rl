@@ -5,15 +5,15 @@ import unittest
 class TestVit4rec(unittest.TestCase):
     def test_vit4rec(self):
 
-        from aprec.recommenders.dnn_sequential_recommender.models.vit4rec import Vit4Rec
-        from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
+        from aprec.recommenders.sequential.models.vit4rec import Vit4Rec
+        from aprec.recommenders.sequential.sequential_recommender import DNNSequentialRecommender
         from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
         from aprec.datasets.movielens20m import get_movielens20m_actions
         from aprec.utils.generator_limit import generator_limit
         from aprec.losses.mean_ypred_ploss import MeanPredLoss
-        from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
-        from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
-        from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
+        from aprec.recommenders.sequential.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
+        from aprec.recommenders.sequential.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
+        from aprec.recommenders.sequential.targetsplitters.items_masking import ItemsMasking
         val_users = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
         model = Vit4Rec()
         recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=50000,

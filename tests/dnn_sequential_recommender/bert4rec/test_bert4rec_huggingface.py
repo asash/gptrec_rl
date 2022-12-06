@@ -19,7 +19,7 @@ class TestOwnBERT4rec(unittest.TestCase):
         pass
 
     def test_bert4rec_model(self):
-        from aprec.recommenders.dnn_sequential_recommender.models.bert4rec.bert4rec import BERT4Rec
+        from aprec.recommenders.sequential.models.bert4rec.bert4rec import BERT4Rec
 
         bert4rec = BERT4Rec()
         bert4rec.set_common_params(10, 10, 32)
@@ -27,15 +27,15 @@ class TestOwnBERT4rec(unittest.TestCase):
         print(model.bert)
 
     def test_bert4rec_recommender(self):
-        from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
-        from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
+        from aprec.recommenders.sequential.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
+        from aprec.recommenders.sequential.targetsplitters.items_masking import ItemsMasking
         from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
         from aprec.utils.generator_limit import generator_limit
         from aprec.datasets.movielens20m import get_movielens20m_actions, get_movies_catalog
-        from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
-        from aprec.recommenders.dnn_sequential_recommender.targetsplitters.recency_sequence_sampling import exponential_importance
-        from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
-        from aprec.recommenders.dnn_sequential_recommender.models.bert4rec.bert4rec import BERT4Rec
+        from aprec.recommenders.sequential.sequential_recommender import DNNSequentialRecommender
+        from aprec.recommenders.sequential.targetsplitters.recency_sequence_sampling import exponential_importance
+        from aprec.recommenders.sequential.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
+        from aprec.recommenders.sequential.models.bert4rec.bert4rec import BERT4Rec
         from aprec.losses.mean_ypred_ploss import MeanPredLoss
 
         USER_ID = '120'

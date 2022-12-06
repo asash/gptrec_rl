@@ -5,15 +5,15 @@ from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
 from aprec.recommenders.metrics.ndcg import KerasNDCG
 class TestOwnBERT4rec(unittest.TestCase):
     def test_bert4rec_ft_recommender(self):
-        from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_with_negatives import ItemsMaskingWithNegativesTargetsBuilder
-        from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_samplers import RandomNegativesWithCosSimValues
-        from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
+        from aprec.recommenders.sequential.target_builders.items_masking_with_negatives import ItemsMaskingWithNegativesTargetsBuilder
+        from aprec.recommenders.sequential.target_builders.negative_samplers import RandomNegativesWithCosSimValues
+        from aprec.recommenders.sequential.targetsplitters.items_masking import ItemsMasking
         from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
         from aprec.utils.generator_limit import generator_limit
         from aprec.datasets.movielens20m import get_movielens20m_actions, get_movies_catalog
-        from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
-        from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
-        from aprec.recommenders.dnn_sequential_recommender.models.bert4recft.bert4recft import BERT4RecFT
+        from aprec.recommenders.sequential.sequential_recommender import DNNSequentialRecommender
+        from aprec.recommenders.sequential.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
+        from aprec.recommenders.sequential.models.bert4recft.bert4recft import BERT4RecFT
         from aprec.losses.items_masking_loss_proxy import ItemsMaksingLossProxy
 
         USER_ID = '120'

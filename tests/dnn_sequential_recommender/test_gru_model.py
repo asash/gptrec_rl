@@ -3,8 +3,8 @@ import unittest
 
 class TestGRUModel(unittest.TestCase):
     def test_gru_model(self):
-        from aprec.recommenders.dnn_sequential_recommender.models.gru4rec import GRU4Rec
-        from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
+        from aprec.recommenders.sequential.models.gru4rec import GRU4Rec
+        from aprec.recommenders.sequential.sequential_recommender import DNNSequentialRecommender
         from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
         from aprec.datasets.movielens20m import get_movielens20m_actions
         from aprec.utils.generator_limit import generator_limit

@@ -6,17 +6,17 @@ from aprec.evaluation.metrics.highest_score import HighestScore
 from aprec.evaluation.metrics.model_confidence import Confidence
 from aprec.losses.bce import BCELoss
 from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
-from aprec.recommenders.dnn_sequential_recommender.models.bert4recft.bias_bert import BiasBERT
+from aprec.recommenders.sequential.models.bert4recft.bias_bert import BiasBERT
 class TestTwoBerts(unittest.TestCase):
     def test_two_berts(self):
-        from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
-        from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
+        from aprec.recommenders.sequential.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
+        from aprec.recommenders.sequential.targetsplitters.items_masking import ItemsMasking
         from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
         from aprec.utils.generator_limit import generator_limit
         from aprec.datasets.movielens20m import get_movielens20m_actions, get_movies_catalog
-        from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
-        from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
-        from aprec.recommenders.dnn_sequential_recommender.models.bert4recft.full_bert import FullBERT
+        from aprec.recommenders.sequential.sequential_recommender import DNNSequentialRecommender
+        from aprec.recommenders.sequential.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
+        from aprec.recommenders.sequential.models.bert4recft.full_bert import FullBERT
         from aprec.evaluation.metrics.hit import HIT
         from aprec.losses.mean_ypred_ploss import MeanPredLoss
 

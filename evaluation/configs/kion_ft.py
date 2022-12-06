@@ -1,4 +1,4 @@
-from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_samplers import SVDSimilaritySampler
+from aprec.recommenders.sequential.target_builders.negative_samplers import SVDSimilaritySampler
 from aprec.datasets.mts_kion import get_submission_user_ids, get_users, get_items
 from aprec.evaluation.split_actions import LeaveOneOut
 from aprec.evaluation.metrics.precision import Precision
@@ -36,12 +36,12 @@ def generate_submit(recommender, recommender_name, evaluation_result, config):
 CALLBACKS = (generate_submit, )
 
 def bert4rec_ft(negatives_sampler=SVDSimilaritySampler(sample_size=400)):
-        from aprec.recommenders.dnn_sequential_recommender.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
-        from aprec.recommenders.dnn_sequential_recommender.targetsplitters.items_masking import ItemsMasking
-        from aprec.recommenders.dnn_sequential_recommender.dnn_sequential_recommender import DNNSequentialRecommender
-        from aprec.recommenders.dnn_sequential_recommender.target_builders.items_masking_with_negatives import ItemsMaskingWithNegativesTargetsBuilder
-        from aprec.recommenders.dnn_sequential_recommender.models.bert4recft.bert4recft import BERT4RecFT
-        from aprec.recommenders.dnn_sequential_recommender.target_builders.negative_samplers import RandomNegativesSampler
+        from aprec.recommenders.sequential.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
+        from aprec.recommenders.sequential.targetsplitters.items_masking import ItemsMasking
+        from aprec.recommenders.sequential.sequential_recommender import DNNSequentialRecommender
+        from aprec.recommenders.sequential.target_builders.items_masking_with_negatives import ItemsMaskingWithNegativesTargetsBuilder
+        from aprec.recommenders.sequential.models.bert4recft.bert4recft import BERT4RecFT
+        from aprec.recommenders.sequential.target_builders.negative_samplers import RandomNegativesSampler
         from aprec.losses.bce import BCELoss
         from aprec.losses.items_masking_loss_proxy import ItemsMaksingLossProxy
         sequence_len = 200
