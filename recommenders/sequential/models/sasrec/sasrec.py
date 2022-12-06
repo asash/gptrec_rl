@@ -80,7 +80,7 @@ class SASRecModel(SequentialRecsysModel):
         inputs = tf.zeros((self.data_parameters.batch_size, self.data_parameters.sequence_length))
         if self.model_parameters.vanilla:
             positives = tf.zeros_like(inputs)
-            negatives = tf.ones_like()
+            negatives = tf.ones_like(inputs)
             targets = tf.stack(positives, negatives, -2)
         else:
             targets = tf.zeros(1)
