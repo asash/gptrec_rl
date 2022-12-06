@@ -1,3 +1,6 @@
+from aprec.evaluation.metrics.entropy import Entropy
+from aprec.evaluation.metrics.highest_score import HighestScore
+from aprec.evaluation.metrics.model_confidence import Confidence
 from aprec.evaluation.split_actions import LeaveOneOut
 
 from aprec.evaluation.metrics.ndcg import NDCG
@@ -10,6 +13,12 @@ from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 
 USERS_FRACTIONS = [1.0]
 
+EXTRA_VAL_METRICS = [HIT(10), NDCG(10), HighestScore(), 
+                     Confidence('Softmax'), Confidence('Sigmoid'), 
+                     Entropy('Sigmoid', 10),Entropy('Softmax', 10),
+                     HIT(100), 
+                     HIT(1)
+                     ]
 
 def dnn(model_config, loss, sequence_splitter, 
                 target_builder,
@@ -31,7 +40,8 @@ def dnn(model_config, loss, sequence_splitter,
                                 sequence_splitter=sequence_splitter, 
                                 targets_builder=target_builder, 
                                 pred_history_vectorizer=pred_history_vectorizer,
-                                sequence_length=sequence_length
+                                sequence_length=sequence_length, 
+                                extra_val_metrics=EXTRA_VAL_METRICS
                                 )
     
     return SequentialRecommender(config)
