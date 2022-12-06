@@ -45,7 +45,7 @@ def sasrec_rss(recency_importance, add_cls=False, pos_smoothing=0,
         from aprec.recommenders.sequential.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
         from aprec.recommenders.sequential.targetsplitters.recency_sequence_sampling import RecencySequenceSampling
         from aprec.recommenders.sequential.targetsplitters.recency_sequence_sampling import exponential_importance
-        from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
+        from aprec.losses.bce import BCELoss
 
 
         target_splitter = lambda: RecencySequenceSampling(0.2, exponential_importance(recency_importance), add_cls=add_cls)
@@ -58,7 +58,7 @@ def sasrec_rss(recency_importance, add_cls=False, pos_smoothing=0,
 
         return dnn(
             model_config,
-            LambdaGammaRankLoss(pred_truncate_at=4000),
+            BCELoss(),
             sequence_splitter=target_splitter,
             target_builder=FullMatrixTargetsBuilder, 
             pred_history_vectorizer=pred_history_vectorizer)
