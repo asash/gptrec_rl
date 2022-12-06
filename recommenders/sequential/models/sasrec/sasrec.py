@@ -18,7 +18,7 @@ class SASRecModel(SequentialRecsysModel):
     @classmethod
     def get_model_config_class(cls) -> Type[SequentialRecsysModel]:
         return SASRecConfig
-    
+     
     def __init__(self, model_parameters, data_parameters, *args, **kwargs):
         super().__init__(model_parameters, data_parameters, *args, **kwargs)
         self.model_parameters: SASRecConfig #just a hint for the static analyser
@@ -58,7 +58,6 @@ class SASRecModel(SequentialRecsysModel):
             self.output_item_embeddings_encode = layers.Dense(self.model_parameters.embedding_size, activation='gelu')
         
 
-
     def block(self, seq, mask, i):
         x = self.attention_blocks[i]["first_norm"](seq)
         queries = x
@@ -81,7 +80,7 @@ class SASRecModel(SequentialRecsysModel):
         if self.model_parameters.vanilla:
             positives = tf.zeros_like(inputs)
             negatives = tf.ones_like(inputs)
-            targets = tf.stack(positives, negatives, -2)
+            targets = tf.stack([positives, negatives], -1)
         else:
             targets = tf.zeros(1)
         return inputs, targets
