@@ -16,7 +16,8 @@ def dnn(model_config, loss, sequence_splitter,
                 pred_history_vectorizer,
                 training_time_limit=3600,  
                 max_epochs=10000, 
-                sequence_length=50
+                sequence_length=50, 
+                batch_size=128,
                 ):
     from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender
     from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
@@ -24,7 +25,7 @@ def dnn(model_config, loss, sequence_splitter,
     config = SequentialRecommenderConfig(model_config,                       
                                 train_epochs=max_epochs, loss=loss,
                                 early_stop_epochs=max_epochs,
-                                batch_size=128,
+                                batch_size=batch_size,
                                 max_batches_per_epoch=256,
                                 training_time_limit=training_time_limit,
                                 sequence_splitter=sequence_splitter, 
@@ -77,6 +78,7 @@ def vanilla_sasrec():
             ShiftedSequenceSplitter,
             target_builder=lambda: NegativePerPositiveTargetBuilder(sequence_length),
             sequence_length=sequence_length, 
+            batch_size=1024,
             pred_history_vectorizer= DefaultHistoryVectrizer())
 
 
