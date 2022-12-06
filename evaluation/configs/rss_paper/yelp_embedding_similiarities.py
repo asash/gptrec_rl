@@ -14,7 +14,7 @@ USERS_FRACTIONS = [1.0]
 def dnn(model_config, loss, sequence_splitter, 
                 target_builder,
                 pred_history_vectorizer,
-                training_time_limit=3600,  
+                training_time_limit=6*3600,  
                 max_epochs=10000, 
                 sequence_length=50, 
                 batch_size=128,
