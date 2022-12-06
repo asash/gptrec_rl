@@ -62,7 +62,7 @@ def sasrec_rss(recency_importance, add_cls=False, pos_smoothing=0,
             BCELoss(),
             sequence_splitter=target_splitter,
             target_builder=FullMatrixTargetsBuilder, 
-            batch_size=1024,
+            batch_size=256,
             pred_history_vectorizer=pred_history_vectorizer)
 
 def vanilla_sasrec():
@@ -79,7 +79,7 @@ def vanilla_sasrec():
             ShiftedSequenceSplitter,
             target_builder=lambda: NegativePerPositiveTargetBuilder(sequence_length),
             sequence_length=sequence_length, 
-            batch_size=1024,
+            batch_size=256,
             pred_history_vectorizer= DefaultHistoryVectrizer())
 
 
