@@ -17,6 +17,7 @@ EXTRA_VAL_METRICS = [HIT(10), NDCG(10), HighestScore(),
                      Confidence('Softmax'), Confidence('Sigmoid'), 
                      Entropy('Sigmoid', 10),Entropy('Softmax', 10),
                      HIT(100), 
+                     MRR(),
                      HIT(1)
                      ]
 
