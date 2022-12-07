@@ -18,7 +18,9 @@ class TestSasrecModel(unittest.TestCase):
         sasrec_config = SASRecConfig(embedding_size=32)
         recommender_config = SequentialRecommenderConfig(sasrec_config, train_epochs=10000, early_stop_epochs=50000,
                                                batch_size=5,
-                                               training_time_limit=3,  sequence_splitter=SequenceContinuation)
+                                               training_time_limit=3,  
+                                               sequence_splitter=SequenceContinuation,
+                                               use_keras_training=True)
 
         recommender = SequentialRecommender(recommender_config)
         recommender.set_val_users(val_users)

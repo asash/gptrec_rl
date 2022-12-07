@@ -31,6 +31,7 @@ class SequentialRecommender(Recommender):
         #we use following two dicts for sampled metrics
         self.item_ranking_requrests = {}
         self.item_ranking_results = {}
+        self.model_is_compiled = False
 
     def add_action(self, action):
         user_id_internal = self.users.get_id(action.user_id)
@@ -118,7 +119,8 @@ class SequentialRecommender(Recommender):
         for epoch in range(self.config.train_epochs):
             generator = data_generator_async_factory.next_generator() 
             print(f"epoch: {epoch}")
-            train_loss, train_metric, extra_train_metrics, val_loss ,val_metric, extra_val_metrics = self.train_epoch(generator, val_generator)
+            train_loss = self.train_epoch(generator)
+            train_metric, extra_train_metrics, val_loss ,val_metric, extra_val_metrics = self.validate(val_generator)
 
             total_trainig_time = time.time() - start_time
             val_metric_history.append((total_trainig_time, val_metric))
@@ -196,8 +198,21 @@ class SequentialRecommender(Recommender):
     def add_test_items_ranking_request(self, request: ItemsRankingRequest):
         self.item_ranking_requrests[request.user_id] = request 
 
-    def train_epoch(self, generator, val_generator):
-        val_generator.reset()
+    def train_epoch(self, generator):
+        if self.config.use_keras_training:
+            return self.train_keras(generator)
+        else:
+            return self.train_eager(generator)
+
+    def train_keras(self, generator):
+        if not self.model_is_compiled:
+            self.model.compile(self.config.optimizer, self.config.loss)
+            self.model_is_compiled = True
+        summary =  self.model.fit(generator)
+        return summary.history['loss'][0]
+        
+        
+    def train_eager(self, generator):
         pbar = tqdm(generator, ascii=True, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0, leave=True, ncols=70)
         variables = self.model.variables
         loss_sum = 0
@@ -213,7 +228,10 @@ class SequentialRecommender(Recommender):
             pbar.set_description(f"loss: {loss_sum/num_batches:.5f}")
         pbar.close()
         train_loss = loss_sum/num_batches
+        return train_loss
 
+    def validate(self, val_generator):
+        val_generator.reset()
         print("validating..")
         pbar = tqdm(val_generator, ascii=True, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0, leave=True, ncols=70)
         val_loss_sum = 0 
@@ -228,7 +246,7 @@ class SequentialRecommender(Recommender):
         val_metric, extra_val_metrics = self.get_metric(self.val_recommendation_requets, self.val_seen, self.val_ground_truth, callbacks=True)
         train_metric, extra_train_metrics = self.get_metric(self.train_sample_recommendation_requests, self.train_sample_seen, self.train_sample_ground_truth)
 
-        return train_loss, train_metric, extra_train_metrics, val_loss, val_metric, extra_val_metrics
+        return train_metric, extra_train_metrics, val_loss, val_metric, extra_val_metrics
 
     def get_metric(self, recommendation_requests, seen_items, ground_truth, callbacks=False):
         extra_recs = 0

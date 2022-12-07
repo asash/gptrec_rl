@@ -30,7 +30,8 @@ class SequentialRecommenderConfig(object):
                  extra_val_metrics: List[Metric] = [], #Used for logging only
                  val_callbacks = [],
                  use_ann_for_inference = False, 
-                 sequence_length=200
+                 sequence_length=200, 
+                 use_keras_training=False
                  ):
         self.model_config = model_config
         self.loss = loss
@@ -54,3 +55,4 @@ class SequentialRecommenderConfig(object):
         self.use_ann_for_inference = use_ann_for_inference
         self.loss.set_batch_size(self.batch_size)
         self.sequence_length = sequence_length
+        self.use_keras_training = use_keras_training 
