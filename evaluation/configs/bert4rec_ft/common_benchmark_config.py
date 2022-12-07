@@ -42,7 +42,7 @@ def bert4rec_ft(negatives_sampler, loss, use_ann=False, batch_size=256):
 def full_bert(loss, num_samples_normalization=False, batch_size=64):
         sequence_len = 100
         from aprec.recommenders.sequential.sequential_recommender import DNNSequentialRecommender
-        from aprec.losses.mean_ypred_ploss import MeanPredLoss
+        from aprec.losses.mean_ypred_loss import MeanPredLoss
         from aprec.recommenders.sequential.targetsplitters.items_masking import ItemsMasking
         from aprec.recommenders.sequential.models.bert4recft.full_bert import FullBERT
         from aprec.recommenders.sequential.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
@@ -65,7 +65,7 @@ def full_bert(loss, num_samples_normalization=False, batch_size=64):
 def quantum_bert(batch_size=64):
         sequence_len = 200
         from aprec.recommenders.sequential.sequential_recommender import DNNSequentialRecommender
-        from aprec.losses.mean_ypred_ploss import MeanPredLoss
+        from aprec.losses.mean_ypred_loss import MeanPredLoss
         from aprec.recommenders.sequential.targetsplitters.items_masking import ItemsMasking
         from aprec.recommenders.sequential.models.bert4recft.quantum_bert import QuantumBERT
         from aprec.recommenders.sequential.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
@@ -89,7 +89,7 @@ def bias_bert(batch_size=32):
         sequence_len = 100
         from aprec.recommenders.sequential.models.bert4recft.bias_bert import BiasBERT
         from aprec.recommenders.sequential.sequential_recommender import DNNSequentialRecommender
-        from aprec.losses.mean_ypred_ploss import MeanPredLoss
+        from aprec.losses.mean_ypred_loss import MeanPredLoss
         from aprec.recommenders.sequential.targetsplitters.items_masking import ItemsMasking
         from aprec.recommenders.sequential.models.bert4recft.quantum_bert import QuantumBERT
         from aprec.recommenders.sequential.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
@@ -115,7 +115,7 @@ def two_berts(batch_size=64):
         from aprec.recommenders.sequential.models.bert4recft.two_berts import TwoBERTS
         sequence_len = 100
         from aprec.recommenders.sequential.sequential_recommender import DNNSequentialRecommender
-        from aprec.losses.mean_ypred_ploss import MeanPredLoss
+        from aprec.losses.mean_ypred_loss import MeanPredLoss
         from aprec.recommenders.sequential.targetsplitters.items_masking import ItemsMasking
         from aprec.recommenders.sequential.models.bert4recft.full_bert import FullBERT
         from aprec.recommenders.sequential.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder

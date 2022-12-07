@@ -10,7 +10,7 @@ class TestDeberta4Rec(unittest.TestCase):
         from aprec.recommenders.sequential.sequential_recommender import DNNSequentialRecommender
         from aprec.recommenders.sequential.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
         from aprec.recommenders.sequential.models.deberta4rec.deberta4rec import Deberta4Rec
-        from aprec.losses.mean_ypred_ploss import MeanPredLoss
+        from aprec.losses.mean_ypred_loss import MeanPredLoss
 
         USER_ID  = '120'
         val_users = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']

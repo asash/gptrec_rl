@@ -17,7 +17,7 @@ class TestTwoBerts(unittest.TestCase):
         from aprec.recommenders.sequential.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
         from aprec.recommenders.sequential.models.bert4recft.quantum_bert import QuantumBERT
         from aprec.evaluation.metrics.hit import HIT
-        from aprec.losses.mean_ypred_ploss import MeanPredLoss
+        from aprec.losses.mean_ypred_loss import MeanPredLoss
 
         USER_ID = '120'
 

@@ -1,9 +1,13 @@
+import os
 import unittest
 
-from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender
-
 class TestVanillaSasrec(unittest.TestCase):
+    def setUp(self):
+        os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+
+
     def test_vanilla_sasrec(self):
+        from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender
         from aprec.datasets.movielens20m import get_movielens20m_actions, get_movies_catalog
         from aprec.losses.bce import BCELoss
         from aprec.recommenders.sequential.target_builders.negative_per_positive_target import NegativePerPositiveTargetBuilder
@@ -22,7 +26,9 @@ class TestVanillaSasrec(unittest.TestCase):
                                                training_time_limit=10, 
                                                sequence_splitter=ShiftedSequenceSplitter, 
                                                targets_builder=NegativePerPositiveTargetBuilder,
+                                               use_keras_training=True
                                                )
+        
         recommender = SequentialRecommender(recommender_config)
 
         recommender.set_val_users(val_users)

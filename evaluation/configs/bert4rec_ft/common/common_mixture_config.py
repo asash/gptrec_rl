@@ -39,7 +39,7 @@ def bert4rec_ft(negatives_sampler=SVDSimilaritySampler()):
 def regular_bert4rec():
         sequence_len = 100
         from aprec.recommenders.sequential.sequential_recommender import DNNSequentialRecommender
-        from aprec.losses.mean_ypred_ploss import MeanPredLoss
+        from aprec.losses.mean_ypred_loss import MeanPredLoss
         from aprec.recommenders.sequential.targetsplitters.items_masking import ItemsMasking
         from aprec.recommenders.sequential.models.bert4rec.bert4rec import BERT4Rec
         from aprec.recommenders.sequential.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder

@@ -2,7 +2,7 @@ from typing import List
 import tensorflow as tf
 from aprec.evaluation.metrics.metric import Metric
 from aprec.evaluation.metrics.ndcg import NDCG
-from aprec.losses.mean_ypred_ploss import MeanPredLoss
+from aprec.losses.mean_ypred_loss import MeanPredLoss
 from aprec.losses.loss import Loss
 from aprec.recommenders.sequential.history_vectorizers.default_history_vectorizer import DefaultHistoryVectrizer
 from aprec.recommenders.sequential.history_vectorizers.history_vectorizer import HistoryVectorizer

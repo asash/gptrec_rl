@@ -1,5 +1,5 @@
 from aprec.evaluation.samplers.pop_sampler import PopTargetItemsSampler
-from aprec.losses.mean_ypred_ploss import MeanPredLoss
+from aprec.losses.mean_ypred_loss import MeanPredLoss
 from aprec.recommenders.sequential.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
 from aprec.recommenders.sequential.models.bert4rec.bert4rec import BERT4Rec
 from aprec.recommenders.sequential.models.albert4rec.albert4rec import ALBERT4Rec

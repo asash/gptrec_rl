@@ -3,7 +3,7 @@ import unittest
 class TestMixer(unittest.TestCase):
     def test_mixer_recommender(self):
         from aprec.datasets.movielens20m import get_movielens20m_actions, get_movies_catalog
-        from aprec.losses.mean_ypred_ploss import MeanPredLoss
+        from aprec.losses.mean_ypred_loss import MeanPredLoss
         from aprec.recommenders.sequential.sequential_recommender import DNNSequentialRecommender
         from aprec.recommenders.sequential.targetsplitters.recency_sequence_sampling import exponential_importance
         from aprec.recommenders.sequential.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer

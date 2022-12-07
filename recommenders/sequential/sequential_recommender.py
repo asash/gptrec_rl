@@ -220,8 +220,10 @@ class SequentialRecommender(Recommender):
         for X, y_true in pbar:
             num_batches += 1
             with tf.GradientTape() as tape:
+                tape.watch(variables)
                 y_pred = self.model(X, training=True)
                 loss_val = tf.reduce_mean(self.config.loss(y_true, y_pred))
+                pass
             grad = tape.gradient(loss_val, variables)
             self.config.optimizer.apply_gradients(zip(grad, variables))
             loss_sum += loss_val

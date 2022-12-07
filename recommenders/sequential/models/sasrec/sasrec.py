@@ -54,13 +54,17 @@ class SASRecModel(SequentialRecsysModel):
         self.seq_norm = layers.LayerNormalization()
         self.all_items = tf.range(0, self.data_parameters.num_items)
         if not self.model_parameters.reuse_item_embeddings:
-            self.output_item_embeddings = layers.Embedding(self.data_parameters.num_items, self.model_parameters.embedding_size)
+            self.output_item_embeddings = layers.Embedding(self.data_parameters.num_items + 2, self.model_parameters.embedding_size)
 
         if self.model_parameters.encode_output_embeddings:
             self.output_item_embeddings_encode = layers.Dense(self.model_parameters.embedding_size, activation='gelu')
         self.loss_ = get_loss.listwise_loss_from_config(self.model_parameters.loss, self.model_parameters.loss_params)
-        self.loss_.set_batch_size(self.data_parameters.batch_size)
-        self.loss_.set_num_items(self.data_parameters.num_items)
+        if self.model_parameters.vanilla:
+            self.loss_.set_batch_size(self.data_parameters.batch_size * self.data_parameters.sequence_length)
+            self.loss_.set_num_items(2)
+        else:
+            self.loss_.set_batch_size(self.data_parameters.batch_size)
+            self.loss_.set_num_items(self.data_parameters.num_items)
         pass
 
     def block(self, seq, mask, i):
@@ -81,7 +85,9 @@ class SASRecModel(SequentialRecsysModel):
         return x, attentions
 
     def get_dummy_inputs(self):
-        inputs = [tf.zeros((self.data_parameters.batch_size, self.data_parameters.sequence_length))]
+        pad = tf.fill((self.data_parameters.batch_size, 1), self.data_parameters.num_items)
+        seq = tf.zeros((self.data_parameters.batch_size, self.data_parameters.sequence_length-1), 'int32')
+        inputs = [tf.concat([pad, seq], -1)]
         if self.model_parameters.vanilla:
             positives = tf.zeros_like(inputs[0])
             negatives = tf.ones_like(inputs[0])
@@ -116,6 +122,12 @@ class SASRecModel(SequentialRecsysModel):
 
             output = tf.stack([positive_results, negative_results], axis=-1)
             ground_truth = tf.stack([true_positives, true_negatives], axis=-1)
+            mask = tf.expand_dims(tf.cast((input_ids == self.data_parameters.num_items), 'float32'), -1)
+            mask = tf.tile(mask, [1, 1, 2])
+            ground_truth = -100 * mask + ground_truth * (1-mask) #ignore padding in loss
+            ground_truth = tf.reshape(ground_truth, (self.data_parameters.sequence_length * self.data_parameters.batch_size, 2))
+            output = tf.reshape(output, (self.data_parameters.sequence_length * self.data_parameters.batch_size, 2))
+            pass
 
         else:
             seq_emb = seq_emb[:, -1, :]
@@ -129,7 +141,8 @@ class SASRecModel(SequentialRecsysModel):
             ground_truth = tf.scatter_nd(idx , vals, (self.data_parameters.batch_size, self.data_parameters.num_items+1))[:,:-1]
             
         output = self.output_activation(output)
-        return self.loss_.loss_per_list(ground_truth, output)
+        result =  self.loss_.loss_per_list(ground_truth, output)
+        return result
     
     def score_all_items(self, inputs):
         input_ids = inputs[0]

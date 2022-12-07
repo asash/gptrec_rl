@@ -10,7 +10,7 @@ class ConvBERT4Rec(unittest.TestCase):
         from aprec.recommenders.sequential.sequential_recommender import DNNSequentialRecommender
         from aprec.recommenders.sequential.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
         from aprec.recommenders.sequential.models.convbert4rec.convbert4rec import ConvBERT4Rec
-        from aprec.losses.mean_ypred_ploss import MeanPredLoss
+        from aprec.losses.mean_ypred_loss import MeanPredLoss
 
         
         USER_ID = '120'

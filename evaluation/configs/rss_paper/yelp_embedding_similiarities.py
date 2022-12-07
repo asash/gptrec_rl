@@ -55,7 +55,7 @@ def sasrec_rss(recency_importance, add_cls=False, pos_smoothing=0,
         from aprec.recommenders.sequential.history_vectorizers.default_history_vectorizer import DefaultHistoryVectrizer
         from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecConfig
 
-        from aprec.recommenders.sequential.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
+        from aprec.recommenders.sequential.target_builders.positives_only_targets_builder import PositvesOnlyTargetBuilder
         from aprec.recommenders.sequential.targetsplitters.recency_sequence_sampling import RecencySequenceSampling
         from aprec.recommenders.sequential.targetsplitters.recency_sequence_sampling import exponential_importance
         from aprec.losses.bce import BCELoss
@@ -73,7 +73,7 @@ def sasrec_rss(recency_importance, add_cls=False, pos_smoothing=0,
             model_config,
             BCELoss(),
             sequence_splitter=target_splitter,
-            target_builder=FullMatrixTargetsBuilder, 
+            target_builder=PositvesOnlyTargetBuilder, 
             batch_size=256,
             pred_history_vectorizer=pred_history_vectorizer)
 
