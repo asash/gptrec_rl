@@ -119,6 +119,7 @@ class MemmapDataGenerator(Sequence):
         res = np.memmap(fname, shape=shape, dtype=dtype, mode="write")
         res[:] = arr[:]
         res.flush()
+        res._mmap.close()
         del(res)
         return fname, shape, dtype
     
@@ -143,6 +144,7 @@ class MemmapDataGenerator(Sequence):
         pass
         self.current_position = 0
         self.max = self.__len__()
+        self.memmaped_objects = {}
 
     def __next__(self):
         if self.current_position >= self.max:
@@ -155,17 +157,25 @@ class MemmapDataGenerator(Sequence):
         return len(self.targets)
     
     def __getitem__(self, idx):
-        inputs = []
-        for input in self.inputs[idx]:
-            inputs.append(self.recover(*input))
-        targets = self.recover(*self.targets[idx])
-        return inputs, targets
+        if idx not in  self.memmaped_objects:
+            inputs = []
+            for input in self.inputs[idx]:
+                inputs.append(self.recover(*input))
+            targets = self.recover(*self.targets[idx])
+            self.memmaped_objects[idx] = inputs, targets
+        return self.memmaped_objects[idx]
 
     def reset(self):
         self.current_position = 0
         self.max = self.__len__()
 
     def cleanup(self):
+        for idx in list(self.memmaped_objects.keys()):
+            inputs, targets = self.memmaped_objects[idx] 
+            targets._mmap.close()
+            for input in inputs:
+                input._mmap.close()
+            del(self.memmaped_objects[idx])
         cmd = f"rm -rf {self.tempdir}"
         shell(cmd)
 
