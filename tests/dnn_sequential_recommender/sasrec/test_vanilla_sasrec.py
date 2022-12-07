@@ -23,7 +23,7 @@ class TestVanillaSasrec(unittest.TestCase):
 
         recommender_config = SequentialRecommenderConfig(model_config, train_epochs=10000, early_stop_epochs=50000,
                                                batch_size=5,
-                                               training_time_limit=10, 
+                                               training_time_limit=5,  
                                                sequence_splitter=ShiftedSequenceSplitter, 
                                                targets_builder=NegativePerPositiveTargetBuilder,
                                                use_keras_training=True

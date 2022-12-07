@@ -115,8 +115,10 @@ class SequentialRecommender(Recommender):
                                       targets_builder=targets_builder, 
                                       shuffle_data=True)
 
-
+        early_stop_flag = False
         for epoch in range(self.config.train_epochs):
+            if early_stop_flag:
+                break
             generator = data_generator_async_factory.next_generator() 
             print(f"epoch: {epoch}")
             train_loss = self.train_epoch(generator)
@@ -167,10 +169,10 @@ class SequentialRecommender(Recommender):
 
             if steps_to_early_stop <= 0:
                 print(f"early stopped at epoch {epoch}")
-                break
+                early_stop_flag = True
             if self.config.training_time_limit is not None and total_trainig_time > self.config.training_time_limit:
                 print(f"time limit stop triggered at epoch {epoch}")
-                break
+                early_stop_flag = True
             generator.cleanup()
 
         data_generator_async_factory.close()
