@@ -2,7 +2,7 @@ from typing import List
 import tensorflow as tf
 from aprec.evaluation.metrics.metric import Metric
 from aprec.evaluation.metrics.ndcg import NDCG
-from aprec.losses.bce import BCELoss
+from aprec.losses.mean_ypred_ploss import MeanPredLoss
 from aprec.losses.loss import Loss
 from aprec.recommenders.sequential.history_vectorizers.default_history_vectorizer import DefaultHistoryVectrizer
 from aprec.recommenders.sequential.history_vectorizers.history_vectorizer import HistoryVectorizer
@@ -13,7 +13,7 @@ from aprec.recommenders.sequential.targetsplitters.random_fraction_splitter impo
 
 class SequentialRecommenderConfig(object):
     def __init__(self, model_config: SequentialModelConfig,
-                 loss: Loss = BCELoss(),
+                 loss: Loss = MeanPredLoss(), #by default we assume that the model is responsible for loss and model.call() returns the loss value which we will optimize. 
                  train_epochs=300, optimizer=tf.keras.optimizers.Adam(),
                  sequence_splitter = RandomFractionSplitter, 
                  targets_builder = FullMatrixTargetsBuilder,

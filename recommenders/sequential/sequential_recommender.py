@@ -208,7 +208,7 @@ class SequentialRecommender(Recommender):
         if not self.model_is_compiled:
             self.model.compile(self.config.optimizer, self.config.loss)
             self.model_is_compiled = True
-        summary =  self.model.fit(generator)
+        summary =  self.model.fit(generator, steps_per_epoch=self.config.max_batches_per_epoch)
         return summary.history['loss'][0]
         
         

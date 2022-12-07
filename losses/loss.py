@@ -13,6 +13,14 @@ class Loss():
     def set_batch_size(self, batch_size):
         self.batch_size = batch_size
 
+    def get_config(self):
+        result =  {"num_items": self.num_items, "batch_size": self.batch_size}
+        return result
+
+    @classmethod
+    def from_config(cls, config):
+        return cls(num_items=config['num_items'], batch_size=config['batch_size']) 
+
 class ListWiseLoss(Loss):
     @tf.custom_gradient
     def loss_per_list(self, y_true, y_pred, sample_weights=None):

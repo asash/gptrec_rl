@@ -1,6 +1,8 @@
 from aprec.losses.bpr import BPRLoss
 from aprec.losses.bce import BCELoss
 from aprec.losses.climf import CLIMFLoss
+from aprec.losses.loss import ListWiseLoss, Loss
+from aprec.losses.softmax_crossentropy import SoftmaxCrossEntropy
 from aprec.losses.top1 import TOP1Loss
 from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
 from aprec.losses.xendcg import XENDCGLoss
@@ -12,6 +14,8 @@ losses = {
     'climf': CLIMFLoss, 
     'bce': BCELoss, 
     'top1': TOP1Loss, 
+    'lambdarank': LambdaGammaRankLoss, 
+    'softmax_ce': SoftmaxCrossEntropy, 
 }
 
 def get_loss(loss_name, items_num, batch_size, max_positives=40,
@@ -26,3 +30,14 @@ def get_loss(loss_name, items_num, batch_size, max_positives=40,
                                    pred_truncate_at=lambdarank_pred_truncate,
                                    bce_grad_weight=lambdarank_bce_weight)
     return losses[loss_name](num_items=items_num, batch_size=batch_size)
+
+
+listwise_losses = {
+    'softmax_ce': SoftmaxCrossEntropy, 
+    'lambdarank': LambdaGammaRankLoss, 
+    'bce': BCELoss, 
+}
+ 
+def listwise_loss_from_config(loss_name, loss_params) -> ListWiseLoss:
+    return losses[loss_name](**loss_params)
+

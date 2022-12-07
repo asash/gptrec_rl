@@ -1,6 +1,9 @@
 from __future__ import annotations
 from typing import Type
 import tensorflow as tf
+from aprec.losses import get_loss
+from aprec.losses.bce import BCELoss
+from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
 layers = tf.keras.layers
 
 
@@ -22,7 +25,6 @@ class SASRecModel(SequentialRecsysModel):
     def __init__(self, model_parameters, data_parameters, *args, **kwargs):
         super().__init__(model_parameters, data_parameters, *args, **kwargs)
         self.model_parameters: SASRecConfig #just a hint for the static analyser
-        assert(self.model_parameters.vanilla != self.model_parameters.sampled_target, "only vanilla or sampled targetd strategy can be used at once")
         self.positions = tf.constant(tf.expand_dims(tf.range(self.data_parameters.sequence_length), 0))
         self.item_embeddings_layer = layers.Embedding(
                                                       self.data_parameters.num_items + 2, 
@@ -56,7 +58,10 @@ class SASRecModel(SequentialRecsysModel):
 
         if self.model_parameters.encode_output_embeddings:
             self.output_item_embeddings_encode = layers.Dense(self.model_parameters.embedding_size, activation='gelu')
-        
+        self.loss_ = get_loss.listwise_loss_from_config(self.model_parameters.loss, self.model_parameters.loss_params)
+        self.loss_.set_batch_size(self.data_parameters.batch_size)
+        self.loss_.set_num_items(self.data_parameters.num_items)
+        pass
 
     def block(self, seq, mask, i):
         x = self.attention_blocks[i]["first_norm"](seq)
@@ -76,39 +81,55 @@ class SASRecModel(SequentialRecsysModel):
         return x, attentions
 
     def get_dummy_inputs(self):
-        inputs = tf.zeros((self.data_parameters.batch_size, self.data_parameters.sequence_length))
+        inputs = [tf.zeros((self.data_parameters.batch_size, self.data_parameters.sequence_length))]
         if self.model_parameters.vanilla:
-            positives = tf.zeros_like(inputs)
-            negatives = tf.ones_like(inputs)
+            positives = tf.zeros_like(inputs[0])
+            negatives = tf.ones_like(inputs[0])
             targets = tf.stack([positives, negatives], -1)
+            inputs.append(targets)
         else:
-            targets = tf.zeros(1)
-        return inputs, targets
+            pad = tf.fill((self.data_parameters.batch_size, self.model_parameters.max_targets_per_user - 1), self.data_parameters.num_items)
+            user_positives = tf.zeros((self.data_parameters.batch_size, 1), 'int32')
+            padded_positives = tf.concat([user_positives, pad], - 1)
+            inputs.append(padded_positives)
+        return inputs
 
     def call(self, inputs,  **kwargs):
         input_ids = inputs[0]
         training = kwargs['training']
         seq_emb, attentions = self.get_seq_embedding(input_ids, bs=self.data_parameters.batch_size, training=training)
 
-        if self.model_parameters.vanilla or (self.model_parameters.sampled_target is not None):
+        if self.model_parameters.vanilla:
             target_ids = inputs[1]
         else:
             target_ids = self.all_items
+            positive_input_ids = inputs[1]
         target_embeddings = self.get_target_embeddings(target_ids)
         if self.model_parameters.vanilla:
             positive_embeddings = target_embeddings[:,:,0,:]
             negative_embeddings = target_embeddings[:,:,1,:]
             positive_results = tf.reduce_sum(seq_emb*positive_embeddings, axis=-1)
+            true_positives = tf.ones_like(positive_results, 'float32')
+
             negative_results = tf.reduce_sum(seq_emb*negative_embeddings, axis=-1)
+            true_negatives = tf.zeros_like(negative_results, 'float32')
+
             output = tf.stack([positive_results, negative_results], axis=-1)
-        elif self.model_parameters.sampled_target:
-            seq_emb = seq_emb[:, -1, :]
-            output = tf.einsum("ij,ikj ->ik", seq_emb, target_embeddings)
+            ground_truth = tf.stack([true_positives, true_negatives], axis=-1)
+
         else:
             seq_emb = seq_emb[:, -1, :]
             output = seq_emb @ tf.transpose(target_embeddings)
+            batch_idx = tf.tile(tf.expand_dims(tf.range(self.data_parameters.batch_size), -1), [1, self.model_parameters.max_targets_per_user])
+            batch_idx = tf.reshape(batch_idx, (self.data_parameters.batch_size * self.model_parameters.max_targets_per_user,))
+            item_idx = tf.cast(tf.reshape(positive_input_ids,
+                                          (self.data_parameters.batch_size * self.model_parameters.max_targets_per_user,)), 'int32')
+            idx = tf.stack((batch_idx, item_idx), -1)
+            vals = tf.ones(self.data_parameters.batch_size * self.model_parameters.max_targets_per_user , 'float32')
+            ground_truth = tf.scatter_nd(idx , vals, (self.data_parameters.batch_size, self.data_parameters.num_items+1))[:,:-1]
+            
         output = self.output_activation(output)
-        return output
+        return self.loss_.loss_per_list(ground_truth, output)
     
     def score_all_items(self, inputs):
         input_ids = inputs[0]
@@ -136,7 +157,7 @@ class SASRecModel(SequentialRecsysModel):
             bs = seq.shape[0]
         positions  = tf.tile(self.positions, [bs, 1])
         if training and self.model_parameters.pos_smoothing:
-            smoothing = tf.random.normal(shape=positions.shape, mean=0, stddev=self.pos_smoothing)
+            smoothing = tf.random.normal(shape=positions.shape, mean=0, stddev=self.model_parameters.pos_smoothing)
             positions =  tf.maximum(0, smoothing + tf.cast(positions, 'float32'))
         if self.model_parameters.pos_emb_comb != 'ignore':
             pos_embeddings = self.postion_embedding_layer(positions)[:input_ids.shape[0]]
@@ -162,12 +183,15 @@ class SASRecConfig(SequentialModelConfig):
                 dropout_rate=0.5, num_blocks=2, num_heads=1,
                 reuse_item_embeddings=False,
                 encode_output_embeddings=False,
-                sampled_target=None,
                 pos_embedding = 'default', 
                 pos_emb_comb = 'add',
                 causal_attention = True,
                 pos_smoothing = 0,
-                vanilla = False): #vanilla implementation; #at the training time we calculate one positive and one negative per sequence element):
+                max_targets_per_user=10,
+                vanilla = False,
+                loss='bce', 
+                loss_params = {}
+                ): #vanilla implementation; #at the training time we calculate one positive and one negative per sequence element):
         self.output_layer_activation=output_layer_activation
         self.embedding_size=embedding_size
         self.dropout_rate = dropout_rate
@@ -175,13 +199,14 @@ class SASRecConfig(SequentialModelConfig):
         self.num_heads = num_heads
         self.reuse_item_embeddings = reuse_item_embeddings
         self.encode_output_embeddings = encode_output_embeddings
-        self.sampled_target = sampled_target
         self.pos_embedding = pos_embedding
         self.pos_emb_comb = pos_emb_comb
         self.causal_attention = causal_attention
         self.pos_smoothing = pos_smoothing
         self.vanilla = vanilla
-
+        self.max_targets_per_user = max_targets_per_user #only used with sparse positives
+        self.loss = loss
+        self.loss_params = loss_params
 
     def as_dict(self):
         result = self.__dict__

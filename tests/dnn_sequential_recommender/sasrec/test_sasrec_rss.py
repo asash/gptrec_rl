@@ -6,36 +6,37 @@ from aprec.recommenders.sequential.history_vectorizers.default_history_vectorize
 from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecConfig
 from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig 
 from aprec.recommenders.sequential.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
+from aprec.recommenders.sequential.target_builders.positives_only_targets_builder import PositvesOnlyTargetBuilder
 
 from aprec.recommenders.sequential.targetsplitters.recency_sequence_sampling import RecencySequenceSampling, exponential_importance
 
-def dnn(model_arch, loss, sequence_splitter, 
+def dnn(model_config, sequence_splitter, 
                 target_builder,
-                training_time_limit=5,  
+                training_time_limit=3,  
                 max_epochs=10000, 
                 pred_history_vectorizer = DefaultHistoryVectrizer()
                 ):
     from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender, SequentialRecommenderConfig
 
-    config = SequentialRecommenderConfig(train_epochs=max_epochs, loss=loss,
-                                                          model_arch=model_arch,
-                                                          early_stop_epochs=100,
-                                                          batch_size=5,
-                                                          training_time_limit=training_time_limit,
-                                                          sequence_splitter=sequence_splitter, 
-                                                          targets_builder=target_builder, 
-                                                          pred_history_vectorizer=pred_history_vectorizer) 
+    config = SequentialRecommenderConfig(model_config,
+                                        train_epochs=max_epochs,
+                                        early_stop_epochs=100,
+                                        batch_size=5,
+                                        training_time_limit=training_time_limit,
+                                        sequence_splitter=sequence_splitter, 
+                                        targets_builder=target_builder, 
+                                        use_keras_training=True,
+                                        pred_history_vectorizer=pred_history_vectorizer) 
     return SequentialRecommender(config)
 
 def sasrec_rss(recency_importance, add_cls=False):
         target_splitter = lambda: RecencySequenceSampling(0.2, exponential_importance(recency_importance), add_cls=add_cls)
         pred_history_vectorizer = AddMaskHistoryVectorizer() if add_cls else DefaultHistoryVectrizer()
-        sasrec_config = SASRecConfig(vanilla=False, num_heads=1, pos_emb_comb='ignore', pos_embedding='exp', causal_attention=False, pos_smoothing=1)
+        sasrec_config = SASRecConfig()
         return dnn(
                 sasrec_config, 
-                LambdaGammaRankLoss(pred_truncate_at=1000),
                 sequence_splitter=target_splitter,
-                target_builder=FullMatrixTargetsBuilder, 
+                target_builder=PositvesOnlyTargetBuilder, 
             pred_history_vectorizer=pred_history_vectorizer
             )
 

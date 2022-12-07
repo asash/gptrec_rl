@@ -26,6 +26,7 @@ class TestBCELoss(unittest.TestCase):
         loss = float(BCELoss()(y_true, y_pred))
         keras_loss = float(BinaryCrossentropy(from_logits=True)(y_true, y_pred))
         self.assertAlmostEqual(loss, 18.420679092407227)
+        pass
 
 
 if __name__ == "__main__":

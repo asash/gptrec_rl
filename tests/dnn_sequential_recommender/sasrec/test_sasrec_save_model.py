@@ -7,6 +7,7 @@ def train_model(conn):
     from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender
     from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
     from aprec.recommenders.sequential.targetsplitters.last_item_splitter import SequenceContinuation
+    from aprec.recommenders.sequential.target_builders.positives_only_targets_builder import PositvesOnlyTargetBuilder
 
 
     import tempfile
@@ -15,10 +16,11 @@ def train_model(conn):
     USER_ID = '120'
 
     val_users = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
-    model_config = SASRecConfig()
+    model_config = SASRecConfig(loss='softmax_ce')
     recommender_config = SequentialRecommenderConfig(model_config, 
                                               train_epochs=10000, early_stop_epochs=50000,
                                               batch_size=5,
+                                              targets_builder=PositvesOnlyTargetBuilder,
                                               training_time_limit=3, sequence_splitter=SequenceContinuation, 
                                               use_keras_training=True)
     recommender = SequentialRecommender(recommender_config)

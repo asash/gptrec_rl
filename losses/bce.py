@@ -1,12 +1,10 @@
-from aprec.losses.loss import ListWiseLoss, Loss
+from aprec.losses.loss import ListWiseLoss
 import tensorflow as tf
-from tensorflow.keras.losses import BinaryCrossentropy
-import tensorflow.keras.backend as K
 
 
 class BCELoss(ListWiseLoss):
     def __init__(self, *args, **kwargs):
-        super().__init__()
+        super().__init__(**kwargs)
         self.__name__ = "BCE"
         self.less_is_better = True
         self.eps = tf.constant(1e-16, 'float32')
@@ -21,8 +19,6 @@ class BCELoss(ListWiseLoss):
         ce_sum = tf.reduce_sum(pos + neg, axis=1)
         res_sum = tf.math.divide_no_nan(ce_sum, num_targets)
         return res_sum
-
-    
 
     def __call__(self, y_true_raw, y_pred):
         y_true = tf.cast(y_true_raw, 'float32')
