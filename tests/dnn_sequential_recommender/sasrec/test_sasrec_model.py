@@ -1,9 +1,13 @@
+import os
 import unittest
+from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender
+
+from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
+
 
 class TestSasrecModel(unittest.TestCase):
     def test_sasrec_model(self):
-        from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecModelBuilder
-        from aprec.recommenders.sequential.sequential_recommender import DNNSequentialRecommender
+        from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecConfig
         from aprec.recommenders.sequential.targetsplitters.last_item_splitter import SequenceContinuation
         from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
         from aprec.datasets.movielens20m import get_movielens20m_actions
@@ -11,10 +15,12 @@ class TestSasrecModel(unittest.TestCase):
         USER_ID = '120'
 
         val_users = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
-        model = SASRecModelBuilder(embedding_size=32)
-        recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=50000,
+        sasrec_config = SASRecConfig(embedding_size=32)
+        recommender_config = SequentialRecommenderConfig(sasrec_config, train_epochs=10000, early_stop_epochs=50000,
                                                batch_size=5,
                                                training_time_limit=3,  sequence_splitter=SequenceContinuation)
+
+        recommender = SequentialRecommender(recommender_config)
         recommender.set_val_users(val_users)
         recommender = FilterSeenRecommender(recommender)
         for action in generator_limit(get_movielens20m_actions(), 10000):
