@@ -21,7 +21,7 @@ EXTRA_VAL_METRICS = [HIT(10), NDCG(10), HighestScore(),
                      HIT(1)
                      ]
 
-def dnn(model_config, loss, sequence_splitter, 
+def dnn(model_config, sequence_splitter, 
                 target_builder,
                 pred_history_vectorizer,
                 training_time_limit=6*3600,  
@@ -33,7 +33,7 @@ def dnn(model_config, loss, sequence_splitter,
     from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
 
     config = SequentialRecommenderConfig(model_config,                       
-                                train_epochs=max_epochs, loss=loss,
+                                train_epochs=max_epochs,
                                 early_stop_epochs=max_epochs,
                                 batch_size=batch_size,
                                 max_batches_per_epoch=48,
@@ -58,7 +58,6 @@ def sasrec_rss(recency_importance, add_cls=False, pos_smoothing=0,
         from aprec.recommenders.sequential.target_builders.positives_only_targets_builder import PositvesOnlyTargetBuilder
         from aprec.recommenders.sequential.targetsplitters.recency_sequence_sampling import RecencySequenceSampling
         from aprec.recommenders.sequential.targetsplitters.recency_sequence_sampling import exponential_importance
-        from aprec.losses.bce import BCELoss
 
 
         target_splitter = lambda: RecencySequenceSampling(0.2, exponential_importance(recency_importance), add_cls=add_cls)
@@ -71,14 +70,12 @@ def sasrec_rss(recency_importance, add_cls=False, pos_smoothing=0,
 
         return dnn(
             model_config,
-            BCELoss(),
             sequence_splitter=target_splitter,
             target_builder=PositvesOnlyTargetBuilder, 
             batch_size=256,
             pred_history_vectorizer=pred_history_vectorizer)
 
 def vanilla_sasrec():
-    from aprec.losses.bce import BCELoss
     from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecConfig
     from aprec.recommenders.sequential.target_builders.negative_per_positive_target import NegativePerPositiveTargetBuilder
     from aprec.recommenders.sequential.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
@@ -87,7 +84,7 @@ def vanilla_sasrec():
     sequence_length = 50
     model_config = SASRecConfig(vanilla=True )
 
-    return dnn(model_config,  BCELoss(),
+    return dnn(model_config, 
             ShiftedSequenceSplitter,
             target_builder=lambda: NegativePerPositiveTargetBuilder(sequence_length),
             sequence_length=sequence_length, 
