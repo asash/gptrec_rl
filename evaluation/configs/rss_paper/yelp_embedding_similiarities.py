@@ -36,7 +36,7 @@ def dnn(model_config, sequence_splitter,
                                 train_epochs=max_epochs,
                                 early_stop_epochs=max_epochs,
                                 batch_size=batch_size,
-                                max_batches_per_epoch=48,
+                                max_batches_per_epoch=256,
                                 training_time_limit=training_time_limit,
                                 sequence_splitter=sequence_splitter, 
                                 targets_builder=target_builder, 
@@ -72,7 +72,7 @@ def sasrec_rss(recency_importance, add_cls=False, pos_smoothing=0,
             model_config,
             sequence_splitter=target_splitter,
             target_builder=PositvesOnlyTargetBuilder, 
-            batch_size=256,
+            batch_size=1024,
             pred_history_vectorizer=pred_history_vectorizer)
 
 def vanilla_sasrec():
@@ -88,7 +88,7 @@ def vanilla_sasrec():
             ShiftedSequenceSplitter,
             target_builder=lambda: NegativePerPositiveTargetBuilder(sequence_length),
             sequence_length=sequence_length, 
-            batch_size=256,
+            batch_size=1024,
             pred_history_vectorizer= DefaultHistoryVectrizer())
 
 
