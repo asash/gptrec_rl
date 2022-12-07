@@ -18,7 +18,8 @@ class TestSasrecModel(unittest.TestCase):
         sasrec_config = SASRecConfig(embedding_size=32)
         recommender_config = SequentialRecommenderConfig(sasrec_config, train_epochs=10000, early_stop_epochs=50000,
                                                batch_size=5,
-                                               training_time_limit=3,  
+                                               training_time_limit=30,  
+                                               max_batches_per_epoch=100,
                                                sequence_splitter=SequenceContinuation,
                                                use_keras_training=True)
 

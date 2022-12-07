@@ -19,10 +19,11 @@ def train_model(conn):
     recommender_config = SequentialRecommenderConfig(model_config, 
                                               train_epochs=10000, early_stop_epochs=50000,
                                               batch_size=5,
-                                              training_time_limit=3, sequence_splitter=SequenceContinuation)
+                                              training_time_limit=3, sequence_splitter=SequenceContinuation, 
+                                              use_keras_training=True)
     recommender = SequentialRecommender(recommender_config)
     recommender.set_val_users(val_users)
-    for action in generator_limit(get_movielens20m_actions(), 10000):
+    for action in generator_limit(get_movielens20m_actions(), 100000):
          recommender.add_action(action)
     recommender.rebuild_model()
     checkpoint_file = tempfile.NamedTemporaryFile(suffix='.dill', delete=False).name 
