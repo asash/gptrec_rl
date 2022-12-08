@@ -3,6 +3,7 @@ import os
 import numpy as np
 import pandas as pd
 from aprec.api.action import Action
+from tqdm import tqdm
 
 from aprec.utils.os_utils import get_dir, shell
 
@@ -32,8 +33,8 @@ def get_movies_dataset():
     ratings_file = preprocess()
     data = pd.read_csv(ratings_file).to_numpy()
     actions = []
-    for i in range(len(data)):
-       action = Action(user_id = data[i][0], item_id = data[i][1], timestamp=data[i][3], data={'rating': data[i][2]}) 
+    for i in tqdm(range(len(data))):
+       action = Action(user_id = str(int(data[i][0])), item_id = str(int(data[i][1])), timestamp=data[i][3], data={'rating': data[i][2]}) 
        actions.append(action)
     return actions
 
@@ -75,11 +76,12 @@ def get_movies_budget_bands():
     return result
 
 def get_movies_dataset_with_bands():
+    movies_with_bands = get_movies_budget_bands()
     actions = get_movies_dataset()
-    movies_with_bands = get_movies_dataset_with_bands()
     result = [] 
     for action in actions:
         if action.item_id not in movies_with_bands:
             continue
         action.data['budget_band'] = movies_with_bands[action.item_id]
+        result.append(action)
     return result
