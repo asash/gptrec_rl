@@ -207,7 +207,7 @@ class ModelTrainer(object):
             with tf.GradientTape() as tape:
                 tape.watch(variables)
                 y_pred = self.recommender.model(X, training=True)
-                loss_val = tf.reduce_mean(self.config.loss(y_true, y_pred))
+                loss_val = tf.reduce_mean(self.recommender.config.loss(y_true, y_pred))
                 pass
             grad = tape.gradient(loss_val, variables)
             self.recommender.config.optimizer.apply_gradients(zip(grad, variables))
