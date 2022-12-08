@@ -36,6 +36,13 @@ class SequentialRecsysModel(tf.keras.Model):
     def get_dummy_inputs(self) -> List[tf.Tensor]:
         raise NotImplementedError()
 
+    def fit_biases(self, train_users):
+        pass        
+
+    #write tensorboard staff metrics here
+    def log(self):
+        pass
+
     @classmethod
     def from_config(cls, config: dict):
         data_parameters = SequentialDataParameters(**config['data_parameters'])
@@ -43,9 +50,7 @@ class SequentialRecsysModel(tf.keras.Model):
         model = cls(model_parameters, data_parameters)
         dummy_data = model.get_dummy_inputs() 
         model(dummy_data) #dummy call to build the model 
-     #   model.compile()
         return model
-        
     
     def get_config(self):
         return get_config_dict(self.model_parameters, self.data_parameters)

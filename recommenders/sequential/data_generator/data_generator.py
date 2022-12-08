@@ -1,19 +1,12 @@
 import os
 import random
-import signal
 import tempfile
-from typing import List, Type
 
 import numpy as np
 from tensorflow.python.keras.utils.data_utils import Sequence
-from aprec.recommenders.sequential.sequential_recommender import SequentialRecommenderConfig
-from aprec.recommenders.sequential.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
+from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
 from multiprocessing_on_dill.context import ForkProcess, ForkContext
 from aprec.recommenders.sequential.target_builders.target_builders import TargetBuilder
-
-
-from aprec.recommenders.sequential.targetsplitters.random_fraction_splitter import RandomFractionSplitter
-from aprec.recommenders.sequential.targetsplitters.targetsplitter import TargetSplitter
 from aprec.utils.os_utils import shell
 
 class DataGenerator(Sequence):
@@ -128,8 +121,8 @@ class MemmapDataGenerator(Sequence):
         res = np.memmap(fname, shape=shape, dtype=dtype, mode="readonly")
         return res
 
-    def __init__(self, data_generator):
-        self.tempdir = tempfile.mkdtemp(prefix="sequential_train_")
+    def __init__(self, data_generator, dir):
+        self.tempdir = tempfile.mkdtemp(prefix="sequential_train_", dir=dir)
         self.inputs = []
         self.targets = []
         for i in range(len(data_generator)):
@@ -181,18 +174,13 @@ class MemmapDataGenerator(Sequence):
 
  
 class DataGeneratorFactory(object):
-    def __init__(self, queue, config, *args, **kwargs):
-        self.factory_func = lambda: MemmapDataGenerator(DataGenerator(config, *args, **kwargs))
+    def __init__(self, queue, tempdir, config, *args, **kwargs):
+        self.tempdir = tempdir
+        self.factory_func = lambda: MemmapDataGenerator(DataGenerator(config, *args, **kwargs), tempdir)
         self.queue = queue
         self.last_generator:MemmapDataGenerator = None
-    
-    def stop(self, *args):
-        if self.last_generator is not None:
-            self.last_generator.cleanup() 
-            exit(0)
 
     def __call__(self):
-        signal.signal(signal.SIGTERM, self.stop)
         while True:
             self.last_generator = self.factory_func()
             self.queue.put(self.last_generator)
@@ -200,24 +188,27 @@ class DataGeneratorFactory(object):
 
 class DataGeneratorAsyncFactory(object):
     def __init__(self, config: SequentialRecommenderConfig, *args, **kwargs) -> None:
-        ctx = ForkContext()
-        self.result_queue = ctx.Queue(config.data_generator_queue_size)
-        self.processors:List[ForkProcess] = []
-        generator_factory = DataGeneratorFactory(self.result_queue, config, *args, **kwargs)
+        self.tempdir = tempfile.mkdtemp(prefix = "sequential_recommender_async_factory_")
         self.config = config
-        for i in range(config.data_generator_processes):
-            self.processors.append(ForkProcess(target=generator_factory))
+        ctx = ForkContext()
+        self.result_queue = ctx.Queue(self.config.data_generator_queue_size)
+        self.generator_factory = DataGeneratorFactory(self.result_queue, self.tempdir, config, *args, **kwargs)
+
+    def __enter__(self):
+        self.processors:List[ForkProcess] = []
+        for i in range(self.config.data_generator_processes):
+            self.processors.append(ForkProcess(target=self.generator_factory))
             self.processors[-1].daemon = True 
             self.processors[-1].start()
+        return self
 
     def next_generator(self) -> MemmapDataGenerator:
         return self.result_queue.get()
 
-    def close(self):
+    def __exit__(self, exc_type, exc_value, exc_traceback):
         for p in self.processors:
             p.terminate()
             p.join()
+        cmd = f"rm -rf {self.tempdir}"
+        shell(cmd)
 
-        while not self.result_queue.empty():
-            next_generator = self.next_generator() 
-            next_generator.cleanup()
