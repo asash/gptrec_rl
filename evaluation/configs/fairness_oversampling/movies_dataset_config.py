@@ -74,7 +74,7 @@ def dnn(model_config, sequence_splitter,
                                 targets_builder=target_builder, 
                                 pred_history_vectorizer=pred_history_vectorizer,
                                 sequence_length=sequence_length, 
-                                use_keras_training=True,
+                                use_keras_training=False,
                                 extra_val_metrics=EXTRA_VAL_METRICS
                                 )
     
