@@ -117,7 +117,7 @@ class RecommendersEvaluator(object):
         tensorboard_dir = f"{out_dir}/tensorboard/"
         mkdir_p(tensorboard_dir)
         tb = program.TensorBoard()
-        tb.configure(argv=[None, '--logdir', tensorboard_dir])
+        tb.configure(argv=[None, '--logdir', tensorboard_dir, '--host', '0.0.0.0'])
         url = tb.launch()
         print(f"TensorBoard is listening listening on {url}")
 
