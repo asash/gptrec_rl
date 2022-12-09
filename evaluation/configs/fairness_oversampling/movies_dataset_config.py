@@ -56,7 +56,7 @@ def vanilla_sasrec():
 def dnn(model_config, sequence_splitter, 
                 target_builder,
                 pred_history_vectorizer,
-                training_time_limit=3600,  
+                training_time_limit=2*3600,  
                 max_epochs=10000, 
                 sequence_length=50, 
                 batch_size=128,
