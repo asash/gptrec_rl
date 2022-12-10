@@ -1,11 +1,10 @@
 import unittest
 from aprec.datasets.movielens20m import get_movies_catalog
-from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
+from aprec.evaluation.metrics.highest_score import HighestScore
+from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.recommenders.sequential.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
 from aprec.recommenders.sequential.history_vectorizers.default_history_vectorizer import DefaultHistoryVectrizer
 from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecConfig
-from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig 
-from aprec.recommenders.sequential.target_builders.full_matrix_targets_builder import FullMatrixTargetsBuilder
 from aprec.recommenders.sequential.target_builders.positives_only_targets_builder import PositvesOnlyTargetBuilder
 
 from aprec.recommenders.sequential.targetsplitters.recency_sequence_sampling import RecencySequenceSampling, exponential_importance
@@ -26,6 +25,7 @@ def dnn(model_config, sequence_splitter,
                                         sequence_splitter=sequence_splitter, 
                                         targets_builder=target_builder, 
                                         use_keras_training=False,
+                                        extra_val_metrics=[HighestScore()],
                                         pred_history_vectorizer=pred_history_vectorizer) 
     return SequentialRecommender(config)
 
