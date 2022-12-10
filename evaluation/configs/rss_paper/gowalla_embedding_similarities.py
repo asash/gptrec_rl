@@ -136,7 +136,7 @@ DATASET = "gowalla_warm5"
 N_VAL_USERS=1024
 MAX_TEST_USERS=86168
 SPLIT_STRATEGY = LeaveOneOut(MAX_TEST_USERS)
-RECOMMENDERS = get_recommenders(filter_seen=True)
+RECOMMENDERS = get_recommenders(filter_seen=False)
 
 if __name__ == "__main__":
 

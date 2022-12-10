@@ -1,4 +1,5 @@
 from __future__ import annotations
+import gc
 from typing import TYPE_CHECKING
 
 from collections import defaultdict
@@ -9,6 +10,7 @@ import tensorflow as tf
 from tqdm import tqdm
 from aprec.api.action import Action
 from aprec.recommenders.sequential.data_generator.data_generator import DataGenerator, DataGeneratorAsyncFactory, MemmapDataGenerator
+from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
 
 if TYPE_CHECKING:
     from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender
@@ -16,16 +18,25 @@ if TYPE_CHECKING:
 
 
 class ValidationResult(object):
-    def __init__(self, val_loss, val_metric, extra_val_metrics, train_metric, extra_train_metrics, train_loss=None) -> None:
+    def __init__(self, val_loss, val_metric, extra_val_metrics, train_metric, extra_train_metrics, validation_time) -> None:
         self.val_loss = val_loss
         self.val_metric = val_metric
         self.extra_val_metrics = extra_val_metrics
         self.train_metric = train_metric
         self.extra_train_metrics = extra_train_metrics
-        self.train_loss = train_loss
+        self.validation_time = validation_time
+       
+class TrainingResult(object):
+    def __init__(self, training_loss, training_time, trained_batches, trained_samples):
+        self.training_loss = training_loss
+        self.training_time = training_time
+        self.trained_batches = trained_batches
+        self.trained_samples = trained_samples
 
-    def set_train_loss(self, train_loss):
-        self.train_loss = train_loss
+class EpochResult(object):
+    def __init__(self, train_result: TrainingResult, val_result: ValidationResult) -> None:
+        self.train_result = train_result
+        self.val_result = val_result
 
 class ModelTrainer(object):
     def __init__(self, recommender: SequentialRecommender):
@@ -65,7 +76,10 @@ class ModelTrainer(object):
         self.val_generator = self.get_val_generator()
         self.early_stop_flag = False
         self.current_epoch = None 
-        self.history: List[ValidationResult] = []
+        self.history: List[EpochResult] = []
+        self.trained_samples=0
+        self.trained_batches=0
+        self.trained_epochs=0
 
     def train(self):
         self.start_time = time.time()
@@ -95,15 +109,19 @@ class ModelTrainer(object):
 
 
     def epoch(self, generator: MemmapDataGenerator):
-        train_loss = self.train_epoch(generator)
+        train_result =  self.train_epoch(generator)
         validation_result = self.validate()
-        validation_result.set_train_loss(train_loss)
-        self.history.append(validation_result)
-        
-        self.try_update_best_val_metric(validation_result.val_metric)
-        self.try_update_best_val_loss(validation_result.val_loss)
+        epoch_result = EpochResult(train_result, validation_result)
+        self.history.append(epoch_result)
+        self.try_update_best_val_metric(epoch_result)
+        self.try_update_best_val_loss(epoch_result)
         self.try_early_stop()
-        self.log(validation_result)
+        self.log(epoch_result)
+        self.epoch_cleanup()
+
+    def epoch_cleanup(self):
+        gc.collect()
+        tf.keras.backend.clear_session()
         
     def training_time(self):
         return time.time() - self.start_time
@@ -118,13 +136,15 @@ class ModelTrainer(object):
             print(f"time limit stop triggered at epoch {self.current_epoch}")
             self.early_stop_flag = True
 
-    def try_update_best_val_loss(self, val_loss):
+    def try_update_best_val_loss(self, epoch_result: EpochResult):
+        val_loss = epoch_result.val_result.val_loss
         self.steps_loss_not_improved += 1
         if (val_loss < self.best_val_loss):
             self.best_val_loss = val_loss
             self.steps_loss_not_improved = 0
 
-    def try_update_best_val_metric(self, val_metric):
+    def try_update_best_val_metric(self, epoch_result: EpochResult):
+        val_metric = epoch_result.val_result.val_metric
         self.steps_metric_not_improved += 1
         if (self.recommender.config.val_metric.less_is_better and val_metric < self.best_metric_val) or\
                             (not self.recommender.config.val_metric.less_is_better and val_metric > self.best_metric_val):
@@ -133,35 +153,52 @@ class ModelTrainer(object):
             self.best_epoch = self.current_epoch
             self.best_weights = self.recommender.model.get_weights()
 
-    def log(self, validation_result: ValidationResult):
+    def log(self, epoch_result: EpochResult):
+        self.log_to_console(epoch_result)
+        with self.tensorboard_writer.as_default(step=self.trained_samples):
+            self.log_to_tensorboard(epoch_result)
+
+    def log_to_tensorboard(self, epoch_result: EpochResult):
         config = self.recommender.config
+        validation_result = epoch_result.val_result
+        train_result = epoch_result.train_result
+
+        tf.summary.scalar(f"{config.val_metric.name}/val", validation_result.val_metric)
+        tf.summary.scalar(f"{config.val_metric.name}/train", validation_result.train_metric)
+        tf.summary.scalar(f"{config.val_metric.name}/train_val_diff", validation_result.train_metric - validation_result.val_metric)
+        tf.summary.scalar(f"{config.val_metric.name}/best_val", self.best_metric_val)
+        tf.summary.scalar(f"{config.val_metric.name}/steps_metric_not_improved", self.steps_metric_not_improved)
+        tf.summary.scalar(f"loss/train", train_result.training_loss)
+        tf.summary.scalar(f"loss/val", validation_result.val_loss)
+        tf.summary.scalar(f"loss/train_val_diff", (train_result.training_loss - validation_result.val_loss))
+        tf.summary.scalar(f"loss/evaluations_without_improvement", self.steps_loss_not_improved)
+        tf.summary.scalar(f"steps_to_early_stop", self.steps_to_early_stop)
+        tf.summary.scalar(f"time/epoch_trainig_time", train_result.training_time)
+        tf.summary.scalar(f"time/trainig_time_per_batch", train_result.training_time/train_result.trained_batches)
+        tf.summary.scalar(f"time/trainig_time_per_sample", train_result.training_time/train_result.trained_samples)
+        tf.summary.scalar(f"time/epoch_validation_time", validation_result.validation_time)
+        
+        for metric in config.extra_val_metrics:
+            tf.summary.scalar(f"{metric.get_name()}/train", validation_result.extra_train_metrics[metric.get_name()])
+            tf.summary.scalar(f"{metric.get_name()}/val", validation_result.extra_val_metrics[metric.get_name()])
+            tf.summary.scalar(f"{metric.get_name()}/train_val_diff", validation_result.extra_train_metrics[metric.get_name()]
+                                                                    - validation_result.extra_val_metrics[metric.get_name()])
+        self.recommender.model.log()
+
+    def log_to_console(self, epoch_result: EpochResult):
+        config = self.recommender.config
+        validation_result = epoch_result.val_result
+        train_result = epoch_result.train_result
         print(f"\tval_{config.val_metric.name}: {validation_result.val_metric:.5f}")
         print(f"\tbest_{config.val_metric.name}: {self.best_metric_val:.5f}")
         print(f"\ttrain_{config.val_metric.name}: {validation_result.train_metric:.5f}")
-        print(f"\ttrain_loss: {validation_result.train_loss}")
+        print(f"\ttrain_loss: {train_result.training_loss}")
         print(f"\tval_loss: {validation_result.val_loss}")
         print(f"\tbest_val_loss: {self.best_val_loss}")
         print(f"\tsteps_metric_not_improved: {self.steps_metric_not_improved}")
         print(f"\tsteps_loss_not_improved: {self.steps_loss_not_improved}")
         print(f"\tsteps_to_stop: {self.steps_to_early_stop}")
         print(f"\ttotal_training_time: {self.training_time()}")
-        with self.tensorboard_writer.as_default(step=(self.current_epoch + 1)*config.max_batches_per_epoch*config.batch_size):
-            tf.summary.scalar(f"{config.val_metric.name}/val", validation_result.val_metric)
-            tf.summary.scalar(f"{config.val_metric.name}/train", validation_result.train_metric)
-            tf.summary.scalar(f"{config.val_metric.name}/train_val_diff", validation_result.train_metric - validation_result.val_metric)
-            tf.summary.scalar(f"{config.val_metric.name}/best_val", self.best_metric_val)
-            tf.summary.scalar(f"{config.val_metric.name}/steps_metric_not_improved", self.steps_metric_not_improved)
-            tf.summary.scalar(f"loss/train", validation_result.train_loss)
-            tf.summary.scalar(f"loss/val", validation_result.val_loss)
-            tf.summary.scalar(f"loss/train_val_diff", (validation_result.train_loss - validation_result.val_loss))
-            tf.summary.scalar(f"loss/evaluations_without_improvement", self.steps_loss_not_improved)
-            tf.summary.scalar(f"steps_to_early_stop", self.steps_to_early_stop)
-            for metric in config.extra_val_metrics:
-                tf.summary.scalar(f"{metric.get_name()}/train", validation_result.extra_train_metrics[metric.get_name()])
-                tf.summary.scalar(f"{metric.get_name()}/val", validation_result.extra_val_metrics[metric.get_name()])
-                tf.summary.scalar(f"{metric.get_name()}/train_val_diff", validation_result.extra_train_metrics[metric.get_name()]
-                                                                    - validation_result.extra_val_metrics[metric.get_name()])
-            self.recommender.model.log()
         
     def leave_one_out(self, users):
         seen_result = []
@@ -184,20 +221,31 @@ class ModelTrainer(object):
 
 
     def train_epoch(self, generator):
+        epoch_training_start = time.time()
         if self.recommender.config.use_keras_training:
-            return self.train_keras(generator)
+            training_loss =  self.train_epoch_keras(generator)
         else:
-            return self.train_eager(generator)
+            training_loss = self.train_epoch_eager(generator)
+        epoch_training_time = time.time() - epoch_training_start
+        trained_batches = len(generator)
+        trained_samples = trained_batches * self.recommender.config.batch_size
+        self.trained_batches += trained_batches 
+        self.trained_samples += trained_samples 
+        self.trained_epochs += 1
+        return TrainingResult(training_loss, epoch_training_time, trained_batches, trained_samples)
+        
 
-    def train_keras(self, generator):
+    def train_epoch_keras(self, generator):
+        self.ensure_model_is_compiled()
+        summary =  self.recommender.model.fit(generator, steps_per_epoch=len(generator))
+        return summary.history['loss'][0]
+
+    def ensure_model_is_compiled(self):
         if not self.model_is_compiled:
             self.recommender.model.compile(self.recommender.config.optimizer, self.recommender.config.loss)
             self.model_is_compiled = True
-        summary =  self.recommender.model.fit(generator, steps_per_epoch=self.recommender.config.max_batches_per_epoch)
-        return summary.history['loss'][0]
         
-        
-    def train_eager(self, generator):
+    def train_epoch_eager(self, generator):
         pbar = tqdm(generator, ascii=True, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0, leave=True, ncols=70)
         variables = self.recommender.model.variables
         loss_sum = 0
@@ -218,6 +266,7 @@ class ModelTrainer(object):
         return train_loss
 
     def validate(self):
+        validation_start = time.time()
         self.val_generator.reset()
         print("validating..")
         pbar = tqdm(self.val_generator, ascii=True, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0, leave=True, ncols=70)
@@ -232,7 +281,9 @@ class ModelTrainer(object):
 
         val_metric, extra_val_metrics = self.get_val_metrics(self.val_recommendation_requets, self.val_seen, self.val_ground_truth, callbacks=True)
         train_metric, extra_train_metrics = self.get_val_metrics(self.train_sample_recommendation_requests, self.train_sample_seen, self.train_sample_ground_truth)
-        return ValidationResult(val_loss, val_metric, extra_val_metrics, train_metric, extra_train_metrics)
+        validation_time = time.time() - validation_start
+        return ValidationResult(val_loss, val_metric, extra_val_metrics,
+                                train_metric, extra_train_metrics, validation_time=validation_time)
 
     def get_val_metrics(self, recommendation_requests, seen_items, ground_truth, callbacks=False):
         extra_recs = 0
