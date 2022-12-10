@@ -306,6 +306,8 @@ class ModelTrainer(object):
                 callback_recs.append(rec)
                 callback_truth.append(truth)
                 metric_sum += self.recommender.config.val_metric(rec, truth) 
+                for extra_metric in self.recommender.config.extra_val_metrics:
+                    extra_metric_sums[extra_metric.get_name()] += extra_metric(rec, truth)
         if callbacks:
             for callback in self.recommender.config.val_callbacks:
                 callback(callback_recs, callback_truth)
