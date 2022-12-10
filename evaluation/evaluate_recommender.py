@@ -23,6 +23,17 @@ def evaluate_recommender(recommender, test_actions,
                          recommendations_limit=900,
                          evaluate_on_samples = False,
                          ):
+
+    print('saving model...')
+    try:
+        mkdir_p(f"{out_dir}/checkpoints/")
+        model_filename = f"{out_dir}/checkpoints/{recommender_name}.dill"
+        recommender.save(model_filename)
+
+    except Exception:
+        print("Failed saving model...")
+        print(traceback.format_exc())
+        
     tensorboard_dir = f"{out_dir}/tensorboard/{recommender_name}"
     mkdir_p(tensorboard_dir)
     recommender.set_tensorboard_dir(tensorboard_dir)
@@ -88,14 +99,7 @@ def evaluate_recommender(recommender, test_actions,
     if evaluate_on_samples:
         result["sampled_metrics"] = sampled_result
 
-    print('saving model...')
-    try:
-        mkdir_p(f"{out_dir}/checkpoints/")
-        model_filename = f"{out_dir}/checkpoints/{recommender_name}.dill"
-        recommender.save(model_filename)
-    except Exception:
-        print("Failed saving model...")
-        print(traceback.format_exc())
+
     return result
 
 class RecommendersEvaluator(object):

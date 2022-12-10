@@ -1,3 +1,4 @@
+import gc
 import tempfile
 from collections import defaultdict
 import tensorflow as tf
@@ -171,6 +172,8 @@ class SequentialRecommender(Recommender):
             pbar.update(end - start)
             start = end  
             end = min(start + self.config.eval_batch_size, len(recommendation_requests))
+            gc.collect()
+            tf.keras.backend.clear_session()
         return results
 
     def get_scoring_func(self):
