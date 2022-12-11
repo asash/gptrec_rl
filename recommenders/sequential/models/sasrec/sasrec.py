@@ -19,7 +19,7 @@ import tensorflow as tf
 class SASRecModel(SequentialRecsysModel):
 
     @classmethod
-    def get_model_config_class(cls) -> Type[SequentialRecsysModel]:
+    def get_model_config_class(cls) -> Type[SASRecConfig]:
         return SASRecConfig
      
     def __init__(self, model_parameters, data_parameters, *args, **kwargs):
