@@ -102,8 +102,8 @@ def vanilla_sasrec():
 
 recommenders = {
 #    "Sasrec-rss-lambdarank-0.8-nocls-exp-mult-sm8": lambda: sasrec_rss(0.8, add_cls=False, pos_smoothing=8, pos_embedding='exp', pos_embeddding_comb='mult'),
-    #"Sasrec-rss-bce-0.8-default-causal": lambda: sasrec_rss(0.8, pos_embeddding_comb='add', pos_embedding='default', causal_attention=True),
-    "Sasrec-rss-lambdarank-0.8-default-causal": lambda: sasrec_rss(0.8,loss='lambdarank', loss_params=dict(pred_truncate_at=4000) ),
+    "Sasrec-rss-bce-0.8-default-causal": lambda: sasrec_rss(0.8, pos_embeddding_comb='add', pos_embedding='default', causal_attention=True),
+    #"Sasrec-rss-lambdarank-0.8-default-causal": lambda: sasrec_rss(0.8,loss='lambdarank', loss_params=dict(pred_truncate_at=4000) ),
     "Sasrec-rss-vanilla": lambda: vanilla_sasrec(),
     # "Sasrec-rss-lambdarank-0.8-cls-exp-mult": lambda: sasrec_rss(0.8, add_cls=True, pos_embedding='exp', pos_embeddding_comb='mult'),
     #"Sasrec-rss-lambdarank-0.8-cls-sin-mult": lambda: sasrec_rss(0.8, add_cls=True, pos_embedding='sin', pos_embeddding_comb='mult'),
