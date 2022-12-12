@@ -1,17 +1,19 @@
+from __future__ import annotations
+
+from typing import List, Type
 import numpy as np
-from tensorflow.keras import Model
 import tensorflow as tf
-from aprec.losses.bce import BCELoss
-from aprec.losses.items_masking_loss_proxy import ItemsMaksingLossProxy
+from aprec.losses.get_loss import listwise_loss_from_config
 from aprec.losses.loss import ListWiseLoss
 
-from aprec.recommenders.sequential.models.sequential_recsys_model import SequentialRecsysModelBuilder
+from aprec.recommenders.sequential.models.sequential_recsys_model import SequentialDataParameters, SequentialModelConfig, SequentialRecsysModel
 from transformers import BertConfig, TFBertMainLayer
 
 NUM_SPECIAL_ITEMS = 3 # +1 for mask item, +1 for padding, +1 for ignore_item
-class FullBERT(SequentialRecsysModelBuilder):
-    def __init__(self, output_layer_activation = 'linear',
-                 embedding_size = 64, max_history_len = 100,
+
+class FullBERTConfig(SequentialModelConfig):
+    def __init__(self,
+                 embedding_size = 64, 
                  attention_probs_dropout_prob = 0.2,
                  hidden_act = "gelu",
                  hidden_dropout_prob = 0.2,
@@ -20,12 +22,11 @@ class FullBERT(SequentialRecsysModelBuilder):
                  num_attention_heads = 2,
                  num_hidden_layers = 3,
                  type_vocab_size = 2,
-                 loss = BCELoss(),
+                 loss = 'bce',
+                 loss_parameters = {},
                  num_samples_normalization=False,
                  ):
-        super().__init__(output_layer_activation, embedding_size, max_history_len)
         self.embedding_size = embedding_size
-        self.max_history_length = max_history_len
         self.attention_probs_dropout_prob = attention_probs_dropout_prob
         self.hidden_act = hidden_act
         self.hidden_dropout_prob = hidden_dropout_prob
@@ -36,38 +37,51 @@ class FullBERT(SequentialRecsysModelBuilder):
         self.type_vocab_size = type_vocab_size      
         self.loss = loss
         self.num_samples_normalization = num_samples_normalization
+        self.loss_parameters = loss_parameters
+        
+    def as_dict(self):
+        return self.__dict__
+    
+    def get_model_architecture(self) -> Type[FullBertModel]:
+        return FullBertModel
+        
 
 
-    def get_model(self):
+class FullBertModel(SequentialRecsysModel):
+    def __init__(self, model_parameters: FullBERTConfig, data_parameters: SequentialDataParameters, *args, **kwargs):
+        super().__init__(model_parameters, data_parameters, *args, **kwargs)
+        self.model_parameters: FullBERTConfig
         bert_config = BertConfig(
-            vocab_size = self.num_items + NUM_SPECIAL_ITEMS, 
-            hidden_size = self.embedding_size,
-            max_position_embeddings=2*self.max_history_length, 
-            attention_probs_dropout_prob=self.attention_probs_dropout_prob, 
-            hidden_act=self.hidden_act, 
-            hidden_dropout_prob=self.hidden_dropout_prob, 
-            initializer_range=self.initializer_range, 
-            num_attention_heads=self.num_attention_heads, 
-            num_hidden_layers=self.num_hidden_layers, 
-            type_vocab_size=self.type_vocab_size, 
+            vocab_size = self.data_parameters.num_items + NUM_SPECIAL_ITEMS, 
+            hidden_size = self.model_parameters.embedding_size,
+            max_position_embeddings=2*self.data_parameters.sequence_length, 
+            attention_probs_dropout_prob=self.model_parameters.attention_probs_dropout_prob, 
+            hidden_act=self.model_parameters.hidden_act, 
+            hidden_dropout_prob=self.model_parameters.hidden_dropout_prob, 
+            initializer_range=self.model_parameters.initializer_range, 
+            num_attention_heads=self.model_parameters.num_attention_heads, 
+            num_hidden_layers=self.model_parameters.num_hidden_layers, 
+            type_vocab_size=self.model_parameters.type_vocab_size, 
         )
-        return FullBertModel(self.batch_size, self.output_layer_activation, bert_config, self.max_history_length, self.loss, self.num_samples_normalization)
-
-
-class FullBertModel(Model):
-    def __init__(self, batch_size, outputput_layer_activation, bert_config, sequence_length, loss: ListWiseLoss, num_samples_normalization:bool,  *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.batch_size = batch_size
-        self.sequence_length = sequence_length
         self.num_items = bert_config.vocab_size - NUM_SPECIAL_ITEMS 
-        self.output_layer_activation = tf.keras.activations.get(outputput_layer_activation)
-        self.token_type_ids = tf.constant(tf.zeros(shape=(batch_size, bert_config.max_position_embeddings)))
+        self.token_type_ids = tf.constant(tf.zeros(shape=(self.data_parameters.batch_size, bert_config.max_position_embeddings)))
         self.bert = TFBertMainLayer(bert_config, add_pooling_layer=False)
-        self.loss = loss
-        self.loss.set_num_items(self.num_items)
-        self.loss.set_batch_size(self.batch_size*self.sequence_length)
-        self.position_ids_for_pred = tf.constant(np.array(list(range(1, sequence_length +1))).reshape(1, sequence_length))
-        self.num_samples_normalization = num_samples_normalization
+        self.loss_ = listwise_loss_from_config(self.model_parameters.loss, self.model_parameters.loss_parameters)
+        self.loss_.set_num_items(self.num_items)
+        self.loss_.set_batch_size(self.data_parameters.batch_size*self.data_parameters.sequence_length)
+        self.position_ids_for_pred = tf.constant(np.array(list(range(1, self.data_parameters.sequence_length +1))).reshape(1, self.data_parameters.sequence_length))
+        self.num_samples_normalization = self.model_parameters.num_samples_normalization
+        self.sequence_length = self.data_parameters.sequence_length
+
+    @classmethod
+    def get_model_config_class(cls) -> Type[FullBERTConfig]:
+        return FullBERTConfig
+
+    def get_dummy_inputs(self) -> List[tf.Tensor]:
+        masked_sequences = tf.zeros((self.data_parameters.batch_size, self.data_parameters.sequence_length), 'int64')
+        labels = tf.zeros_like(masked_sequences)
+        positions = tf.zeros_like(masked_sequences)
+        return [masked_sequences, labels, positions]
 
     def call(self, inputs, **kwargs):
         masked_sequences = inputs[0]
@@ -88,17 +102,18 @@ class FullBertModel(Model):
         return self.get_loss(ground_truth,logits)
 
     def get_loss(self, ground_truth, logits):
-        input_shape = ground_truth.shape
         num_masked_samples = tf.reduce_sum(tf.cast(ground_truth[:,:,0] != -100, 'float32'), -1)
-        ground_truth = tf.reshape(ground_truth, (ground_truth.shape[0] * ground_truth.shape[1], ground_truth.shape[2]))
-        logits = tf.reshape(logits, (logits.shape[0]*logits.shape[1], logits.shape[2]))
+        num_lists = self.data_parameters.batch_size * self.data_parameters.sequence_length
+        items_per_list = self.data_parameters.num_items
+        ground_truth = tf.reshape(ground_truth, (num_lists, items_per_list))
+        logits = tf.reshape(logits, (num_lists, items_per_list))
         if self.num_samples_normalization:
             sample_weights = tf.expand_dims(tf.expand_dims(tf.math.divide_no_nan(1.0, num_masked_samples), -1), -1)
-            sample_weights = tf.tile(sample_weights, [1, input_shape[1], input_shape[2]])
-            sample_weights = tf.reshape(sample_weights, (sample_weights.shape[0] * sample_weights.shape[1], sample_weights.shape[2]))
-            return self.loss.loss_per_list(ground_truth, logits, sample_weights)
+            sample_weights = tf.tile(sample_weights, [1, self.data_parameters.sequence_length, items_per_list])
+            sample_weights = tf.reshape(sample_weights, (num_lists, items_per_list))
+            return self.loss_.loss_per_list(ground_truth, logits, sample_weights)
         else:
-            return self.loss.loss_per_list(ground_truth, logits)
+            return self.loss_.loss_per_list(ground_truth, logits)
    
     def score_all_items(self, inputs): 
         sequence = inputs[0] 
