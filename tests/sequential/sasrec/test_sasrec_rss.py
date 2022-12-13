@@ -24,7 +24,7 @@ def dnn(model_config, sequence_splitter,
                                         training_time_limit=training_time_limit,
                                         sequence_splitter=sequence_splitter, 
                                         targets_builder=target_builder, 
-                                        use_keras_training=False,
+                                        use_keras_training=True,
                                         extra_val_metrics=[HighestScore()],
                                         pred_history_vectorizer=pred_history_vectorizer) 
     return SequentialRecommender(config)

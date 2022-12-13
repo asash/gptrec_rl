@@ -1,14 +1,9 @@
 import unittest
 import numpy as np
 
-import tensorflow as tf
-from tensorflow import keras
-
-from aprec.recommenders.sequential.models.sasrec.sasrec import ExpPositionEncoding, SinePositionEncoding
-
-
 class TestSinEmbedding(unittest.TestCase):
     def test_embedding(self):
+        from aprec.recommenders.sequential.models.sasrec.sasrec import ExpPositionEncoding, SinePositionEncoding
         sinEncoder = SinePositionEncoding(50, 64)
         input = np.array([[0, 1, 2, 3],[1,2,3,4]])
         encoded = sinEncoder(input)

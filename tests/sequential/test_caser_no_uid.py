@@ -1,12 +1,10 @@
 import unittest
-from aprec.losses.bce import BCELoss
-from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender
-
-from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
-
 
 class TestCaserNoUid(unittest.TestCase):
     def test_caser_model_no_uid(self):
+        from aprec.losses.bce import BCELoss
+        from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender
+        from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
         from aprec.recommenders.sequential.models.caser import CaserConfig
         from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
         from aprec.datasets.movielens20m import get_movielens20m_actions
@@ -19,6 +17,7 @@ class TestCaserNoUid(unittest.TestCase):
                                                early_stop_epochs=5, batch_size=5, 
                                                training_time_limit=10, 
                                                loss=BCELoss(), 
+                                               sequence_length=5,
                                                use_keras_training=True
                                                )
         recommender = SequentialRecommender(recommender_config)

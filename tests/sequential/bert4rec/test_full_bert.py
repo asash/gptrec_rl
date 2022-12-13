@@ -1,39 +1,40 @@
 import unittest
 
-from aprec.api.items_ranking_request import ItemsRankingRequest
-from aprec.evaluation.metrics.entropy import Entropy
-from aprec.evaluation.metrics.highest_score import HighestScore
-from aprec.evaluation.metrics.model_confidence import Confidence
-from aprec.losses.bce import BCELoss
-from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
-class TestTwoBerts(unittest.TestCase):
-    def test_two_berts(self):
+
+class TestFullBert(unittest.TestCase):
+    def test_bert4rec(self):
+        from aprec.api.items_ranking_request import ItemsRankingRequest
+        from aprec.evaluation.metrics.entropy import Entropy
+        from aprec.evaluation.metrics.highest_score import HighestScore
+        from aprec.evaluation.metrics.model_confidence import Confidence
+        from aprec.recommenders.sequential.models.bert4rec.full_bert import FullBERTConfig
+        from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender
+        from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
         from aprec.recommenders.sequential.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
         from aprec.recommenders.sequential.targetsplitters.items_masking import ItemsMasking
         from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
         from aprec.utils.generator_limit import generator_limit
         from aprec.datasets.movielens20m import get_movielens20m_actions, get_movies_catalog
-        from aprec.recommenders.sequential.sequential_recommender import DNNSequentialRecommender
         from aprec.recommenders.sequential.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
-        from aprec.recommenders.sequential.models.bert4recft.quantum_bert import QuantumBERT
         from aprec.evaluation.metrics.hit import HIT
-        from aprec.losses.mean_ypred_loss import MeanPredLoss
 
         USER_ID = '120'
 
         val_users = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
         embedding_size=32
-        model = QuantumBERT(embedding_size=embedding_size)
-        recommender = DNNSequentialRecommender(model, train_epochs=10000, early_stop_epochs=50000,
+        model_config =  FullBERTConfig(embedding_size=embedding_size, loss='lambdarank')
+        recommender_config = SequentialRecommenderConfig(model_config, 
+                                               train_epochs=10000, early_stop_epochs=50000,
                                                batch_size=5,
                                                training_time_limit=10, 
-                                               loss = MeanPredLoss(),
                                                sequence_splitter=lambda: ItemsMasking(), 
                                                targets_builder= lambda: ItemsMaskingTargetsBuilder(relative_positions_encoding=False),
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
                                                eval_batch_size=8,
-                                               extra_val_metrics = [HIT(10), HighestScore(), Confidence('Softmax'), Confidence('Sigmoid'), Entropy('Softmax', 10)]
-                                               )
+                                               use_keras_training=True,
+                                               extra_val_metrics = [HIT(10), HighestScore(), Confidence('Softmax'), Confidence('Sigmoid'), Entropy('Softmax', 10)])
+        
+        recommender = SequentialRecommender(recommender_config)
         recommender.set_val_users(val_users)
         recommender = FilterSeenRecommender(recommender)
         for action in generator_limit(get_movielens20m_actions(), 10000):

@@ -2,13 +2,10 @@ from __future__ import annotations
 from typing import Type
 import tensorflow as tf
 from aprec.losses import get_loss
-from aprec.losses.bce import BCELoss
-from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
 layers = tf.keras.layers
 
 
 from aprec.recommenders.sequential.models.sequential_recsys_model import SequentialModelConfig, SequentialRecsysModel
-from aprec.recommenders.metrics.ndcg import KerasNDCG
 from .sasrec_multihead_attention import multihead_attention
 import tensorflow as tf
 
