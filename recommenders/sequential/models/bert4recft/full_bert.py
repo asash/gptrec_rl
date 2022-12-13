@@ -22,7 +22,7 @@ class FullBERTConfig(SequentialModelConfig):
                  num_attention_heads = 2,
                  num_hidden_layers = 3,
                  type_vocab_size = 2,
-                 loss = 'bce',
+                 loss = 'softmax_ce',
                  loss_parameters = {},
                  num_samples_normalization=False,
                  ):
