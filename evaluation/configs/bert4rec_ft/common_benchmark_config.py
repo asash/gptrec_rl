@@ -20,8 +20,6 @@ EMBEDDING_SIZE=128
  
 
 def sasrec_rss(recency_importance): 
-        from aprec.recommenders.sequential.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
-        from aprec.recommenders.sequential.history_vectorizers.default_history_vectorizer import DefaultHistoryVectrizer
         from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecConfig
 
         from aprec.recommenders.sequential.target_builders.positives_only_targets_builder import PositvesOnlyTargetBuilder
@@ -49,7 +47,6 @@ def vanilla_sasrec():
 
 def sasrec_style_model(model_config, sequence_splitter, 
                 target_builder,
-                training_time_limit=2*3600,  
                 max_epochs=10000, 
                 batch_size=128,
                 ):
@@ -61,7 +58,6 @@ def sasrec_style_model(model_config, sequence_splitter,
                                 early_stop_epochs=200,
                                 batch_size=batch_size,
                                 max_batches_per_epoch=256,
-                                training_time_limit=training_time_limit,
                                 sequence_splitter=sequence_splitter, 
                                 targets_builder=target_builder, 
                                 use_keras_training=True,
@@ -80,7 +76,6 @@ def get_bert_style_model(model_config):
         recommender_config = SequentialRecommenderConfig(model_config, 
                                                train_epochs=10000, early_stop_epochs=200,
                                                batch_size=128,
-                                               training_time_limit=10, 
                                                sequence_splitter=ItemsMasking, 
                                                max_batches_per_epoch=256,
                                                targets_builder=ItemsMaskingTargetsBuilder,
