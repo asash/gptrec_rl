@@ -17,7 +17,7 @@ import tensorflow as tf
 def get_global_tensorboard_dir(dataset_name):
     global_tb_dir = Path(__file__).parent / 'results' / 'tensorboard' / dataset_name
     global_tb_dir.mkdir(parents=True, exist_ok=True)
-    return global_tb_dir
+    return global_tb_dir.absolute()
 
 def config():
     """ from https://stackoverflow.com/questions/67631/how-to-import-a-module-given-the-full-path"""
