@@ -209,7 +209,7 @@ class RecommendersEvaluator(object):
             tensorboard_dir = f"{self.out_dir}/tensorboard/{recommender_name}"
             mkdir_p(tensorboard_dir)
             tensorboard_run_id = recommender_name + "_" + Path(self.out_dir).name
-            os.symlink(tensorboard_dir, (self.global_tensorboard_dir/tensorboard_run_id).absolute())
+            os.symlink(os.path.abspath(tensorboard_dir), os.path.abspath((self.global_tensorboard_dir/tensorboard_run_id)))
             recommender.set_out_dir(self.out_dir)
             recommender.set_tensorboard_dir(tensorboard_dir)
             print("adding train actions...")
