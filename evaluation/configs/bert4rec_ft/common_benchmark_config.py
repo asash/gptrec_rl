@@ -19,14 +19,14 @@ SEQUENCE_LENGTH=200
 EMBEDDING_SIZE=128
  
 
-def sasrec_rss(recency_importance): 
+def sasrec_rss(recency_importance, loss='bce'): 
         from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecConfig
 
         from aprec.recommenders.sequential.target_builders.positives_only_targets_builder import PositvesOnlyTargetBuilder
         from aprec.recommenders.sequential.targetsplitters.recency_sequence_sampling import RecencySequenceSampling
         from aprec.recommenders.sequential.targetsplitters.recency_sequence_sampling import exponential_importance
         target_splitter = lambda: RecencySequenceSampling(0.2, exponential_importance(recency_importance))
-        model_config = SASRecConfig(vanilla=False, embedding_size=EMBEDDING_SIZE)
+        model_config = SASRecConfig(vanilla=False, embedding_size=EMBEDDING_SIZE, loss=loss)
         return sasrec_style_model(
             model_config,
             sequence_splitter=target_splitter,
@@ -86,14 +86,14 @@ def get_bert_style_model(model_config):
         
         return SequentialRecommender(recommender_config)
 
-def full_bert():
+def full_bert(loss='softmax_ce'):
         from aprec.recommenders.sequential.models.bert4rec.full_bert import FullBERTConfig
-        model_config =  FullBERTConfig(embedding_size=EMBEDDING_SIZE)
+        model_config =  FullBERTConfig(embedding_size=EMBEDDING_SIZE, loss=loss)
         return get_bert_style_model(model_config)
 
-def sampling_bert():
+def sampling_bert(loss='bce'):
         from aprec.recommenders.sequential.models.bert4rec.bert4recft import SampleBERTConfig
-        model_config =  SampleBERTConfig(embedding_size=EMBEDDING_SIZE)
+        model_config =  SampleBERTConfig(embedding_size=EMBEDDING_SIZE, loss=loss)
         return get_bert_style_model(model_config)
 
 def popularity():
@@ -106,10 +106,15 @@ def mf_bpr():
 recommenders = {
         "popularity": popularity,
         "mf-bpr": mf_bpr,
-        "BERT4rec": full_bert, 
-        "BERT4rec-sampling": sampling_bert, 
+        "BERT4rec-sampling-lambdarank": lambda: sampling_bert('lambdarank'), 
+        "BERT4rec-sampling-bce": lambda: sampling_bert('bce'), 
+        "BERT4rec-sampling-softmax": lambda: sampling_bert('softmax_ce'), 
         "SASRec": vanilla_sasrec,
-        "SASRec-RSS": lambda: sasrec_rss(0.8)
+        "SASRec-RSS-bce": lambda: sasrec_rss(0.8, 'bce'),
+        "SASRec-RSS-softmax": lambda: sasrec_rss(0.8, 'softmax_ce'),
+        "SASRec-RSS-lambdarank": lambda: sasrec_rss(0.8, 'lambdarank'),
+        "BERT4rec": lambda: full_bert('softmax_ce'),
+        "BERT4rec-bce": lambda: full_bert('bce') 
 }
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
