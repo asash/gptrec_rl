@@ -62,7 +62,7 @@ class BERT4RecFTModel(SequentialRecsysModel):
         )
         self.bert = TFBertMainLayer(self.bert_config, False)
         self.loss_ = listwise_loss_from_config(self.model_parameters.loss, self.model_parameters.loss_parameters)
-        self.loss_.set_num_items(self.data_parameters.num_items)
+        self.loss_.set_num_items(self.model_parameters.num_negative_samples + 1)
         self.loss_.set_batch_size(self.data_parameters.batch_size*self.data_parameters.sequence_length)
         self.output_layer_activation = tf.keras.activations.get(self.model_parameters.output_layer_activation)
         self.position_ids_for_pred = tf.expand_dims(tf.range(1, self.data_parameters.sequence_length+1), 0) 
