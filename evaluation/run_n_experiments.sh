@@ -15,12 +15,14 @@ config_id="${config_filename%.*}"
 
 date=`date +%Y_%m_%dT%H_%M_%S`
 experiment_id="${config_id}_${date}"
-root_dir=./results/$experiment_id
+dataset_id=`python3 dataset_by_config.py ${config}`
+echo "running experiments on dataset ${dataset_id}"
+root_dir=./results/$dataset_id/$experiment_id
 experiment_stdout=$root_dir/stdout
 experiment_stderr=$root_dir/stderr
 experiment_commit=$root_dir/commit
 
-mkdir $root_dir
+mkdir -p $root_dir
 
 latest_experiment_link=./results/latest_experiment
 

@@ -1,7 +1,9 @@
 import os
+from pathlib import Path
 import sys
 import importlib.util
 import json
+import tempfile
 import time
 import mmh3
 
@@ -12,6 +14,10 @@ from aprec.datasets.datasets_register import DatasetsRegister
 import tensorflow as tf
 
 
+def get_global_tensorboard_dir(dataset_name):
+    global_tb_dir = Path(__file__).parent / 'results' / 'tensorboard' / dataset_name
+    global_tb_dir.mkdir(parents=True, exist_ok=True)
+    return global_tb_dir
 
 def config():
     """ from https://stackoverflow.com/questions/67631/how-to-import-a-module-given-the-full-path"""
@@ -23,9 +29,11 @@ def config():
     if len(sys.argv) > 2:
         config.out_file = open(sys.argv[2], 'w')
         config.out_dir = os.path.dirname(sys.argv[2])
+        config.global_tensorboard_dir = get_global_tensorboard_dir(config.DATASET)
     else:
         config.out_file = sys.stdout
-        config.out_dir = os.getcwd()
+        config.out_dir = tempfile.mkdtemp() 
+        config.global_tensorboard_dir = Path(tempfile.mkdtemp())
 
     return config
 
@@ -106,7 +114,8 @@ def run_experiment(config):
                                                       experiment_config=config,
                                                       target_items_sampler=target_items_sampler, 
                                                       remove_cold_start=filter_cold_start, 
-                                                      save_split=config.SAVE_SPLIT
+                                                      save_split=config.SAVE_SPLIT, 
+                                                      global_tensorboard_dir=config.global_tensorboard_dir
                                                       )
 
         if  hasattr(config, 'FEATURES_FROM_TEST'):

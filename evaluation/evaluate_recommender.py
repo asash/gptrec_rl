@@ -1,5 +1,7 @@
 import copy
 import gzip
+from pathlib import Path
+import tensorflow as tf
 import ujson
 import os
 import random
@@ -111,6 +113,7 @@ class RecommendersEvaluator(object):
                  target_items_sampler: TargetItemSampler = None,
                  remove_cold_start=True, 
                  save_split = False,
+                 global_tensorboard_dir = None 
                  ):
         self.actions = actions
         self.metrics = metrics
@@ -119,6 +122,7 @@ class RecommendersEvaluator(object):
         self.callbacks = callbacks
         self.out_dir = out_dir
         tensorboard_dir = f"{out_dir}/tensorboard/"
+        self.global_tensorboard_dir = global_tensorboard_dir
         mkdir_p(tensorboard_dir)
         tb = program.TensorBoard()
         tb.configure(argv=[None, '--logdir', tensorboard_dir, '--host', '0.0.0.0'])
@@ -175,8 +179,27 @@ class RecommendersEvaluator(object):
             eval_process.start()
             eval_process.join()
             if not result_queue.empty(): #successful evaluation:
-                result['recommenders'][recommender_name] = result_queue.get()
+                evaluation_result = result_queue.get()
+                result['recommenders'][recommender_name] = evaluation_result 
+
+                #by some reason logging to tensorboard also wants to use GPU memory.
+                # Running this in sandbox in order to release the memomoryt afterwards. 
+                log_process = ForkProcess(target=self.log_result_to_tensorboard, args=(evaluation_result,))
+                log_process.start()
+                log_process.join()
+                pass
         return result
+
+    def log_result_to_tensorboard(self, evaluation_result):
+        tensorboard_dir = evaluation_result['model_metadata']['tensorboard_dir']
+        step = int(evaluation_result['model_build_time'])
+        tensorboard_writer = tf.summary.create_file_writer(tensorboard_dir)
+        with tf.device("CPU:0"),  tensorboard_writer.as_default(step=step):
+            for metric in self.metrics:
+                metric_value = float(evaluation_result[metric.name])
+                metric_name = f"test/{metric.name}"
+                tf.summary.scalar(metric_name, metric_value)
+        pass
 
     def evaluate_single_recommender(self, recommender_name, result_queue):
         try:
@@ -185,6 +208,8 @@ class RecommendersEvaluator(object):
             recommender = self.recommenders[recommender_name]()
             tensorboard_dir = f"{self.out_dir}/tensorboard/{recommender_name}"
             mkdir_p(tensorboard_dir)
+            tensorboard_run_id = recommender_name + "_" + Path(self.out_dir).name
+            os.symlink(tensorboard_dir, self.global_tensorboard_dir/tensorboard_run_id)
             recommender.set_out_dir(self.out_dir)
             recommender.set_tensorboard_dir(tensorboard_dir)
             print("adding train actions...")
@@ -219,7 +244,9 @@ class RecommendersEvaluator(object):
             evaluation_result['model_build_time'] = build_time_end - build_time_start
             evaluation_result['model_inference_time'] = evaluate_time_end - evaluate_time_start
             evaluation_result['model_metadata'] = copy.deepcopy(recommender.get_metadata())
+            evaluation_result['model_metadata']['tensorboard_dir'] =  tensorboard_dir
             print("done")
+
             print(ujson.dumps(evaluation_result))
             result_queue.put(evaluation_result)
 
