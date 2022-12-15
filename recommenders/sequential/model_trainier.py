@@ -15,8 +15,6 @@ from aprec.recommenders.sequential.sequential_recommender_config import Sequenti
 if TYPE_CHECKING:
     from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender
 
-
-
 class ValidationResult(object):
     def __init__(self, val_loss, val_metric, extra_val_metrics, train_metric, extra_train_metrics, validation_time) -> None:
         self.val_loss = val_loss
@@ -80,6 +78,7 @@ class ModelTrainer(object):
         self.trained_samples=0
         self.trained_batches=0
         self.trained_epochs=0
+        self.time_to_converge = 0
 
     def train(self):
         self.start_time = time.time()
@@ -93,7 +92,10 @@ class ModelTrainer(object):
                 if self.early_stop_flag:
                     break
             self.recommender.model.set_weights(self.best_weights)
+            
             print(f"taken best model from epoch{self.best_epoch}. best_val_{self.recommender.config.val_metric.name}: {self.best_metric_val}")
+            train_metadata = {'time_to_converge': self.time_to_converge}
+            return train_metadata
     
     def get_train_generator_factory(self):
         return DataGeneratorAsyncFactory(self.recommender.config,
@@ -152,6 +154,7 @@ class ModelTrainer(object):
             self.best_metric_val = val_metric
             self.best_epoch = self.current_epoch
             self.best_weights = self.recommender.model.get_weights()
+            self.time_to_converge = self.training_time()
 
     def log(self, epoch_result: EpochResult):
         self.log_to_console(epoch_result)

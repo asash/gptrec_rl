@@ -13,11 +13,23 @@ from collections import defaultdict
 from tqdm import tqdm
 
 from aprec.evaluation.samplers.sampler import TargetItemSampler
-from aprec.utils.os_utils import mkdir_p
+from aprec.utils.os_utils import mkdir_p, shell
 from aprec.evaluation.filter_cold_start import filter_cold_start
 from aprec.evaluation.evaluation_utils import group_by_user
 from multiprocessing_on_dill.context import ForkProcess, ForkContext
 from tensorboard import program
+
+def compress(filename):
+    print(f"compressing {filename}")
+    shell(f"gzip {filename}")
+    print(f"done compressing {filename}")
+
+def compress_async(filename):
+    eval_process = ForkProcess(target=compress,  args=(filename, ))
+    eval_process.start()
+
+    
+    
 
 def evaluate_recommender(recommender, test_actions,
                          metrics, out_dir, recommender_name,
@@ -31,6 +43,7 @@ def evaluate_recommender(recommender, test_actions,
         mkdir_p(f"{out_dir}/checkpoints/")
         model_filename = f"{out_dir}/checkpoints/{recommender_name}.dill"
         recommender.save(model_filename)
+        compress_async(model_filename)
 
     except Exception:
         print("Failed saving model...")
@@ -83,14 +96,14 @@ def evaluate_recommender(recommender, test_actions,
         user_docs.append(user_doc)
     
     mkdir_p(f"{out_dir}/predictions/")
-    predictions_filename = f"{out_dir}/predictions/{recommender_name}.json.gz"
+    predictions_filename = f"{out_dir}/predictions/{recommender_name}.json"
     print("saving recommendations...")
-    with gzip.open(predictions_filename, "w") as output:
-        for user_doc in tqdm(user_docs,ascii=True, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}'):
-            try:
-                output.write(ujson.dumps(user_doc).encode("utf-8") + b"\n")
-            except:
-                pass
+    saving_start_time = time.time()
+    with open(predictions_filename, "wt") as output:
+        ujson.dump(user_docs, output, indent=4)
+    saving_time = time.time() - saving_start_time
+    print(f"done in {saving_time} seconds ({len(user_docs)/saving_time:0.6} per second)")
+    compress_async(predictions_filename)
  
     result = {}
     sampled_result = {}
@@ -192,7 +205,7 @@ class RecommendersEvaluator(object):
 
     def log_result_to_tensorboard(self, evaluation_result):
         tensorboard_dir = evaluation_result['model_metadata']['tensorboard_dir']
-        step = int(evaluation_result['model_build_time'])
+        step = int(evaluation_result['minutes_to_converge'])
         tensorboard_writer = tf.summary.create_file_writer(tensorboard_dir)
         with tf.device("CPU:0"),  tensorboard_writer.as_default(step=step):
             for metric in self.metrics:
@@ -241,7 +254,9 @@ class RecommendersEvaluator(object):
                                                      evaluate_on_samples=self.sampled_requests is not None)
             evaluate_time_end = time.time()
             print("calculating metrics...")
-            evaluation_result['model_build_time'] = build_time_end - build_time_start
+            build_time = build_time_end - build_time_start
+            evaluation_result['model_build_time'] = build_time 
+            evaluation_result['minutes_to_converge'] = self.minutes_to_converge(build_time, recommender.get_metadata()) 
             evaluation_result['model_inference_time'] = evaluate_time_end - evaluate_time_start
             evaluation_result['model_metadata'] = copy.deepcopy(recommender.get_metadata())
             evaluation_result['model_metadata']['tensorboard_dir'] =  tensorboard_dir
@@ -262,6 +277,12 @@ class RecommendersEvaluator(object):
             except:
                 pass
 
+    def minutes_to_converge(self, build_time, model_metadata):
+        result_seconds = build_time
+        if 'train_metadata' in model_metadata and 'time_to_converge' in model_metadata['train_metadata']:
+            result_seconds = model_metadata['train_metadata']['time_to_converge']
+        return result_seconds / 60
+
     def save_split(self, train, test):
         training_actions_saving_start = time.time()
         print("saving train actions...")
@@ -275,6 +296,7 @@ class RecommendersEvaluator(object):
         print(f"test actions aved in {test_actions_saving_end - test_actions_saving_start} seconds")
 
     def save_actions(self, actions, filename):
-        with gzip.open(os.path.join(self.out_dir, filename), 'w') as output:
+        with open(os.path.join(self.out_dir, filename), 'w') as output:
             for action in tqdm(actions):
                 output.write(action.to_json().encode('utf-8') + b"\n")
+        compress_async(filename)

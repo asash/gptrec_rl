@@ -11,10 +11,11 @@ from aprec.recommenders.top_recommender import TopRecommender
 
 USERS_FRACTIONS = [1.0]
 
-EXTRA_VAL_METRICS = [HIT(10), NDCG(10), HighestScore(), 
-                     Confidence('Softmax'), Confidence('Sigmoid'), 
-                     Entropy('Sigmoid', 2),  Entropy('Sigmoid', 5),  Entropy('Sigmoid', 10),
-                     Entropy('Softmax', 2), Entropy('Softmax', 5), Entropy('Softmax', 10)]
+EXTRA_VAL_METRICS = [NDCG(10), HighestScore(), NDCG(40), HIT(1), MRR(), 
+                     Confidence('Softmax'), Confidence('Sigmoid'), Entropy('Softmax', 10)]
+
+METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
+
 SEQUENCE_LENGTH=200
 EMBEDDING_SIZE=128
  
@@ -106,8 +107,8 @@ def mf_bpr():
 recommenders = {
         "popularity": popularity,
         "mf-bpr": mf_bpr,
-        "BERT4rec-sampling-lambdarank": lambda: sampling_bert('lambdarank'), 
         "BERT4rec-sampling-bce": lambda: sampling_bert('bce'), 
+        "BERT4rec-sampling-lambdarank": lambda: sampling_bert('lambdarank'), 
         "BERT4rec-sampling-softmax": lambda: sampling_bert('softmax_ce'), 
         "SASRec": vanilla_sasrec,
         "SASRec-RSS-bce": lambda: sasrec_rss(0.8, 'bce'),
@@ -117,7 +118,6 @@ recommenders = {
         "BERT4rec-bce": lambda: full_bert('bce') 
 }
 
-METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
 
 def get_recommenders(filter_seen: bool):
     result = {}

@@ -55,8 +55,9 @@ class SequentialRecommender(Recommender):
         self.pass_parameters()
 
         model_trainer = ModelTrainer(self)
-        model_trainer.train()
+        train_metadata = model_trainer.train()
         del(model_trainer)
+        self.metadata['train_metadata'] = train_metadata
 
         if self.config.use_ann_for_inference:
                 self.build_ann_index()
@@ -181,6 +182,9 @@ class SequentialRecommender(Recommender):
             return self.model.score_all_items
         else: 
             return self.model
+
+    def get_metadata(self):
+        return self.metadata
     
     def get_all_item_scores(self, user_id):
         model_inputs = self.get_model_inputs(user_id) 
