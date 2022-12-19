@@ -51,14 +51,6 @@ class LambdaMARTEnsembleRecommender(Recommender):
 
     def set_out_dir(self, log_dir):
         self.log_dir = log_dir 
-        if log_dir is not None:
-            self.train_users_file  = gzip.open(os.path.join(log_dir, "ensemble_train.csv.gz"), "w") 
-            self.val_users_file  = gzip.open(os.path.join(log_dir, "ensemble_val.csv.gz"), "w") 
-            self.predictions_file  = gzip.open(os.path.join(log_dir, "ensemble_prediction_features.csv.gz"), "w")
-        else:
-            self.train_users_file  = None 
-            self.val_users_file  =  None
-            self.predictions_file = None 
 
     
     def add_item(self, item: Item):
@@ -120,15 +112,20 @@ class LambdaMARTEnsembleRecommender(Recommender):
             print(f"rebuilding recommender {other_recommender}")
             self.other_recommenders[other_recommender].rebuild_model()
 
-
+        train_users_file = None
+        val_users_file = None
+        if self.log_dir is not None:
+            train_users_file  = gzip.open(os.path.join(self.log_dir, "ensemble_train.csv.gz"), "w") 
+            val_users_file  =  gzip.open(os.path.join(self.log_dir, "ensemble_val.csv.gz"), "w") 
+ 
         print ("building ensemble train dataset...")
-        train_dataset = self.get_data(ensemble_users, self.train_users_file)
+        train_dataset = self.get_data(ensemble_users, train_users_file)
         print ("building ensemble val dataset...")
-        val_dataset = self.get_data(ensemble_val_users, self.val_users_file)
+        val_dataset = self.get_data(ensemble_val_users, val_users_file)
 
         if self.log_dir is not None:
-            self.train_users_file.close()
-            self.val_users_file.close()
+            train_users_file.close()
+            val_users_file.close()
 
         self.ranker = lightgbm.train(
             params={
@@ -144,8 +141,6 @@ class LambdaMARTEnsembleRecommender(Recommender):
             early_stopping_rounds=self.early_stopping
         )
         feature_names = train_dataset.feature_name
-        if self.predictions_file is not None:
-            self.predictions_file.write(f"user_id;item_id;target;{';'.join(feature_names)}\n".encode('utf-8'))
 
     
     def get_metadata(self):
@@ -194,8 +189,6 @@ class LambdaMARTEnsembleRecommender(Recommender):
         user_ids = [user_id] * len(items)
         scores = self.ranker.predict(features) 
         recs = list(zip(items, scores))
-        if self.predictions_file is not None:
-            self.log_candidates(self.predictions_file, user_ids, items, features, scores)
         return sorted(recs, key=lambda x: -x[1])[:limit]
 
     def log_candidates(self, logfile, user_ids, items, features, targets=None):
@@ -237,6 +230,10 @@ class LambdaMARTEnsembleRecommender(Recommender):
             for candidate, features in zip(candidate_ids, features):
                 candidate_features[candidate] += features
         return candidate_features
+
+    def save(self, checkpoints):
+        pass
+
     
     def set_val_users(self, val_users):
         self.val_users = val_users

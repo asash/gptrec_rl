@@ -1,8 +1,8 @@
 
+from tempfile import NamedTemporaryFile
 import unittest
 
-class TestLambdaMartEnsembleRecommender(unittest.TestCase):
-    def test_lambdamart_ensemble_recommender(self):
+def train_model():
         import json
         import os
         from aprec.datasets.movielens20m import get_movielens20m_actions
@@ -36,13 +36,22 @@ class TestLambdaMartEnsembleRecommender(unittest.TestCase):
         recs = recommender.recommend('121', 10)
         print(recs)
         print(json.dumps(recommender.get_metadata()))
-        recommender.predictions_file.close()
         train_csv = pd.read_csv(os.path.join(tempdir, 'ensemble_train.csv.gz'), compression='gzip', delimiter=';')
         val_csv = pd.read_csv(os.path.join(tempdir, 'ensemble_train.csv.gz'), compression='gzip', delimiter=';')
-        prediction_csv = pd.read_csv(os.path.join(tempdir, 'ensemble_prediction_features.csv.gz'), compression='gzip', delimiter=';')
-        print(train_csv)
-        print(val_csv)
-        print(prediction_csv)
+        return recommender
+
+def train_and_save(tempdir):
+    recommender = train_model()
+
+
+
+class TestLambdaMartEnsembleRecommender(unittest.TestCase):
+    def test_lambdamart_ensemble_recommender(self):
+        recommender = train_model()
+        with NamedTemporaryFile() as tmp:
+            recommender.save(tmp.name)
+
+        
 
 if __name__ == "__main__":
     unittest.main()
