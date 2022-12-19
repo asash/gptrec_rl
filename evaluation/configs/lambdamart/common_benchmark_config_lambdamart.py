@@ -27,11 +27,10 @@ def lambdamart(lambda_l2=0.0):
     )
 
 recommenders = {
-    "lambdamart_baseline": lambdamart,
-    "lambdamart_baseline_l2:0001": lambdamart(lambda_l2=0.0001),
-    "lambdamart_baseline_l2:001": lambdamart(lambda_l2=0.001),
-    "lambdamart_baseline_l2:01": lambdamart(lambda_l2=0.01),
-    "lambdamart_baseline_l2:1": lambdamart(lambda_l2=0.1),
+    "lambdamart_baseline_l2:0001": lambda: lambdamart(lambda_l2=0.0001),
+    "lambdamart_baseline_l2:001": lambda: lambdamart(lambda_l2=0.001),
+    "lambdamart_baseline_l2:01": lambda: lambdamart(lambda_l2=0.01),
+    "lambdamart_baseline_l2:1": lambda: lambdamart(lambda_l2=0.1),
 }
 
 
