@@ -126,8 +126,7 @@ def run_experiment(config):
         result_for_fraction['num_users'] = len(user_id_set)
         result.append(result_for_fraction)
         write_result(config, result)
-        shell(f"python3 statistical_signifficance_test.py --predictions-dir={config.out_dir}/predictions/ "
-              f"--output-file={config.out_dir}/statistical_signifficance.json")
+        #removed "two significance tests"
 
 def get_max_test_users(config):
     if hasattr(config, 'MAX_TEST_USERS'):
