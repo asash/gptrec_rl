@@ -22,7 +22,7 @@ def lambdamart(filter_seen=True):
     return LambdaMARTEnsembleRecommender(
                             candidates_selection_recommender=candidates_selection, 
                             other_recommenders=other_recommenders,
-                            n_ensemble_users=200, 
+                            n_ensemble_users=1024, 
                             n_ensemble_val_users=200, 
     )
 

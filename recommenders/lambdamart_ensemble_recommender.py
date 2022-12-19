@@ -186,7 +186,6 @@ class LambdaMARTEnsembleRecommender(Recommender):
         for candidate in candidates:
             items.append(candidate)
             features.append(candidates[candidate])
-        user_ids = [user_id] * len(items)
         scores = self.ranker.predict(features) 
         recs = list(zip(items, scores))
         return sorted(recs, key=lambda x: -x[1])[:limit]
@@ -230,9 +229,6 @@ class LambdaMARTEnsembleRecommender(Recommender):
             for candidate, features in zip(candidate_ids, features):
                 candidate_features[candidate] += features
         return candidate_features
-
-    def save(self, checkpoints):
-        pass
 
     
     def set_val_users(self, val_users):
