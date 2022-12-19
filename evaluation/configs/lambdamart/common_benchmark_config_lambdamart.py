@@ -9,10 +9,9 @@ from aprec.recommenders.lightfm import LightFMRecommender
 from aprec.recommenders.top_recommender import TopRecommender
 
 
-def lambdamart(filter_seen=True):
+def lambdamart(lambda_l2=0.0):
     candidates_selection = LightFMRecommender(256)
-    if filter_seen:
-        candidates_selection = FilterSeenRecommender(candidates_selection)
+    candidates_selection = FilterSeenRecommender(candidates_selection)
 
     other_recommenders = {
         "TopRecommender": TopRecommender(), 
@@ -24,11 +23,15 @@ def lambdamart(filter_seen=True):
                             other_recommenders=other_recommenders,
                             n_ensemble_users=1024, 
                             n_ensemble_val_users=200, 
+                            lambda_l2=lambda_l2
     )
 
 recommenders = {
     "lambdamart_baseline": lambdamart,
-    "lambdamart_baseline_unfiltered": lambda: lambdamart(filter_seen=False)
+    "lambdamart_baseline_l2:0001": lambdamart(lambda_l2=0.0001),
+    "lambdamart_baseline_l2:001": lambdamart(lambda_l2=0.001),
+    "lambdamart_baseline_l2:01": lambdamart(lambda_l2=0.01),
+    "lambdamart_baseline_l2:1": lambdamart(lambda_l2=0.1),
 }
 
 
