@@ -174,7 +174,7 @@ class VanillaBERT4Rec(Recommender):
         bert4rec_dir = os.path.dirname(BERT4rec.__file__)
         bert4rec_runner = os.path.join(bert4rec_dir, "run.py")
         signature = tmpdir.split("/")[-1]
-        cmd = f"python {bert4rec_runner}\
+        cmd = f"python3 {bert4rec_runner}\
             --train_input_file={train_instances_filename} \
             --test_input_file={pred_instances_filename} \
             --vocab_filename={vocab_filename} \
