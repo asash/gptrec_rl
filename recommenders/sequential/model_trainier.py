@@ -132,7 +132,7 @@ class ModelTrainer(object):
         return time.time() - self.start_time
 
     def try_early_stop(self):
-        self.steps_to_early_stop = self.recommender.config.early_stop_epochs - min(self.steps_loss_not_improved, self.steps_metric_not_improved)
+        self.steps_to_early_stop = self.recommender.config.early_stop_epochs - self.steps_metric_not_improved
         if self.steps_to_early_stop <= 0:
             print(f"early stopped at epoch {self.current_epoch}")
             self.early_stop_flag = True

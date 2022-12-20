@@ -68,7 +68,7 @@ def sasrec_style_model(model_config, sequence_splitter,
     
     return SequentialRecommender(config)
 
-def get_bert_style_model(model_config):
+def get_bert_style_model(model_config, tuning_samples_portion):
         from aprec.recommenders.sequential.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
         from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender
         from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
@@ -77,7 +77,7 @@ def get_bert_style_model(model_config):
         recommender_config = SequentialRecommenderConfig(model_config, 
                                                train_epochs=10000, early_stop_epochs=200,
                                                batch_size=128,
-                                               sequence_splitter=ItemsMasking, 
+                                               sequence_splitter=lambda: ItemsMasking(tuning_samples_prob=tuning_samples_portion), 
                                                max_batches_per_epoch=256,
                                                targets_builder=ItemsMaskingTargetsBuilder,
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
@@ -87,15 +87,15 @@ def get_bert_style_model(model_config):
         
         return SequentialRecommender(recommender_config)
 
-def full_bert(loss='softmax_ce'):
+def full_bert(loss='softmax_ce', tuning_samples_portion=0.0):
         from aprec.recommenders.sequential.models.bert4rec.full_bert import FullBERTConfig
         model_config =  FullBERTConfig(embedding_size=EMBEDDING_SIZE, loss=loss)
-        return get_bert_style_model(model_config)
+        return get_bert_style_model(model_config, tuning_samples_portion=tuning_samples_portion)
 
-def sampling_bert(loss='bce'):
+def sampling_bert(loss='bce', tuning_samples_portion=0.0):
         from aprec.recommenders.sequential.models.bert4rec.bert4recft import SampleBERTConfig
         model_config =  SampleBERTConfig(embedding_size=EMBEDDING_SIZE, loss=loss)
-        return get_bert_style_model(model_config)
+        return get_bert_style_model(model_config, tuning_samples_portion=tuning_samples_portion)
 
 def popularity():
         return TopRecommender()
@@ -105,17 +105,44 @@ def mf_bpr():
 
 
 recommenders = {
-        "popularity": popularity,
-        "mf-bpr": mf_bpr,
-        "BERT4rec-sampling-bce": lambda: sampling_bert('bce'), 
-        "BERT4rec-sampling-lambdarank": lambda: sampling_bert('lambdarank'), 
-        "BERT4rec-sampling-softmax": lambda: sampling_bert('softmax_ce'), 
-        "SASRec": vanilla_sasrec,
-        "SASRec-RSS-bce": lambda: sasrec_rss(0.8, 'bce'),
-        "SASRec-RSS-softmax": lambda: sasrec_rss(0.8, 'softmax_ce'),
-        "SASRec-RSS-lambdarank": lambda: sasrec_rss(0.8, 'lambdarank'),
-        "BERT4rec": lambda: full_bert('softmax_ce'),
-        "BERT4rec-bce": lambda: full_bert('bce') 
+        #"popularity": popularity,
+        #"mf-bpr": mf_bpr,
+        #"BERT4rec-sampling-bce": lambda: sampling_bert('bce'), 
+        #"BERT4rec-sampling-lambdarank": lambda: sampling_bert('lambdarank'), 
+        #"BERT4rec-sampling-softmax": lambda: sampling_bert('softmax_ce'), 
+        #"SASRec": vanilla_sasrec,
+        #"SASRec-RSS-bce": lambda: sasrec_rss(0.8, 'bce'),
+        #"SASRec-RSS-softmax": lambda: sasrec_rss(0.8, 'softmax_ce'),
+        #"SASRec-RSS-lambdarank": lambda: sasrec_rss(0.8, 'lambdarank'),
+        "BERT4rec-tuning-tuning:0.1": lambda: full_bert('softmax_ce', 0.1),
+        "BERT4rec-sampling-tuning:0.1": lambda: sampling_bert('bce', 0.1),
+
+        "BERT4rec-tuning-tuning:0.2": lambda: full_bert('softmax_ce', 0.2),
+        "BERT4rec-sampling-tuning:0.2": lambda: sampling_bert('bce', 0.2),
+
+        "BERT4rec-tuning-tuning:0.3": lambda: full_bert('softmax_ce', 0.3),
+        "BERT4rec-sampling-tuning:0.3": lambda: sampling_bert('bce', 0.3),
+
+        "BERT4rec-tuning-tuning:0.4": lambda: full_bert('softmax_ce', 0.4),
+        "BERT4rec-sampling-tuning:0.4": lambda: sampling_bert('bce', 0.4),
+
+        "BERT4rec-tuning-tuning:0.5": lambda: full_bert('softmax_ce', 0.5),
+        "BERT4rec-sampling-tuning:0.5": lambda: sampling_bert('bce', 0.5),
+
+        "BERT4rec-tuning-tuning:0.6": lambda: full_bert('softmax_ce', 0.6),
+        "BERT4rec-sampling-tuning:0.6": lambda: sampling_bert('bce', 0.6),
+
+        "BERT4rec-tuning-tuning:0.7": lambda: full_bert('softmax_ce', 0.7),
+        "BERT4rec-sampling-tuning:0.7": lambda: sampling_bert('bce', 0.7),
+
+        "BERT4rec-tuning-tuning:0.9": lambda: full_bert('softmax_ce', 0.9),
+        "BERT4rec-sampling-tuning:0.9": lambda: sampling_bert('bce', 0.9),
+
+        "BERT4rec-tuning-tuning:1.0": lambda: full_bert('softmax_ce', 1.0),
+        "BERT4rec-sampling-tuning:1.0": lambda: sampling_bert('bce', 1.0),
+
+
+        #"BERT4rec-bce": lambda: full_bert('bce') 
 }
 
 
