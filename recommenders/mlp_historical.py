@@ -14,6 +14,7 @@ import math
 
 class GreedyMLPHistorical(Recommender):
     def __init__(self,  bottleneck_size=32, train_epochs=300, n_val_users = 1000, batch_size=256):
+        super().__init__()
         self.users = ItemId()
         self.items = ItemId()
         self.user_actions = defaultdict(lambda: [])

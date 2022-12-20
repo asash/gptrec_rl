@@ -50,6 +50,7 @@ class DatasetsRegister(object):
 
         "ml-20m_warm5_fraction_0.01": lambda: take_user_fraction(DatasetsRegister.get_from_cache("ml-20m_warm5")(), 0.01), 
         "ml-20m_warm5_fraction_0.001": lambda: take_user_fraction(DatasetsRegister.get_from_cache("ml-20m_warm5")(), 0.001), 
+        "netflix_fraction_0.001": lambda: take_user_fraction(DatasetsRegister.get_from_cache("netflix")(), 0.001), 
     }
     
     @staticmethod

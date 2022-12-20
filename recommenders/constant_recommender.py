@@ -2,6 +2,7 @@ from .recommender import Recommender
 
 class ConstantRecommender(Recommender):
     def __init__(self, recommendations):
+        super().__init__()
         self.recommendations = recommendations
 
     def name(self):

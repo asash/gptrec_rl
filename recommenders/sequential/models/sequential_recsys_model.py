@@ -49,7 +49,7 @@ class SequentialRecsysModel(tf.keras.Model):
         model_parameters = cls.get_model_config_class()(**config['model_parameters'])
         model = cls(model_parameters, data_parameters)
         dummy_data = model.get_dummy_inputs() 
-        model(dummy_data) #dummy call to build the model 
+        model(dummy_data, training=False) #dummy call to build the model 
         return model
     
     def get_config(self):

@@ -27,8 +27,13 @@ class TestRecommenderEvaluator(unittest.TestCase):
                                           recommendations_limit, 
                                           target_items_sampler=target_items_sampler)
         result = evaluator()['recommenders']['top_recommender']
+
+        
         del(result["model_build_time"])
         del(result["model_inference_time"])
+        del(result["minutes_to_converge"])
+        del(result["model_metadata"]["tensorboard_dir"])
+
         self.assertEqual(result, 
                 {'precision@5': 0.0078125, 'sampled_metrics': {'precision@5': 0.039062500000000014},
                 'model_metadata': {"top 20 items": [("318", 556), ("296", 523), ("356", 501), ("593", 493),

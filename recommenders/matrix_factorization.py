@@ -18,6 +18,7 @@ from aprec.losses.get_loss import get_loss
 
 class MatrixFactorizationRecommender(Recommender):
     def __init__(self, embedding_size, num_epochs, loss, batch_size, regularization=0.0, learning_rate=0.001):
+        super().__init__()
         self.users = ItemId()
         self.items = ItemId()
         self.user_actions = defaultdict(list)

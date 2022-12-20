@@ -16,6 +16,7 @@ class ItemsMasking(TargetSplitter):
         self.masking_prob = masking_prob
         self.max_predictions_per_seq = max_predictions_per_seq
         self.random = np.random.Generator(np.random.PCG64(np.random.SeedSequence(random_seed)))
+        self.tuning_random = np.random.Generator(np.random.PCG64(np.random.SeedSequence(random_seed+1)))
         self.force_last = force_last 
         self.recency_importance = recency_importance
         self.tuning_samples_prob = tuning_samples_prob
@@ -27,7 +28,7 @@ class ItemsMasking(TargetSplitter):
         if len(seq) < self.seqence_len:
             seq = [(-1, self.num_items)] * (self.seqence_len - len(seq)) + seq
 
-        if not self.force_last and self.random.random() > self.tuning_samples_prob:
+        if not self.force_last and self.tuning_random.random() > self.tuning_samples_prob:
             n_masks = min(self.max_predictions_per_seq,
                             max(1, int(round(len(sequence) * self.masking_prob))))
             sample_range = list(range(len(seq) - seq_len, len(seq)))

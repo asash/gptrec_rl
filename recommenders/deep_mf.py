@@ -26,6 +26,7 @@ class DeepMFRecommender(Recommender):
                  items_per_pred_iter = 1000,
                  steps = 100000
                  ):
+        super().__init__()
         self.users = ItemId()
         self.items = ItemId()
         self.optimizer=optimizer

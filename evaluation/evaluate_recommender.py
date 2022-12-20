@@ -1,6 +1,7 @@
 import copy
 import gzip
 from pathlib import Path
+import tempfile
 import tensorflow as tf
 import ujson
 import os
@@ -135,6 +136,8 @@ class RecommendersEvaluator(object):
         self.callbacks = callbacks
         self.out_dir = out_dir
         tensorboard_dir = f"{out_dir}/tensorboard/"
+        if global_tensorboard_dir is None:
+            global_tensorboard_dir = Path(tempfile.mkdtemp())
         self.global_tensorboard_dir = global_tensorboard_dir
         mkdir_p(tensorboard_dir)
         tb = program.TensorBoard()

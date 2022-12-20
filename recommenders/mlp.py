@@ -1,16 +1,15 @@
+import tensorflow as tf
 from aprec.utils.item_id import ItemId
 from aprec.recommenders.recommender import Recommender
 from scipy.sparse import csr_matrix
 from sklearn.model_selection import train_test_split
-from tensorflow.keras.models import Sequential
-import tensorflow.keras.layers as layers
-from tensorflow.keras.utils import Sequence
 import numpy as np
 import math
 
 
 class GreedyMLP(Recommender):
     def __init__(self,  bottleneck_size=32, train_epochs=300):
+        super().__init__()
         self.users = ItemId()
         self.items = ItemId()
         self.rows = []
@@ -43,7 +42,8 @@ class GreedyMLP(Recommender):
                             validation_data=val_generator)
 
     def get_model(self, n_movies):
-        model = Sequential(name='MLP')
+        model = tf.keras.models.Sequential(name='MLP')
+        layers = tf.keras.layers
         model.add(layers.Input(shape=(n_movies), name="input"))
         model.add(layers.Dropout(0.5, name="input_drouput"))
         model.add(layers.Dense(256, name="dense1", activation="relu"))
@@ -75,7 +75,7 @@ class GreedyMLP(Recommender):
         raise (NotImplementedError)
 
 
-class BatchGenerator(Sequence):
+class BatchGenerator(tf.keras.utils.Sequence):
     def __init__(self, matrix, batch_size = 1000):
         self.matrix = matrix
         self.batch_size = batch_size

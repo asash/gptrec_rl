@@ -91,6 +91,9 @@ class ModelTrainer(object):
                 train_generator.cleanup()
                 if self.early_stop_flag:
                     break
+            #cleanup loss and optimizer associated with the model
+            del(self.recommender.model) 
+            self.recommender.model = self.recommender.get_model()
             self.recommender.model.set_weights(self.best_weights)
             
             print(f"taken best model from epoch{self.best_epoch}. best_val_{self.recommender.config.val_metric.name}: {self.best_metric_val}")
