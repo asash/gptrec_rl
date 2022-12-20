@@ -7,13 +7,18 @@ from aprec.recommenders.sequential.targetsplitters.targetsplitter import TargetS
 class ItemsMasking(TargetSplitter):
     def __init__(self,  masking_prob = 0.2,
                  max_predictions_per_seq = 20,
-                 random_seed = 31337, force_last=False, recency_importance = lambda n, k: 1) -> None:
+                 random_seed = 31337, 
+                 force_last=False, 
+                 recency_importance = lambda n, k: 1, 
+                 tuning_samples_prob = 0.0
+                 ) -> None:
         super().__init__()
         self.masking_prob = masking_prob
         self.max_predictions_per_seq = max_predictions_per_seq
         self.random = np.random.Generator(np.random.PCG64(np.random.SeedSequence(random_seed)))
         self.force_last = force_last 
         self.recency_importance = recency_importance
+        self.tuning_samples_prob = tuning_samples_prob
 
     def split(self, sequence):
         seq = sequence[-self.seqence_len: ]
@@ -22,7 +27,7 @@ class ItemsMasking(TargetSplitter):
         if len(seq) < self.seqence_len:
             seq = [(-1, self.num_items)] * (self.seqence_len - len(seq)) + seq
 
-        if not self.force_last:
+        if not self.force_last and self.random.random() > self.tuning_samples_prob:
             n_masks = min(self.max_predictions_per_seq,
                             max(1, int(round(len(sequence) * self.masking_prob))))
             sample_range = list(range(len(seq) - seq_len, len(seq)))
