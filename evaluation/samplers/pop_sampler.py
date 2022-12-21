@@ -46,3 +46,20 @@ class PopTargetItemsSampler(TargetItemSampler):
                 target_items = target_items.union(set(item_ids))
             result.append(ItemsRankingRequest(user_id=user_id, item_ids=list(target_items)))
         return result
+
+class PopTargetItemsWithReplacementSampler(TargetItemSampler):
+    def get_sampled_ranking_requests(self):
+        items, probs = SampledProxy.all_item_ids_probs(self.actions)
+        pooled_sampler = PooledSamplerWithReplacement(items, probs)
+        by_user_test = group_by_user(self.test)
+        result = []
+        for user_id in tqdm.tqdm(by_user_test):
+            target_items = set(action.item_id for action in by_user_test[user_id])
+            sampled_items = []
+            while(len(target_items) + len(sampled_items) < self.target_size):
+                item_ids = pooled_sampler.sample(self.target_size - len(target_items))
+                for item_id in item_ids:
+                    if item_id not in target_items:
+                        sampled_items.append(item_id) 
+            result.append(ItemsRankingRequest(user_id=user_id, item_ids=list(target_items) + sampled_items))
+        return result

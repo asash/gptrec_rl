@@ -9,5 +9,5 @@ RECOMMENDERS = get_recommenders(filter_seen=True)
 
 if __name__ == "__main__":
 
-    from aprec.tests.test_configs import TestConfigs
+    from aprec.tests.misc.test_configs import TestConfigs
     TestConfigs().validate_config(__file__)

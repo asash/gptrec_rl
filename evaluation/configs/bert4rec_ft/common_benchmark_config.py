@@ -5,6 +5,7 @@ from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.evaluation.metrics.mrr import MRR
 from aprec.evaluation.metrics.map import MAP
 from aprec.evaluation.metrics.hit import HIT
+from aprec.evaluation.samplers.pop_sampler import PopTargetItemsWithReplacementSampler
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.recommenders.lightfm import LightFMRecommender
 from aprec.recommenders.top_recommender import TopRecommender
@@ -15,6 +16,7 @@ EXTRA_VAL_METRICS = [NDCG(10), HighestScore(), NDCG(40), HIT(1), MRR(),
                      Confidence('Softmax'), Confidence('Sigmoid'), Entropy('Softmax', 10)]
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
+TARGET_ITEMS_SAMPLER = PopTargetItemsWithReplacementSampler(101)
 
 SEQUENCE_LENGTH=200
 EMBEDDING_SIZE=128
@@ -92,10 +94,10 @@ def full_bert(loss='softmax_ce', tuning_samples_portion=0.0):
         model_config =  FullBERTConfig(embedding_size=EMBEDDING_SIZE, loss=loss)
         return get_bert_style_model(model_config, tuning_samples_portion=tuning_samples_portion)
 
-def sampling_bert(loss='bce', tuning_samples_portion=0.0):
+def sampling_bert(sampling_strategy, num_samples, loss):
         from aprec.recommenders.sequential.models.bert4rec.bert4recft import SampleBERTConfig
-        model_config =  SampleBERTConfig(embedding_size=EMBEDDING_SIZE, loss=loss)
-        return get_bert_style_model(model_config, tuning_samples_portion=tuning_samples_portion)
+        model_config =  SampleBERTConfig(embedding_size=EMBEDDING_SIZE, loss=loss, num_negative_samples=num_samples, sampler=sampling_strategy)
+        return get_bert_style_model(model_config, 0.0)
 
 def popularity():
         return TopRecommender()
@@ -105,45 +107,22 @@ def mf_bpr():
 
 
 recommenders = {
-        #"popularity": popularity,
-        #"mf-bpr": mf_bpr,
-        #"BERT4rec-sampling-bce": lambda: sampling_bert('bce'), 
-        #"BERT4rec-sampling-lambdarank": lambda: sampling_bert('lambdarank'), 
-        #"BERT4rec-sampling-softmax": lambda: sampling_bert('softmax_ce'), 
-        #"SASRec": vanilla_sasrec,
-        #"SASRec-RSS-bce": lambda: sasrec_rss(0.8, 'bce'),
-        #"SASRec-RSS-softmax": lambda: sasrec_rss(0.8, 'softmax_ce'),
-        #"SASRec-RSS-lambdarank": lambda: sasrec_rss(0.8, 'lambdarank'),
-        "BERT4rec-tuning-tuning:0.1": lambda: full_bert('softmax_ce', 0.1),
-        "BERT4rec-sampling-tuning:0.1": lambda: sampling_bert('bce', 0.1),
+        "popularity": popularity,
+        "mf-bpr": mf_bpr
+        }
 
-        "BERT4rec-tuning-tuning:0.2": lambda: full_bert('softmax_ce', 0.2),
-        "BERT4rec-sampling-tuning:0.2": lambda: sampling_bert('bce', 0.2),
+for num_samples in [1, 10, 100, 200, 400]:
+        for loss in ['bce', 'softmax_ce']:
+                for sampling_strategy in ['random', 'popularity', 'idf']:
+                        recommenders[f"BERT4Rec-sampling:{sampling_strategy}:{num_samples}:{loss}"] =\
+                                lambda n=num_samples, l=loss, s=sampling_strategy: sampling_bert(sampling_strategy=s, loss=l, num_samples=n)
 
-        "BERT4rec-tuning-tuning:0.3": lambda: full_bert('softmax_ce', 0.3),
-        "BERT4rec-sampling-tuning:0.3": lambda: sampling_bert('bce', 0.3),
+recommenders["BERT4rec"] = lambda: full_bert('softmax_ce', 0.1)
+recommenders["BERT4rec-no-tuning"] =  lambda: full_bert('softmax_ce', 0.0)
+recommenders["SASRec-vanilla"] =  vanilla_sasrec 
+recommenders["SASRec-RSS-BCE"] =  lambda: sasrec_rss(0.8, 'bce')
+recommenders["SASRec-RSS-lambdarank"]= lambda: sasrec_rss(0.8, 'lambddarank')
 
-        "BERT4rec-tuning-tuning:0.4": lambda: full_bert('softmax_ce', 0.4),
-        "BERT4rec-sampling-tuning:0.4": lambda: sampling_bert('bce', 0.4),
-
-        "BERT4rec-tuning-tuning:0.5": lambda: full_bert('softmax_ce', 0.5),
-        "BERT4rec-sampling-tuning:0.5": lambda: sampling_bert('bce', 0.5),
-
-        "BERT4rec-tuning-tuning:0.6": lambda: full_bert('softmax_ce', 0.6),
-        "BERT4rec-sampling-tuning:0.6": lambda: sampling_bert('bce', 0.6),
-
-        "BERT4rec-tuning-tuning:0.7": lambda: full_bert('softmax_ce', 0.7),
-        "BERT4rec-sampling-tuning:0.7": lambda: sampling_bert('bce', 0.7),
-
-        "BERT4rec-tuning-tuning:0.9": lambda: full_bert('softmax_ce', 0.9),
-        "BERT4rec-sampling-tuning:0.9": lambda: sampling_bert('bce', 0.9),
-
-        "BERT4rec-tuning-tuning:1.0": lambda: full_bert('softmax_ce', 1.0),
-        "BERT4rec-sampling-tuning:1.0": lambda: sampling_bert('bce', 1.0),
-
-
-        #"BERT4rec-bce": lambda: full_bert('bce') 
-}
 
 
 def get_recommenders(filter_seen: bool):
