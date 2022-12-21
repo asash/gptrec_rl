@@ -3,6 +3,7 @@ from typing import List, Type
 import numpy as np
 import tensorflow as tf
 from aprec.losses.get_loss import listwise_loss_from_config
+from aprec.recommenders.sequential.models.bert4rec.samplers.sampler import get_negatives_sampler
 
 from aprec.recommenders.sequential.models.sequential_recsys_model import SequentialDataParameters, SequentialModelConfig, SequentialRecsysModel
 from transformers import TFBertMainLayer, BertConfig
@@ -22,6 +23,7 @@ class SampleBERTConfig(SequentialModelConfig):
                  num_negative_samples = 200,
                  loss = 'bce',
                  loss_parameters = {},
+                 sampler='random'
                 ):
         self.embedding_size = embedding_size
         self.attention_probs_dropout_prob = attention_probs_dropout_prob
@@ -36,6 +38,7 @@ class SampleBERTConfig(SequentialModelConfig):
         self.loss = loss
         self.loss_parameters = loss_parameters 
         self.num_negative_samples = num_negative_samples
+        self.sampler = sampler
 
     def as_dict(self) -> dict:
         return self.__dict__
@@ -66,6 +69,7 @@ class BERT4RecFTModel(SequentialRecsysModel):
         self.loss_.set_batch_size(self.data_parameters.batch_size*self.data_parameters.sequence_length)
         self.output_layer_activation = tf.keras.activations.get(self.model_parameters.output_layer_activation)
         self.position_ids_for_pred = tf.expand_dims(tf.range(1, self.data_parameters.sequence_length+1), 0) 
+        self.sampler = get_negatives_sampler(self.model_parameters.sampler, self.data_parameters, self.model_parameters.num_negative_samples)
 
     def get_dummy_inputs(self) -> List[tf.Tensor]:
         masked_sequences = tf.zeros((self.data_parameters.batch_size, self.data_parameters.sequence_length), 'int64')
@@ -74,18 +78,18 @@ class BERT4RecFTModel(SequentialRecsysModel):
         labels = tf.concat([labels_masked, labels_non_masked], -1)
         positions = tf.zeros_like(masked_sequences)
         return [masked_sequences, labels, positions]
-
+    
     @classmethod
     def get_model_config_class(cls) -> Type[SampleBERTConfig]:
         return SampleBERTConfig
 
+    def fit_biases(self, train_users):
+        self.sampler.fit(train_users)
+
     def call(self, inputs, **kwargs):
         sequences = inputs[0]
         labels = inputs[1]
-        negatives = tf.random.uniform((self.data_parameters.batch_size,
-                                       self.data_parameters.sequence_length,
-                                       self.model_parameters.num_negative_samples), dtype='int64', maxval=self.data_parameters.num_items)
-
+        negatives = self.sampler(sequences, labels)
         candidates = tf.concat([tf.expand_dims(tf.nn.relu(labels), -1), negatives], -1)
         positions = inputs[2]
         bert_output = self.bert(sequences, position_ids=positions)              
