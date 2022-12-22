@@ -32,7 +32,7 @@ def vanilla_sasrec(num_samples):
     return sasrec_style_model(model_config, 
             ShiftedSequenceSplitter,
             target_builder=lambda: PositivesSequenceTargetBuilder(SEQUENCE_LENGTH),
-            batch_size=1024)
+            batch_size=128)
 
 
 def sasrec_style_model(model_config, sequence_splitter, 
