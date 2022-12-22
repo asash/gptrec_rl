@@ -64,7 +64,7 @@ recommenders = {
 
         }
 
-for num_samples in [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]:
+for num_samples in [512, 256, 128, 64, 32, 16, 8, 4, 1]:
     recommenders[f"SASRec-sampling:random:{num_samples}:bce"] =\
         lambda n=num_samples: vanilla_sasrec( num_samples=n)
 
