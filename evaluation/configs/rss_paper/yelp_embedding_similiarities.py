@@ -80,13 +80,14 @@ def vanilla_sasrec():
     from aprec.recommenders.sequential.target_builders.negative_per_positive_target import NegativePerPositiveTargetBuilder
     from aprec.recommenders.sequential.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
     from aprec.recommenders.sequential.history_vectorizers.default_history_vectorizer import DefaultHistoryVectrizer
+    from aprec.recommenders.sequential.target_builders.positives_sequence_target_builder import PositivesSequenceTargetBuilder
 
     sequence_length = 50
     model_config = SASRecConfig(vanilla=True )
 
     return dnn(model_config, 
             ShiftedSequenceSplitter,
-            target_builder=lambda: NegativePerPositiveTargetBuilder(sequence_length),
+            target_builder=lambda: PositivesSequenceTargetBuilder(sequence_length),
             sequence_length=sequence_length, 
             batch_size=1024,
             pred_history_vectorizer= DefaultHistoryVectrizer())

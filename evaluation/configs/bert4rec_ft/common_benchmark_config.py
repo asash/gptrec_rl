@@ -8,6 +8,7 @@ from aprec.evaluation.metrics.hit import HIT
 from aprec.evaluation.samplers.pop_sampler import PopTargetItemsWithReplacementSampler
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.recommenders.lightfm import LightFMRecommender
+from aprec.recommenders.sequential.target_builders.positives_sequence_target_builder import PositivesSequenceTargetBuilder
 from aprec.recommenders.top_recommender import TopRecommender
 
 USERS_FRACTIONS = [1.0]
@@ -44,7 +45,7 @@ def vanilla_sasrec():
     model_config = SASRecConfig(vanilla=True, embedding_size=EMBEDDING_SIZE)
     return sasrec_style_model(model_config, 
             ShiftedSequenceSplitter,
-            target_builder=lambda: NegativePerPositiveTargetBuilder(SEQUENCE_LENGTH),
+            target_builder=lambda: PositivesSequenceTargetBuilder(SEQUENCE_LENGTH),
             batch_size=1024)
 
 
