@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_probability as tfp
 import tqdm
-from aprec.recommenders.sequential.models.bert4rec.samplers.sampler import NegativesSampler
+from aprec.recommenders.sequential.samplers.sampler import NegativesSampler
 from aprec.recommenders.sequential.models.sequential_recsys_model import SequentialDataParameters
 
 

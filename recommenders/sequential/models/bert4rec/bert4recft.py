@@ -3,7 +3,7 @@ from typing import List, Type
 import numpy as np
 import tensorflow as tf
 from aprec.losses.get_loss import listwise_loss_from_config
-from aprec.recommenders.sequential.models.bert4rec.samplers.sampler import get_negatives_sampler
+from aprec.recommenders.sequential.samplers.sampler import get_negatives_sampler
 
 from aprec.recommenders.sequential.models.sequential_recsys_model import SequentialDataParameters, SequentialModelConfig, SequentialRecsysModel
 from transformers import TFBertMainLayer, BertConfig

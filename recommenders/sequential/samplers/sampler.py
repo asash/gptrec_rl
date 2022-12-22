@@ -15,15 +15,15 @@ class NegativesSampler(object):
 
 def get_negatives_sampler(sampler_name, data_parameters, num_negatives) -> NegativesSampler:
     if sampler_name == "random":
-        from aprec.recommenders.sequential.models.bert4rec.samplers.random_sampler import RandomNegativesSampler
+        from aprec.recommenders.sequential.samplers.random_sampler import RandomNegativesSampler
         return RandomNegativesSampler(data_parameters, num_negatives)
 
     elif sampler_name == "popularity":
-        from aprec.recommenders.sequential.models.bert4rec.samplers.popularity_sampler import PopularitySampler
+        from aprec.recommenders.sequential.samplers.popularity_sampler import PopularitySampler
         return PopularitySampler(data_parameters, num_negatives)
 
     elif sampler_name == "idf":
-        from aprec.recommenders.sequential.models.bert4rec.samplers.idf_sampler import IDFSampler
+        from aprec.recommenders.sequential.samplers.idf_sampler import IDFSampler
         return IDFSampler(data_parameters, num_negatives)
     else:
         raise Exception(f"wrong negatives sampler name {sampler_name}")  

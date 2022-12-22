@@ -1,5 +1,5 @@
 import tensorflow as tf
-from aprec.recommenders.sequential.models.bert4rec.samplers.sampler import NegativesSampler
+from aprec.recommenders.sequential.samplers.sampler import NegativesSampler
 from aprec.recommenders.sequential.models.sequential_recsys_model import SequentialDataParameters
 
 
