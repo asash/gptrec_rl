@@ -21,7 +21,7 @@ class TestVanillaSasrec(unittest.TestCase):
 
         USER_ID = '120'
         val_users = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
-        model_config = SASRecConfig(embedding_size=32, vanilla=True, vanilla_num_negatives=5)
+        model_config = SASRecConfig(embedding_size=32, vanilla=True, vanilla_num_negatives=5, vanilla_positive_alpha=0.5)
 
         recommender_config = SequentialRecommenderConfig(model_config, train_epochs=10000, early_stop_epochs=50000,
                                                batch_size=5,

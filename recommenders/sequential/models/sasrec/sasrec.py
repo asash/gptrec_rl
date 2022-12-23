@@ -115,7 +115,17 @@ class SASRecModel(SequentialRecsysModel):
         target_embeddings = self.get_target_embeddings(tf.nn.relu(target_ids))
         if self.model_parameters.vanilla:
             cnt_per_pos = self.model_parameters.vanilla_num_negatives + 1
-            output = tf.einsum("bse, bsne -> bsn", seq_emb, target_embeddings)
+            logits = tf.einsum("bse, bsne -> bsn", seq_emb, target_embeddings)
+            if self.model_parameters.vanilla_positive_alpha != 1:
+                alpha = self.model_parameters.vanilla_positive_alpha
+                positive_logits = logits[:, :, 0:1]
+                negative_logits = logits[:,:,1:]
+                positive_probs = tf.sigmoid(positive_logits)
+                positive_probs_adjusted = tf.math.pow(positive_probs, -alpha) 
+                positive_logits_transformed = tf.math.log(1/(positive_probs_adjusted  - 1))
+                logits = tf.concat([positive_logits_transformed, negative_logits], -1)
+
+            
             truth_positives = tf.ones((self.data_parameters.batch_size, self.data_parameters.sequence_length, 1))
             truth_negatives = tf.zeros((self.data_parameters.batch_size, self.data_parameters.sequence_length, self.model_parameters.vanilla_num_negatives))
             ground_truth = tf.concat([truth_positives, truth_negatives], axis=-1)
@@ -123,12 +133,12 @@ class SASRecModel(SequentialRecsysModel):
             mask = tf.tile(mask, [1, 1, cnt_per_pos])
             ground_truth = -100 * mask + ground_truth * (1-mask) #ignore padding in loss
             ground_truth = tf.reshape(ground_truth, (self.data_parameters.sequence_length * self.data_parameters.batch_size, cnt_per_pos))
-            output = tf.reshape(output, (self.data_parameters.sequence_length * self.data_parameters.batch_size, cnt_per_pos))
+            logits = tf.reshape(logits, (self.data_parameters.sequence_length * self.data_parameters.batch_size, cnt_per_pos))
             pass
 
         else:
             seq_emb = seq_emb[:, -1, :]
-            output = seq_emb @ tf.transpose(target_embeddings)
+            logits = seq_emb @ tf.transpose(target_embeddings)
             batch_idx = tf.tile(tf.expand_dims(tf.range(self.data_parameters.batch_size), -1), [1, self.model_parameters.max_targets_per_user])
             batch_idx = tf.reshape(batch_idx, (self.data_parameters.batch_size * self.model_parameters.max_targets_per_user,))
             item_idx = tf.cast(tf.reshape(positive_input_ids,
@@ -137,8 +147,8 @@ class SASRecModel(SequentialRecsysModel):
             vals = tf.ones(self.data_parameters.batch_size * self.model_parameters.max_targets_per_user , 'float32')
             ground_truth = tf.scatter_nd(idx , vals, (self.data_parameters.batch_size, self.data_parameters.num_items+1))[:,:-1]
             
-        output = self.output_activation(output)
-        result =  self.loss_.loss_per_list(ground_truth, output)
+        logits = self.output_activation(logits)
+        result =  self.loss_.loss_per_list(ground_truth, logits)
         return result
     
     def score_all_items(self, inputs):
@@ -200,6 +210,7 @@ class SASRecConfig(SequentialModelConfig):
                 max_targets_per_user=10,
                 vanilla = False,
                 vanilla_num_negatives = 1,
+                vanilla_positive_alpha = 1,
                 vanilla_target_sampler = 'random',
                 loss='bce', 
                 loss_params = {}
@@ -221,6 +232,7 @@ class SASRecConfig(SequentialModelConfig):
         self.loss_params = loss_params
         self.vanilla_num_negatives = vanilla_num_negatives 
         self.vanilla_target_sampler = vanilla_target_sampler
+        self.vanilla_positive_alpha = vanilla_positive_alpha
 
     def as_dict(self):
         result = self.__dict__
