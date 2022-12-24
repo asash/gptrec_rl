@@ -7,25 +7,26 @@ class BCELoss(ListWiseLoss):
         super().__init__(**kwargs)
         self.__name__ = "BCE"
         self.less_is_better = True
-        self.eps = tf.constant(1e-16, 'float32')
 
     def calc_per_list(self, y_true_raw, y_pred):
-        y_true = tf.cast(y_true_raw, 'float32')
-        is_target = tf.cast((y_true >= -self.eps), 'float32')
+        eps = tf.constant(1e-16, y_pred.dtype)
+        y_true = tf.cast(y_true_raw, y_pred.dtype)
+        is_target = tf.cast((y_true >= -eps), y_pred.dtype)
         trues = y_true*is_target
-        pos = -trues*tf.math.log((tf.sigmoid(y_pred) + self.eps)) * is_target
-        neg = -(1.0 - trues)*tf.math.log((1.0 - tf.sigmoid(y_pred)) + self.eps) * is_target
+        pos = -trues*tf.math.log((tf.sigmoid(y_pred) + eps)) * is_target
+        neg = -(1.0 - trues)*tf.math.log((1.0 - tf.sigmoid(y_pred)) + eps) * is_target
         num_targets = tf.reduce_sum(is_target, axis=1)
         ce_sum = tf.reduce_sum(pos + neg, axis=1)
         res_sum = tf.math.divide_no_nan(ce_sum, num_targets)
         return res_sum
 
     def __call__(self, y_true_raw, y_pred):
-        y_true = tf.cast(y_true_raw, 'float32')
-        is_target = tf.cast((y_true >= -self.eps), 'float32')
+        y_true = tf.cast(y_true_raw, y_pred.dtype)
+        eps = tf.constant(1e-16, y_pred.dtype)
+        is_target = tf.cast((y_true >= -eps), y_pred.dtype)
         trues = y_true*is_target
-        pos = -trues*tf.math.log((tf.sigmoid(y_pred) + self.eps)) * is_target
-        neg = -(1.0 - trues)*tf.math.log((1.0 - tf.sigmoid(y_pred)) + self.eps) * is_target
+        pos = -trues*tf.math.log((tf.sigmoid(y_pred) + eps)) * is_target
+        neg = -(1.0 - trues)*tf.math.log((1.0 - tf.sigmoid(y_pred)) + eps) * is_target
         num_targets = tf.reduce_sum(is_target)
         ce_sum = tf.reduce_sum(pos + neg)
         res_sum = tf.math.divide_no_nan(ce_sum, num_targets)

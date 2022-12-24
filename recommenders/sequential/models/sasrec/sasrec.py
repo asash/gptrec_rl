@@ -118,13 +118,15 @@ class SASRecModel(SequentialRecsysModel):
             logits = tf.einsum("bse, bsne -> bsn", seq_emb, target_embeddings)
             if self.model_parameters.vanilla_positive_alpha != 1:
                 alpha = self.model_parameters.vanilla_positive_alpha
-                positive_logits = logits[:, :, 0:1]
+                positive_logits = tf.cast(logits[:, :, 0:1], 'float64') #use float64 to increase numerical stability
                 negative_logits = logits[:,:,1:]
                 positive_probs = tf.sigmoid(positive_logits)
                 positive_probs_adjusted = tf.math.pow(positive_probs, -alpha) 
-                to_log = tf.nn.relu(tf.math.divide_no_nan(1.0, (positive_probs_adjusted  - 1))) + 1e-9
+                to_log = tf.nn.relu(tf.math.divide(1.0, (positive_probs_adjusted  - 1)))
                 positive_logits_transformed = tf.math.log(to_log)
+                negative_logits = tf.cast(negative_logits, 'float64')
                 logits = tf.concat([positive_logits_transformed, negative_logits], -1)
+                pass
 
             
             truth_positives = tf.ones((self.data_parameters.batch_size, self.data_parameters.sequence_length, 1))
@@ -149,6 +151,7 @@ class SASRecModel(SequentialRecsysModel):
             ground_truth = tf.scatter_nd(idx , vals, (self.data_parameters.batch_size, self.data_parameters.num_items+1))[:,:-1]
             
         logits = self.output_activation(logits)
+        ground_truth = tf.cast(ground_truth, logits.dtype)
         result =  self.loss_.loss_per_list(ground_truth, logits)
         return result
     
