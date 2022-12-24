@@ -77,7 +77,7 @@ alphas = [1, 0.5, 0.25, 0.125, 0.0625, 0.03125, 0.015625, 0.0078125,
 negative_nums = [1, 2, 4, 6, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
 
 
-for i in range(100):
+for i in range(1000):
     alpha = random.choice(alphas)
     num_negatives = random.choice(negative_nums)
     recommenders[f"SASRec-alpha:{alpha}:negatives:{num_negatives}"] = lambda a=alpha, n=num_negatives: vanilla_sasrec(alpha=a, num_negatives=n)
