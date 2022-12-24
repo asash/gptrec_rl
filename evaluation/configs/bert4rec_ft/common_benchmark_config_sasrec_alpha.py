@@ -1,3 +1,4 @@
+import random
 from aprec.evaluation.metrics.entropy import Entropy
 from aprec.evaluation.metrics.highest_score import HighestScore
 from aprec.evaluation.metrics.model_confidence import Confidence
@@ -25,10 +26,11 @@ EMBEDDING_SIZE=128
 
 
 
-def vanilla_sasrec(alpha):
+def vanilla_sasrec(alpha, num_negatives):
     from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecConfig
     from aprec.recommenders.sequential.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
-    model_config = SASRecConfig(vanilla=True, embedding_size=EMBEDDING_SIZE, vanilla_num_negatives=1, vanilla_positive_alpha=alpha)
+    model_config = SASRecConfig(vanilla=True, embedding_size=EMBEDDING_SIZE,
+                                vanilla_num_negatives=num_negatives, vanilla_positive_alpha=alpha)
     return sasrec_style_model(model_config, 
             ShiftedSequenceSplitter,
             target_builder=lambda: PositivesSequenceTargetBuilder(SEQUENCE_LENGTH),
@@ -64,15 +66,21 @@ recommenders = {
 
         }
 
-for alpha in [0.5, 0.25, 0.125, 0.0625, 0.03125, 0.015625, 0.0078125, 
+alphas = [1, 0.5, 0.25, 0.125, 0.0625, 0.03125, 0.015625, 0.0078125, 
               0.00390625, 
               0.001953125, 
               0.0009765625, 
               0.00048828125, 
-              0.00029274, #this one is equal to perfect proportion
               0.000244140625, 
-              0.0001220703125]:
-    recommenders[f"SASRec-alpha:{alpha}"] = lambda a=alpha: vanilla_sasrec(alpha=a)
+              0.0001220703125]
+
+negative_nums = [1, 2, 4, 6, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
+
+
+for i in range(150):
+    alpha = random.choice(alphas)
+    num_negatives = random.choice(negative_nums)
+    recommenders[f"SASRec-alpha:{alpha}:negatives:{num_negatives}"] = lambda a=alpha, n=num_negatives: vanilla_sasrec(alpha=a, num_negatives=n)
 
 
 
