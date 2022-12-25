@@ -26,11 +26,12 @@ EMBEDDING_SIZE=128
 
 
 
-def vanilla_sasrec(alpha, num_negatives):
+def vanilla_sasrec(alpha: float, num_negatives: int, embeddings_norm: float):
     from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecConfig
     from aprec.recommenders.sequential.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
     model_config = SASRecConfig(vanilla=True, embedding_size=EMBEDDING_SIZE,
-                                vanilla_num_negatives=num_negatives, vanilla_positive_alpha=alpha)
+                                vanilla_num_negatives=num_negatives, vanilla_positive_alpha=alpha, 
+                                embeddings_l2=embeddings_norm)
     return sasrec_style_model(model_config, 
             ShiftedSequenceSplitter,
             target_builder=lambda: PositivesSequenceTargetBuilder(SEQUENCE_LENGTH),
@@ -73,14 +74,16 @@ alphas = [1, 0.5, 0.25, 0.125, 0.0625, 0.03125, 0.015625, 0.0078125,
               0.00048828125, 
               0.000244140625, 
               0.0001220703125]
-
-negative_nums = [1, 2, 4, 6, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
+negative_nums = [1, 2, 4, 6, 8, 16, 32, 64, 128]
+embedding_norms = [1.0, 0.1, 0.01, 0.001, 0.0001, 0.0]
 
 
 for i in range(1000):
     alpha = random.choice(alphas)
     num_negatives = random.choice(negative_nums)
-    recommenders[f"SASRec-alpha:{alpha}:negatives:{num_negatives}"] = lambda a=alpha, n=num_negatives: vanilla_sasrec(alpha=a, num_negatives=n)
+    l2 = random.choice(embedding_norms)
+    recommenders[f"SASRec-alpha:{alpha}:negatives:{num_negatives}:embedding_norms:{l2}"] =\
+        lambda a=alpha, n=num_negatives, norm=l2: vanilla_sasrec(alpha=a, num_negatives=n, embeddings_norm=norm)
 
 
 

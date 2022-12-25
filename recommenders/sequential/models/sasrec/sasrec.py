@@ -153,7 +153,8 @@ class SASRecModel(SequentialRecsysModel):
         logits = self.output_activation(logits)
         ground_truth = tf.cast(ground_truth, logits.dtype)
         result =  self.loss_.loss_per_list(ground_truth, logits)
-        return result
+        embeddings_norm = tf.cast(tf.norm(target_embeddings) * self.model_parameters.embeddings_l2, result.dtype)
+        return result + embeddings_norm
     
     def score_all_items(self, inputs):
         input_ids = inputs[0]
@@ -217,7 +218,8 @@ class SASRecConfig(SequentialModelConfig):
                 vanilla_positive_alpha = 1,
                 vanilla_target_sampler = 'random',
                 loss='bce', 
-                loss_params = {}
+                loss_params = {}, 
+                embeddings_l2 = 0.001
                 ): 
         self.output_layer_activation=output_layer_activation
         self.embedding_size=embedding_size
@@ -234,6 +236,7 @@ class SASRecConfig(SequentialModelConfig):
         self.max_targets_per_user = max_targets_per_user #only used with sparse positives
         self.loss = loss
         self.loss_params = loss_params
+        self.embeddings_l2 = embeddings_l2 
         self.vanilla_num_negatives = vanilla_num_negatives 
         self.vanilla_target_sampler = vanilla_target_sampler
         self.vanilla_positive_alpha = vanilla_positive_alpha
