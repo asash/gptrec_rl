@@ -71,8 +71,8 @@ recommenders = {
 
 #negative_nums = [2 ** i for i in range(0, 9)]
 #ts = np.linspace(0, 1, 11) 
-negative_nums = [0.5]
-ts=[16]
+negative_nums = [16]
+ts=[0.5]
 
 all_pairs = [(neg, t) for neg in negative_nums for t in ts]
 random.shuffle(all_pairs)
