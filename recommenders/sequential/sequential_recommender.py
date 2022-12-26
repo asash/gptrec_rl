@@ -31,19 +31,6 @@ class SequentialRecommender(Recommender):
         action_id_internal = self.items.get_id(action.item_id)
         self.user_actions[user_id_internal].append((action.timestamp, action_id_internal))
 
-    # exclude last action for val_users
-    def user_actions_by_id_list(self, id_list, val_user_ids=None):
-        val_users = set()
-        if val_user_ids is not None:
-            val_users = set(val_user_ids)
-        result = []
-        for user_id in id_list:
-            if user_id not in val_users:
-                result.append(self.user_actions[user_id])
-            else:
-                result.append(self.user_actions[user_id][:-1])
-        return result
-
     def sort_actions(self):
         for user_id in self.user_actions:
             self.user_actions[user_id].sort()

@@ -27,7 +27,7 @@ class SequentialRecommenderConfig(object):
                  max_batches_per_epoch=10,
                  eval_batch_size = 1024, 
                  val_rec_limit=40,
-                 val_metric = HIT(10), #Used for early stopping
+                 val_metric = NDCG(10), #Used for early stopping
                  extra_val_metrics: List[Metric] = [], #Used for logging only
                  val_callbacks = [],
                  use_ann_for_inference = False, 

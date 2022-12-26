@@ -221,9 +221,23 @@ class ModelTrainer(object):
     def train_val_split(self):
         val_user_ids = [self.recommender.users.get_id(val_user) for val_user in self.recommender.val_users]
         train_user_ids = list(range(self.recommender.users.size()))
-        val_users = self.recommender.user_actions_by_id_list(val_user_ids)
-        train_users = self.recommender.user_actions_by_id_list(train_user_ids, val_user_ids)
+        val_users = self.user_actions_by_id_list(val_user_ids)
+        train_users = self.user_actions_by_id_list(train_user_ids, val_user_ids)
         return train_users, val_users
+
+    # exclude last action for val_users
+    def user_actions_by_id_list(self, id_list, val_user_ids=None):
+        val_users = set()
+        if val_user_ids is not None:
+            val_users = set(val_user_ids)
+        result = []
+        for user_id in id_list:
+            if user_id not in val_users:
+                result.append(self.recommender.user_actions[user_id])
+            else:
+                result.append(self.recommender.user_actions[user_id][:-1])
+        return result
+
 
 
     def train_epoch(self, generator):
