@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Type
 import tensorflow as tf
 from aprec.losses import get_loss
+from aprec.recommenders.sequential.models.positional_encodings import  get_pos_embedding
 from aprec.recommenders.sequential.samplers.sampler import get_negatives_sampler
 layers = tf.keras.layers
 
@@ -116,17 +117,20 @@ class SASRecModel(SequentialRecsysModel):
         if self.model_parameters.vanilla:
             cnt_per_pos = self.model_parameters.vanilla_num_negatives + 1
             logits = tf.einsum("bse, bsne -> bsn", seq_emb, target_embeddings)
-            if self.model_parameters.vanilla_positive_alpha != 1:
-                alpha = self.model_parameters.vanilla_positive_alpha
-                positive_logits = tf.cast(logits[:, :, 0:1], 'float64') #use float64 to increase numerical stability
-                negative_logits = logits[:,:,1:]
-                positive_probs = tf.sigmoid(positive_logits)
-                positive_probs_adjusted = tf.math.pow(positive_probs, -alpha) 
-                to_log = tf.nn.relu(tf.math.divide(1.0, (positive_probs_adjusted  - 1)))
-                positive_logits_transformed = tf.math.log(to_log)
-                negative_logits = tf.cast(negative_logits, 'float64')
-                logits = tf.concat([positive_logits_transformed, negative_logits], -1)
-                pass
+            #if self.model_parameters.vanilla_bce_t != 0:
+
+            alpha = self.model_parameters.vanilla_num_negatives / (self.data_parameters.num_items - 1)
+            t = self.model_parameters.vanilla_bce_t 
+            beta = alpha * ((1 - 1/alpha)*t + 1/alpha)
+
+            positive_logits = tf.cast(logits[:, :, 0:1], 'float64') #use float64 to increase numerical stability
+            negative_logits = logits[:,:,1:]
+            positive_probs = tf.sigmoid(positive_logits)
+            positive_probs_adjusted = tf.math.pow(positive_probs, -beta) 
+            to_log = tf.nn.relu(tf.math.divide(1.0, (positive_probs_adjusted  - 1)))
+            positive_logits_transformed = tf.math.log(to_log)
+            negative_logits = tf.cast(negative_logits, 'float64')
+            logits = tf.concat([positive_logits_transformed, negative_logits], -1)
 
             
             truth_positives = tf.ones((self.data_parameters.batch_size, self.data_parameters.sequence_length, 1))
@@ -193,7 +197,6 @@ class SASRecModel(SequentialRecsysModel):
 
         elif self.model_parameters.pos_emb_comb == 'ignore':
              seq = seq
-        before = seq
         seq = self.embedding_dropout(seq)
         seq *= mask
         attentions = []
@@ -208,14 +211,14 @@ class SASRecConfig(SequentialModelConfig):
                 dropout_rate=0.5, num_blocks=2, num_heads=1,
                 reuse_item_embeddings=False,
                 encode_output_embeddings=False,
-                pos_embedding = 'default', 
+                pos_embedding = 'learnable', 
                 pos_emb_comb = 'add',
                 causal_attention = True,
                 pos_smoothing = 0,
                 max_targets_per_user=10,
                 vanilla = False,
                 vanilla_num_negatives = 1,
-                vanilla_positive_alpha = 1,
+                vanilla_bce_t = 1,
                 vanilla_target_sampler = 'random',
                 loss='bce', 
                 loss_params = {}, 
@@ -239,7 +242,7 @@ class SASRecConfig(SequentialModelConfig):
         self.embeddings_l2 = embeddings_l2 
         self.vanilla_num_negatives = vanilla_num_negatives 
         self.vanilla_target_sampler = vanilla_target_sampler
-        self.vanilla_positive_alpha = vanilla_positive_alpha
+        self.vanilla_bce_t = vanilla_bce_t
 
     def as_dict(self):
         result = self.__dict__
@@ -250,64 +253,3 @@ class SASRecConfig(SequentialModelConfig):
 
 
     
-class SinePositionEncoding(tf.keras.layers.Layer):
-    def __init__(
-        self,
-        seq_length, 
-        hidden_size,
-        max_wavelength=10000,
-        **kwargs,
-    ):
-        super().__init__(**kwargs)
-        self.max_wavelength = max_wavelength
-        self.seq_length = seq_length
-        self.hidden_size = hidden_size
-    
-    def call(self, positions):
-        seq_length = self.seq_length
-        hidden_size = self.hidden_size
-        position = tf.cast(tf.range(seq_length), self.compute_dtype)
-        min_freq = tf.cast(1 / self.max_wavelength, dtype=self.compute_dtype)
-        timescales = tf.pow(
-            min_freq,
-            tf.cast(2 * (tf.range(hidden_size) // 2), self.compute_dtype)
-            / tf.cast(hidden_size, self.compute_dtype),
-        )
-        angles = tf.expand_dims(position, 1) * tf.expand_dims(timescales, 0)
-        cos_mask = tf.cast(tf.range(hidden_size) % 2, self.compute_dtype)
-        sin_mask = 1 - cos_mask
-        positional_encodings = (
-            tf.sin(angles) * sin_mask + tf.cos(angles) * cos_mask
-        )
-        return tf.gather(positional_encodings, positions)
-
-class ExpPositionEncoding(tf.keras.layers.Layer):
-    def __init__(self, seq_len, emb_size, init=3, **kwargs):
-        super().__init__(**kwargs)
-        self.seq_len = seq_len
-        self.emb_size = emb_size
-        pows_initalizer = tf.random_uniform_initializer(-init, init)
-        self.pow = tf.Variable(initial_value=pows_initalizer(shape=(emb_size, )), trainable=True)
-        
-    
-    def __call__(self, positions):
-        w = tf.exp(self.pow)
-        for i in range(len(positions.shape)):
-            w = tf.expand_dims(w, 0)
-        tiles = list(positions.shape) + [1]
-        w = tf.tile(w, tiles)
-        positions_norm = tf.cast((positions+1), 'float32')/(self.seq_len+1)
-        pos = tf.tile(tf.expand_dims(positions_norm, -1), [1] * len(positions.shape) + [self.emb_size])
-        return tf.pow(pos, w)
-    
-def get_pos_embedding(seq_len, emb_size, kind):
-    if kind == 'default':
-        return layers.Embedding(seq_len, output_dim=emb_size, dtype='float32')
-
-    if kind == 'exp':
-        return ExpPositionEncoding(seq_len, emb_size)
-    
-    if kind == 'sin':
-        return SinePositionEncoding(seq_len, emb_size)
-
-        

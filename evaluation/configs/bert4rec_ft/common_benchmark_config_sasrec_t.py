@@ -1,4 +1,6 @@
 import random
+
+import numpy as np
 from aprec.evaluation.metrics.entropy import Entropy
 from aprec.evaluation.metrics.highest_score import HighestScore
 from aprec.evaluation.metrics.model_confidence import Confidence
@@ -26,11 +28,11 @@ EMBEDDING_SIZE=128
 
 
 
-def vanilla_sasrec(alpha: float, num_negatives: int, embeddings_norm: float):
+def vanilla_sasrec(t: float, num_negatives: int, embeddings_norm: float):
     from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecConfig
     from aprec.recommenders.sequential.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
     model_config = SASRecConfig(vanilla=True, embedding_size=EMBEDDING_SIZE,
-                                vanilla_num_negatives=num_negatives, vanilla_positive_alpha=alpha, 
+                                vanilla_num_negatives=num_negatives, vanilla_bce_t=t, 
                                 embeddings_l2=embeddings_norm)
     return sasrec_style_model(model_config, 
             ShiftedSequenceSplitter,
@@ -67,23 +69,17 @@ recommenders = {
 
         }
 
-alphas = [1, 0.5, 0.25, 0.125, 0.0625, 0.03125, 0.015625, 0.0078125, 
-              0.00390625, 
-              0.001953125, 
-              0.0009765625, 
-              0.00048828125, 
-              0.000244140625, 
-              0.0001220703125]
-negative_nums = [1, 2, 4, 6, 8, 16, 32, 64, 128, 256]
-embedding_norms = [1.0, 0.1, 0.01, 0.001, 0.0001, 0.0]
+negative_nums = [2 ** i for i in range(0, 9)]
+ts = np.linspace(0, 1, 11) 
+
+all_pairs = [(neg, t) for neg in negative_nums for t in ts]
+random.shuffle(all_pairs)
 
 
-for i in range(1000):
-    alpha = random.choice(alphas)
-    num_negatives = random.choice(negative_nums)
-    l2 = random.choice(embedding_norms)
-    recommenders[f"SASRec-alpha:{alpha}:negatives:{num_negatives}:embedding_norms:{l2}"] =\
-        lambda a=alpha, n=num_negatives, norm=l2: vanilla_sasrec(alpha=a, num_negatives=n, embeddings_norm=norm)
+l2 = 0.00001 
+for (num_negatives, t_val) in all_pairs:
+    recommenders[f"SASRec-t:{t_val:0.2}:negatives:{num_negatives}:embedding_norms:{l2:.5f}"] =\
+        lambda t=t_val, n=num_negatives, norm=l2: vanilla_sasrec(t=t, num_negatives=n, embeddings_norm=norm)
 
 
 
