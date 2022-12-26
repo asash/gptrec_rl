@@ -55,7 +55,7 @@ def sasrec_style_model(model_config, sequence_splitter,
                                 max_batches_per_epoch=256,
                                 sequence_splitter=sequence_splitter, 
                                 targets_builder=target_builder, 
-                                use_keras_training=True,
+                                use_keras_training=False,
                                 extra_val_metrics=EXTRA_VAL_METRICS, 
                                 sequence_length=SEQUENCE_LENGTH
                                 )
@@ -69,8 +69,10 @@ recommenders = {
 
         }
 
-negative_nums = [2 ** i for i in range(0, 9)]
-ts = np.linspace(0, 1, 11) 
+#negative_nums = [2 ** i for i in range(0, 9)]
+#ts = np.linspace(0, 1, 11) 
+negative_nums = [0.5]
+ts=[16]
 
 all_pairs = [(neg, t) for neg in negative_nums for t in ts]
 random.shuffle(all_pairs)
