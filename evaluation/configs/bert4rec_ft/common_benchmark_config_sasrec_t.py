@@ -42,7 +42,7 @@ def vanilla_sasrec(t: float, num_negatives: int, embeddings_norm: float):
 
 def sasrec_style_model(model_config, sequence_splitter, 
                 target_builder,
-                max_epochs=10000, 
+                max_epochs=100, 
                 batch_size=1024,
                 ):
     from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender
