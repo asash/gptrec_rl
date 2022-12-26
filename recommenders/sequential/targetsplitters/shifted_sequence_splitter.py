@@ -3,12 +3,11 @@ from aprec.recommenders.sequential.targetsplitters.targetsplitter import TargetS
 
 
 class ShiftedSequenceSplitter(TargetSplitter):
-    def __init__(self, max_len=100) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self.max_len = max_len
     
     def split(self, sequence):
-        train = sequence[-self.max_len - 1: -1]
+        train = sequence[-self.seqence_len - 1: -1]
         label = sequence[-len(train):]
         return train, label
     

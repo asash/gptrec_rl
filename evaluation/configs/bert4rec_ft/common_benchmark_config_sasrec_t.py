@@ -20,7 +20,7 @@ EXTRA_VAL_METRICS = [NDCG(10), HighestScore(), NDCG(40), HIT(1), MRR(),
                      Confidence('Softmax'), Confidence('Sigmoid'), Entropy('Softmax', 10)]
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
-TARGET_ITEMS_SAMPLER = PopTargetItemsWithReplacementSampler(101)
+#TARGET_ITEMS_SAMPLER = PopTargetItemsWithReplacementSampler(101)
 
 SEQUENCE_LENGTH=200
 EMBEDDING_SIZE=128
@@ -42,7 +42,7 @@ def vanilla_sasrec(t: float, num_negatives: int, embeddings_norm: float):
 
 def sasrec_style_model(model_config, sequence_splitter, 
                 target_builder,
-                max_epochs=10000, 
+                max_epochs=10, 
                 batch_size=1024,
                 ):
     from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender
@@ -50,12 +50,12 @@ def sasrec_style_model(model_config, sequence_splitter,
 
     config = SequentialRecommenderConfig(model_config,                       
                                 train_epochs=max_epochs,
-                                early_stop_epochs=200,
+                                early_stop_epochs=10,
                                 batch_size=batch_size,
                                 max_batches_per_epoch=256,
                                 sequence_splitter=sequence_splitter, 
                                 targets_builder=target_builder, 
-                                use_keras_training=False,
+                                use_keras_training=True,
                                 extra_val_metrics=EXTRA_VAL_METRICS, 
                                 sequence_length=SEQUENCE_LENGTH
                                 )
@@ -71,8 +71,8 @@ recommenders = {
 
 #negative_nums = [2 ** i for i in range(0, 9)]
 #ts = np.linspace(0, 1, 11) 
-negative_nums = [16]
-ts=[0.5]
+negative_nums = [1]
+ts=[0.0]
 
 all_pairs = [(neg, t) for neg in negative_nums for t in ts]
 random.shuffle(all_pairs)

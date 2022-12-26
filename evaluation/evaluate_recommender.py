@@ -43,8 +43,8 @@ def evaluate_recommender(recommender, test_actions,
     try:
         mkdir_p(f"{out_dir}/checkpoints/")
         model_filename = f"{out_dir}/checkpoints/{recommender_name}.dill"
-        recommender.save(model_filename)
-        compress_async(model_filename)
+        #recommender.save(model_filename)
+        #compress_async(model_filename)
 
     except Exception:
         print("Failed saving model...")
