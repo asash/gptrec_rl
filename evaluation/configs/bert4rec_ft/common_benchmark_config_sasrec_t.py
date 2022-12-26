@@ -42,7 +42,7 @@ def vanilla_sasrec(t: float, num_negatives: int, embeddings_norm: float):
 
 def sasrec_style_model(model_config, sequence_splitter, 
                 target_builder,
-                max_epochs=100, 
+                max_epochs=10000, 
                 batch_size=1024,
                 ):
     from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender
@@ -69,10 +69,8 @@ recommenders = {
 
         }
 
-#negative_nums = [2 ** i for i in range(0, 9)]
-#ts = np.linspace(0, 1, 11) 
-negative_nums = [16]
-ts=[0.5]
+negative_nums = [2 ** i for i in range(0, 9)]
+ts = np.linspace(0, 1, 11) 
 
 all_pairs = [(neg, t) for neg in negative_nums for t in ts]
 random.shuffle(all_pairs)
