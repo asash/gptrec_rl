@@ -75,6 +75,19 @@ ts = np.linspace(0, 1, 11)
 all_pairs = [(neg, t) for neg in negative_nums for t in ts]
 random.shuffle(all_pairs)
 
+def sort_key(pair):
+    neg, t = pair
+    result = 100
+    if neg == 1:
+        result = 0
+    elif t == 0.0:
+        result = 1
+    return result
+    
+    
+
+all_pairs.sort(key=sort_key)
+
 
 l2 = 0.00001 
 for (num_negatives, t_val) in all_pairs:
