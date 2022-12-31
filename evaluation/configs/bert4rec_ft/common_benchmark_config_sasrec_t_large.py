@@ -37,7 +37,7 @@ def vanilla_sasrec(t: float, num_negatives: int, embeddings_norm: float):
     return sasrec_style_model(model_config, 
             ShiftedSequenceSplitter,
             target_builder=lambda: PositivesSequenceTargetBuilder(SEQUENCE_LENGTH),
-            batch_size=128)
+            batch_size=256)
 
 
 def sasrec_style_model(model_config, sequence_splitter, 
