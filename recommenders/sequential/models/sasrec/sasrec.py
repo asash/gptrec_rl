@@ -27,33 +27,34 @@ class SASRecModel(SequentialRecsysModel):
         self.positions = tf.constant(tf.expand_dims(tf.range(self.data_parameters.sequence_length), 0))
         self.item_embeddings_layer = layers.Embedding(
                                                       self.data_parameters.num_items + 2, 
-                                                      output_dim=self.model_parameters.embedding_size, dtype='float32', 
+                                                      output_dim=self.model_parameters.embedding_size, dtype='float64', 
                                                       name='item_embeddings')
         if self.model_parameters.pos_emb_comb != 'ignore':
             self.postion_embedding_layer = get_pos_embedding(self.data_parameters.sequence_length, self.model_parameters.embedding_size, self.model_parameters.pos_embedding)
-        self.embedding_dropout = layers.Dropout(self.model_parameters.dropout_rate, name='embedding_dropout')
+        self.embedding_dropout = layers.Dropout(self.model_parameters.dropout_rate, name='embedding_dropout', dtype='float64')
 
         self.attention_blocks = []
         for i in range(self.model_parameters.num_blocks):
             block_layers = {
-                "first_norm": layers.LayerNormalization(),
+                "first_norm": layers.LayerNormalization(dtype='float64'),
                 "attention_layers": {
-                    "query_proj": layers.Dense(self.model_parameters.embedding_size, activation='linear'),
-                    "key_proj": layers.Dense(self.model_parameters.embedding_size, activation='linear'),
-                    "val_proj": layers.Dense(self.model_parameters.embedding_size, activation='linear'),
-                    "dropout": layers.Dropout(self.model_parameters.dropout_rate),
+                    "query_proj": layers.Dense(self.model_parameters.embedding_size, activation='linear', dtype='float64'),
+                    "key_proj": layers.Dense(self.model_parameters.embedding_size, activation='linear', dtype='float64'),
+                    "val_proj": layers.Dense(self.model_parameters.embedding_size, activation='linear', dtype='float64'),
+                    "dropout": layers.Dropout(self.model_parameters.dropout_rate, dtype='float64'),
                 },
-                "second_norm": layers.LayerNormalization(),
-                "dense1": layers.Dense(self.model_parameters.embedding_size, activation='relu'),
-                "dense2": layers.Dense(self.model_parameters.embedding_size),
-                "dropout": layers.Dropout(self.model_parameters.dropout_rate)
+                "second_norm": layers.LayerNormalization(dtype='float64'),
+                "dense1": layers.Dense(self.model_parameters.embedding_size, activation='relu', dtype='float64'),
+                "dense2": layers.Dense(self.model_parameters.embedding_size, dtype='float64'),
+                "dropout": layers.Dropout(self.model_parameters.dropout_rate, dtype='float64')
             }
             self.attention_blocks.append(block_layers)
         self.output_activation = tf.keras.activations.get(self.model_parameters.output_layer_activation)
-        self.seq_norm = layers.LayerNormalization()
+        self.seq_norm = layers.LayerNormalization(dtype='float64')
         self.all_items = tf.range(0, self.data_parameters.num_items)
         if not self.model_parameters.reuse_item_embeddings:
-            self.output_item_embeddings = layers.Embedding(self.data_parameters.num_items + 2, self.model_parameters.embedding_size)
+            self.output_item_embeddings = layers.Embedding(self.data_parameters.num_items + 2, 
+                                                           self.model_parameters.embedding_size, dtype='float64')
 
         if self.model_parameters.encode_output_embeddings:
             self.output_item_embeddings_encode = layers.Dense(self.model_parameters.embedding_size, activation='gelu')
@@ -134,10 +135,11 @@ class SASRecModel(SequentialRecsysModel):
             logits = tf.concat([positive_logits_transformed, negative_logits], -1)
 
             
-            truth_positives = tf.ones((self.data_parameters.batch_size, self.data_parameters.sequence_length, 1))
-            truth_negatives = tf.zeros((self.data_parameters.batch_size, self.data_parameters.sequence_length, self.model_parameters.vanilla_num_negatives))
+            truth_positives = tf.ones((self.data_parameters.batch_size, self.data_parameters.sequence_length, 1), dtype='float64')
+            truth_negatives = tf.zeros((self.data_parameters.batch_size, 
+                                        self.data_parameters.sequence_length, self.model_parameters.vanilla_num_negatives), dtype='float64')
             ground_truth = tf.concat([truth_positives, truth_negatives], axis=-1)
-            mask = tf.expand_dims(tf.cast((input_ids == self.data_parameters.num_items), 'float32'), -1)
+            mask = tf.expand_dims(tf.cast((input_ids == self.data_parameters.num_items), 'float64'), -1)
             mask = tf.tile(mask, [1, 1, cnt_per_pos])
             ground_truth = -100 * mask + ground_truth * (1-mask) #ignore padding in loss
             ground_truth = tf.reshape(ground_truth, (self.data_parameters.sequence_length * self.data_parameters.batch_size, cnt_per_pos))
@@ -152,7 +154,7 @@ class SASRecModel(SequentialRecsysModel):
             item_idx = tf.cast(tf.reshape(positive_input_ids,
                                           (self.data_parameters.batch_size * self.model_parameters.max_targets_per_user,)), 'int32')
             idx = tf.stack((batch_idx, item_idx), -1)
-            vals = tf.ones(self.data_parameters.batch_size * self.model_parameters.max_targets_per_user , 'float32')
+            vals = tf.ones(self.data_parameters.batch_size * self.model_parameters.max_targets_per_user , 'float64')
             ground_truth = tf.scatter_nd(idx , vals, (self.data_parameters.batch_size, self.data_parameters.num_items+1))[:,:-1]
             
         logits = self.output_activation(logits)
@@ -182,13 +184,13 @@ class SASRecModel(SequentialRecsysModel):
 
     def get_seq_embedding(self, input_ids, bs=None, training=None):
         seq = self.item_embeddings_layer(input_ids)
-        mask = tf.expand_dims(tf.cast(tf.not_equal(input_ids, self.data_parameters.num_items), dtype=tf.float32), -1)
+        mask = tf.expand_dims(tf.cast(tf.not_equal(input_ids, self.data_parameters.num_items), dtype=tf.float64), -1)
         if bs is None:
             bs = seq.shape[0]
         positions  = tf.tile(self.positions, [bs, 1])
         if training and self.model_parameters.pos_smoothing:
             smoothing = tf.random.normal(shape=positions.shape, mean=0, stddev=self.model_parameters.pos_smoothing)
-            positions =  tf.maximum(0, smoothing + tf.cast(positions, 'float32'))
+            positions =  tf.maximum(0, smoothing + tf.cast(positions, 'float64'))
         if self.model_parameters.pos_emb_comb != 'ignore':
             pos_embeddings = self.postion_embedding_layer(positions)[:input_ids.shape[0]]
         if self.model_parameters.pos_emb_comb == 'add':

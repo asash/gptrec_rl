@@ -54,7 +54,7 @@ class ExpPositionEncoding(tf.keras.layers.Layer):
     
 def get_pos_embedding(seq_len, emb_size, kind):
     if (kind == 'default') or (kind=='learnable'):
-        return tf.keras.layers.Embedding(seq_len, output_dim=emb_size, dtype='float32')
+        return tf.keras.layers.Embedding(seq_len, output_dim=emb_size, dtype='float64')
 
     if kind == 'exp':
         return ExpPositionEncoding(seq_len, emb_size)
