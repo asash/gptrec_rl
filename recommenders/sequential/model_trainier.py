@@ -71,6 +71,7 @@ class ModelTrainer(object):
         self.steps_loss_not_improved = 0
         self.best_epoch = -1
         self.best_weights = self.recommender.model.get_weights()
+        self.last_no_nan_weights = self.recommender.model.get_weights()
         self.val_generator = self.get_val_generator()
         self.early_stop_flag = False
         self.current_epoch = None 
@@ -277,9 +278,14 @@ class ModelTrainer(object):
                 y_pred = self.recommender.model(X, training=True)
                 loss_val = tf.reduce_mean(self.recommender.config.loss(y_true, y_pred))
                 pass
-            grad = tape.gradient(loss_val, variables)
-            self.recommender.config.optimizer.apply_gradients(zip(grad, variables))
-            loss_sum += loss_val
+            if not tf.math.is_nan(loss_val).numpy():
+                self.last_no_nan_weights = self.recommender.model.get_weights()
+                grad = tape.gradient(loss_val, variables)
+                self.recommender.config.optimizer.apply_gradients(zip(grad, variables))
+                loss_sum += loss_val
+            else:
+                print("model returned nan loss. returning to last non-nan values")
+                self.recommender.model.set_weights(self.last_no_nan_weights)
             pbar.set_description(f"loss: {loss_sum/num_batches:.5f}")
         pbar.close()
         train_loss = loss_sum/num_batches
