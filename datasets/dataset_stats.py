@@ -51,6 +51,14 @@ def at_least_10_actions(user, items, session_lens):
     n = len(list(filter(lambda l: l>=10, session_lens)))
     return n
 
+def uniq_interactions(users, items, session_lens):
+    total = 0
+    for user in users:
+        uniq = len(set(action.item_id for action in users[user]))
+        total += uniq
+    return total 
+
+ 
 
 
 def sparsity(users, items, session_lens):
@@ -72,6 +80,7 @@ all_metrics = {
     "at_least_50_actions": at_least_50_actions,
     "at_least_20_actions": at_least_20_actions,
     "at_least_10_actions": at_least_10_actions,
+    "uniq_interactions": uniq_interactions,
     "sparsity": sparsity 
 }
 

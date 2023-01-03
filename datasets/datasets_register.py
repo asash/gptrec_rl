@@ -11,6 +11,7 @@ from aprec.datasets.gowalla import get_gowalla_dataset
 from aprec.datasets.movies_dataset import get_movies_dataset, get_movies_dataset_with_bands
 from aprec.datasets.netflix import get_netflix_dataset
 from aprec.datasets.yelp import get_yelp_dataset
+from aprec.datasets.amazon import get_amazon_actions
 from aprec.datasets.mts_kion import get_mts_kion_dataset
 from aprec.datasets.dataset_utils import filter_cold_users, take_user_fraction 
 from aprec.utils.os_utils import mkdir_p_local
@@ -32,6 +33,7 @@ class DatasetsRegister(object):
         "mts_kion": lambda: get_mts_kion_dataset(),
         "yelp": get_yelp_dataset,
         "netflix": get_netflix_dataset,
+        "Amazon.Books": lambda: get_amazon_actions("books"),
 
         "ml-20m_warm5": lambda: filter_cold_users(get_movielens20m_actions(min_rating=0.0), 5), 
         "booking_warm5": lambda: filter_cold_users(get_booking_dataset(unix_timestamps=True, mark_control=False)[0], 5), 
@@ -39,6 +41,7 @@ class DatasetsRegister(object):
         "yelp_warm5": lambda: filter_cold_users(get_yelp_dataset(), 5),
         "netflix_warm5": lambda: filter_cold_users(DatasetsRegister.get_from_cache("netflix")(), 5), 
         "mts_kion_warm5": lambda: filter_cold_users(get_mts_kion_dataset(), 5),
+        "Amazon.Books_warm5": lambda: filter_cold_users(DatasetsRegister.get_from_cache("Amazon.Books")(), 5),
 
 
         "ml-20m_warm10": lambda: filter_cold_users(get_movielens20m_actions(min_rating=0.0), 10), 
