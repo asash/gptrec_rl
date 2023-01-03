@@ -278,14 +278,9 @@ class ModelTrainer(object):
                 y_pred = self.recommender.model(X, training=True)
                 loss_val = tf.reduce_mean(self.recommender.config.loss(y_true, y_pred))
                 pass
-            if not tf.math.is_nan(loss_val).numpy():
-                self.last_no_nan_weights = self.recommender.model.get_weights()
-                grad = tape.gradient(loss_val, variables)
-                self.recommender.config.optimizer.apply_gradients(zip(grad, variables))
-                loss_sum += loss_val
-            else:
-                print("model returned nan loss. returning to last non-nan values")
-                self.recommender.model.set_weights(self.last_no_nan_weights)
+            grad = tape.gradient(loss_val, variables)
+            self.recommender.config.optimizer.apply_gradients(zip(grad, variables))
+            loss_sum += loss_val
             pbar.set_description(f"loss: {loss_sum/num_batches:.5f}")
         pbar.close()
         train_loss = loss_sum/num_batches
