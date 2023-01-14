@@ -244,7 +244,7 @@ class SASRecConfig(SequentialModelConfig):
                 max_targets_per_user=10,
                 vanilla = False,
                 vanilla_num_negatives = 1,
-                vanilla_bce_t = 1,
+                vanilla_bce_t = 0.0,
                 vanilla_target_sampler = 'random',
                 full_target = False,
                 loss='bce', 
