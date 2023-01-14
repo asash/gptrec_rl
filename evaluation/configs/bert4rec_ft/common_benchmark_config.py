@@ -49,7 +49,7 @@ def vanilla_sasrec(loss='bce', num_samples=1, embedding_norm=0.0, batch_size=102
 def sasrec_full_target():
     from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecConfig
     from aprec.recommenders.sequential.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
-    model_config = SASRecConfig(full_target=True, loss='softmax_ce', embedding_size=EMBEDDING_SIZE)
+    model_config = SASRecConfig(full_target=True, loss='softmax_ce', embedding_size=EMBEDDING_SIZE, embeddings_l2=0.0)
     return sasrec_style_model(model_config, 
             ShiftedSequenceSplitter,
             target_builder=lambda: PositivesSequenceTargetBuilder(SEQUENCE_LENGTH),
