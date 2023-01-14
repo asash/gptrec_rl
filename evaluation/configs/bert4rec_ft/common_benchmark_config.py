@@ -53,7 +53,7 @@ def sasrec_full_target():
     return sasrec_style_model(model_config, 
             ShiftedSequenceSplitter,
             target_builder=lambda: PositivesSequenceTargetBuilder(SEQUENCE_LENGTH),
-            batch_size=128)
+            batch_size=64)
 
 
 def sasrec_style_model(model_config, sequence_splitter, 
@@ -114,15 +114,18 @@ def mf_bpr():
         return LightFMRecommender(num_latent_components=EMBEDDING_SIZE, num_threads=32)
 
 
-recommenders = {
-        "popularity": popularity,
-        "mf-bpr": mf_bpr
-        }
+#recommenders = {
+#        "popularity": popularity,
+#        "mf-bpr": mf_bpr
+#        }
 
+recommenders = {}
 recommenders["SASRec-FullCE"] = sasrec_full_target 
 recommenders["BERT4rec"] = lambda: full_bert('softmax_ce', 0.1)
 recommenders["SASRec-vanilla"] =  vanilla_sasrec 
 recommenders["SASRec-vanilla:embedding_norms:0.00001"] =  lambda: vanilla_sasrec(embedding_norm=0.00001)
+recommenders["popularity"] = popularity
+recommenders["mf_bpr"] = mf_bpr
 
 for num_samples in [1, 10, 100, 200, 400]:
         for loss in ['bce', 'softmax_ce']:
