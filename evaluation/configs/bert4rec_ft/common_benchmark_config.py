@@ -120,8 +120,8 @@ def mf_bpr():
 #        }
 
 recommenders = {}
+recommenders["BERT4rec"] = lambda: full_bert('softmax_ce')
 recommenders["SASRec-FullCE"] = sasrec_full_target 
-recommenders["BERT4rec"] = lambda: full_bert('softmax_ce', 0.1)
 recommenders["SASRec-vanilla"] =  vanilla_sasrec 
 recommenders["SASRec-vanilla:embedding_norms:0.00001"] =  lambda: vanilla_sasrec(embedding_norm=0.00001)
 recommenders["popularity"] = popularity
