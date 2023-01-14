@@ -109,8 +109,7 @@ class SASRecModel(SequentialRecsysModel):
             target_ids = tf.concat([target_positives, target_negatives], -1)
             pass
         elif self.model_parameters.full_target:
-            target_ids = tf.expand_dims(tf.expand_dims(self.all_items, 0),0)
-            target_ids = tf.tile(target_ids, [self.data_parameters.batch_size, self.data_parameters.sequence_length, 1])
+            target_ids = self.all_items
         else:
             target_ids = self.all_items
             positive_input_ids = inputs[1]
@@ -148,7 +147,7 @@ class SASRecModel(SequentialRecsysModel):
             pass
 
         elif self.model_parameters.full_target:
-            logits = tf.einsum("bse, bsie -> bsi", seq_emb, target_embeddings) 
+            logits = tf.einsum("bse, ie -> bsi", seq_emb, target_embeddings) 
             batch_idx = tf.tile(tf.expand_dims(tf.range(self.data_parameters.batch_size), -1), 
                                 [1, self.data_parameters.sequence_length])
             batch_idx = tf.reshape(batch_idx, (self.data_parameters.batch_size * self.data_parameters.sequence_length,))
@@ -182,8 +181,10 @@ class SASRecModel(SequentialRecsysModel):
         logits = self.output_activation(logits)
         ground_truth = tf.cast(ground_truth, logits.dtype)
         result =  self.loss_.loss_per_list(ground_truth, logits)
-        embeddings_norm = tf.cast(tf.norm(target_embeddings) * self.model_parameters.embeddings_l2, result.dtype)
-        return result + embeddings_norm
+        if self.model_parameters.embeddings_l2 > 0:
+            embeddings_norm = tf.cast(tf.norm(target_embeddings) * self.model_parameters.embeddings_l2, result.dtype)
+            result += embeddings_norm
+        return result
     
     def score_all_items(self, inputs):
         input_ids = inputs[0]

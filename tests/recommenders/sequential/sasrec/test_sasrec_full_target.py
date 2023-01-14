@@ -24,7 +24,7 @@ class TestSasrecFullTarget(unittest.TestCase):
                                                training_time_limit=5,  
                                                sequence_splitter=ShiftedSequenceSplitter, 
                                                targets_builder=PositivesSequenceTargetBuilder,
-                                               use_keras_training=False
+                                               use_keras_training=True
                                                )
    
         recommender = SequentialRecommender(recommender_config)
