@@ -78,7 +78,7 @@ def sasrec_style_model(model_config, sequence_splitter,
     
     return SequentialRecommender(config)
 
-def get_bert_style_model(model_config, tuning_samples_portion):
+def get_bert_style_model(model_config, tuning_samples_portion, batch_size=128):
         from aprec.recommenders.sequential.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
         from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender
         from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
@@ -88,7 +88,7 @@ def get_bert_style_model(model_config, tuning_samples_portion):
                                                train_epochs=10000, early_stop_epochs=200,
                                                batch_size=128,
                                                sequence_splitter=lambda: ItemsMasking(tuning_samples_prob=tuning_samples_portion), 
-                                               max_batches_per_epoch=256,
+                                               max_batches_per_epoch=batch_size,
                                                targets_builder=ItemsMaskingTargetsBuilder,
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
                                                use_keras_training=True,
@@ -105,7 +105,7 @@ def full_bert(loss='softmax_ce', tuning_samples_portion=0.0):
 def sampling_bert(sampling_strategy, num_samples, loss):
         from aprec.recommenders.sequential.models.bert4rec.bert4recft import SampleBERTConfig
         model_config =  SampleBERTConfig(embedding_size=EMBEDDING_SIZE, loss=loss, num_negative_samples=num_samples, sampler=sampling_strategy)
-        return get_bert_style_model(model_config, 0.0)
+        return get_bert_style_model(model_config, 0.0, batch_size=32)
 
 def popularity():
         return TopRecommender()
@@ -132,7 +132,7 @@ for num_samples in [1, 10, 100, 200, 400]:
                 recommenders[f"BERT4Rec-sampling:random:{num_samples}:{loss}"] =\
                         lambda n=num_samples, l=loss: sampling_bert(sampling_strategy='random', loss=l, num_samples=n)
                 recommenders[f"SASRec-sampling:random:{num_samples}:{loss}"] =\
-                        lambda n=num_samples, l=loss: vanilla_sasrec(loss=l, num_samples=n, batch_size=1024)
+                        lambda n=num_samples, l=loss: vanilla_sasrec(loss=l, num_samples=n, batch_size=32)
 
 def get_recommenders(filter_seen: bool):
     result = {}
