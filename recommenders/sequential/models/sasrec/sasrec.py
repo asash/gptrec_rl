@@ -127,11 +127,11 @@ class SASRecModel(SequentialRecsysModel):
 
             positive_logits = tf.cast(logits[:, :, 0:1], 'float64') #use float64 to increase numerical stability
             negative_logits = logits[:,:,1:]
-            positive_probs = tf.sigmoid(positive_logits)
-            positive_probs_adjusted = tf.math.pow(positive_probs, -beta) 
-            eps = 1e-10 
-            to_log = tf.nn.relu(tf.math.divide(1.0, tf.nn.relu((positive_probs_adjusted  - 1))+eps))
-            positive_logits_transformed = tf.math.log(to_log+eps)
+            eps = 1e-10
+            positive_probs = tf.clip_by_value(tf.sigmoid(positive_logits), eps, 1-eps)
+            positive_probs_adjusted = tf.clip_by_value(tf.math.pow(positive_probs, -beta), 1+eps, tf.float64.max)
+            to_log = tf.clip_by_value(tf.math.divide(1.0, (positive_probs_adjusted  - 1)), eps, tf.float64.max)
+            positive_logits_transformed = tf.math.log(to_log)
             negative_logits = tf.cast(negative_logits, 'float64')
             logits = tf.concat([positive_logits_transformed, negative_logits], -1)
 
