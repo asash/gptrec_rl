@@ -14,10 +14,13 @@ from aprec.recommenders.top_recommender import TopRecommender
 USERS_FRACTIONS = [1.0]
 
 EXTRA_VAL_METRICS = [NDCG(10), HighestScore(), NDCG(40), HIT(1), MRR(), 
-                     Confidence('Softmax'), Confidence('Sigmoid'), Entropy('Softmax', 10)]
+                     Confidence('Softmax'),
+                     Confidence('Sigmoid'),
+                     Entropy('Softmax', 10), 
+                     HIT(10)]
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
-TARGET_ITEMS_SAMPLER = PopTargetItemsWithReplacementSampler(101)
+#TARGET_ITEMS_SAMPLER = PopTargetItemsWithReplacementSampler(101)
 
 SEQUENCE_LENGTH=200
 EMBEDDING_SIZE=128
@@ -45,6 +48,17 @@ def vanilla_sasrec(loss='bce', num_samples=1, embedding_norm=0.0, batch_size=102
             ShiftedSequenceSplitter,
             target_builder=lambda: PositivesSequenceTargetBuilder(SEQUENCE_LENGTH),
             batch_size=batch_size)
+
+def deb_sasrec(num_samples=32, t=0.5, l2=0.00001):
+    from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecConfig
+    from aprec.recommenders.sequential.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
+    model_config = SASRecConfig(vanilla=True, embedding_size=EMBEDDING_SIZE, loss='bce', vanilla_num_negatives=num_samples, 
+                                embeddings_l2=l2, vanilla_bce_t=t)
+    return sasrec_style_model(model_config, 
+            ShiftedSequenceSplitter,
+            target_builder=lambda: PositivesSequenceTargetBuilder(SEQUENCE_LENGTH),
+            batch_size=128)
+
 
 def sasrec_full_target():
     from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecConfig
@@ -114,25 +128,29 @@ def mf_bpr():
         return LightFMRecommender(num_latent_components=EMBEDDING_SIZE, num_threads=32)
 
 
-#recommenders = {
-#        "popularity": popularity,
-#        "mf-bpr": mf_bpr
-#        }
+recommenders = {
+        "popularity": popularity,
+        "mf-bpr": mf_bpr
+        }
 
 recommenders = {}
-recommenders["BERT4rec"] = lambda: full_bert('softmax_ce')
+
+recommenders["DebSASRec"] =  deb_sasrec 
+recommenders["BERT4rec"] = full_bert
 recommenders["SASRec-vanilla"] =  vanilla_sasrec 
-recommenders["SASRec-FullCE"] = sasrec_full_target 
+recommenders["SASRec-FullCE"] =  lambda: sampling_bert(sampling_strategy='random', loss='bce', num_samples=2)
+recommenders["BERT4rec-negPerPos"] = lambda: full_bert('softmax_ce')
 recommenders["SASRec-vanilla:embedding_norms:0.00001"] =  lambda: vanilla_sasrec(embedding_norm=0.00001)
 recommenders["popularity"] = popularity
 recommenders["mf_bpr"] = mf_bpr
 
+
 for num_samples in [1, 10, 100, 200, 400]:
         for loss in ['bce', 'softmax_ce']:
                 recommenders[f"BERT4Rec-sampling:random:{num_samples}:{loss}"] =\
-                        lambda n=num_samples, l=loss: sampling_bert(sampling_strategy='random', loss=l, num_samples=n)
                 recommenders[f"SASRec-sampling:random:{num_samples}:{loss}"] =\
                         lambda n=num_samples, l=loss: vanilla_sasrec(loss=l, num_samples=n, batch_size=32)
+#                        lambda n=num_samples, l=loss: sampling_bert(sampling_strategy='random', loss=l, num_samples=n)
 
 def get_recommenders(filter_seen: bool):
     result = {}
