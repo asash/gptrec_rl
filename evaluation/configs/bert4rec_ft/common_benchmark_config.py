@@ -25,20 +25,20 @@ METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), 
 SEQUENCE_LENGTH=200
 EMBEDDING_SIZE=128
  
-def vanilla_sasrec(loss='bce', num_samples=1, embedding_norm=0.0, batch_size=128):
+def vanilla_sasrec(loss='bce', num_samples=1, batch_size=128):
     from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecConfig
     from aprec.recommenders.sequential.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
-    model_config = SASRecConfig(vanilla=True, embedding_size=EMBEDDING_SIZE, loss=loss, vanilla_num_negatives=num_samples, embeddings_l2=embedding_norm)
+    model_config = SASRecConfig(vanilla=True, embedding_size=EMBEDDING_SIZE, loss=loss, vanilla_num_negatives=num_samples)
     return sasrec_style_model(model_config, 
             ShiftedSequenceSplitter,
             target_builder=lambda: PositivesSequenceTargetBuilder(SEQUENCE_LENGTH),
             batch_size=batch_size)
 
-def deb_sasrec(num_samples=32, t=0.5, l2=0.00001):
+def deb_sasrec(num_samples=32, t=0.5):
     from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecConfig
     from aprec.recommenders.sequential.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
     model_config = SASRecConfig(vanilla=True, embedding_size=EMBEDDING_SIZE, loss='bce', vanilla_num_negatives=num_samples, 
-                                embeddings_l2=l2, vanilla_bce_t=t)
+                                vanilla_bce_t=t)
     return sasrec_style_model(model_config, 
             ShiftedSequenceSplitter,
             target_builder=lambda: PositivesSequenceTargetBuilder(SEQUENCE_LENGTH),
@@ -48,7 +48,7 @@ def deb_sasrec(num_samples=32, t=0.5, l2=0.00001):
 def sasrec_full_target():
     from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecConfig
     from aprec.recommenders.sequential.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
-    model_config = SASRecConfig(full_target=True, loss='softmax_ce', embedding_size=EMBEDDING_SIZE, embeddings_l2=0.0)
+    model_config = SASRecConfig(full_target=True, loss='softmax_ce', embedding_size=EMBEDDING_SIZE)
     return sasrec_style_model(model_config, 
             ShiftedSequenceSplitter,
             target_builder=lambda: PositivesSequenceTargetBuilder(SEQUENCE_LENGTH),
@@ -67,7 +67,7 @@ def sasrec_style_model(model_config, sequence_splitter,
                                 train_epochs=max_epochs,
                                 early_stop_epochs=200,
                                 batch_size=batch_size,
-                                eval_batch_size=128, #no need for gradients, should work ok
+                                eval_batch_size=256, #no need for gradients, should work ok
                                 validation_batch_size=256,
                                 max_batches_per_epoch=256,
                                 sequence_splitter=sequence_splitter, 
@@ -87,7 +87,9 @@ def get_bert_style_model(model_config, tuning_samples_portion, batch_size=128):
         from aprec.recommenders.sequential.targetsplitters.items_masking import ItemsMasking
         recommender_config = SequentialRecommenderConfig(model_config, 
                                                train_epochs=10000, early_stop_epochs=200,
-                                               batch_size=128,
+                                               batch_size=batch_size,
+                                               eval_batch_size=256, #no need for gradients, should work ok
+                                               validation_batch_size=256,
                                                sequence_splitter=lambda: ItemsMasking(tuning_samples_prob=tuning_samples_portion), 
                                                max_batches_per_epoch=batch_size,
                                                targets_builder=ItemsMaskingTargetsBuilder,
@@ -101,7 +103,7 @@ def get_bert_style_model(model_config, tuning_samples_portion, batch_size=128):
 def full_bert(loss='softmax_ce', tuning_samples_portion=0.0):
         from aprec.recommenders.sequential.models.bert4rec.full_bert import FullBERTConfig
         model_config =  FullBERTConfig(embedding_size=EMBEDDING_SIZE, loss=loss)
-        return get_bert_style_model(model_config, tuning_samples_portion=tuning_samples_portion)
+        return get_bert_style_model(model_config, tuning_samples_portion=tuning_samples_portion, batch_size=32)
 
 def sampling_bert(sampling_strategy, num_samples, loss):
         from aprec.recommenders.sequential.models.bert4rec.bert4recft import SampleBERTConfig
@@ -122,12 +124,14 @@ recommenders = {
 
 recommenders = {}
 
-recommenders["DebSASRec"] =  deb_sasrec 
+recommenders["DebSASRec-samples:128-t:0.9"] = lambda: deb_sasrec(num_samples=128, t=0.9) 
 recommenders["BERT4rec"] = full_bert
+recommenders["DebSASRec"] =  deb_sasrec 
+recommenders["DebSASRec-t:0.9"] = lambda: deb_sasrec(t=0.9) 
+recommenders["DebSASRec-samples:128"] = lambda: deb_sasrec(num_samples=128) 
 recommenders["SASRec-vanilla"] =  vanilla_sasrec 
-recommenders["SASRec-FullCE"] =  lambda: sampling_bert(sampling_strategy='random', loss='bce', num_samples=2)
-recommenders["BERT4rec-negPerPos"] = lambda: full_bert('softmax_ce')
-recommenders["SASRec-vanilla:embedding_norms:0.00001"] =  lambda: vanilla_sasrec(embedding_norm=0.00001)
+recommenders["SASRec-FullCE"] =  sasrec_full_target 
+recommenders["BERT4rec-negPerPos"] = lambda: sampling_bert(sampling_strategy='random', loss='bce', num_samples=2)
 recommenders["popularity"] = popularity
 recommenders["mf_bpr"] = mf_bpr
 
