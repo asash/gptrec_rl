@@ -186,7 +186,6 @@ class SASRecModel(SequentialRecsysModel):
             result += embeddings_norm
         return result
 
-    @tf.function 
     def score_all_items(self, inputs):
         input_ids = inputs[0]
         seq_emb, attentions = self.get_seq_embedding(input_ids)
