@@ -310,8 +310,10 @@ class ModelTrainer(object):
         extra_recs = 0
         if self.recommender.flags.get('filter_seen', False):
             extra_recs += self.recommender.config.sequence_length        
-
-        recs = self.recommender.recommend_batch(recommendation_requests, self.recommender.config.val_rec_limit + extra_recs, is_val=True)
+        recs = self.recommender.recommend_batch(recommendation_requests, 
+                                                self.recommender.config.val_rec_limit + extra_recs, 
+                                                is_val=True, 
+                                                batch_size=self.recommender.config.validation_batch_size)
         metric_sum = 0.0
         extra_metric_sums = defaultdict(lambda: 0.0)
         callback_recs, callback_truth = [], [] 

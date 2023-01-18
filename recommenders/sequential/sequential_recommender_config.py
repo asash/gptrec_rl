@@ -26,6 +26,7 @@ class SequentialRecommenderConfig(object):
                  data_generator_queue_size = 16,
                  max_batches_per_epoch=10,
                  eval_batch_size = 1024, 
+                 validation_batch_size=1024,
                  val_rec_limit=40,
                  val_metric = NDCG(10), #Used for early stopping
                  extra_val_metrics: List[Metric] = [], #Used for logging only
@@ -57,3 +58,4 @@ class SequentialRecommenderConfig(object):
         self.loss.set_batch_size(self.batch_size)
         self.sequence_length = sequence_length
         self.use_keras_training = use_keras_training 
+        self.validation_batch_size = validation_batch_size

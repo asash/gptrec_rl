@@ -148,10 +148,12 @@ class SequentialRecommender(Recommender):
             result.append(self.items.reverse_id(int(id)))
         return result
 
-    def recommend_batch(self, recommendation_requests, limit, is_val=False):
+    def recommend_batch(self, recommendation_requests, limit, is_val=False, batch_size=None):
+        if batch_size is None:
+            batch_size = self.config.eval_batch_size
         results = []
         start = 0
-        end = min(start + self.config.eval_batch_size, len(recommendation_requests))
+        end = min(start + batch_size, len(recommendation_requests))
         print("generating recommendation in batches...")
         pbar = tqdm(total = len(recommendation_requests), ascii=True, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}',  position=0, leave=True, ncols=70)
         while (start < end):
@@ -159,7 +161,7 @@ class SequentialRecommender(Recommender):
             results += self.recommend_multiple(req, limit, is_val)
             pbar.update(end - start)
             start = end  
-            end = min(start + self.config.eval_batch_size, len(recommendation_requests))
+            end = min(start + batch_size, len(recommendation_requests))
             gc.collect()
             tf.keras.backend.clear_session()
         return results
