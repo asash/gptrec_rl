@@ -25,22 +25,7 @@ METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), 
 SEQUENCE_LENGTH=200
 EMBEDDING_SIZE=128
  
-
-def sasrec_rss(recency_importance, loss='bce'): 
-        from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecConfig
-
-        from aprec.recommenders.sequential.target_builders.positives_only_targets_builder import PositvesOnlyTargetBuilder
-        from aprec.recommenders.sequential.targetsplitters.recency_sequence_sampling import RecencySequenceSampling
-        from aprec.recommenders.sequential.targetsplitters.recency_sequence_sampling import exponential_importance
-        target_splitter = lambda: RecencySequenceSampling(0.2, exponential_importance(recency_importance))
-        model_config = SASRecConfig(vanilla=False, embedding_size=EMBEDDING_SIZE, loss=loss)
-        return sasrec_style_model(
-            model_config,
-            sequence_splitter=target_splitter,
-            target_builder=PositvesOnlyTargetBuilder, 
-            batch_size=1024)
-
-def vanilla_sasrec(loss='bce', num_samples=1, embedding_norm=0.0, batch_size=1024):
+def vanilla_sasrec(loss='bce', num_samples=1, embedding_norm=0.0, batch_size=128):
     from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecConfig
     from aprec.recommenders.sequential.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
     model_config = SASRecConfig(vanilla=True, embedding_size=EMBEDDING_SIZE, loss=loss, vanilla_num_negatives=num_samples, embeddings_l2=embedding_norm)
@@ -82,6 +67,7 @@ def sasrec_style_model(model_config, sequence_splitter,
                                 train_epochs=max_epochs,
                                 early_stop_epochs=200,
                                 batch_size=batch_size,
+                                eval_batch_size=batch_size,
                                 max_batches_per_epoch=256,
                                 sequence_splitter=sequence_splitter, 
                                 targets_builder=target_builder, 
