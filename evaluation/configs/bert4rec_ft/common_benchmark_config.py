@@ -124,8 +124,8 @@ recommenders = {
 
 recommenders = {}
 
-recommenders["SASRec-FullCE"] =  sasrec_full_target 
 recommenders["BERT4rec"] = full_bert
+recommenders["SASRec-FullCE"] =  sasrec_full_target 
 recommenders["DebSASRec-samples:128-t:0.9"] = lambda: deb_sasrec(num_samples=128, t=0.9) 
 recommenders["DebSASRec"] =  deb_sasrec 
 recommenders["DebSASRec-t:0.9"] = lambda: deb_sasrec(t=0.9) 
