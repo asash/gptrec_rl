@@ -52,7 +52,7 @@ def sasrec_full_target():
     return sasrec_style_model(model_config, 
             ShiftedSequenceSplitter,
             target_builder=lambda: PositivesSequenceTargetBuilder(SEQUENCE_LENGTH),
-            batch_size=128)
+            batch_size=64)
 
 
 def sasrec_style_model(model_config, sequence_splitter, 
@@ -103,12 +103,12 @@ def get_bert_style_model(model_config, tuning_samples_portion, batch_size=128):
 def full_bert(loss='softmax_ce', tuning_samples_portion=0.0):
         from aprec.recommenders.sequential.models.bert4rec.full_bert import FullBERTConfig
         model_config =  FullBERTConfig(embedding_size=EMBEDDING_SIZE, loss=loss)
-        return get_bert_style_model(model_config, tuning_samples_portion=tuning_samples_portion, batch_size=32)
+        return get_bert_style_model(model_config, tuning_samples_portion=tuning_samples_portion, batch_size=64)
 
 def sampling_bert(sampling_strategy, num_samples, loss):
         from aprec.recommenders.sequential.models.bert4rec.bert4recft import SampleBERTConfig
         model_config =  SampleBERTConfig(embedding_size=EMBEDDING_SIZE, loss=loss, num_negative_samples=num_samples, sampler=sampling_strategy)
-        return get_bert_style_model(model_config, 0.0, batch_size=32)
+        return get_bert_style_model(model_config, 0.0, batch_size=64)
 
 def popularity():
         return TopRecommender()
@@ -124,24 +124,21 @@ recommenders = {
 
 recommenders = {}
 
-recommenders["DebSASRec-samples:128-t:0.9"] = lambda: deb_sasrec(num_samples=128, t=0.9) 
+recommenders["SASRec-FullCE"] =  sasrec_full_target 
 recommenders["BERT4rec"] = full_bert
+recommenders["DebSASRec-samples:128-t:0.9"] = lambda: deb_sasrec(num_samples=128, t=0.9) 
 recommenders["DebSASRec"] =  deb_sasrec 
 recommenders["DebSASRec-t:0.9"] = lambda: deb_sasrec(t=0.9) 
 recommenders["DebSASRec-samples:128"] = lambda: deb_sasrec(num_samples=128) 
 recommenders["SASRec-vanilla"] =  vanilla_sasrec 
-recommenders["SASRec-FullCE"] =  sasrec_full_target 
-recommenders["BERT4rec-negPerPos"] = lambda: sampling_bert(sampling_strategy='random', loss='bce', num_samples=2)
+recommenders["BERT4rec-negPerPos"] = lambda: sampling_bert(sampling_strategy='random', loss='bce', num_samples=1)
 recommenders["popularity"] = popularity
 recommenders["mf_bpr"] = mf_bpr
 
 
-for num_samples in [1, 10, 100, 200, 400]:
-        for loss in ['bce', 'softmax_ce']:
-                recommenders[f"BERT4Rec-sampling:random:{num_samples}:{loss}"] =\
-                recommenders[f"SASRec-sampling:random:{num_samples}:{loss}"] =\
-                        lambda n=num_samples, l=loss: vanilla_sasrec(loss=l, num_samples=n, batch_size=32)
-#                        lambda n=num_samples, l=loss: sampling_bert(sampling_strategy='random', loss=l, num_samples=n)
+for num_samples in [1, 4, 16, 64, 256]:
+        for t in [0.0, 0.25, 0.5, 0.75, 1.0]:
+                recommenders[f"DebSASRec-samples:{num_samples}-t:{t}"] = lambda num_samples=num_samples, t=t: deb_sasrec(num_samples=num_samples, t=t)
 
 def get_recommenders(filter_seen: bool):
     result = {}
