@@ -90,7 +90,7 @@ def get_bert_style_model(model_config, tuning_samples_portion, batch_size=128):
                                                eval_batch_size=256, #no need for gradients, should work ok
                                                validation_batch_size=256,
                                                sequence_splitter=lambda: ItemsMasking(tuning_samples_prob=tuning_samples_portion), 
-                                               max_batches_per_epoch=batch_size,
+                                               max_batches_per_epoch=1024,
                                                targets_builder=ItemsMaskingTargetsBuilder,
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
                                                use_keras_training=True,
@@ -123,7 +123,7 @@ recommenders = {
 
 recommenders = {}
 
-recommenders["BERT4rec"] = lambda: full_bert(tuning_samples_portion=0.1)
+recommenders["BERT4rec"] = lambda: full_bert(tuning_samples_portion=0.0)
 
 def get_recommenders(filter_seen: bool):
     result = {}
