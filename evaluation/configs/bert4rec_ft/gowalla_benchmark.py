@@ -1,6 +1,6 @@
 
 from aprec.evaluation.split_actions import LeaveOneOut
-from aprec.evaluation.configs.bert4rec_ft.common_benchmark_config import *
+from aprec.evaluation.configs.bert4rec_ft.common_benchmark_config_small_lr import *
 
 DATASET = "gowalla_warm5"
 N_VAL_USERS=512
