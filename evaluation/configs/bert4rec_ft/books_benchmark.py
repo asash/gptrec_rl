@@ -3,7 +3,7 @@ from aprec.evaluation.configs.bert4rec_ft.common_benchmark_config_small_lr impor
 
 DATASET = "Amazon.Books_warm5"
 N_VAL_USERS=512
-MAX_TEST_USERS=8196
+MAX_TEST_USERS=100000
 SPLIT_STRATEGY = LeaveOneOut(MAX_TEST_USERS)
 RECOMMENDERS = get_recommenders(filter_seen=True)
 
