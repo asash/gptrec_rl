@@ -26,11 +26,10 @@ def get_metrics(doc):
 
 def read_data(filename):
     result = []
-    with gzip.open(filename) as input:
-        for line in input:
-            doc = json.loads(line)
-            metrics = get_metrics(doc)
-            result.append(metrics)
+    data = json.load(gzip.open(filename))
+    for doc in data:
+        metrics = get_metrics(doc)
+        result.append(metrics)
     return pd.DataFrame(result)
 
 df1 = read_data(predictions_file_1)
