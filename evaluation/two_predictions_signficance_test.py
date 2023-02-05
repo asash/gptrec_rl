@@ -5,15 +5,20 @@ import json
 import pandas as pd
 from scipy.stats import ttest_ind
 from argparse import ArgumentParser
+if len(sys.argv)== 3:
+    predictions_file_1 = sys.argv[1]
+    predictions_file_2  =  sys.argv[2]
+    args=None
 
-parser = ArgumentParser()
-parser.add_argument('--first', type=str, required=True)
-parser.add_argument('--second', type=str, required=True)
-parser.add_argument("--metrics", type=str,required=False, default=None)
-args = parser.parse_args()
+else:
+    parser = ArgumentParser()
+    parser.add_argument('--first', type=str, required=True)
+    parser.add_argument('--second', type=str, required=True)
+    parser.add_argument("--metrics", type=str,required=False, default=None)
+    args = parser.parse_args()
 
-predictions_file_1 = args.first 
-predictions_file_2 = args.second
+    predictions_file_1 = args.first 
+    predictions_file_2 = args.second
 first_name = os.path.basename(predictions_file_1).rstrip(".json.gz")
 second_name = os.path.basename(predictions_file_2).rstrip(".json.gz")
 
@@ -37,7 +42,7 @@ df2 = read_data(predictions_file_2)
 
 overlap_columns = set(df1.columns).intersection(set(df2.columns))
 
-if args.metrics is not None:
+if args is not None and args.metrics is not None:
     overlap_columns = overlap_columns.intersection(set(args.metrics.split(",")))
 
 
