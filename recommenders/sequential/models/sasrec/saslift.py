@@ -30,7 +30,6 @@ class SASLiftModel(SequentialRecsysModel):
         item_probs = cnt/np.sum(cnt)
         self.item_freqs.assign(item_probs) 
         self.item_idfs.assign(-np.log(item_probs))
-        pass
 
     def __init__(self, model_parameters, data_parameters, *args, **kwargs):
         super().__init__(model_parameters, data_parameters, *args, **kwargs)
@@ -44,9 +43,11 @@ class SASLiftModel(SequentialRecsysModel):
             self.postion_embedding_layer = get_pos_embedding(self.data_parameters.sequence_length, self.model_parameters.embedding_size, self.model_parameters.pos_embedding)
         self.embedding_dropout = layers.Dropout(self.model_parameters.dropout_rate, name='embedding_dropout')
     
-        init = tf.random_uniform_initializer(0.00001, 0.1)
-        self.item_freqs = tf.Variable(init(shape=(self.data_parameters.num_items,)), trainable=False) 
-        self.item_idfs = tf.Variable(init(shape=(self.data_parameters.num_items,)), trainable=False) 
+        freqs_init = tf.random_uniform_initializer(0.00001, 0.1)
+        self.item_freqs = tf.Variable(freqs_init(shape=(self.data_parameters.num_items,)), trainable=False) 
+
+        idfs_init = tf.random_uniform_initializer(5, 9)
+        self.item_idfs = tf.Variable(idfs_init(shape=(self.data_parameters.num_items,)), trainable=False) 
 
         self.attention_blocks = []
         for i in range(self.model_parameters.num_blocks):
@@ -100,6 +101,13 @@ class SASLiftModel(SequentialRecsysModel):
         inputs.append(positives)
         return inputs
 
+    def get_item_idfs(self):
+        return tf.stop_gradient(self.item_idfs)
+
+    def get_item_freqs(self):
+        return tf.stop_gradient(self.item_freqs)
+
+
     def call(self, inputs,  **kwargs):
         input_ids = inputs[0]
         training = kwargs['training']
@@ -121,8 +129,8 @@ class SASLiftModel(SequentialRecsysModel):
         positive_scores = logits[:, :, 0:1]
         negative_scores = logits[:,:,1:]
         mask = tf.cast((input_ids != self.data_parameters.num_items), 'float32')
-        positive_idfs = tf.gather(self.item_idfs, tf.nn.relu(target_positives))
-        negative_freqs = tf.gather(self.item_freqs, tf.nn.relu(target_negatives))
+        positive_idfs = tf.gather(self.get_item_idfs(), tf.nn.relu(target_positives))
+        negative_freqs = tf.gather(self.get_item_freqs(), tf.nn.relu(target_negatives))
         positive_logprobs = tf.squeeze(positive_scores - positive_idfs, -1)*beta
         negative_logprobs_sum = tf.reduce_sum(-tf.exp(negative_scores) * negative_freqs, axis=-1)
         loss_sum = tf.reduce_sum(-(positive_logprobs + negative_logprobs_sum) * mask, -1)
@@ -138,7 +146,7 @@ class SASLiftModel(SequentialRecsysModel):
         target_ids = self.all_items
         target_embeddings = self.get_target_embeddings(target_ids)
         output = seq_emb @ tf.transpose(target_embeddings)
-        output = self.output_activation(output)
+        output = tf.exp(output)*self.get_item_freqs()
         return output
 
     def get_target_embeddings(self, target_ids):

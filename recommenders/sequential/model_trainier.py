@@ -278,7 +278,7 @@ class ModelTrainer(object):
                 y_pred = self.recommender.model(X, training=True)
                 loss_val = tf.reduce_mean(self.recommender.config.loss(y_true, y_pred))
                 pass
-            grad = tape.gradient(loss_val, variables)
+            grad = tape.gradient(loss_val, variables, unconnected_gradients=tf.UnconnectedGradients.ZERO)
             self.recommender.config.optimizer.apply_gradients(zip(grad, variables))
             loss_sum += loss_val
             pbar.set_description(f"loss: {loss_sum/num_batches:.5f}")
