@@ -61,7 +61,6 @@ def sasrec_style_model(model_config, sequence_splitter,
 
 
 recommenders = {
-    'rjpq-1neg': lambda: deb_sasrec(1),
     'rjpq': deb_sasrec}
 
 
