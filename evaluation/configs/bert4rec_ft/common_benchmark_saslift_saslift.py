@@ -23,12 +23,12 @@ METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), 
 #TARGET_ITEMS_SAMPLER = PopTargetItemsWithReplacementSampler(101)
 
 SEQUENCE_LENGTH=200
-EMBEDDING_SIZE=256
+EMBEDDING_SIZE=128
  
 def deb_sasrec(num_samples=256):
     from aprec.recommenders.sequential.models.sasrec.saslift import SASLiftConfig
     from aprec.recommenders.sequential.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
-    model_config = SASLiftConfig(embedding_size=EMBEDDING_SIZE, vanilla_num_negatives=num_samples, pq_m=16)
+    model_config = SASLiftConfig(embedding_size=EMBEDDING_SIZE, vanilla_num_negatives=num_samples, pq_m=8)
     return sasrec_style_model(model_config, 
             ShiftedSequenceSplitter,
             target_builder=lambda: PositivesSequenceTargetBuilder(SEQUENCE_LENGTH),
@@ -47,8 +47,8 @@ def sasrec_style_model(model_config, sequence_splitter,
                                 train_epochs=max_epochs,
                                 early_stop_epochs=200,
                                 batch_size=batch_size,
-                                eval_batch_size=1024, #no need for gradients, should work ok
-                                validation_batch_size=1024,
+                                eval_batch_size=512, #no need for gradients, should work ok
+                                validation_batch_size=512,
                                 max_batches_per_epoch=256,
                                 sequence_splitter=sequence_splitter, 
                                 targets_builder=target_builder, 
