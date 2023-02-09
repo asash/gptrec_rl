@@ -70,8 +70,8 @@ class ItemCodeLayer(layers.Layer):
         input_codes = tf.stop_gradient(tf.cast(tf.gather(self.item_codes, input_ids), 'int32'))
         code_byte_indices = tf.tile(tf.expand_dims(tf.expand_dims(tf.range(0, self.item_code_bytes), 0), 0), [batch_size,self.data_parameters.sequence_length,1])
         n_sub_embeddings = batch_size * self.data_parameters.sequence_length * self.item_code_bytes
-        code_byte_indices_reshaped = tf.reshape(code_byte_indices, n_sub_embeddings)
-        input_codes_reshaped = tf.reshape(input_codes, n_sub_embeddings)
+        code_byte_indices_reshaped = tf.reshape(code_byte_indices, (n_sub_embeddings, ))
+        input_codes_reshaped = tf.reshape(input_codes, (n_sub_embeddings,))
         indices = tf.stack([code_byte_indices_reshaped, input_codes_reshaped], axis=-1)
         input_sub_embeddings_reshaped = tf.gather_nd(self.centroids, indices)
         result = tf.reshape(input_sub_embeddings_reshaped,[batch_size, self.data_parameters.sequence_length, self.item_code_bytes * self.sub_embedding_size] )
