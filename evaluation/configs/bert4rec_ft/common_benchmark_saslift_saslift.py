@@ -25,11 +25,10 @@ METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), 
 SEQUENCE_LENGTH=200
 EMBEDDING_SIZE=128
  
-def deb_sasrec(num_samples=32, t=0.5):
+def deb_sasrec(num_samples=256):
     from aprec.recommenders.sequential.models.sasrec.saslift import SASLiftConfig
     from aprec.recommenders.sequential.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
-    model_config = SASLiftConfig(embedding_size=EMBEDDING_SIZE, vanilla_num_negatives=num_samples, 
-                                vanilla_bce_t=t)
+    model_config = SASLiftConfig(embedding_size=EMBEDDING_SIZE, vanilla_num_negatives=num_samples, pq_m=8)
     return sasrec_style_model(model_config, 
             ShiftedSequenceSplitter,
             target_builder=lambda: PositivesSequenceTargetBuilder(SEQUENCE_LENGTH),
@@ -48,7 +47,7 @@ def sasrec_style_model(model_config, sequence_splitter,
                                 train_epochs=max_epochs,
                                 early_stop_epochs=200,
                                 batch_size=batch_size,
-                                eval_batch_size=256, #no need for gradients, should work ok
+                                eval_batch_size=1024, #no need for gradients, should work ok
                                 validation_batch_size=256,
                                 max_batches_per_epoch=256,
                                 sequence_splitter=sequence_splitter, 
@@ -61,11 +60,9 @@ def sasrec_style_model(model_config, sequence_splitter,
     return SequentialRecommender(config)
 
 
-recommenders = {}
+recommenders = {'rjpq': deb_sasrec}
 
-for num_samples in [1, 4, 16, 64, 256]:
-        for t in [0.0, 0.25, 0.5, 0.75, 1.0]:
-                recommenders[f"SASLift-samples:{num_samples}-t:{t}"] = lambda num_samples=num_samples, t=t: deb_sasrec(num_samples=num_samples, t=t)
+
 
 def get_recommenders(filter_seen: bool):
     result = {}

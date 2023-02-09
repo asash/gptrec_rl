@@ -268,7 +268,7 @@ class ModelTrainer(object):
         
     def train_epoch_eager(self, generator):
         pbar = tqdm(generator, ascii=True, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0, leave=True, ncols=70)
-        variables = self.recommender.model.variables
+        variables = self.recommender.model.trainable_variables
         loss_sum = 0
         num_batches = 0
         for X, y_true in pbar:

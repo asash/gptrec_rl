@@ -4,17 +4,78 @@ import numpy as np
 import tensorflow as tf
 from aprec.losses import get_loss
 from aprec.recommenders.sequential.models.positional_encodings import  get_pos_embedding
+
 from aprec.recommenders.sequential.samplers.sampler import get_negatives_sampler
+from scipy.sparse import csr_matrix
 layers = tf.keras.layers
 
-
-from aprec.recommenders.sequential.models.sequential_recsys_model import SequentialModelConfig, SequentialRecsysModel
+from aprec.recommenders.sequential.models.sequential_recsys_model import SequentialDataParameters, SequentialModelConfig, SequentialRecsysModel
 from .sasrec_multihead_attention import multihead_attention
 import tensorflow as tf
+from sklearn.decomposition import TruncatedSVD
+from sklearn.cluster import KMeans
+from scipy.spatial.distance import cdist
+from scipy.optimize import linear_sum_assignment
+
+#https://stackoverflow.com/questions/5452576/k-means-algorithm-variation-with-equal-cluster-size
+def get_even_clusters(X, n_clusters):
+    cluster_size =int(np.ceil(len(X)/n_clusters)) 
+    kmeans = KMeans(n_clusters)
+    kmeans.fit(X)
+    centers = kmeans.cluster_centers_
+    centers = centers.reshape(-1, 1, X.shape[-1]).repeat(cluster_size, 1).reshape(-1, X.shape[-1])
+    distance_matrix = cdist(X, centers)
+    clusters = linear_sum_assignment(distance_matrix)[1]//cluster_size
+    return clusters
 
 #https://ieeexplore.ieee.org/abstract/document/8594844
 #the code is ported from original code
 #https://github.com/kang205/SASRec
+
+class ItemCodeLayer(layers.Layer):
+    def __init__(self, model_parameters: SASLiftConfig, data_parameters: SequentialDataParameters):
+        super().__init__()
+        self.model_parameters = model_parameters
+        self.data_parameters = data_parameters
+        self.sub_embedding_size = self.model_parameters.embedding_size // self.model_parameters.pq_m
+        self.item_code_bytes = self.model_parameters.embedding_size // self.sub_embedding_size
+        item_initializer = tf.zeros_initializer()
+        self.item_codes = tf.Variable(item_initializer((self.data_parameters.num_items + 1, self.item_code_bytes), dtype='uint8'), trainable=False, name="ItemCodes/codes")
+
+        centroid_initializer = tf.random_uniform_initializer()
+        self.centroids = tf.Variable(centroid_initializer(shape=(self.item_code_bytes, 256, self.sub_embedding_size)), name="ItemCodes/centroids")
+
+    def assign_codes(self, train_users):
+        rows = []
+        cols = []
+        vals = []
+        for i in range(len(train_users)):
+            for j in range(len(train_users[i])):
+                rows.append(i)
+                cols.append(train_users[i][j][1])
+                vals.append(1)
+        matr = csr_matrix((vals, [rows, cols]), shape=(len(train_users), self.data_parameters.num_items+1))
+        svd = TruncatedSVD(n_components=self.model_parameters.embedding_size)
+        svd.fit(matr)
+        item_embeddings = np.transpose(svd.components_)
+        centroid_asignments = []
+        for i in range(self.model_parameters.pq_m):
+            sub_embeddings = item_embeddings[:, i*self.sub_embedding_size:(i+1)*self.sub_embedding_size]
+            clusters = get_even_clusters(sub_embeddings, 256)
+            centroid_asignments.append(clusters)
+        centroid_asignments = np.transpose(np.array(centroid_asignments, dtype='uint8'))
+        self.item_codes.assign(centroid_asignments)
+
+    def call(self, input_ids, batch_size):
+        input_codes = tf.stop_gradient(tf.cast(tf.gather(self.item_codes, input_ids), 'int32'))
+        code_byte_indices = tf.tile(tf.expand_dims(tf.expand_dims(tf.range(0, self.item_code_bytes), 0), 0), [batch_size,self.data_parameters.sequence_length,1])
+        n_sub_embeddings = batch_size * self.data_parameters.sequence_length * self.item_code_bytes
+        code_byte_indices_reshaped = tf.reshape(code_byte_indices, n_sub_embeddings)
+        input_codes_reshaped = tf.reshape(input_codes, n_sub_embeddings)
+        indices = tf.stack([code_byte_indices_reshaped, input_codes_reshaped], axis=-1)
+        input_sub_embeddings_reshaped = tf.gather_nd(self.centroids, indices)
+        result = tf.reshape(input_sub_embeddings_reshaped,[batch_size, self.data_parameters.sequence_length, self.item_code_bytes * self.sub_embedding_size] )
+        return result
 
 class SASLiftModel(SequentialRecsysModel):
     @classmethod
@@ -22,33 +83,15 @@ class SASLiftModel(SequentialRecsysModel):
         return SASLiftConfig
 
     def fit_biases(self, train_users):
-        cnt = np.ones(self.data_parameters.num_items)
-        for user in train_users:
-            user_actions = [action[1] for action in user] 
-            for action in user_actions:
-                cnt[action] += 1
-        item_probs = cnt/np.sum(cnt)
-        self.item_freqs.assign(item_probs) 
-        self.item_idfs.assign(-np.log(item_probs))
+        self.item_codes_layer.assign_codes(train_users)
 
     def __init__(self, model_parameters, data_parameters, *args, **kwargs):
         super().__init__(model_parameters, data_parameters, *args, **kwargs)
         self.model_parameters: SASLiftConfig #just a hint for the static analyser
         self.positions = tf.constant(tf.expand_dims(tf.range(self.data_parameters.sequence_length), 0))
-        self.item_embeddings_layer = layers.Embedding(
-                                                      self.data_parameters.num_items + 2, 
-                                                      output_dim=self.model_parameters.embedding_size, dtype='float32', 
-                                                      name='item_embeddings')
         if self.model_parameters.pos_emb_comb != 'ignore':
             self.postion_embedding_layer = get_pos_embedding(self.data_parameters.sequence_length, self.model_parameters.embedding_size, self.model_parameters.pos_embedding)
         self.embedding_dropout = layers.Dropout(self.model_parameters.dropout_rate, name='embedding_dropout')
-    
-        freqs_init = tf.random_uniform_initializer(0.00001, 0.1)
-        self.item_freqs = tf.Variable(freqs_init(shape=(self.data_parameters.num_items,)), trainable=False) 
-
-        idfs_init = tf.random_uniform_initializer(5, 9)
-        self.item_idfs = tf.Variable(idfs_init(shape=(self.data_parameters.num_items,)), trainable=False) 
-
         self.attention_blocks = []
         for i in range(self.model_parameters.num_blocks):
             block_layers = {
@@ -68,13 +111,12 @@ class SASLiftModel(SequentialRecsysModel):
         self.output_activation = tf.keras.activations.get(self.model_parameters.output_layer_activation)
         self.seq_norm = layers.LayerNormalization()
         self.all_items = tf.range(0, self.data_parameters.num_items)
-        if not self.model_parameters.reuse_item_embeddings:
-            self.output_item_embeddings = layers.Embedding(self.data_parameters.num_items + 2, self.model_parameters.embedding_size)
-
         if self.model_parameters.encode_output_embeddings:
             self.output_item_embeddings_encode = layers.Dense(self.model_parameters.embedding_size, activation='gelu')
         self.sampler = get_negatives_sampler(self.model_parameters.vanilla_target_sampler, 
                                                  self.data_parameters, self.model_parameters.vanilla_num_negatives)
+        self.item_codes_layer = ItemCodeLayer(self.model_parameters, self.data_parameters)
+
 
     def block(self, seq, mask, i):
         x = self.attention_blocks[i]["first_norm"](seq)
@@ -101,68 +143,46 @@ class SASLiftModel(SequentialRecsysModel):
         inputs.append(positives)
         return inputs
 
-    def get_item_idfs(self):
-        return tf.stop_gradient(self.item_idfs)
-
-    def get_item_freqs(self):
-        return tf.stop_gradient(self.item_freqs)
-
-
     def call(self, inputs,  **kwargs):
         input_ids = inputs[0]
         training = kwargs['training']
         seq_emb, attentions = self.get_seq_embedding(input_ids, bs=self.data_parameters.batch_size, training=training)
+        seq_sub_emb = tf.reshape(seq_emb, [self.data_parameters.batch_size, self.data_parameters.sequence_length, self.item_codes_layer.item_code_bytes, self.item_codes_layer.sub_embedding_size])
+        centroid_scores = tf.einsum("bsie,ine->bsin", seq_sub_emb, self.item_codes_layer.centroids) 
         target_positives = tf.expand_dims(inputs[1], -1)
         target_negatives = self.sampler(input_ids, target_positives)
         target_ids = tf.concat([target_positives, target_negatives], -1)
+        target_codes =tf.transpose(tf.cast(tf.gather(self.item_codes_layer.item_codes, tf.nn.relu(target_ids)), 'int32'), [0, 1, 3, 2])
+        target_sub_scores = tf.gather(centroid_scores, target_codes, batch_dims=3)
+        logits = tf.reduce_sum(target_sub_scores, -2)
+        positive_logits = logits[:, :, 0]
+        negative_logits = logits[:,:,1:]
+        minus_positive_logprobs = tf.math.softplus(-positive_logits)
+        minus_negative_logprobs = tf.reduce_sum(tf.math.softplus(negative_logits) , axis=-1)
+        minus_average_logprobs = (minus_positive_logprobs + minus_negative_logprobs) / (self.model_parameters.vanilla_num_negatives +1)
+        mask = 1 - tf.cast(input_ids == self.data_parameters.num_items, 'float32')
+        result = tf.reduce_sum(mask*minus_average_logprobs)/tf.reduce_sum(mask)
+        return result
 
-        #use relu to hide negative targets - they will be ignored later in any case
-        target_embeddings = self.get_target_embeddings(tf.nn.relu(target_ids))
-        cnt_per_pos = self.model_parameters.vanilla_num_negatives + 1
-        logits = tf.einsum("bse, bsne -> bsn", seq_emb, target_embeddings)
-        #if self.model_parameters.vanilla_bce_t != 0:
-
-        alpha = self.model_parameters.vanilla_num_negatives / (self.data_parameters.num_items - 1)
-        t = self.model_parameters.vanilla_bce_t 
-        beta = alpha * ((1 - 1/alpha)*t + 1/alpha)
-
-        positive_scores = logits[:, :, 0:1]
-        negative_scores = logits[:,:,1:]
-        mask = tf.cast((input_ids != self.data_parameters.num_items), 'float32')
-        positive_idfs = tf.gather(self.get_item_idfs(), tf.nn.relu(target_positives))
-        negative_freqs = tf.gather(self.get_item_freqs(), tf.nn.relu(target_negatives))
-        positive_logprobs = tf.squeeze(positive_scores - positive_idfs, -1)*beta
-        negative_logprobs_sum = tf.reduce_sum(-tf.exp(negative_scores) * negative_freqs, axis=-1)
-        loss_sum = tf.reduce_sum(-(positive_logprobs + negative_logprobs_sum) * mask, -1)
-        num_unmasked = tf.reduce_sum(mask, -1)
-        loss = tf.math.divide_no_nan(loss_sum, num_unmasked)
-        return loss
     
 
+        
     def score_all_items(self, inputs):
         input_ids = inputs[0]
         seq_emb, attentions = self.get_seq_embedding(input_ids)
         seq_emb = seq_emb[:, -1, :]
-        target_ids = self.all_items
-        target_embeddings = self.get_target_embeddings(target_ids)
-        output = seq_emb @ tf.transpose(target_embeddings)
-        output = tf.exp(output)*self.get_item_freqs()
-        return output
-
-    def get_target_embeddings(self, target_ids):
-        if self.model_parameters.reuse_item_embeddings:
-            target_embeddings = self.item_embeddings_layer(target_ids)
-        else:
-            target_embeddings = self.output_item_embeddings(target_ids)
-        if self.model_parameters.encode_output_embeddings:
-            target_embeddings = self.output_item_embeddings_encode(target_embeddings)
-        return target_embeddings
+        seq_sub_emb = tf.reshape(seq_emb, [seq_emb.shape[0], self.item_codes_layer.item_code_bytes, self.item_codes_layer.sub_embedding_size])
+        centroid_scores = tf.transpose(tf.einsum("bie,ine->bin", seq_sub_emb, self.item_codes_layer.centroids), perm=[1, 0, 2])
+        targets = tf.transpose(self.item_codes_layer.item_codes[:-1])
+        sub_scores = tf.gather(centroid_scores, tf.cast(targets, 'int32'), batch_dims=1, axis=-1)
+        return tf.reduce_sum(sub_scores, axis=0)
+        pass
 
     def get_seq_embedding(self, input_ids, bs=None, training=None):
-        seq = self.item_embeddings_layer(input_ids)
-        mask = tf.expand_dims(tf.cast(tf.not_equal(input_ids, self.data_parameters.num_items), dtype=tf.float32), -1)
         if bs is None:
-            bs = seq.shape[0]
+            bs = input_ids.shape[0]
+        seq = self.item_codes_layer(input_ids, bs)
+        mask = tf.expand_dims(tf.cast(tf.not_equal(input_ids, self.data_parameters.num_items), dtype=tf.float32), -1)
         positions  = tf.tile(self.positions, [bs, 1])
         if training and self.model_parameters.pos_smoothing:
             smoothing = tf.random.normal(shape=positions.shape, mean=0, stddev=self.model_parameters.pos_smoothing)
@@ -199,6 +219,7 @@ class SASLiftConfig(SequentialModelConfig):
                 vanilla_bce_t = 0.0,
                 vanilla_target_sampler = 'random',
                 full_target = False,
+                pq_m = 4,
                 ): 
         self.output_layer_activation=output_layer_activation
         self.embedding_size=embedding_size
@@ -216,6 +237,7 @@ class SASLiftConfig(SequentialModelConfig):
         self.vanilla_num_negatives = vanilla_num_negatives 
         self.vanilla_target_sampler = vanilla_target_sampler
         self.vanilla_bce_t = vanilla_bce_t
+        self.pq_m = pq_m
 
     def as_dict(self):
         result = self.__dict__
