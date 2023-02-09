@@ -2,7 +2,6 @@ from __future__ import annotations
 from typing import Type
 import numpy as np
 import tensorflow as tf
-from aprec.losses import get_loss
 from aprec.recommenders.sequential.models.positional_encodings import  get_pos_embedding
 
 from aprec.recommenders.sequential.samplers.sampler import get_negatives_sampler
@@ -12,21 +11,8 @@ layers = tf.keras.layers
 from aprec.recommenders.sequential.models.sequential_recsys_model import SequentialDataParameters, SequentialModelConfig, SequentialRecsysModel
 from .sasrec_multihead_attention import multihead_attention
 import tensorflow as tf
-from sklearn.decomposition import TruncatedSVD
-from sklearn.cluster import KMeans
-from scipy.spatial.distance import cdist
-from scipy.optimize import linear_sum_assignment
-
-#https://stackoverflow.com/questions/5452576/k-means-algorithm-variation-with-equal-cluster-size
-def get_even_clusters(X, n_clusters):
-    cluster_size =int(np.ceil(len(X)/n_clusters)) 
-    kmeans = KMeans(n_clusters)
-    kmeans.fit(X)
-    centers = kmeans.cluster_centers_
-    centers = centers.reshape(-1, 1, X.shape[-1]).repeat(cluster_size, 1).reshape(-1, X.shape[-1])
-    distance_matrix = cdist(X, centers)
-    clusters = linear_sum_assignment(distance_matrix)[1]//cluster_size
-    return clusters
+from sklearn.decomposition import TruncatedSVD 
+from sklearn.preprocessing import KBinsDiscretizer
 
 #https://ieeexplore.ieee.org/abstract/document/8594844
 #the code is ported from original code
@@ -55,15 +41,17 @@ class ItemCodeLayer(layers.Layer):
                 cols.append(train_users[i][j][1])
                 vals.append(1)
         matr = csr_matrix((vals, [rows, cols]), shape=(len(train_users), self.data_parameters.num_items+1))
-        svd = TruncatedSVD(n_components=self.model_parameters.embedding_size)
+        print("fitting svd for initial centroids assignments")
+        svd = TruncatedSVD(n_components=self.item_code_bytes)
         svd.fit(matr)
-        item_embeddings = np.transpose(svd.components_)
-        centroid_asignments = []
-        for i in range(self.model_parameters.pq_m):
-            sub_embeddings = item_embeddings[:, i*self.sub_embedding_size:(i+1)*self.sub_embedding_size]
-            clusters = get_even_clusters(sub_embeddings, 256)
-            centroid_asignments.append(clusters)
-        centroid_asignments = np.transpose(np.array(centroid_asignments, dtype='uint8'))
+        item_embeddings = svd.components_
+        assignments = []
+        print("done")
+        for i in range(self.item_code_bytes):
+            discretizer = KBinsDiscretizer(n_bins=256, encode='ordinal', strategy='quantile')
+            component_assignments = discretizer.fit_transform(item_embeddings[i:i+1].T).astype('uint8')[:,0]
+            assignments.append(component_assignments)
+        centroid_asignments = np.transpose(np.array(assignments))
         self.item_codes.assign(centroid_asignments)
 
     def call(self, input_ids, batch_size):
