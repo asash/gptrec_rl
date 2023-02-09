@@ -120,5 +120,5 @@ if __name__ == "__main__":
 
 
     print("unsampled metrics:")
-    print(df)
+    print(df.to_markdown())
 
