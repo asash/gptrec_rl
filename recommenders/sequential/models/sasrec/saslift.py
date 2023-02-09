@@ -160,11 +160,18 @@ class SASLiftModel(SequentialRecsysModel):
         seq_emb, attentions = self.get_seq_embedding(input_ids)
         seq_emb = seq_emb[:, -1, :]
         seq_sub_emb = tf.reshape(seq_emb, [seq_emb.shape[0], self.item_codes_layer.item_code_bytes, self.item_codes_layer.sub_embedding_size])
-        centroid_scores = tf.transpose(tf.einsum("bie,ine->bin", seq_sub_emb, self.item_codes_layer.centroids), perm=[1, 0, 2])
-        targets = tf.transpose(self.item_codes_layer.item_codes[:-1])
-        sub_scores = tf.gather(centroid_scores, tf.cast(targets, 'int32'), batch_dims=1, axis=-1)
-        return tf.reduce_sum(sub_scores, axis=0)
-        pass
+        centroid_scores = tf.einsum("bie,ine->bin", seq_sub_emb, self.item_codes_layer.centroids)
+        centroid_scores = tf.transpose(tf.reshape(centroid_scores, [centroid_scores.shape[0], centroid_scores.shape[1] * centroid_scores.shape[2]]))
+        target_codes = tf.cast(tf.transpose(self.item_codes_layer.item_codes[:-1]), 'int32')
+        offsets = tf.expand_dims(tf.range(self.item_codes_layer.item_code_bytes) * 256, -1)
+        target_centroid_indices = target_codes + offsets
+        item_index = tf.tile(tf.expand_dims(tf.range(self.data_parameters.num_items), 0), [self.item_codes_layer.item_code_bytes, 1])
+        values = tf.ones_like(item_index, dtype='float32')
+        index = tf.cast(tf.reshape(tf.stack([item_index, target_centroid_indices], -1), shape=[values.shape[0]* values.shape[1], 2]), "int64")
+        values = tf.reshape(values, [values.shape[0]*values.shape[1]])
+        item_codes_sparse = tf.sparse.reorder(tf.SparseTensor(index, values, dense_shape = [self.data_parameters.num_items, centroid_scores.shape[0]]))
+        result = tf.transpose(tf.sparse.sparse_dense_matmul(item_codes_sparse, centroid_scores))
+        return result
 
     def get_seq_embedding(self, input_ids, bs=None, training=None):
         if bs is None:
