@@ -164,14 +164,11 @@ class SASLiftModel(SequentialRecsysModel):
         centroid_scores = tf.transpose(tf.reshape(centroid_scores, [centroid_scores.shape[0], centroid_scores.shape[1] * centroid_scores.shape[2]]))
         target_codes = tf.cast(tf.transpose(self.item_codes_layer.item_codes[:-1]), 'int32')
         offsets = tf.expand_dims(tf.range(self.item_codes_layer.item_code_bytes) * 256, -1)
-        target_centroid_indices = target_codes + offsets
-        item_index = tf.tile(tf.expand_dims(tf.range(self.data_parameters.num_items), 0), [self.item_codes_layer.item_code_bytes, 1])
-        values = tf.ones_like(item_index, dtype='float32')
-        index = tf.cast(tf.reshape(tf.stack([item_index, target_centroid_indices], -1), shape=[values.shape[0]* values.shape[1], 2]), "int64")
-        values = tf.reshape(values, [values.shape[0]*values.shape[1]])
-        item_codes_sparse = tf.sparse.reorder(tf.SparseTensor(index, values, dense_shape = [self.data_parameters.num_items, centroid_scores.shape[0]]))
-        result = tf.transpose(tf.sparse.sparse_dense_matmul(item_codes_sparse, centroid_scores))
-        return result
+        target_codes += offsets
+        result = tf.zeros((self.data_parameters.num_items, centroid_scores.shape[1]))
+        for i in range (self.item_codes_layer.item_code_bytes):
+            result += tf.gather(centroid_scores, target_codes[i])
+        return tf.transpose(result)
 
     def get_seq_embedding(self, input_ids, bs=None, training=None):
         if bs is None:
