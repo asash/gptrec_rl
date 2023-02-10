@@ -23,12 +23,12 @@ METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), 
 #TARGET_ITEMS_SAMPLER = PopTargetItemsWithReplacementSampler(101)
 
 SEQUENCE_LENGTH=200
-EMBEDDING_SIZE=128
+EMBEDDING_SIZE=256
  
-def deb_sasrec(num_samples=256):
+def deb_sasrec(num_samples=256, m=16):
     from aprec.recommenders.sequential.models.sasrec.saslift import SASLiftConfig
     from aprec.recommenders.sequential.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
-    model_config = SASLiftConfig(embedding_size=EMBEDDING_SIZE, vanilla_num_negatives=num_samples, pq_m=8)
+    model_config = SASLiftConfig(embedding_size=EMBEDDING_SIZE, vanilla_num_negatives=num_samples, pq_m=m)
     return sasrec_style_model(model_config, 
             ShiftedSequenceSplitter,
             target_builder=lambda: PositivesSequenceTargetBuilder(SEQUENCE_LENGTH),
@@ -61,7 +61,16 @@ def sasrec_style_model(model_config, sequence_splitter,
 
 
 recommenders = {
-    'rjpq': deb_sasrec}
+    'rjpq-16': lambda:deb_sasrec(m=16),
+    'rjpq-32': lambda:deb_sasrec(m=32),
+    'rjpq-8': lambda:deb_sasrec(m=8),
+    'rjpq-64': lambda:deb_sasrec(m=64),
+    'rjpq-128': lambda:deb_sasrec(m=128),
+    'rjpq-256': lambda:deb_sasrec(m=256),
+    'rjpq-4': lambda:deb_sasrec(m=4),
+    'rjpq-2': lambda:deb_sasrec(m=2),
+    'rjpq-1': lambda:deb_sasrec(m=2),
+    }
 
 
 
