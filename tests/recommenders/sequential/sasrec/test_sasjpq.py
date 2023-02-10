@@ -14,13 +14,13 @@ class TestVanillaSasrec(unittest.TestCase):
         from aprec.recommenders.sequential.target_builders.negative_per_positive_target import NegativePerPositiveTargetBuilder
         from aprec.recommenders.sequential.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
         from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
-        from aprec.recommenders.sequential.models.sasrec.saslift import SASLiftConfig
+        from aprec.recommenders.sequential.models.sasrec.sasjpq import SASJPQConfig
         from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
         from aprec.utils.generator_limit import generator_limit
 
         USER_ID = '120'
         val_users = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
-        model_config = SASLiftConfig(embedding_size=32, vanilla_num_negatives=5, vanilla_bce_t=1)
+        model_config = SASJPQConfig(embedding_size=32, vanilla_num_negatives=5, vanilla_bce_t=1)
 
         recommender_config = SequentialRecommenderConfig(model_config, train_epochs=10000, early_stop_epochs=50000,
                                                batch_size=5,

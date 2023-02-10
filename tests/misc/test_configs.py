@@ -84,9 +84,9 @@ class TestConfigs(unittest.TestCase):
             del(recommender)
             model_cnt += 1
         sys.stderr.write(f"{model_cnt} models found:\n")
-
-        for recommender_name in config.RECOMMENDERS:
-            sys.stderr.write(f"\t{recommender_name}\n")
+        
+        for i, recommender_name in enumerate(config.RECOMMENDERS):
+            sys.stderr.write(f"\t{i+1}. {recommender_name}\n")
 
 
 

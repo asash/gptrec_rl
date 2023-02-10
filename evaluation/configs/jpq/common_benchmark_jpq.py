@@ -5,11 +5,9 @@ from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.evaluation.metrics.mrr import MRR
 from aprec.evaluation.metrics.map import MAP
 from aprec.evaluation.metrics.hit import HIT
-from aprec.evaluation.samplers.pop_sampler import PopTargetItemsWithReplacementSampler
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
-from aprec.recommenders.lightfm import LightFMRecommender
 from aprec.recommenders.sequential.target_builders.positives_sequence_target_builder import PositivesSequenceTargetBuilder
-from aprec.recommenders.top_recommender import TopRecommender
+import random
 
 USERS_FRACTIONS = [1.0]
 
@@ -23,17 +21,24 @@ METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), 
 #TARGET_ITEMS_SAMPLER = PopTargetItemsWithReplacementSampler(101)
 
 SEQUENCE_LENGTH=200
-EMBEDDING_SIZE=256
  
-def deb_sasrec(num_samples=256, m=16):
-    from aprec.recommenders.sequential.models.sasrec.saslift import SASLiftConfig
+def sasjpq(embedding_size, m, num_samples=1):
+    from aprec.recommenders.sequential.models.sasrec.sasjpq import SASJPQConfig
     from aprec.recommenders.sequential.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
-    model_config = SASLiftConfig(embedding_size=EMBEDDING_SIZE, vanilla_num_negatives=num_samples, pq_m=m)
+    model_config = SASJPQConfig(embedding_size=embedding_size, vanilla_num_negatives=num_samples, pq_m=m)
     return sasrec_style_model(model_config, 
             ShiftedSequenceSplitter,
             target_builder=lambda: PositivesSequenceTargetBuilder(SEQUENCE_LENGTH),
             batch_size=128)
 
+def vanilla_sasrec(embedding_size, loss='bce', num_samples=1, batch_size=128):
+    from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecConfig
+    from aprec.recommenders.sequential.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
+    model_config = SASRecConfig(vanilla=True, embedding_size=embedding_size, loss=loss, vanilla_num_negatives=num_samples)
+    return sasrec_style_model(model_config, 
+            ShiftedSequenceSplitter,
+            target_builder=lambda: PositivesSequenceTargetBuilder(SEQUENCE_LENGTH),
+            batch_size=batch_size)
 
 def sasrec_style_model(model_config, sequence_splitter, 
                 target_builder,
@@ -59,21 +64,20 @@ def sasrec_style_model(model_config, sequence_splitter,
     
     return SequentialRecommender(config)
 
+recommenders_list = []
 
-recommenders = {
-    'rjpq-16': lambda:deb_sasrec(m=16),
-    'rjpq-32': lambda:deb_sasrec(m=32),
-    'rjpq-8': lambda:deb_sasrec(m=8),
-    'rjpq-64': lambda:deb_sasrec(m=64),
-    'rjpq-128': lambda:deb_sasrec(m=128),
-    'rjpq-256': lambda:deb_sasrec(m=256),
-    'rjpq-4': lambda:deb_sasrec(m=4),
-    'rjpq-2': lambda:deb_sasrec(m=2),
-    'rjpq-1': lambda:deb_sasrec(m=2),
-    }
-
-
-
+embedding_sizes = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
+pq_ms=  [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
+for emb in embedding_sizes:
+    recommenders_list.append((f"sas-emb:{emb}", lambda e=emb: vanilla_sasrec(embedding_size=e)))
+    for m in pq_ms:
+        if m <= emb:
+            recommenders_list.append((f"sasrjpq-emb:{emb}-pqm:{m}", lambda e=emb, pqm=m: sasjpq(embedding_size=e, m=pqm)))
+            
+random.seed(31337)           
+random.shuffle(recommenders_list)
+recommenders = dict(recommenders_list)
+ 
 def get_recommenders(filter_seen: bool):
     result = {}
     all_recommenders = list(recommenders.keys())

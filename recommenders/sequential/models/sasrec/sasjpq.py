@@ -19,7 +19,7 @@ from sklearn.preprocessing import KBinsDiscretizer
 #https://github.com/kang205/SASRec
 
 class ItemCodeLayer(layers.Layer):
-    def __init__(self, model_parameters: SASLiftConfig, data_parameters: SequentialDataParameters):
+    def __init__(self, model_parameters: SASJPQConfig, data_parameters: SequentialDataParameters):
         super().__init__()
         self.model_parameters = model_parameters
         self.data_parameters = data_parameters
@@ -70,17 +70,17 @@ class ItemCodeLayer(layers.Layer):
         result = tf.reshape(input_sub_embeddings_reshaped,[batch_size, self.data_parameters.sequence_length, self.item_code_bytes * self.sub_embedding_size] )
         return result
 
-class SASLiftModel(SequentialRecsysModel):
+class SASJPQModel(SequentialRecsysModel):
     @classmethod
-    def get_model_config_class(cls) -> Type[SASLiftConfig]:
-        return SASLiftConfig
+    def get_model_config_class(cls) -> Type[SASJPQConfig]:
+        return SASJPQConfig
 
     def fit_biases(self, train_users):
         self.item_codes_layer.assign_codes(train_users)
 
     def __init__(self, model_parameters, data_parameters, *args, **kwargs):
         super().__init__(model_parameters, data_parameters, *args, **kwargs)
-        self.model_parameters: SASLiftConfig #just a hint for the static analyser
+        self.model_parameters: SASJPQConfig #just a hint for the static analyser
         self.positions = tf.constant(tf.expand_dims(tf.range(self.data_parameters.sequence_length), 0))
         if self.model_parameters.pos_emb_comb != 'ignore':
             self.postion_embedding_layer = get_pos_embedding(self.data_parameters.sequence_length, self.model_parameters.embedding_size, self.model_parameters.pos_embedding)
@@ -202,7 +202,7 @@ class SASLiftModel(SequentialRecsysModel):
         seq_emb = self.seq_norm(seq)
         return seq_emb, attentions 
 
-class SASLiftConfig(SequentialModelConfig):
+class SASJPQConfig(SequentialModelConfig):
     def __init__(self, output_layer_activation='linear', embedding_size=64,
                 dropout_rate=0.5, num_blocks=2, num_heads=1,
                 reuse_item_embeddings=False,
@@ -241,7 +241,7 @@ class SASLiftConfig(SequentialModelConfig):
         return result
     
     def get_model_architecture(self) -> Type[SequentialRecsysModel]:
-        return SASLiftModel
+        return SASJPQModel
 
 
     
