@@ -14,7 +14,7 @@ class TestVanillaSasrec(unittest.TestCase):
         from aprec.recommenders.sequential.target_builders.negative_per_positive_target import NegativePerPositiveTargetBuilder
         from aprec.recommenders.sequential.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
         from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
-        from aprec.recommenders.sequential.models.sasrec.sasjpq import SASJPQConfig
+        from aprec.recommenders.sequential.models.recjpq.sasjpq import SASJPQConfig
         from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
         from aprec.utils.generator_limit import generator_limit
 

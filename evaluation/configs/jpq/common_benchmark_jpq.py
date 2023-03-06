@@ -23,7 +23,7 @@ METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), 
 SEQUENCE_LENGTH=200
  
 def sasjpq(embedding_size, m, num_samples=1):
-    from aprec.recommenders.sequential.models.sasrec.sasjpq import SASJPQConfig
+    from aprec.recommenders.sequential.models.recjpq.sasjpq import SASJPQConfig
     from aprec.recommenders.sequential.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
     model_config = SASJPQConfig(embedding_size=embedding_size, vanilla_num_negatives=num_samples, pq_m=m)
     return sasrec_style_model(model_config, 
