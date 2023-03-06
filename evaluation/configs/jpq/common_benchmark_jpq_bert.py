@@ -99,10 +99,14 @@ def sasrec_style_model(model_config, sequence_splitter,
 
 recommenders_list = []
 
-embedding_sizes = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
-pq_ms=  [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
+#embedding_sizes = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
+#pq_ms=  [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
+
+embedding_sizes = [512]
+pq_ms=[128]
+
 for emb in embedding_sizes:
-    recommenders_list.append((f"bert4rec-emb:{emb}", lambda e=emb: full_bert(embedding_size=e)))
+    #recommenders_list.append((f"bert4rec-emb:{emb}", lambda e=emb: full_bert(embedding_size=e)))
     for m in pq_ms:
         if m <= emb:
             recommenders_list.append((f"bert4recjpq-emb:{emb}-pqm:{m}", lambda e=emb, pqm=m: bertjpq(embedding_size=e, m=pqm)))
