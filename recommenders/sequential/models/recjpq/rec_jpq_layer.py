@@ -21,12 +21,13 @@ class ItemCodeLayer(tf.keras.layers.Layer):
                                      name="ItemCodes/centroids")
         self.item_codes_strategy = get_codes_strategy(codes_strategy, self.item_code_bytes, num_items)
         self.sequence_length = sequence_length
+        self.num_items = num_items
 
     def assign_codes(self, train_users):
         codes = self.item_codes_strategy.assign(train_users)
         self.item_codes.assign(codes)
 
-    def call(self, input_ids, batch_size):
+    def call(self, input_ids, batch_size): #use instead of item embeddings
         input_codes = tf.stop_gradient(tf.cast(tf.gather(self.item_codes, input_ids), 'int32'))
         code_byte_indices = tf.tile(tf.expand_dims(tf.expand_dims(tf.range(0, self.item_code_bytes), 0), 0), [batch_size, self.sequence_length,1])
         n_sub_embeddings = batch_size * self.sequence_length * self.item_code_bytes
@@ -36,4 +37,46 @@ class ItemCodeLayer(tf.keras.layers.Layer):
         input_sub_embeddings_reshaped = tf.gather_nd(self.centroids, indices)
         result = tf.reshape(input_sub_embeddings_reshaped,[batch_size, self.sequence_length, self.item_code_bytes * self.sub_embedding_size] )
         return result
+
+    def score_sequence_items(self, seq_emb, target_ids, batch_size):
+        """
+            seq_emb - encoded embeddings of items in sequence batch_size x sequence_len x embedding_size 
+            target_id - items to score batch_size x sequence_length x num_items_to_score  (ints) 
+        """ 
+        seq_sub_emb = tf.reshape(seq_emb, [batch_size, self.sequence_length, self.item_code_bytes, self.sub_embedding_size])
+        centroid_scores = tf.einsum("bsie,ine->bsin", seq_sub_emb, self.centroids) 
+        target_codes =tf.transpose(tf.cast(tf.gather(self.item_codes, tf.nn.relu(target_ids)), 'int32'), [0, 1, 3, 2])
+        target_sub_scores = tf.gather(centroid_scores, target_codes, batch_dims=3)
+        logits = tf.reduce_sum(target_sub_scores, -2)
+        return logits
+
+    def score_sequence_all_items(self, seq_emb, batch_size):
+        seq_sub_emb = tf.reshape(seq_emb, [batch_size, self.sequence_length, self.item_code_bytes, self.sub_embedding_size])
+        centroid_scores = tf.einsum("bsie,ine->bsin", seq_sub_emb, self.centroids) 
+        centroid_scores = tf.transpose(tf.reshape(centroid_scores, [batch_size, self.sequence_length, self.item_code_bytes * 256]), 
+                                       [2, 0, 1])
+        target_codes = tf.cast(tf.transpose(self.item_codes[:-1]), 'int32')
+        offsets = tf.expand_dims(tf.range(self.item_code_bytes) * 256, -1)
+        target_codes += offsets
+        item_sub_scores = tf.gather(centroid_scores, target_codes)
+        logits = tf.transpose(tf.reduce_sum(item_sub_scores, axis=0), [1,2,0])
+        return logits
+
+ 
+
+    def score_all_items(self, seq_emb): #seq_emb: batch_size x embedding_size
+        seq_sub_emb = tf.reshape(seq_emb, [seq_emb.shape[0], self.item_code_bytes, self.sub_embedding_size])
+        centroid_scores = tf.einsum("bie,ine->bin", seq_sub_emb, self.centroids)
+        centroid_scores = tf.transpose(tf.reshape(centroid_scores, 
+                                                  [centroid_scores.shape[0], centroid_scores.shape[1] * centroid_scores.shape[2]]))
+        target_codes = tf.cast(tf.transpose(self.item_codes[:-1]), 'int32')
+        offsets = tf.expand_dims(tf.range(self.item_code_bytes) * 256, -1)
+        target_codes += offsets
+        result = tf.zeros((self.num_items, centroid_scores.shape[1]))
+        for i in range (self.item_code_bytes):
+            result += tf.gather(centroid_scores, target_codes[i])
+        return tf.transpose(result)
+
+         
+
 

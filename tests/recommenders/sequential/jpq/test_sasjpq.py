@@ -11,7 +11,6 @@ class TestVanillaSasrec(unittest.TestCase):
     def test_saslift(self):
         from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender
         from aprec.datasets.movielens20m import get_movielens20m_actions, get_movies_catalog
-        from aprec.recommenders.sequential.target_builders.negative_per_positive_target import NegativePerPositiveTargetBuilder
         from aprec.recommenders.sequential.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
         from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
         from aprec.recommenders.sequential.models.recjpq.sasjpq import SASJPQConfig

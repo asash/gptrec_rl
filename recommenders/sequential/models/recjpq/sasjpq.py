@@ -93,14 +93,10 @@ class SASJPQModel(SequentialRecsysModel):
         input_ids = inputs[0]
         training = kwargs['training']
         seq_emb, attentions = self.get_seq_embedding(input_ids, bs=self.data_parameters.batch_size, training=training)
-        seq_sub_emb = tf.reshape(seq_emb, [self.data_parameters.batch_size, self.data_parameters.sequence_length, self.item_codes_layer.item_code_bytes, self.item_codes_layer.sub_embedding_size])
-        centroid_scores = tf.einsum("bsie,ine->bsin", seq_sub_emb, self.item_codes_layer.centroids) 
         target_positives = tf.expand_dims(inputs[1], -1)
         target_negatives = self.sampler(input_ids, target_positives)
         target_ids = tf.concat([target_positives, target_negatives], -1)
-        target_codes =tf.transpose(tf.cast(tf.gather(self.item_codes_layer.item_codes, tf.nn.relu(target_ids)), 'int32'), [0, 1, 3, 2])
-        target_sub_scores = tf.gather(centroid_scores, target_codes, batch_dims=3)
-        logits = tf.reduce_sum(target_sub_scores, -2)
+        logits = self.item_codes_layer.score_sequence_items(seq_emb, target_ids, self.data_parameters.batch_size)
         positive_logits = logits[:, :, 0]
         negative_logits = logits[:,:,1:]
         minus_positive_logprobs = tf.math.softplus(-positive_logits)
@@ -113,17 +109,9 @@ class SASJPQModel(SequentialRecsysModel):
     def score_all_items(self, inputs):
         input_ids = inputs[0]
         seq_emb, attentions = self.get_seq_embedding(input_ids)
-        seq_emb = seq_emb[:, -1, :]
-        seq_sub_emb = tf.reshape(seq_emb, [seq_emb.shape[0], self.item_codes_layer.item_code_bytes, self.item_codes_layer.sub_embedding_size])
-        centroid_scores = tf.einsum("bie,ine->bin", seq_sub_emb, self.item_codes_layer.centroids)
-        centroid_scores = tf.transpose(tf.reshape(centroid_scores, [centroid_scores.shape[0], centroid_scores.shape[1] * centroid_scores.shape[2]]))
-        target_codes = tf.cast(tf.transpose(self.item_codes_layer.item_codes[:-1]), 'int32')
-        offsets = tf.expand_dims(tf.range(self.item_codes_layer.item_code_bytes) * 256, -1)
-        target_codes += offsets
-        result = tf.zeros((self.data_parameters.num_items, centroid_scores.shape[1]))
-        for i in range (self.item_codes_layer.item_code_bytes):
-            result += tf.gather(centroid_scores, target_codes[i])
-        return tf.transpose(result)
+        last_item_emb = seq_emb[:, -1, :]
+        return self.item_codes_layer.score_all_items(last_item_emb)
+
 
     def get_seq_embedding(self, input_ids, bs=None, training=None):
         if bs is None:
