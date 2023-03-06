@@ -41,7 +41,7 @@ def full_bert(embedding_size):
         model_config =  FullBERTConfig(embedding_size=embedding_sizes)
         return bert_style_model(model_config, tuning_samples_portion=0.0)
  
-def bert_style_model(model_config, tuning_samples_portion, batch_size=128):
+def bert_style_model(model_config, tuning_samples_portion, batch_size=64):
         import tensorflow as tf
         from aprec.recommenders.sequential.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
         from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender
