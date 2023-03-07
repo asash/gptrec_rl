@@ -120,5 +120,6 @@ if __name__ == "__main__":
 
 
     print("unsampled metrics:")
+    df['epoch_time'] = df['model_build_time']/df['num_epochs']
     print(df.to_markdown())
 
