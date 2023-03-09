@@ -132,5 +132,6 @@ class BertJPQModel(SequentialRecsysModel):
    
     def score_all_items(self, inputs): 
         sequence = inputs[0] 
-        sequence_embeddings  = self.bert(sequence, position_ids=self.position_ids_for_pred).last_hidden_state[:,-1]
+        item_embeddings = self.item_codes_layer(sequence, sequence.shape[0])
+        sequence_embeddings  = self.bert(None, inputs_embeds=item_embeddings, position_ids=self.position_ids_for_pred).last_hidden_state[:,-1]
         return self.item_codes_layer.score_all_items(sequence_embeddings)
