@@ -52,8 +52,8 @@ def sasrec_style_model(model_config, sequence_splitter,
                                 train_epochs=max_epochs,
                                 early_stop_epochs=200,
                                 batch_size=batch_size,
-                                eval_batch_size=512, #no need for gradients, should work ok
-                                validation_batch_size=512,
+                                eval_batch_size=256, #no need for gradients, should work ok
+                                validation_batch_size=256,
                                 max_batches_per_epoch=256,
                                 sequence_splitter=sequence_splitter, 
                                 targets_builder=target_builder, 
