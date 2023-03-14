@@ -114,12 +114,16 @@ if __name__ == "__main__":
         del(df['sampled_metrics'])
         sampled_metrics_df = pd.DataFrame(sampled_metrics, index=df.index).sort_values(main_metric)
         sampled_metrics_df.insert(loc=0, column=f'rank by {main_metric}', value=ranks)
+
         print("sampled metrics: ")
         print(sampled_metrics_df)
         print("\n\n\n")
 
 
     print("unsampled metrics:")
-    df['epoch_time'] = df['model_build_time']/df['num_epochs']
+    try:
+        df['epoch_time'] = df['model_build_time']/df['num_epochs']
+    except:
+        pass
     print(df.to_markdown())
 
