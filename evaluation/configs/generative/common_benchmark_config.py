@@ -33,9 +33,12 @@ def gpt2rec():
         from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender
 
         model_config = GPT2RecConfig(embedding_size=256)
+        bs=64
         recommender_config = SequentialRecommenderConfig(model_config, train_epochs=10000, early_stop_epochs=300,
-                                               batch_size=5,
-                                               training_time_limit=10,  
+                                               batch_size=bs,
+                                               eval_batch_size=bs, 
+                                               validation_batch_size=bs,
+                                               training_time_limit=100000000,  
                                                sequence_splitter=IdSplitter, 
                                                targets_builder=DummyTargetBuilder,
                                                use_keras_training=False,
