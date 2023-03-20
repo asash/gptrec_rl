@@ -38,7 +38,7 @@ def gpt2rec():
                                                training_time_limit=10,  
                                                sequence_splitter=IdSplitter, 
                                                targets_builder=DummyTargetBuilder,
-                                               use_keras_training=True,
+                                               use_keras_training=False,
                                                sequence_length=SEQUENCE_LENGTH,
                                                )
         
