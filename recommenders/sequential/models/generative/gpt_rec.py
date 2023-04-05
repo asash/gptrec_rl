@@ -77,7 +77,6 @@ class GPT2RecModel(SequentialRecsysModel):
         result = self.gpt(input_ids=gpt_input, labels=gpt_labels, return_dict=True, attention_mask=attention_mask)
         return result.loss
 
-   
     def score_all_items(self, inputs): 
         seq_batch = inputs[0]
         tokens = self.tokenizer(seq_batch, seq_batch.shape[0], seq_batch.shape[1])

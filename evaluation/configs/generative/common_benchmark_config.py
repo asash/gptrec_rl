@@ -29,14 +29,14 @@ def gpt2rec():
 
         model_config = GPT2RecConfig(embedding_size=256)
         bs=16
-        recommender_config = SequentialRecommenderConfig(model_config, train_epochs=20, early_stop_epochs=300,
+        recommender_config = SequentialRecommenderConfig(model_config, train_epochs=100000, early_stop_epochs=300,
                                                batch_size=bs,
                                                eval_batch_size=bs, 
                                                validation_batch_size=bs,
                                                training_time_limit=100000000,  
                                                sequence_splitter=IdSplitter, 
                                                targets_builder=DummyTargetBuilder,
-                                               use_keras_training=False,
+                                               use_keras_training=True,
                                                sequence_length=SEQUENCE_LENGTH,
                                                max_batches_per_epoch=256,
                                                extra_val_metrics=EXTRA_VAL_METRICS
