@@ -35,7 +35,6 @@ class GPT2RecConfig(SequentialModelConfig):
     
     def get_model_architecture(self) -> Type[GPT2RecConfig]:
         return GPT2RecModel
-
 class GPT2RecModel(SequentialRecsysModel):
     def __init__(self, model_parameters: GPT2RecConfig, data_parameters: SequentialDataParameters, *args, **kwargs):
         super().__init__(model_parameters, data_parameters, *args, **kwargs)
@@ -43,7 +42,7 @@ class GPT2RecModel(SequentialRecsysModel):
         self.tokenizer_class = get_tokenizer_class(model_parameters.tokenizer)
         self.tokenizer:Tokenizer = self.tokenizer_class(model_parameters.tokens_per_item, model_parameters.values_per_dim, data_parameters.num_items)
         gpt_config = GPT2Config(
-            vocab_size = self.tokenizer.vocab_size,
+            vocab_size = int(self.tokenizer.vocab_size),
             n_positions = data_parameters.sequence_length * model_parameters.tokens_per_item, 
             n_embd =  model_parameters.embedding_size, 
             n_layer = model_parameters.transformer_blocks, 
@@ -67,7 +66,7 @@ class GPT2RecModel(SequentialRecsysModel):
         return [seq]
 
     def call(self, inputs, **kwargs):
-        tokens = self.tokenizer.tokenize(inputs[0])
+        tokens = self.tokenizer(inputs[0])
         attention_mask = tf.cast((tokens != -100), 'float32')
         tokens = tf.nn.relu(tokens)
         gpt_input=tokens
@@ -80,7 +79,7 @@ class GPT2RecModel(SequentialRecsysModel):
 
    
     def score_all_items(self, inputs): 
-        tokens = self.tokenizer.tokenize(inputs[0])
+        tokens = self.tokenizer(inputs[0])
         attention_mask = tf.cast((tokens != -100), 'float32')
         tokens = tf.nn.relu(tokens)
         output = self.gpt.generate(
@@ -92,18 +91,20 @@ class GPT2RecModel(SequentialRecsysModel):
                 num_return_sequences=self.model_parameters.generate_n_sequences, 
                 output_scores=True,
                 return_dict_in_generate=True,
-                attention_mask=attention_mask
+                attention_mask=attention_mask,
+                pad_token_id=self.num_items
                 )
         input_length = tokens.shape[-1]
         generated_sequences = output.sequences[:,input_length:]
         predicted_items = self.tokenizer.decode(generated_sequences)
         logits = tf.transpose(tf.stack(output.scores), [1, 0, 2])
-        token_scores = tf.gather(logits, generated_sequences, batch_dims=2)
+        log_probs = tf.nn.log_softmax(logits, axis=-1)
+        token_scores = tf.gather(log_probs, generated_sequences, batch_dims=2)
         seq_scores = tf.reduce_sum(token_scores, axis=-1)
         predicted_items =tf.reshape(predicted_items, (tokens.shape[0], self.model_parameters.generate_n_sequences))
-        sample_nums = tf.cast(tf.tile(tf.expand_dims(tf.range(0, predicted_items.shape[0]), -1), [1, self.model_parameters.generate_n_sequences]), 'int64')
+        sample_nums = tf.tile(tf.expand_dims(tf.range(0, predicted_items.shape[0]), -1), [1, self.model_parameters.generate_n_sequences])
         index = tf.stack([sample_nums, predicted_items], axis=-1)
-        shape = tf.constant([tokens.shape[0], self.data_parameters.num_items + 1], dtype='int64')
+        shape = tf.constant([tokens.shape[0], self.data_parameters.num_items + 1])
         seq_scores = tf.reshape(seq_scores, (tokens.shape[0], self.model_parameters.generate_n_sequences))
         result = tf.scatter_nd(index, seq_scores, shape)[:,:-1]
         print(tf.reduce_sum(result))

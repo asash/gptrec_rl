@@ -10,6 +10,9 @@ import numpy as np
 
 
 class SVDTokenizer(Tokenizer):
+    def __init__(self, tokens_per_item, values_per_dimension, num_items) -> None:
+        super().__init__(tokens_per_item, values_per_dimension, num_items)
+
     def assign(self, train_users):
         rows = []
         cols = []
@@ -21,13 +24,13 @@ class SVDTokenizer(Tokenizer):
                 vals.append(1)
         matr = csr_matrix((vals, [rows, cols]), shape=(len(train_users), self.num_items+1))
         print("fitting svd tokenizer")
-        svd = TruncatedSVD(n_components=self.tokens_per_item)
+        svd = TruncatedSVD(n_components=int(self.tokens_per_item))
         svd.fit(matr)
         item_embeddings = svd.components_
         assignments = []
         print("done")
-        for i in range(self.tokens_per_item):
-            discretizer = KBinsDiscretizer(n_bins=self.values_per_dimension, encode='ordinal', strategy='quantile')
+        for i in range(int(self.tokens_per_item)):
+            discretizer = KBinsDiscretizer(n_bins=int(self.values_per_dimension), encode='ordinal', strategy='quantile')
             ith_component = item_embeddings[i:i+1][0]
             ith_component = (ith_component - np.min(ith_component))/np.max(ith_component)
             noise = np.random.normal(0, 1e-5, self.num_items + 1)
@@ -37,5 +40,5 @@ class SVDTokenizer(Tokenizer):
             assignments.append(component_assignments)
         result = np.array(assignments).T
         result[-1] = -100 #padding
-        self.vocabulary = tf.constant(result)
+        self.vocabulary.assign(result)
         

@@ -6,11 +6,6 @@ from aprec.evaluation.metrics.mrr import MRR
 from aprec.evaluation.metrics.map import MAP
 from aprec.evaluation.metrics.hit import HIT
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
-import random
-
-
-
-
 
 USERS_FRACTIONS = [1.0]
 
@@ -33,7 +28,7 @@ def gpt2rec():
         from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender
 
         model_config = GPT2RecConfig(embedding_size=256)
-        bs=64
+        bs=16
         recommender_config = SequentialRecommenderConfig(model_config, train_epochs=10000, early_stop_epochs=300,
                                                batch_size=bs,
                                                eval_batch_size=bs, 
@@ -43,13 +38,12 @@ def gpt2rec():
                                                targets_builder=DummyTargetBuilder,
                                                use_keras_training=False,
                                                sequence_length=SEQUENCE_LENGTH,
+                                               max_batches_per_epoch=256,
                                                )
         
         recommender = SequentialRecommender(recommender_config)
         return recommender
 
-
-            
 recommenders = {"gpt2rec": gpt2rec} 
  
 def get_recommenders(filter_seen: bool):
