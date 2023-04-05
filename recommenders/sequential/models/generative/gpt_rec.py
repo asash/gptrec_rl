@@ -69,11 +69,9 @@ class GPT2RecModel(SequentialRecsysModel):
         tokens = self.tokenizer(inputs[0], self.data_parameters.batch_size, self.data_parameters.sequence_length)
         attention_mask = tf.cast((tokens != -100), 'float32')
         tokens = tf.nn.relu(tokens)
-        gpt_input=tokens
-        gpt_labels=tokens
-        #gpt_input = tokens[:,:-1]
-        #attention_mask = attention_mask[:,:-1]
-        #gpt_labels = tokens[:,1:]
+        gpt_input = tokens[:,:-1]
+        attention_mask = attention_mask[:,:-1]
+        gpt_labels = tokens[:,1:]
         result = self.gpt(input_ids=gpt_input, labels=gpt_labels, return_dict=True, attention_mask=attention_mask)
         return result.loss
 
@@ -81,7 +79,7 @@ class GPT2RecModel(SequentialRecsysModel):
         seq_batch = inputs[0]
         tokens = self.tokenizer(seq_batch, seq_batch.shape[0], seq_batch.shape[1])
         attention_mask = tf.cast((tokens != -100), 'float32')
-        tokens = tf.nn.relu(tokens)
+        tokens = tf.nn.relu(tokens) + self.num_items * (1-attention_mask)
         output = self.gpt.generate(
                 tokens,
                 do_sample=True, 
