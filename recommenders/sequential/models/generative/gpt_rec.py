@@ -79,7 +79,7 @@ class GPT2RecModel(SequentialRecsysModel):
         seq_batch = inputs[0]
         tokens = self.tokenizer(seq_batch, seq_batch.shape[0], seq_batch.shape[1])
         attention_mask = tf.cast((tokens != -100), 'float32')
-        tokens = tf.nn.relu(tokens) + self.num_items * (1-attention_mask)
+        tokens = tf.nn.relu(tokens) + tf.cast(self.num_items * (1-attention_mask), 'int32')
         output = self.gpt.generate(
                 tokens,
                 do_sample=True, 
