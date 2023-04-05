@@ -29,7 +29,7 @@ def gpt2rec():
 
         model_config = GPT2RecConfig(embedding_size=256)
         bs=16
-        recommender_config = SequentialRecommenderConfig(model_config, train_epochs=10000, early_stop_epochs=300,
+        recommender_config = SequentialRecommenderConfig(model_config, train_epochs=20, early_stop_epochs=300,
                                                batch_size=bs,
                                                eval_batch_size=bs, 
                                                validation_batch_size=bs,
