@@ -38,6 +38,6 @@ class Tokenizer(tf.keras.layers.Layer):
         return tf.constant(np.array(result))
 
 
-    def call(self, batch: npt.ArrayLike):
-        return tf.reshape(tf.gather(self.vocabulary, batch), (batch.shape[0], batch.shape[1]*self.tokens_per_item))
+    def call(self, batch: npt.ArrayLike, bs, seq_len):
+        return tf.reshape(tf.gather(self.vocabulary, batch), (bs, seq_len*self.tokens_per_item))
     

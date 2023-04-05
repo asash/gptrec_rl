@@ -66,7 +66,7 @@ class GPT2RecModel(SequentialRecsysModel):
         return [seq]
 
     def call(self, inputs, **kwargs):
-        tokens = self.tokenizer(inputs[0])
+        tokens = self.tokenizer(inputs[0], self.data_parameters.batch_size, self.data_parameters.sequence_length)
         attention_mask = tf.cast((tokens != -100), 'float32')
         tokens = tf.nn.relu(tokens)
         gpt_input=tokens
@@ -79,7 +79,8 @@ class GPT2RecModel(SequentialRecsysModel):
 
    
     def score_all_items(self, inputs): 
-        tokens = self.tokenizer(inputs[0])
+        seq_batch = inputs[0]
+        tokens = self.tokenizer(seq_batch, seq_batch.shape[0], seq_batch.shape[1])
         attention_mask = tf.cast((tokens != -100), 'float32')
         tokens = tf.nn.relu(tokens)
         output = self.gpt.generate(
@@ -106,6 +107,6 @@ class GPT2RecModel(SequentialRecsysModel):
         index = tf.stack([sample_nums, predicted_items], axis=-1)
         shape = tf.constant([tokens.shape[0], self.data_parameters.num_items + 1])
         seq_scores = tf.reshape(seq_scores, (tokens.shape[0], self.model_parameters.generate_n_sequences))
+        seq_scores = tf.sigmoid(seq_scores) #sigmoid to make sure that the scores are between 0 and 1
         result = tf.scatter_nd(index, seq_scores, shape)[:,:-1]
-        print(tf.reduce_sum(result))
         return result

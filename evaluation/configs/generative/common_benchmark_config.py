@@ -39,6 +39,7 @@ def gpt2rec():
                                                use_keras_training=False,
                                                sequence_length=SEQUENCE_LENGTH,
                                                max_batches_per_epoch=256,
+                                               extra_val_metrics=EXTRA_VAL_METRICS
                                                )
         
         recommender = SequentialRecommender(recommender_config)

@@ -27,7 +27,7 @@ class TestVanillaSasrec(unittest.TestCase):
                                                training_time_limit=10,  
                                                sequence_splitter=IdSplitter, 
                                                targets_builder=DummyTargetBuilder,
-                                               use_keras_training=False,
+                                               use_keras_training=True,
                                                sequence_length=32,
                                                )
         
