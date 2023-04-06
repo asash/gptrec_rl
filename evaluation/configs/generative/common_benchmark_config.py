@@ -5,6 +5,7 @@ from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.evaluation.metrics.mrr import MRR
 from aprec.evaluation.metrics.map import MAP
 from aprec.evaluation.metrics.hit import HIT
+from aprec.evaluation.metrics.non_zero_scores import NonZeroScores
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 
 USERS_FRACTIONS = [1.0]
@@ -13,6 +14,7 @@ EXTRA_VAL_METRICS = [NDCG(10), HighestScore(), NDCG(40), HIT(1), MRR(),
                      Confidence('Softmax'),
                      Confidence('Sigmoid'),
                      Entropy('Softmax', 10), 
+                     NonZeroScores(),
                      HIT(10)]
 
 METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
