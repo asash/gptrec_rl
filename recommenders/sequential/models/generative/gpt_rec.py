@@ -17,7 +17,8 @@ class GPT2RecConfig(SequentialModelConfig):
                  tokens_per_item = 4, 
                  generate_top_k = 50, 
                  generate_top_p = 0.95,
-                 generate_n_sequences = 50 
+                 generate_n_sequences = 50,
+                 generation_temperature=1.2, 
                  ):
         self.embedding_size = embedding_size
         self.transformer_blocks = transformer_blocks
@@ -28,6 +29,7 @@ class GPT2RecConfig(SequentialModelConfig):
         self.generate_top_k = generate_top_k
         self.generate_top_p = generate_top_p
         self.generate_n_sequences = generate_n_sequences 
+        self.generation_temperature = generation_temperature
 
         
     def as_dict(self):
@@ -89,7 +91,8 @@ class GPT2RecModel(SequentialRecsysModel):
                 output_scores=True,
                 return_dict_in_generate=True,
                 attention_mask=attention_mask,
-                pad_token_id=self.num_items
+                pad_token_id=self.num_items, 
+                temperature=self.model_parameters.generation_temperature
                 )
         input_length = tokens.shape[-1]
         generated_sequences = output.sequences[:,input_length:]
