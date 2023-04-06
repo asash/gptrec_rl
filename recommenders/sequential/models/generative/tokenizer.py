@@ -26,9 +26,9 @@ class Tokenizer(tf.keras.layers.Layer):
             self.index[item_tokens] = i
     
     def decode(self, batch):
-        if not self.index_is_built.numpy():
+        if not self.index_is_built:
             self.build_index()
-            self.index_is_built.assign(True)
+            self.index_is_built = True
             
         result = [] 
         for i in range(len(batch)):
