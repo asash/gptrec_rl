@@ -15,7 +15,7 @@ class Tokenizer(tf.keras.layers.Layer):
         self.vocabulary = tf.Variable(vocabulary_initaliser((num_items + 1, tokens_per_item), dtype='int32'), 
                                       trainable=False, name="Tokenizer/Vocabulary")
         self.index = {}
-        self.index_is_built = tf.Variable(False, trainable=False, name="Tokenizer/IndexIsBuilt")
+        self.index_is_built = False #not a weight, so not saved in checkpoints 
     
     def assign(self, train_users):
         raise NotImplementedError()
