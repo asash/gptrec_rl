@@ -55,7 +55,7 @@ class GPT2RecModel(SequentialRecsysModel):
 
     @classmethod
     def get_model_config_class(cls) -> Type[GPT2RecConfig]:
-        return GPT2Config
+        return GPT2RecConfig
 
     def fit_biases(self, train_users):
         self.tokenizer.assign(train_users)
