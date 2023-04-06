@@ -54,7 +54,7 @@ class GPT2RecModel(SequentialRecsysModel):
         pass
 
     @classmethod
-    def get_model_config_class(cls) -> Type[GPT2Config]:
+    def get_model_config_class(cls) -> Type[GPT2RecConfig]:
         return GPT2Config
 
     def fit_biases(self, train_users):
