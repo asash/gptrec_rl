@@ -117,34 +117,33 @@ class SASRecModel(SequentialRecsysModel):
         #use relu to hide negative targets - they will be ignored later in any case
         target_embeddings = self.get_target_embeddings(tf.nn.relu(target_ids))
         if self.model_parameters.vanilla:
-            cnt_per_pos = self.model_parameters.vanilla_num_negatives + 1
             logits = tf.einsum("bse, bsne -> bsn", seq_emb, target_embeddings)
-            #if self.model_parameters.vanilla_bce_t != 0:
 
-            alpha = self.model_parameters.vanilla_num_negatives / (self.data_parameters.num_items - 1)
-            t = self.model_parameters.vanilla_bce_t 
-            beta = alpha * ((1 - 1/alpha)*t + 1/alpha)
+            if self.model_parameters.vanilla_bce_t != 0:
+                cnt_per_pos = self.model_parameters.vanilla_num_negatives + 1
+                alpha = self.model_parameters.vanilla_num_negatives / (self.data_parameters.num_items - 1)
+                t = self.model_parameters.vanilla_bce_t 
+                beta = alpha * ((1 - 1/alpha)*t + 1/alpha)
 
-            positive_logits = tf.cast(logits[:, :, 0:1], 'float64') #use float64 to increase numerical stability
-            negative_logits = logits[:,:,1:]
-            eps = 1e-10
-            positive_probs = tf.clip_by_value(tf.sigmoid(positive_logits), eps, 1-eps)
-            positive_probs_adjusted = tf.clip_by_value(tf.math.pow(positive_probs, -beta), 1+eps, tf.float64.max)
-            to_log = tf.clip_by_value(tf.math.divide(1.0, (positive_probs_adjusted  - 1)), eps, tf.float64.max)
-            positive_logits_transformed = tf.math.log(to_log)
-            negative_logits = tf.cast(negative_logits, 'float64')
-            logits = tf.concat([positive_logits_transformed, negative_logits], -1)
+                positive_logits = tf.cast(logits[:, :, 0:1], 'float64') #use float64 to increase numerical stability
+                negative_logits = logits[:,:,1:]
+                eps = 1e-10
+                positive_probs = tf.clip_by_value(tf.sigmoid(positive_logits), eps, 1-eps)
+                positive_probs_adjusted = tf.clip_by_value(tf.math.pow(positive_probs, -beta), 1+eps, tf.float64.max)
+                to_log = tf.clip_by_value(tf.math.divide(1.0, (positive_probs_adjusted  - 1)), eps, tf.float64.max)
+                positive_logits_transformed = tf.math.log(to_log)
+                negative_logits = tf.cast(negative_logits, 'float64')
+                logits = tf.concat([positive_logits_transformed, negative_logits], -1)
 
-            
-            truth_positives = tf.ones((self.data_parameters.batch_size, self.data_parameters.sequence_length, 1))
-            truth_negatives = tf.zeros((self.data_parameters.batch_size, self.data_parameters.sequence_length, self.model_parameters.vanilla_num_negatives))
-            ground_truth = tf.concat([truth_positives, truth_negatives], axis=-1)
-            mask = tf.expand_dims(tf.cast((input_ids == self.data_parameters.num_items), 'float32'), -1)
-            mask = tf.tile(mask, [1, 1, cnt_per_pos])
-            ground_truth = -100 * mask + ground_truth * (1-mask) #ignore padding in loss
-            ground_truth = tf.reshape(ground_truth, (self.data_parameters.sequence_length * self.data_parameters.batch_size, cnt_per_pos))
-            logits = tf.reshape(logits, (self.data_parameters.sequence_length * self.data_parameters.batch_size, cnt_per_pos))
-            pass
+                
+                truth_positives = tf.ones((self.data_parameters.batch_size, self.data_parameters.sequence_length, 1))
+                truth_negatives = tf.zeros((self.data_parameters.batch_size, self.data_parameters.sequence_length, self.model_parameters.vanilla_num_negatives))
+                ground_truth = tf.concat([truth_positives, truth_negatives], axis=-1)
+                mask = tf.expand_dims(tf.cast((input_ids == self.data_parameters.num_items), 'float32'), -1)
+                mask = tf.tile(mask, [1, 1, cnt_per_pos])
+                ground_truth = -100 * mask + ground_truth * (1-mask) #ignore padding in loss
+                ground_truth = tf.reshape(ground_truth, (self.data_parameters.sequence_length * self.data_parameters.batch_size, cnt_per_pos))
+                logits = tf.reshape(logits, (self.data_parameters.sequence_length * self.data_parameters.batch_size, cnt_per_pos))
 
         elif self.model_parameters.full_target:
             logits = tf.einsum("bse, ie -> bsi", seq_emb, target_embeddings) 
