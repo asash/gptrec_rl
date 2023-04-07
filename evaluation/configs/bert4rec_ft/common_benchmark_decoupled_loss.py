@@ -127,8 +127,8 @@ recommenders = {
 
 recommenders = {}
 
-recommenders["BERT4rec-FullSoftmax"] = full_bert
-recommenders["SASRec-FullSoftmax"] =  sasrec_full_target 
+#recommenders["BERT4rec-FullSoftmax"] = full_bert
+#recommenders["SASRec-FullSoftmax"] =  sasrec_full_target 
 
 
 for num_samples in [1, 4, 16, 64, 256]:
