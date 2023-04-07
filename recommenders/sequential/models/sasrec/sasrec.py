@@ -118,9 +118,9 @@ class SASRecModel(SequentialRecsysModel):
         target_embeddings = self.get_target_embeddings(tf.nn.relu(target_ids))
         if self.model_parameters.vanilla:
             logits = tf.einsum("bse, bsne -> bsn", seq_emb, target_embeddings)
+            cnt_per_pos = self.model_parameters.vanilla_num_negatives + 1
 
             if self.model_parameters.vanilla_bce_t != 0:
-                cnt_per_pos = self.model_parameters.vanilla_num_negatives + 1
                 alpha = self.model_parameters.vanilla_num_negatives / (self.data_parameters.num_items - 1)
                 t = self.model_parameters.vanilla_bce_t 
                 beta = alpha * ((1 - 1/alpha)*t + 1/alpha)
