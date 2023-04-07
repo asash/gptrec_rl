@@ -98,7 +98,7 @@ def get_bert_style_model(model_config, tuning_samples_portion, batch_size=128):
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
                                                use_keras_training=True,
                                                sequence_length=SEQUENCE_LENGTH,
-                                               optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001)
+                                               optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001),
                                                extra_val_metrics = EXTRA_VAL_METRICS)
         
         return SequentialRecommender(recommender_config)
