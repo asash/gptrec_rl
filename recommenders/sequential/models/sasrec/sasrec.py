@@ -136,14 +136,14 @@ class SASRecModel(SequentialRecsysModel):
                 logits = tf.concat([positive_logits_transformed, negative_logits], -1)
 
                 
-                truth_positives = tf.ones((self.data_parameters.batch_size, self.data_parameters.sequence_length, 1))
-                truth_negatives = tf.zeros((self.data_parameters.batch_size, self.data_parameters.sequence_length, self.model_parameters.vanilla_num_negatives))
-                ground_truth = tf.concat([truth_positives, truth_negatives], axis=-1)
-                mask = tf.expand_dims(tf.cast((input_ids == self.data_parameters.num_items), 'float32'), -1)
-                mask = tf.tile(mask, [1, 1, cnt_per_pos])
-                ground_truth = -100 * mask + ground_truth * (1-mask) #ignore padding in loss
-                ground_truth = tf.reshape(ground_truth, (self.data_parameters.sequence_length * self.data_parameters.batch_size, cnt_per_pos))
-                logits = tf.reshape(logits, (self.data_parameters.sequence_length * self.data_parameters.batch_size, cnt_per_pos))
+            truth_positives = tf.ones((self.data_parameters.batch_size, self.data_parameters.sequence_length, 1))
+            truth_negatives = tf.zeros((self.data_parameters.batch_size, self.data_parameters.sequence_length, self.model_parameters.vanilla_num_negatives))
+            ground_truth = tf.concat([truth_positives, truth_negatives], axis=-1)
+            mask = tf.expand_dims(tf.cast((input_ids == self.data_parameters.num_items), 'float32'), -1)
+            mask = tf.tile(mask, [1, 1, cnt_per_pos])
+            ground_truth = -100 * mask + ground_truth * (1-mask) #ignore padding in loss
+            ground_truth = tf.reshape(ground_truth, (self.data_parameters.sequence_length * self.data_parameters.batch_size, cnt_per_pos))
+            logits = tf.reshape(logits, (self.data_parameters.sequence_length * self.data_parameters.batch_size, cnt_per_pos))
 
         elif self.model_parameters.full_target:
             logits = tf.einsum("bse, ie -> bsi", seq_emb, target_embeddings) 
