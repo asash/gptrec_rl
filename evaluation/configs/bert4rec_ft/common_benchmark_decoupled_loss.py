@@ -10,6 +10,7 @@ from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.recommenders.lightfm import LightFMRecommender
 from aprec.recommenders.sequential.target_builders.positives_sequence_target_builder import PositivesSequenceTargetBuilder
 from aprec.recommenders.top_recommender import TopRecommender
+import tensorflow as tf
 
 USERS_FRACTIONS = [1.0]
 
@@ -74,7 +75,8 @@ def sasrec_style_model(model_config, sequence_splitter,
                                 targets_builder=target_builder, 
                                 use_keras_training=True,
                                 extra_val_metrics=EXTRA_VAL_METRICS, 
-                                sequence_length=SEQUENCE_LENGTH
+                                sequence_length=SEQUENCE_LENGTH,
+                                optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001)
                                 )
     
     return SequentialRecommender(config)
@@ -96,6 +98,7 @@ def get_bert_style_model(model_config, tuning_samples_portion, batch_size=128):
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
                                                use_keras_training=True,
                                                sequence_length=SEQUENCE_LENGTH,
+                                               optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001)
                                                extra_val_metrics = EXTRA_VAL_METRICS)
         
         return SequentialRecommender(recommender_config)
