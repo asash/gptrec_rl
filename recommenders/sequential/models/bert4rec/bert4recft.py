@@ -22,6 +22,7 @@ class SampleBERTConfig(SequentialModelConfig):
                  output_layer_activation = 'linear',
                  num_negative_samples = 200,
                  loss = 'bce',
+                 gbce_t = 0.0,
                  loss_parameters = {},
                  sampler='random'
                 ):
@@ -39,6 +40,7 @@ class SampleBERTConfig(SequentialModelConfig):
         self.loss_parameters = loss_parameters 
         self.num_negative_samples = num_negative_samples
         self.sampler = sampler
+        self.gbce_t = gbce_t
 
     def as_dict(self) -> dict:
         return self.__dict__
@@ -96,6 +98,21 @@ class BERT4RecFTModel(SequentialRecsysModel):
         emb_matrix = tf.gather(self.bert.embeddings.weight, candidates)
         result = tf.einsum("ijk,ijmk->ijm", bert_output[0], emb_matrix)
         logits = self.output_layer_activation(result)
+
+        if self.model_parameters.gbce_t != 0:
+            alpha = self.model_parameters.num_negative_samples / (self.data_parameters.num_items - 1)
+            t = self.model_parameters.gbce_t 
+            beta = alpha * ((1 - 1/alpha)*t + 1/alpha)
+
+            positive_logits = tf.cast(logits[:, :, 0:1], 'float64') #use float64 to increase numerical stability
+            negative_logits = logits[:,:,1:]
+            eps = 1e-10
+            positive_probs = tf.clip_by_value(tf.sigmoid(positive_logits), eps, 1-eps)
+            positive_probs_adjusted = tf.clip_by_value(tf.math.pow(positive_probs, -beta), 1+eps, tf.float64.max)
+            to_log = tf.clip_by_value(tf.math.divide(1.0, (positive_probs_adjusted  - 1)), eps, tf.float64.max)
+            positive_logits_transformed = tf.math.log(to_log)
+            negative_logits = tf.cast(negative_logits, 'float64')
+            logits = tf.concat([positive_logits_transformed, negative_logits], -1)
 
         ground_truth_positives = tf.ones((self.data_parameters.batch_size, self.data_parameters.sequence_length, 1))
         ground_truth_negatives = tf.zeros((self.data_parameters.batch_size, self.data_parameters.sequence_length,
