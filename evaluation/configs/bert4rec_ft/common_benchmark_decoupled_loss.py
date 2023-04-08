@@ -127,10 +127,6 @@ recommenders = {
 
 recommenders = {}
 
-recommenders["BERT4rec-FullSoftmax"] = full_bert
-recommenders["SASRec-FullSoftmax"] =  sasrec_full_target 
-
-
 for num_samples in [1, 4, 16, 64, 256]:
         recommenders[f"BERT4Rec-samples:{num_samples}-gBCE"] = lambda num_samples=num_samples: gsasrec(num_samples=num_samples, t=1.0, loss='bce')
         recommenders[f"SASRec-samples:{num_samples}-gBCE"] = lambda num_samples=num_samples: gsasrec(num_samples=num_samples, t=1.0, loss='bce')
@@ -138,6 +134,11 @@ for num_samples in [1, 4, 16, 64, 256]:
         recommenders[f"SASRec-samples:{num_samples}-SampledSoftmax"] = lambda num_samples=num_samples: gsasrec(num_samples=num_samples, t=0.0, loss='softmax_ce')
         recommenders[f"BERT4Rec-Samples:{num_samples}-BCE"] = lambda num_samples=num_samples: sampling_bert('random', num_samples, 'bce')
         recommenders[f"BERT4Rec-Samples:{num_samples}-SampledSoftmax"] = lambda num_samples=num_samples: sampling_bert('random', num_samples, 'softmax_ce')
+
+recommenders["BERT4rec-FullSoftmax"] = full_bert
+recommenders["SASRec-FullSoftmax"] =  sasrec_full_target 
+
+
 
 def get_recommenders(filter_seen: bool):
     result = {}
