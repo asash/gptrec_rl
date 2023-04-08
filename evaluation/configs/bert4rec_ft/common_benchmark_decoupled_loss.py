@@ -88,7 +88,7 @@ def get_bert_style_model(model_config, tuning_samples_portion, batch_size=128):
         from aprec.recommenders.sequential.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
         from aprec.recommenders.sequential.targetsplitters.items_masking import ItemsMasking
         recommender_config = SequentialRecommenderConfig(model_config, 
-                                               train_epochs=10000, early_stop_epochs=200,
+                                               train_epochs=10000, early_stop_epochs=300,
                                                batch_size=batch_size,
                                                eval_batch_size=256, #no need for gradients, should work ok
                                                validation_batch_size=256,
