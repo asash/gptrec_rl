@@ -113,7 +113,7 @@ def full_bert(loss='softmax_ce', tuning_samples_portion=0.0):
 def sampling_bert(sampling_strategy, num_samples, loss, t=0.0):
         from aprec.recommenders.sequential.models.bert4rec.bert4recft import SampleBERTConfig
         model_config =  SampleBERTConfig(embedding_size=EMBEDDING_SIZE, loss=loss, num_negative_samples=num_samples, sampler=sampling_strategy, gbce_t=t)
-        return get_bert_style_model(model_config, 0.0, batch_size=64)
+        return get_bert_style_model(model_config, 0.0, batch_size=128)
 
 def popularity():
         return TopRecommender()
