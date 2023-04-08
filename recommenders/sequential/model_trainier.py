@@ -86,7 +86,7 @@ class ModelTrainer(object):
         with self.get_train_generator_factory() as train_data_generator_factory:
             for epoch_num in range(self.recommender.config.train_epochs):
                 print(f"epoch {epoch_num}")
-                self.current_epoch = epoch_num
+                self.current_epoch = epoch_num + 1
                 train_generator = train_data_generator_factory.next_generator()
                 self.epoch(train_generator)
                 train_generator.cleanup()
@@ -133,7 +133,10 @@ class ModelTrainer(object):
         return time.time() - self.start_time
 
     def try_early_stop(self):
-        self.steps_to_early_stop = self.recommender.config.early_stop_epochs - self.steps_metric_not_improved
+        steps_to_early_stop_metric = self.recommender.config.early_stop_epochs - self.steps_metric_not_improved
+        steps_to_early_stop_min_epoch = self.recommender.config.min_train_epochs - self.current_epoch 
+        self.steps_to_early_stop = max(steps_to_early_stop_metric, steps_to_early_stop_min_epoch)
+                
         if self.steps_to_early_stop <= 0:
             print(f"early stopped at epoch {self.current_epoch}")
             self.early_stop_flag = True

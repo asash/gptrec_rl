@@ -67,6 +67,7 @@ def sasrec_style_model(model_config, sequence_splitter,
     config = SequentialRecommenderConfig(model_config,                       
                                 train_epochs=max_epochs,
                                 early_stop_epochs=400,
+                                min_train_epochs=1000,
                                 batch_size=batch_size,
                                 eval_batch_size=256, #no need for gradients, should work ok
                                 validation_batch_size=256,
@@ -90,6 +91,7 @@ def get_bert_style_model(model_config, tuning_samples_portion, batch_size=128):
         recommender_config = SequentialRecommenderConfig(model_config, 
                                                train_epochs=10000, early_stop_epochs=400,
                                                batch_size=batch_size,
+                                               min_train_epochs=1000,
                                                eval_batch_size=256, #no need for gradients, should work ok
                                                validation_batch_size=256,
                                                sequence_splitter=lambda: ItemsMasking(tuning_samples_prob=tuning_samples_portion), 

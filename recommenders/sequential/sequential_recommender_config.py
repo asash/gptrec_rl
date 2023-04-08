@@ -19,6 +19,7 @@ class SequentialRecommenderConfig(object):
                  sequence_splitter = RandomFractionSplitter, 
                  targets_builder = FullMatrixTargetsBuilder,
                  batch_size=1000, early_stop_epochs=100, 
+                 min_train_epochs=10, #if early stopping is enabled, we will train at least this number of epochs
                  training_time_limit=None,
                  train_history_vectorizer:HistoryVectorizer = DefaultHistoryVectrizer(), 
                  pred_history_vectorizer:HistoryVectorizer = DefaultHistoryVectrizer(),
@@ -59,3 +60,4 @@ class SequentialRecommenderConfig(object):
         self.sequence_length = sequence_length
         self.use_keras_training = use_keras_training 
         self.validation_batch_size = validation_batch_size
+        self.min_train_epochs = min_train_epochs
