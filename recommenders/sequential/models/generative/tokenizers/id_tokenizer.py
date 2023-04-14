@@ -24,7 +24,7 @@ class IDTokenizer(Tokenizer):
     def assign(self, train_users):
         assignment = np.arange(self.num_items+1)
         assignment[-1] = -100 #padding
-        assignment = np.expand_dims(assignment, 0)
+        assignment = np.expand_dims(assignment, 1)
         self.vocabulary.assign(assignment)
         
         
