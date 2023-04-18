@@ -22,14 +22,14 @@ METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), 
 
 SEQUENCE_LENGTH=100
 
-def gpt2rec():
+def gpt2rec(tokenizer='svd', tokens_per_item=1, values_per_dim=10000):
         from aprec.recommenders.sequential.models.generative.gpt_rec import GPT2RecConfig
         from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
         from aprec.recommenders.sequential.targetsplitters.id_splitter import IdSplitter
         from aprec.recommenders.sequential.target_builders.dummy_builder import DummyTargetBuilder
         from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender
 
-        model_config = GPT2RecConfig(embedding_size=256, tokenizer='id', tokens_per_item=1, values_per_dim=10000)
+        model_config = GPT2RecConfig(embedding_size=256, tokenizer=tokenizer, tokens_per_item=tokenizer, values_per_dim=values_per_dim)
         bs=16
         recommender_config = SequentialRecommenderConfig(model_config, train_epochs=100000, early_stop_epochs=300,
                                                batch_size=bs,
@@ -47,7 +47,15 @@ def gpt2rec():
         recommender = SequentialRecommender(recommender_config)
         return recommender
 
-recommenders = {"gpt2rec": gpt2rec} 
+recommenders = {
+                "gpt2rec-svd-tokens-2-values-128": lambda: gpt2rec(tokenizer='svd', tokens_per_item=2, values_per_dim=100),
+                "gpt2rec-svd-tokens-2-values-512": lambda: gpt2rec(tokenizer='svd', tokens_per_item=2, values_per_dim=512),
+                "gpt2rec-svd-tokens-2-values-2048": lambda: gpt2rec(tokenizer='svd', tokens_per_item=2, values_per_dim=512),
+                "gpt2rec-svd-tokens-4-values-128": lambda: gpt2rec(tokenizer='svd', tokens_per_item=4, values_per_dim=100),
+                "gpt2rec-svd-tokens-4-values-512": lambda: gpt2rec(tokenizer='svd', tokens_per_item=4, values_per_dim=512),
+                "gpt2rec-svd-tokens-4-values-2048": lambda: gpt2rec(tokenizer='svd', tokens_per_item=4, values_per_dim=2048),
+                "gpt2rec-id": lambda: gpt2rec(tokenizer='id', tokens_per_item=1, values_per_dim=10000),
+                } 
  
 def get_recommenders(filter_seen: bool):
     result = {}
