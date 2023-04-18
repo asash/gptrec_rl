@@ -44,7 +44,7 @@ class GPT2RecModel(SequentialRecsysModel):
         self.tokenizer_class = get_tokenizer_class(model_parameters.tokenizer)
         self.tokenizer:Tokenizer = self.tokenizer_class(model_parameters.tokens_per_item, model_parameters.values_per_dim, data_parameters.num_items)
         gpt_config = GPT2Config(
-            vocab_size = int(self.tokenizer.vocab_size),
+            vocab_size = int(self.tokenizer.vocab_size) + 1,
             n_positions = data_parameters.sequence_length * model_parameters.tokens_per_item, 
             n_embd =  model_parameters.embedding_size, 
             n_layer = model_parameters.transformer_blocks, 
@@ -80,7 +80,7 @@ class GPT2RecModel(SequentialRecsysModel):
         seq_batch = inputs[0]
         tokens = self.tokenizer(seq_batch, seq_batch.shape[0], seq_batch.shape[1])
         attention_mask = tf.cast((tokens != -100), 'float32')
-        tokens = tf.nn.relu(tokens) + tf.cast(self.num_items * (1-attention_mask), 'int32')
+        tokens = tf.nn.relu(tokens) 
         output = self.gpt.generate(
                 tokens,
                 do_sample=True, 
@@ -91,7 +91,7 @@ class GPT2RecModel(SequentialRecsysModel):
                 output_scores=True,
                 return_dict_in_generate=True,
                 attention_mask=attention_mask,
-                pad_token_id=self.num_items, 
+                pad_token_id=self.tokenizer.vocab_size,
                 temperature=self.model_parameters.generation_temperature
                 )
         input_length = tokens.shape[-1]
