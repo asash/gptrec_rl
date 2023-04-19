@@ -1,3 +1,4 @@
+import random
 from aprec.evaluation.metrics.entropy import Entropy
 from aprec.evaluation.metrics.highest_score import HighestScore
 from aprec.evaluation.metrics.model_confidence import Confidence
@@ -50,13 +51,30 @@ def gpt2rec(tokenizer='svd', tokens_per_item=1, values_per_dim=10000):
 recommenders = {
                 "gpt2rec-svd-tokens-2-values-128": lambda: gpt2rec(tokenizer='svd', tokens_per_item=2, values_per_dim=100),
                 "gpt2rec-svd-tokens-2-values-512": lambda: gpt2rec(tokenizer='svd', tokens_per_item=2, values_per_dim=512),
-                "gpt2rec-svd-tokens-2-values-2048": lambda: gpt2rec(tokenizer='svd', tokens_per_item=2, values_per_dim=512),
+                "gpt2rec-svd-tokens-2-values-2048": lambda: gpt2rec(tokenizer='svd', tokens_per_item=2, values_per_dim=2048),
+                "gpt2rec-svd-tokens-2-values-8192": lambda: gpt2rec(tokenizer='svd', tokens_per_item=2, values_per_dim=8192),
+                "gpt2rec-svd-tokens-2-values-32768": lambda: gpt2rec(tokenizer='svd', tokens_per_item=2, values_per_dim=32768),
+
                 "gpt2rec-svd-tokens-4-values-128": lambda: gpt2rec(tokenizer='svd', tokens_per_item=4, values_per_dim=100),
                 "gpt2rec-svd-tokens-4-values-512": lambda: gpt2rec(tokenizer='svd', tokens_per_item=4, values_per_dim=512),
                 "gpt2rec-svd-tokens-4-values-2048": lambda: gpt2rec(tokenizer='svd', tokens_per_item=4, values_per_dim=2048),
-                "gpt2rec-id": lambda: gpt2rec(tokenizer='id', tokens_per_item=1, values_per_dim=10000),
+                "gpt2rec-svd-tokens-4-values-8192": lambda: gpt2rec(tokenizer='svd', tokens_per_item=4, values_per_dim=8192),
+                "gpt2rec-svd-tokens-4-values-32768": lambda: gpt2rec(tokenizer='svd', tokens_per_item=4, values_per_dim=32768),
+
+                "gpt2rec-svd-tokens-8-values-128": lambda: gpt2rec(tokenizer='svd', tokens_per_item=8, values_per_dim=100),
+                "gpt2rec-svd-tokens-8-values-512": lambda: gpt2rec(tokenizer='svd', tokens_per_item=8, values_per_dim=512),
+                "gpt2rec-svd-tokens-8-values-2048": lambda: gpt2rec(tokenizer='svd', tokens_per_item=8, values_per_dim=2048),
+                "gpt2rec-svd-tokens-8-values-8192": lambda: gpt2rec(tokenizer='svd', tokens_per_item=8, values_per_dim=8192),
+                "gpt2rec-svd-tokens-8-values-32768": lambda: gpt2rec(tokenizer='svd', tokens_per_item=8, values_per_dim=32768),
+
+                "gpt2rec-id": lambda: gpt2rec(tokenizer='id', tokens_per_item=1, values_per_dim=30000),
                 } 
- 
+
+r_list = list(recommenders.items())
+random.seed(31337)
+random.shuffle(r_list)
+recommenders=dict(r_list)
+
 def get_recommenders(filter_seen: bool):
     result = {}
     all_recommenders = list(recommenders.keys())
