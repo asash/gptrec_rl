@@ -116,7 +116,7 @@ def full_gru(embedding_size):
 
 def gru_style_model(model_config, batch_size=128, max_epochs=10000):
         from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
-        from aprec.losses.softmax_crossentropy import SoftmaxCrossEntropy
+        from aprec.losses.lambda_gamma_rank import LambdaGammaRankLoss
         from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender
         recommender_config = SequentialRecommenderConfig(model_config, train_epochs=max_epochs,
                                 early_stop_epochs=200,
@@ -127,7 +127,7 @@ def gru_style_model(model_config, batch_size=128, max_epochs=10000):
                                 use_keras_training=True,
                                 extra_val_metrics=EXTRA_VAL_METRICS, 
                                 sequence_length=SEQUENCE_LENGTH,
-                                loss = SoftmaxCrossEntropy())
+                                loss = LambdaGammaRankLoss(pred_truncate_at=4000))
         return SequentialRecommender(recommender_config)
 recommenders = {}
 
