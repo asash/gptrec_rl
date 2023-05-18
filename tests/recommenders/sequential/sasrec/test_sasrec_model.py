@@ -22,7 +22,7 @@ class TestSasrecModel(unittest.TestCase):
                                                sequence_splitter=SequenceContinuation,
                                                sequence_length=5,
                                                targets_builder=PositvesOnlyTargetBuilder, 
-                                               use_keras_training=True)
+                                               use_keras_training=False)
 
    
         recommender = SequentialRecommender(recommender_config)

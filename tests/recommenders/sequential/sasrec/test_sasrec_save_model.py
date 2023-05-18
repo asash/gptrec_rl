@@ -34,7 +34,6 @@ def train_model(conn):
     conn.send((checkpoint_file, recs, ))
 
 
-
 class TestSasrecModel(unittest.TestCase):
     def test_sasrec_model_saving(self):
         #train model in a separate process, avoid data sharing and garbage in tf session 

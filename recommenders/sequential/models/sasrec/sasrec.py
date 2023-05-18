@@ -259,7 +259,7 @@ class SASRecConfig(SequentialModelConfig):
         self.pos_smoothing = pos_smoothing
         self.vanilla = vanilla
         self.max_targets_per_user = max_targets_per_user #only used with sparse positives
-        self.full_target = full_target,
+        self.full_target = full_target
         self.loss = loss
         self.loss_params = loss_params
         self.vanilla_num_negatives = vanilla_num_negatives 

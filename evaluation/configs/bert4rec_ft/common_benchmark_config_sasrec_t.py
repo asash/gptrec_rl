@@ -89,11 +89,6 @@ def sort_key(pair):
 all_pairs.sort(key=sort_key)
 
 
-l2 = 0.00001 
-for (num_negatives, t_val) in all_pairs:
-    recommenders[f"SASRec-t:{t_val:0.2}:negatives:{num_negatives}:embedding_norms:{l2:.5f}"] =\
-        lambda t=t_val, n=num_negatives, norm=l2: vanilla_sasrec(t=t, num_negatives=n, embeddings_norm=norm)
-
 
 
 def get_recommenders(filter_seen: bool):

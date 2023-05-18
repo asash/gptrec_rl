@@ -1,5 +1,5 @@
 from aprec.evaluation.split_actions import LeaveOneOut
-from aprec.evaluation.configs.jpq.common_benchmark_jpq_bert import *
+from aprec.evaluation.configs.jpq.common_benchmark_config_jpq_bert import *
 
 DATASET = "BERT4rec.ml-1m"
 N_VAL_USERS=1024

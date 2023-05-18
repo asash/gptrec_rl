@@ -95,10 +95,12 @@ class TestItemSplitters(unittest.TestCase):
         from aprec.recommenders.sequential.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter 
         sequence = [1, 2, 3, 4, 5]
         splitter = ShiftedSequenceSplitter()
+        splitter.set_sequence_len(4)
         train, label = splitter.split(sequence)
         self.assertEquals(train, [1, 2, 3, 4])
         self.assertEquals(label, [2, 3, 4, 5])
-        splitter = ShiftedSequenceSplitter(max_len=2)
+        splitter = ShiftedSequenceSplitter()
+        splitter.set_sequence_len(2)
 
         train, label = splitter.split(sequence)
         self.assertEquals(train, [3, 4])

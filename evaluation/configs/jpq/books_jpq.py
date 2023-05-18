@@ -1,5 +1,5 @@
 from aprec.evaluation.split_actions import LeaveOneOut
-from aprec.evaluation.configs.jpq.common_benchmark_jpq import *
+from aprec.evaluation.configs.jpq.common_benchmark_config_jpq import *
 
 DATASET = "Amazon.Books_warm5"
 N_VAL_USERS=512
