@@ -127,7 +127,7 @@ def gru_style_model(model_config, batch_size=128, max_epochs=10000):
                                 use_keras_training=True,
                                 extra_val_metrics=EXTRA_VAL_METRICS, 
                                 sequence_length=SEQUENCE_LENGTH,
-                                loss = LambdaGammaRankLoss(pred_truncate_at=4000))
+                                loss = LambdaGammaRankLoss(pred_truncate_at=3000))
         return SequentialRecommender(recommender_config)
 recommenders = {}
 
