@@ -1,22 +1,43 @@
+import math
 import tensorflow as tf
+
+from aprec.recommenders.sequential.models.recjpq.centroid_assignment_strategies.bpr_strategy import BPRAssignmentStrategy
+from aprec.recommenders.sequential.models.recjpq.centroid_assignment_strategies.qr_strategy import QuotientRemainder
+from aprec.recommenders.sequential.models.recjpq.centroid_assignment_strategies.random_strategy import RandomAssignmentStrategy
 from .centroid_assignment_strategies.centroid_strategy import CentroidAssignmentStragety
 from .centroid_assignment_strategies.svd_strategy import SVDAssignmentStrategy
 
 def get_codes_strategy(codes_strategy, item_code_bytes, num_items) -> CentroidAssignmentStragety:
     if codes_strategy == "svd":
         return SVDAssignmentStrategy(item_code_bytes, num_items)
+    if codes_strategy == "bpr":
+        return BPRAssignmentStrategy(item_code_bytes, num_items)
+    if codes_strategy == "random":
+        return RandomAssignmentStrategy(item_code_bytes, num_items) 
+    if codes_strategy == "qr":
+        return QuotientRemainder(item_code_bytes, num_items)
+    
         
 class ItemCodeLayer(tf.keras.layers.Layer):
     def __init__(self, embedding_size, pq_m, num_items, sequence_length, codes_strategy):
         super().__init__()
+
+        
         self.sub_embedding_size = embedding_size // pq_m
         self.item_code_bytes = embedding_size // self.sub_embedding_size
         item_initializer = tf.zeros_initializer()
-        self.item_codes = tf.Variable(item_initializer((num_items + 1, self.item_code_bytes), dtype='uint8'), 
+        if codes_strategy != "qr":
+            self.base_type = 'uint8' 
+            self.vals_per_dim = 256
+        else:
+            self.base_type = 'int32'
+            self.vals_per_dim = math.ceil(math.sqrt(num_items))
+
+        self.item_codes = tf.Variable(item_initializer((num_items + 1, self.item_code_bytes), dtype=self.base_type), 
                                       trainable=False, name="ItemCodes/codes")
 
         centroid_initializer = tf.random_uniform_initializer()
-        self.centroids = tf.Variable(centroid_initializer(shape=(self.item_code_bytes, 256,
+        self.centroids = tf.Variable(centroid_initializer(shape=(self.item_code_bytes, self.vals_per_dim,
                                                                  self.sub_embedding_size)),
                                      name="ItemCodes/centroids")
         self.item_codes_strategy = get_codes_strategy(codes_strategy, self.item_code_bytes, num_items)
@@ -53,10 +74,10 @@ class ItemCodeLayer(tf.keras.layers.Layer):
     def score_sequence_all_items(self, seq_emb, batch_size):
         seq_sub_emb = tf.reshape(seq_emb, [batch_size, self.sequence_length, self.item_code_bytes, self.sub_embedding_size])
         centroid_scores = tf.einsum("bsie,ine->bsin", seq_sub_emb, self.centroids) 
-        centroid_scores = tf.transpose(tf.reshape(centroid_scores, [batch_size, self.sequence_length, self.item_code_bytes * 256]), 
+        centroid_scores = tf.transpose(tf.reshape(centroid_scores, [batch_size, self.sequence_length, self.item_code_bytes * self.vals_per_dim]), 
                                        [2, 0, 1])
         target_codes = tf.cast(tf.transpose(self.item_codes[:-1]), 'int32')
-        offsets = tf.expand_dims(tf.range(self.item_code_bytes) * 256, -1)
+        offsets = tf.expand_dims(tf.range(self.item_code_bytes) * self.vals_per_dim, -1)
         target_codes += offsets
         item_sub_scores = tf.gather(centroid_scores, target_codes)
         logits = tf.transpose(tf.reduce_sum(item_sub_scores, axis=0), [1,2,0])
@@ -70,7 +91,7 @@ class ItemCodeLayer(tf.keras.layers.Layer):
         centroid_scores = tf.transpose(tf.reshape(centroid_scores, 
                                                   [centroid_scores.shape[0], centroid_scores.shape[1] * centroid_scores.shape[2]]))
         target_codes = tf.cast(tf.transpose(self.item_codes[:-1]), 'int32')
-        offsets = tf.expand_dims(tf.range(self.item_code_bytes) * 256, -1)
+        offsets = tf.expand_dims(tf.range(self.item_code_bytes) * self.vals_per_dim, -1)
         target_codes += offsets
         result = tf.zeros((self.num_items, centroid_scores.shape[1]))
         for i in range (self.item_code_bytes):

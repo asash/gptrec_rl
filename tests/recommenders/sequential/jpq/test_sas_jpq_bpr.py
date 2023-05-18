@@ -3,12 +3,11 @@ import unittest
 
 from aprec.recommenders.sequential.target_builders.positives_sequence_target_builder import PositivesSequenceTargetBuilder
 
-class TestVanillaSasrec(unittest.TestCase):
+class TestSASRecJPQBPR(unittest.TestCase):
     def setUp(self):
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
-
-    def test_saslift(self):
+    def test_sasjpq_bpr(self):
         from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender
         from aprec.datasets.movielens20m import get_movielens20m_actions, get_movies_catalog
         from aprec.recommenders.sequential.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
@@ -19,7 +18,7 @@ class TestVanillaSasrec(unittest.TestCase):
 
         USER_ID = '120'
         val_users = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
-        model_config = SASJPQConfig(embedding_size=32, vanilla_num_negatives=5, vanilla_bce_t=1)
+        model_config = SASJPQConfig(embedding_size=32, vanilla_num_negatives=5, vanilla_bce_t=1, centroid_strategy='bpr')
 
         recommender_config = SequentialRecommenderConfig(model_config, train_epochs=10000, early_stop_epochs=50000,
                                                batch_size=5,
