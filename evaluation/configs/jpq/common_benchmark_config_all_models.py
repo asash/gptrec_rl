@@ -132,15 +132,15 @@ def gru_style_model(model_config, batch_size=128, max_epochs=10000):
 recommenders = {}
 
 for strategy in ('random', 'svd', 'bpr'):
-    recommenders[f'grujpq_{strategy}'] = lambda embedding_size=512, m=8, strategy=strategy: grujpq(embedding_size, m, strategy)    
-    recommenders[f'sasrec_{strategy}'] = lambda embedding_size=512, m=8, strategy=strategy: sasjpq(embedding_size, m, strategy)    
-    recommenders[f'bert4rec_{strategy}'] = lambda embedding_size=512, m=8, strategy=strategy: bertjpq(embedding_size, m, strategy)    
+    recommenders[f'grujpq_{strategy}'] = lambda embedding_size=512, m=8, strategy=strategy: grujpq(embedding_size, m, strategy=strategy)    
+    recommenders[f'sasrec_{strategy}'] = lambda embedding_size=512, m=8, strategy=strategy: sasjpq(embedding_size, m, strategy=strategy)    
+    recommenders[f'bert4rec_{strategy}'] = lambda embedding_size=512, m=8, strategy=strategy: bertjpq(embedding_size, m, strategy=strategy)    
 
 recommenders['sasrec'] = lambda embedding_size=512: vanilla_sasrec(embedding_size)
 recommenders['bert4rec'] = lambda embedding_size=512: full_bert(embedding_size)
 recommenders['gru4rec'] = lambda embedding_size=512: full_gru(embedding_size)
 
-recommenders["sasrec_qr"] = lambda embedding_size=512: sasjpq(embedding_size, 2 , "qr")
+recommenders["sasrec_qr"] = lambda embedding_size=512: sasjpq(embedding_size, 2 , strategy="qr")
 recommenders["bert4rec_qr"] = lambda embedding_size=512: bertjpq(embedding_size, 2 , "qr")
 recommenders["gru4rec_qr"] = lambda embedding_size=512: grujpq(embedding_size, 2 , "qr")
 

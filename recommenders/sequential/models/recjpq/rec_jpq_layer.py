@@ -33,8 +33,8 @@ class ItemCodeLayer(tf.keras.layers.Layer):
             self.base_type = 'int32'
             self.vals_per_dim = math.ceil(math.sqrt(num_items))
 
-        self.item_codes = tf.Variable(item_initializer((num_items + 1, self.item_code_bytes), dtype=self.base_type), 
-                                      trainable=False, name="ItemCodes/codes")
+        self.item_codes = tf.Variable(item_initializer((num_items + 2, self.item_code_bytes), dtype=self.base_type), 
+                                      trainable=False, name="ItemCodes/codes") # +2 for padding and mask
 
         centroid_initializer = tf.random_uniform_initializer()
         self.centroids = tf.Variable(centroid_initializer(shape=(self.item_code_bytes, self.vals_per_dim,
@@ -76,7 +76,7 @@ class ItemCodeLayer(tf.keras.layers.Layer):
         centroid_scores = tf.einsum("bsie,ine->bsin", seq_sub_emb, self.centroids) 
         centroid_scores = tf.transpose(tf.reshape(centroid_scores, [batch_size, self.sequence_length, self.item_code_bytes * self.vals_per_dim]), 
                                        [2, 0, 1])
-        target_codes = tf.cast(tf.transpose(self.item_codes[:-1]), 'int32')
+        target_codes = tf.cast(tf.transpose(self.item_codes[:-2]), 'int32')
         offsets = tf.expand_dims(tf.range(self.item_code_bytes) * self.vals_per_dim, -1)
         target_codes += offsets
         item_sub_scores = tf.gather(centroid_scores, target_codes)
@@ -90,7 +90,7 @@ class ItemCodeLayer(tf.keras.layers.Layer):
         centroid_scores = tf.einsum("bie,ine->bin", seq_sub_emb, self.centroids)
         centroid_scores = tf.transpose(tf.reshape(centroid_scores, 
                                                   [centroid_scores.shape[0], centroid_scores.shape[1] * centroid_scores.shape[2]]))
-        target_codes = tf.cast(tf.transpose(self.item_codes[:-1]), 'int32')
+        target_codes = tf.cast(tf.transpose(self.item_codes[:-2]), 'int32')
         offsets = tf.expand_dims(tf.range(self.item_code_bytes) * self.vals_per_dim, -1)
         target_codes += offsets
         result = tf.zeros((self.num_items, centroid_scores.shape[1]))
