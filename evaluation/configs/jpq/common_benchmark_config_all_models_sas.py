@@ -136,7 +136,7 @@ recommenders = {}
 #    recommenders[f'sasrec_{strategy}'] = lambda embedding_size=512, m=8, strategy=strategy: sasjpq(embedding_size, m, strategy=strategy)    
 #    recommenders[f'bert4rec_{strategy}'] = lambda embedding_size=512, m=8, strategy=strategy: bertjpq(embedding_size, m, strategy=strategy)    
 
-recommenders['sasrec'] = lambda embedding_size=512: vanilla_sasrec(embedding_size, batch_size=1)
+recommenders['sasrec'] = lambda embedding_size=256: vanilla_sasrec(embedding_size, batch_size=128)
 #recommenders['bert4rec'] = lambda embedding_size=512: full_bert(embedding_size)
 #recommenders['gru4rec'] = lambda embedding_size=512: full_gru(embedding_size)
 
