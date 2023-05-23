@@ -1,6 +1,11 @@
 import unittest
+import os
 
 class TestLambdarankLoss(unittest.TestCase):
+    def setUp(self):
+        pass
+        os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+
     def lambdas_sample_test(self, y, s, lambdas, ndcg_at=30, bce_weight=0.0, remove_batch_dim=False):
         from aprec.losses.lambda_gamma_rank import  LambdaGammaRankLoss
         import tensorflow.keras.backend as K
