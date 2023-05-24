@@ -24,7 +24,7 @@ class SVDAssignmentStrategy(CentroidAssignmentStragety):
         for i in range(self.item_code_bytes):
             discretizer = KBinsDiscretizer(n_bins=256, encode='ordinal', strategy='quantile')
             ith_component = item_embeddings[i:i+1][0]
-            ith_component = (ith_component - np.min(ith_component))/np.max(ith_component)
+            ith_component = (ith_component - np.min(ith_component))/(np.max(ith_component) - np.min(ith_component) + 1e-10)
             noise = np.random.normal(0, 1e-5, self.num_items + 2)
             ith_component += noise # make sure that every item has unique value
             ith_component = np.expand_dims(ith_component, 1)
