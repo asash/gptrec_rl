@@ -35,7 +35,6 @@ def min_session_len(users, items, session_lens):
 def max_session_len(users, items, session_lens):
     return int(np.max(session_lens))
 
-
 def p80_session_len(user, items, session_lens):
     return float(np.percentile(session_lens, 80))
 
@@ -58,6 +57,19 @@ def uniq_interactions(users, items, session_lens):
         total += uniq
     return total 
 
+def long_tail_less_5(users, items, session_lens):
+    from collections import Counter
+    item_cnt = Counter()
+    for user in users:
+        for action in users[user]:
+            item_cnt[action.item_id] += 1
+    tail = 0 
+    for item in item_cnt:
+        if item_cnt[item] < 5:
+            tail += 1
+    return tail / len(items) 
+
+
  
 
 
@@ -74,6 +86,7 @@ all_metrics = {
     "num_interactions": num_interactions, 
     "average_session_len": average_session_len, 
     "median_session_len": median_session_len, 
+    "long_tail_less_5": long_tail_less_5,
     "min_session_len": min_session_len, 
     "max_session_len": max_session_len, 
     "p80_session_len": p80_session_len,
