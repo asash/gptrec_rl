@@ -44,7 +44,7 @@ class GPT2RecModel(SequentialRecsysModel):
         self.tokenizer_class = get_tokenizer_class(model_parameters.tokenizer)
         self.tokenizer:Tokenizer = self.tokenizer_class(model_parameters.tokens_per_item, model_parameters.values_per_dim, data_parameters.num_items)
         gpt_config = GPT2Config(
-            vocab_size = int(self.tokenizer.vocab_size) + 1,
+            vocab_size = int(self.tokenizer.vocab_size) + 2, #+1 for padding, +2 for eos marker
             n_positions = data_parameters.sequence_length * model_parameters.tokens_per_item, 
             n_embd =  model_parameters.embedding_size, 
             n_layer = model_parameters.transformer_blocks, 
