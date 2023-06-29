@@ -8,6 +8,7 @@ from aprec.recommenders.recommender import Recommender
 from aprec.recommenders.sequential.models.generative.gpt_rec_rl import RLGPT2RecConfig, RLGPT2RecModel
 from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender
 from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
+from aprec.utils.os_utils import mkdir_p
 
 
 class GenerativeTuningRecommender(SequentialRecommender):
@@ -66,6 +67,9 @@ class GenerativeTuningRecommender(SequentialRecommender):
         return [self.items.reverse_id(item_id) for ts, item_id in seq]
     
     def tune(self):
+        tensorboard_dir = self.get_tensorboard_dir() 
+        mkdir_p(tensorboard_dir)
+        tensorboard_writer = tf.summary.create_file_writer(tensorboard_dir)
         optimizer = tf.keras.optimizers.Adam(learning_rate=1e-4)
         for step in range(1, self.max_tuning_steps + 1): 
             print("Tuning step", step)
@@ -89,8 +93,12 @@ class GenerativeTuningRecommender(SequentialRecommender):
                 optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
                 mean_reward = tf.reduce_mean(batch_rewards)
                 print(f"Step {step}. Mean reward", mean_reward.numpy())
-            if step % self.validate_every_steps == 0:
-                self.validate(step)
+                with tensorboard_writer.as_default(step=step):
+                    tf.summary.scalar('tuning_train/ppo_loss', ppo_loss)
+                    tf.summary.scalar('tuning_train/mean_reward', mean_reward)
+                    if step % self.validate_every_steps == 0:
+                        self.validate(step)
+                        tensorboard_writer.flush()
 
     def validate(self, step):
         print("Validating...")
@@ -101,6 +109,8 @@ class GenerativeTuningRecommender(SequentialRecommender):
             rewards.append(reward)
         mean_reward = tf.reduce_mean(rewards)
         print(f"Validation at {step}. Mean reward", mean_reward.numpy())
+        tf.summary.scalar('tuning_val/mean_reward', mean_reward)
+
     
     def tune_seq_generator(self):
         while True:

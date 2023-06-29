@@ -137,10 +137,9 @@ class SequentialRecommender(Recommender):
         return result
     
     def get_tensorboard_dir(self):
-        if self.tensorboard_dir is not None:
-            return self.tensorboard_dir
-        else:
-            return tempfile.mkdtemp()
+        if self.tensorboard_dir is None:
+            self.tensorboard_dir = tempfile.mkdtemp()
+        return self.tensorboard_dir
 
     def decode_item_ids(self, ids):
         result = []

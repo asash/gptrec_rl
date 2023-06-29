@@ -99,10 +99,11 @@ class ModelTrainer(object):
             
             print(f"taken best model from epoch{self.best_epoch}")
             if not self.recommender.config.validate_on_loss:
-                print ("best_val_{self.recommender.config.val_metric.name}: {self.best_metric_val}")
+                print (f"best_val_{self.recommender.config.val_metric.name}: {self.best_metric_val}")
             else:
-                print ("best_val_loss: {self.best_val_loss}")
+                print (f"best_val_loss: {self.best_val_loss}")
             train_metadata = {'time_to_converge': self.time_to_converge}
+            self.tensorboard_writer.flush()
             return train_metadata
     
     def get_train_generator_factory(self):

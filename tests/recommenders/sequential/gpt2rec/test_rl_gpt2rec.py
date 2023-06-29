@@ -39,7 +39,7 @@ class TestRLGptRec(unittest.TestCase):
                                                )
         
         
-        recommender = GenerativeTuningRecommender(recommender_config, pre_training_recommender, validate_every_steps=2, max_tuning_steps=4)
+        recommender = GenerativeTuningRecommender(recommender_config, pre_training_recommender, validate_every_steps=2, max_tuning_steps=1000)
 
         recommender.set_val_users(val_users)
         recommender = FilterSeenRecommender(recommender)
