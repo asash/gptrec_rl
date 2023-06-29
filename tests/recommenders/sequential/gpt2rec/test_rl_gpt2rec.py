@@ -39,7 +39,7 @@ class TestRLGptRec(unittest.TestCase):
                                                )
         
         
-        recommender = GenerativeTuningRecommender(recommender_config, pre_training_recommender, validate_every_steps=2, max_tuning_steps=1000)
+        recommender = GenerativeTuningRecommender(recommender_config, pre_training_recommender, validate_every_steps=2, max_tuning_steps=4)
 
         recommender.set_val_users(val_users)
         recommender = FilterSeenRecommender(recommender)
@@ -50,6 +50,8 @@ class TestRLGptRec(unittest.TestCase):
         catalog = get_movies_catalog()
         for rec in recs:
             print(catalog.get_item(rec[0]), "\t", rec[1])
+        batch = [('52345', None), ('39828', None)]
+        recommender.recommend_batch(batch, limit=10)
 
 if __name__ == "__main__":
     unittest.main()

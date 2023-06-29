@@ -37,7 +37,7 @@ def generative_tuning_recommender():
         model_config = RLGPT2RecConfig(transformer_blocks=3, embedding_size=256, tokenizer='id', tokens_per_item=1, values_per_dim=3500, attention_heads=4)
         pre_training_recommender = lambda: FilterSeenRecommender(FirstOrderMarkovChainRecommender())
 
-        recommender_config = SequentialRecommenderConfig(model_config, train_epochs=100, early_stop_epochs=10,
+        recommender_config = SequentialRecommenderConfig(model_config, train_epochs=10000, early_stop_epochs=200,
                                                batch_size=128,
                                                training_time_limit=200000,  
                                                sequence_splitter=IdSplitter, 
@@ -47,7 +47,7 @@ def generative_tuning_recommender():
                                                sequence_length=SEQUENCE_LENGTH,
                                                validate_on_loss=True
                                                )
-        recommender = GenerativeTuningRecommender(recommender_config, pre_training_recommender, validate_every_steps=20, max_tuning_steps=1000)
+        recommender = GenerativeTuningRecommender(recommender_config, pre_training_recommender, validate_every_steps=20, max_tuning_steps=4000)
         return recommender
         
 

@@ -149,7 +149,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
         result = tf.exp(logprob_tensor - old_logprob)
         return result
 
-    def recommend(self, user_id, limit):
+    def recommend(self, user_id, limit, features=None):
         internal_user_id = self.users.get_id(user_id)
         seq = self.get_pred_sequence(internal_user_id)
         sep_item_id = self.items.get_id('<SEP>')
@@ -164,7 +164,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
 
     def recommend_batch(self, recommendation_requests, limit):
         results = []
-        for user_id, features in tqdm(recommendation_requests, ascii=True):
+        for user_id, features in tqdm.tqdm(recommendation_requests, ascii=True):
             results.append(self.recommend(user_id, limit, features))
         return results
    
