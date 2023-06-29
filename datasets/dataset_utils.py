@@ -7,14 +7,13 @@ import mmh3
 from aprec.utils.os_utils import get_dir, mkdir_p, shell
 
 
-
-def filter_popular_items(actions_generator, max_actions):
+def filter_popular_items(actions_generator, max_items):
     actions = []
     items_counter = Counter()
     for action in actions_generator:
         actions.append(action)
         items_counter[action.item_id] += 1
-    popular_items = set([item_id for (item_id, cnt) in items_counter.most_common(max_actions)])
+    popular_items = set([item_id for (item_id, cnt) in items_counter.most_common(max_items)])
     return filter(lambda action: action.item_id in popular_items, actions)
 
 def filter_cold_users(actions_generator, min_actions_per_user = 0):

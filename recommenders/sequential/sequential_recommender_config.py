@@ -29,13 +29,16 @@ class SequentialRecommenderConfig(object):
                  eval_batch_size = 1024, 
                  validation_batch_size=1024,
                  val_rec_limit=40,
+                 validate_on_loss = False, #if True, we will use loss value for early stopping, otherwise we will use val_metric. Extra_val_metrics will be ignored if True.
                  val_metric = NDCG(10), #Used for early stopping
                  extra_val_metrics: List[Metric] = [], #Used for logging only
                  val_callbacks = [],
                  use_ann_for_inference = False, 
                  sequence_length=200, 
+                 train_on_val_users=True, #if True, we will train on val users as well (excluding the last action) 
                  use_keras_training=False
                  ):
+
         self.model_config = model_config
         self.loss = loss
         self.train_epochs = train_epochs
@@ -61,3 +64,5 @@ class SequentialRecommenderConfig(object):
         self.use_keras_training = use_keras_training 
         self.validation_batch_size = validation_batch_size
         self.min_train_epochs = min_train_epochs
+        self.validate_on_loss = validate_on_loss
+        self.train_on_val_users = train_on_val_users

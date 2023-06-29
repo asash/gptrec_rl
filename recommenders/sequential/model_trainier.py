@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender
 
 class ValidationResult(object):
-    def __init__(self, val_loss, val_metric, extra_val_metrics, train_metric, extra_train_metrics, validation_time) -> None:
+    def __init__(self, val_loss, validation_time, val_metric=None, extra_val_metrics=None, train_metric=None, extra_train_metrics=None) -> None:
         self.val_loss = val_loss
         self.val_metric = val_metric
         self.extra_val_metrics = extra_val_metrics
@@ -97,7 +97,11 @@ class ModelTrainer(object):
             self.recommender.model = self.recommender.get_model()
             self.recommender.model.set_weights(self.best_weights)
             
-            print(f"taken best model from epoch{self.best_epoch}. best_val_{self.recommender.config.val_metric.name}: {self.best_metric_val}")
+            print(f"taken best model from epoch{self.best_epoch}")
+            if not self.recommender.config.validate_on_loss:
+                print ("best_val_{self.recommender.config.val_metric.name}: {self.best_metric_val}")
+            else:
+                print ("best_val_loss: {self.best_val_loss}")
             train_metadata = {'time_to_converge': self.time_to_converge}
             return train_metadata
     
@@ -119,7 +123,8 @@ class ModelTrainer(object):
         validation_result = self.validate()
         epoch_result = EpochResult(train_result, validation_result)
         self.history.append(epoch_result)
-        self.try_update_best_val_metric(epoch_result)
+        if not self.recommender.config.validate_on_loss:
+            self.try_update_best_val_metric(epoch_result)
         self.try_update_best_val_loss(epoch_result)
         self.try_early_stop()
         self.log(epoch_result)
@@ -133,10 +138,12 @@ class ModelTrainer(object):
         return time.time() - self.start_time
 
     def try_early_stop(self):
-        steps_to_early_stop_metric = self.recommender.config.early_stop_epochs - self.steps_metric_not_improved
+        if not self.recommender.config.validate_on_loss:
+            steps_to_early_stop_metric = self.recommender.config.early_stop_epochs - self.steps_metric_not_improved
+        else:
+            steps_to_early_stop_metric = self.recommender.config.early_stop_epochs - self.steps_loss_not_improved
         steps_to_early_stop_min_epoch = self.recommender.config.min_train_epochs - self.current_epoch 
         self.steps_to_early_stop = max(steps_to_early_stop_metric, steps_to_early_stop_min_epoch)
-                
         if self.steps_to_early_stop <= 0:
             print(f"early stopped at epoch {self.current_epoch}")
             self.early_stop_flag = True
@@ -151,6 +158,8 @@ class ModelTrainer(object):
         if (val_loss < self.best_val_loss):
             self.best_val_loss = val_loss
             self.steps_loss_not_improved = 0
+            if self.recommender.config:
+                self.update_best_epoch()
 
     def try_update_best_val_metric(self, epoch_result: EpochResult):
         val_metric = epoch_result.val_result.val_metric
@@ -159,9 +168,13 @@ class ModelTrainer(object):
                             (not self.recommender.config.val_metric.less_is_better and val_metric > self.best_metric_val):
             self.steps_metric_not_improved = 0
             self.best_metric_val = val_metric
-            self.best_epoch = self.current_epoch
-            self.best_weights = self.recommender.model.get_weights()
-            self.time_to_converge = self.training_time()
+            if not self.recommender.config.validate_on_loss:
+                self.update_best_epoch()
+
+    def update_best_epoch(self):
+        self.best_epoch = self.current_epoch
+        self.best_weights = self.recommender.model.get_weights()
+        self.time_to_converge = self.training_time()
 
     def log(self, epoch_result: EpochResult):
         self.log_to_console(epoch_result)
@@ -173,11 +186,19 @@ class ModelTrainer(object):
         validation_result = epoch_result.val_result
         train_result = epoch_result.train_result
 
-        tf.summary.scalar(f"{config.val_metric.name}/val", validation_result.val_metric)
-        tf.summary.scalar(f"{config.val_metric.name}/train", validation_result.train_metric)
-        tf.summary.scalar(f"{config.val_metric.name}/train_val_diff", validation_result.train_metric - validation_result.val_metric)
-        tf.summary.scalar(f"{config.val_metric.name}/best_val", self.best_metric_val)
-        tf.summary.scalar(f"{config.val_metric.name}/steps_metric_not_improved", self.steps_metric_not_improved)
+        if not self.recommender.config.validate_on_loss:
+            tf.summary.scalar(f"{config.val_metric.name}/val", validation_result.val_metric)
+            tf.summary.scalar(f"{config.val_metric.name}/train", validation_result.train_metric)
+            tf.summary.scalar(f"{config.val_metric.name}/train_val_diff", validation_result.train_metric - validation_result.val_metric)
+            tf.summary.scalar(f"{config.val_metric.name}/best_val", self.best_metric_val)
+            tf.summary.scalar(f"{config.val_metric.name}/steps_metric_not_improved", self.steps_metric_not_improved)
+            for metric in config.extra_val_metrics:
+                tf.summary.scalar(f"{metric.get_name()}/train", validation_result.extra_train_metrics[metric.get_name()])
+                tf.summary.scalar(f"{metric.get_name()}/val", validation_result.extra_val_metrics[metric.get_name()])
+                tf.summary.scalar(f"{metric.get_name()}/train_val_diff", validation_result.extra_train_metrics[metric.get_name()]
+                                                                        - validation_result.extra_val_metrics[metric.get_name()])
+
+
         tf.summary.scalar(f"loss/train", train_result.training_loss)
         tf.summary.scalar(f"loss/val", validation_result.val_loss)
         tf.summary.scalar(f"loss/train_val_diff", (train_result.training_loss - validation_result.val_loss))
@@ -187,21 +208,18 @@ class ModelTrainer(object):
         tf.summary.scalar(f"time/trainig_time_per_batch", train_result.training_time/train_result.trained_batches)
         tf.summary.scalar(f"time/trainig_time_per_sample", train_result.training_time/train_result.trained_samples)
         tf.summary.scalar(f"time/epoch_validation_time", validation_result.validation_time)
-        
-        for metric in config.extra_val_metrics:
-            tf.summary.scalar(f"{metric.get_name()}/train", validation_result.extra_train_metrics[metric.get_name()])
-            tf.summary.scalar(f"{metric.get_name()}/val", validation_result.extra_val_metrics[metric.get_name()])
-            tf.summary.scalar(f"{metric.get_name()}/train_val_diff", validation_result.extra_train_metrics[metric.get_name()]
-                                                                    - validation_result.extra_val_metrics[metric.get_name()])
+
         self.recommender.model.log()
 
     def log_to_console(self, epoch_result: EpochResult):
         config = self.recommender.config
         validation_result = epoch_result.val_result
         train_result = epoch_result.train_result
-        print(f"\tval_{config.val_metric.name}: {validation_result.val_metric:.5f}")
-        print(f"\tbest_{config.val_metric.name}: {self.best_metric_val:.5f}")
-        print(f"\ttrain_{config.val_metric.name}: {validation_result.train_metric:.5f}")
+        if not self.recommender.config.validate_on_loss:
+            print(f"\tval_{config.val_metric.name}: {validation_result.val_metric:.5f}")
+            print(f"\tbest_{config.val_metric.name}: {self.best_metric_val:.5f}")
+            print(f"\ttrain_{config.val_metric.name}: {validation_result.train_metric:.5f}")
+
         print(f"\ttrain_loss: {train_result.training_loss}")
         print(f"\tval_loss: {validation_result.val_loss}")
         print(f"\tbest_val_loss: {self.best_val_loss}")
@@ -238,7 +256,7 @@ class ModelTrainer(object):
         for user_id in id_list:
             if user_id not in val_users:
                 result.append(self.recommender.user_actions[user_id])
-            else:
+            elif self.recommender.config.train_on_val_users:
                 result.append(self.recommender.user_actions[user_id][:-1])
         return result
 
@@ -302,12 +320,16 @@ class ModelTrainer(object):
             loss_val = tf.reduce_mean(self.recommender.config.loss(y_true, y_pred))
             val_loss_sum += loss_val
         val_loss = val_loss_sum / num_val_batches 
-
-        val_metric, extra_val_metrics = self.get_val_metrics(self.val_recommendation_requets, self.val_seen, self.val_ground_truth, callbacks=True)
-        train_metric, extra_train_metrics = self.get_val_metrics(self.train_sample_recommendation_requests, self.train_sample_seen, self.train_sample_ground_truth)
-        validation_time = time.time() - validation_start
-        return ValidationResult(val_loss, val_metric, extra_val_metrics,
-                                train_metric, extra_train_metrics, validation_time=validation_time)
+        
+        if not self.recommender.config.validate_on_loss:
+            val_metric, extra_val_metrics = self.get_val_metrics(self.val_recommendation_requets, self.val_seen, self.val_ground_truth, callbacks=True)
+            train_metric, extra_train_metrics = self.get_val_metrics(self.train_sample_recommendation_requests, self.train_sample_seen, self.train_sample_ground_truth)
+            validation_time = time.time() - validation_start
+            return ValidationResult(val_loss, validation_time, val_metric, validation_time, extra_val_metrics,
+                                    train_metric, extra_train_metrics)
+        else:
+            validation_time = time.time() - validation_start
+            return ValidationResult(val_loss, validation_time)
 
     def get_val_metrics(self, recommendation_requests, seen_items, ground_truth, callbacks=False):
         extra_recs = 0

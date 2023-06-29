@@ -13,7 +13,7 @@ from aprec.datasets.netflix import get_netflix_dataset
 from aprec.datasets.yelp import get_yelp_dataset
 from aprec.datasets.amazon import get_amazon_actions
 from aprec.datasets.mts_kion import get_mts_kion_dataset
-from aprec.datasets.dataset_utils import filter_cold_users, take_user_fraction 
+from aprec.datasets.dataset_utils import filter_cold_users, filter_popular_items, take_user_fraction 
 from aprec.utils.os_utils import mkdir_p_local
 
 class DatasetsRegister(object):
@@ -54,6 +54,11 @@ class DatasetsRegister(object):
         "ml-20m_warm5_fraction_0.01": lambda: take_user_fraction(DatasetsRegister.get_from_cache("ml-20m_warm5")(), 0.01), 
         "ml-20m_warm5_fraction_0.001": lambda: take_user_fraction(DatasetsRegister.get_from_cache("ml-20m_warm5")(), 0.001), 
         "netflix_fraction_0.001": lambda: take_user_fraction(DatasetsRegister.get_from_cache("netflix")(), 0.001), 
+
+
+        #small datasets for models testing
+        "ml-20m_50items": lambda: filter_popular_items(DatasetsRegister.get_from_cache("ml-20m")(), 50), 
+        "ml-20m_50items_fraction_0.01": lambda: take_user_fraction(filter_cold_users(filter_popular_items(DatasetsRegister.get_from_cache("ml-20m")(), 50), 5), 0.01),
     }
     
     @staticmethod
