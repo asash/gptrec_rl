@@ -71,6 +71,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
         mkdir_p(tensorboard_dir)
         tensorboard_writer = tf.summary.create_file_writer(tensorboard_dir)
         optimizer = tf.keras.optimizers.Adam(learning_rate=1e-4)
+        tune_seq_generator = self.tune_seq_generator()
         for step in range(1, self.max_tuning_steps + 1): 
             print("Tuning step", step)
             print("generating...")
@@ -79,7 +80,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
                 batch_ratios = []
                 batch_rewards = []
                 for i in tqdm.tqdm(range(self.tuning_batch_size),  ascii=True, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0, leave=True, ncols=70):
-                    ratio, reward = next(self.tune_seq_generator())
+                    internal_id, ratio, reward = next(tune_seq_generator)
                     batch_ratios.append(ratio)
                     batch_rewards.append(reward)
 
@@ -116,7 +117,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
         while True:
             all_user_ids = list(self.user_actions.keys())
             random.shuffle(all_user_ids)
-            for internal_user_id in self.user_actions:
+            for internal_user_id in all_user_ids:
                 if len(self.user_actions[internal_user_id]) == 0:
                     continue
                 #ignore val users
@@ -124,7 +125,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
                     continue
 
                 reward, ratio = self.get_ratio_reward(internal_user_id)
-                yield ratio, reward
+                yield internal_user_id, ratio, reward
 
     def get_ratio_reward(self, internal_user_id, greedy=False):
         sequence, ground_truth = self.get_tuning_sequence(internal_user_id)
