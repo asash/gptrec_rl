@@ -10,12 +10,7 @@ from aprec.evaluation.metrics.hit import HIT
 from aprec.evaluation.metrics.non_zero_scores import NonZeroScores
 from aprec.evaluation.split_actions import LeaveOneOut
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
-from aprec.recommenders.first_order_mc import FirstOrderMarkovChainRecommender
-from aprec.recommenders.sequential.generative_tuning_recommender import GenerativeTuningRecommender
-from aprec.recommenders.sequential.models.generative.gpt_rec_rl import RLGPT2RecConfig
-from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
-from aprec.recommenders.sequential.target_builders.dummy_builder import DummyTargetBuilder
-from aprec.recommenders.sequential.targetsplitters.id_splitter import IdSplitter
+
 
 USERS_FRACTIONS = [1.0]
 
@@ -33,6 +28,12 @@ SEQUENCE_LENGTH=200
 
 
 def generative_tuning_recommender():       
+        from aprec.recommenders.first_order_mc import FirstOrderMarkovChainRecommender
+        from aprec.recommenders.sequential.generative_tuning_recommender import GenerativeTuningRecommender
+        from aprec.recommenders.sequential.models.generative.gpt_rec_rl import RLGPT2RecConfig
+        from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
+        from aprec.recommenders.sequential.target_builders.dummy_builder import DummyTargetBuilder
+        from aprec.recommenders.sequential.targetsplitters.id_splitter import IdSplitter
         model_config = RLGPT2RecConfig(transformer_blocks=3, embedding_size=256, tokenizer='id', tokens_per_item=1, values_per_dim=3500, attention_heads=4)
         pre_training_recommender = lambda: FilterSeenRecommender(FirstOrderMarkovChainRecommender())
 
@@ -77,7 +78,6 @@ SPLIT_STRATEGY = LeaveOneOut(MAX_TEST_USERS)
 RECOMMENDERS = get_recommenders(filter_seen=True)
 
 if __name__ == "__main__":
-
     from aprec.tests.misc.test_configs import TestConfigs
     TestConfigs().validate_config(__file__)
 
