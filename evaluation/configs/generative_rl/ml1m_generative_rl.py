@@ -7,6 +7,7 @@ from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.evaluation.metrics.mrr import MRR
 from aprec.evaluation.metrics.map import MAP
 from aprec.evaluation.metrics.hit import HIT
+from aprec.evaluation.metrics.ndcgnorm import NDCGNorm
 from aprec.evaluation.metrics.non_zero_scores import NonZeroScores
 from aprec.evaluation.split_actions import LeaveOneOut
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
@@ -49,7 +50,10 @@ def generative_tuning_recommender():
                                                validate_on_loss=True
                                                )
         recommender = GenerativeTuningRecommender(recommender_config, pre_training_recommender,
-                                                  validate_every_steps=20, max_tuning_steps=8000, tuning_batch_size=32)
+                                                  validate_every_steps=20, max_tuning_steps=8000, 
+                                                  tuning_batch_size=32, 
+                                                  reward_metric=NDCGNorm(10),
+                                                  )
         return recommender
         
 
