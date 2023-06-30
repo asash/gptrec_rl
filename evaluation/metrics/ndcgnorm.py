@@ -9,8 +9,11 @@ class NDCGNorm(Metric):
         self.name = "ndcg@{}".format(k)
         self.regular_ndcg = NDCG(k)
         self.k = k
+        self.eps = 0.01
         
     def __call__(self, recommendations, actual_actions):
-        return (self.regular_ndcg(recommendations, actual_actions) - 0.5) * 2  
-
+        result = self.regular_ndcg(recommendations, actual_actions)
+        if result == 0:
+            result = -self.eps # Negative reward for PPO
+        return result
 
