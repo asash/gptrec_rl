@@ -36,7 +36,7 @@ def generative_tuning_recommender():
         from aprec.recommenders.sequential.target_builders.dummy_builder import DummyTargetBuilder
         from aprec.recommenders.sequential.targetsplitters.id_splitter import IdSplitter
         model_config = RLGPT2RecConfig(transformer_blocks=3, embedding_size=256, tokenizer='id', tokens_per_item=1, values_per_dim=3500, attention_heads=4)
-        pre_training_recommender = lambda: FilterSeenRecommender(LightFMRecommender())
+        pre_training_recommender = lambda: FilterSeenRecommender(LightFMRecommender(num_latent_components=256))
 
         recommender_config = SequentialRecommenderConfig(model_config, train_epochs=200, early_stop_epochs=200,
                                                batch_size=128,
