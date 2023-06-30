@@ -49,7 +49,7 @@ def generative_tuning_recommender():
                                                validate_on_loss=True
                                                )
         recommender = GenerativeTuningRecommender(recommender_config, pre_training_recommender,
-                                                  validate_every_steps=20, max_tuning_steps=8000, tuning_batch_size=64)
+                                                  validate_every_steps=20, max_tuning_steps=8000, tuning_batch_size=32)
         return recommender
         
 
