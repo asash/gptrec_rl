@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow as tf
 import tqdm
 from aprec.api.action import Action
-from aprec.evaluation.metrics.ndcg import NDCG
+from aprec.recommenders.sequential.models.generative.reward_metrics.ndcg_reward import NDCGReward
 from aprec.recommenders.recommender import Recommender
 from aprec.recommenders.sequential.models.generative.gpt_rec_rl import RLGPT2RecConfig, RLGPT2RecModel
 from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender
@@ -15,7 +15,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
     def __init__(self, config: SequentialRecommenderConfig, pre_train_recommender_factory,
                  gen_limit=10, 
                  filter_seen=True,
-                 clip_eps=0.2, reward_metric = NDCG(10), 
+                 clip_eps=0.2, reward_metric = NDCGReward(10), 
                  tuning_batch_size=8, 
                  max_tuning_steps = 1000,
                  validate_every_steps = 100
@@ -85,7 +85,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
                     batch_rewards.append(reward)
 
                 batch_ratios = tf.stack(batch_ratios, 0)
-                batch_rewards = tf.cast(tf.expand_dims(tf.stack(batch_rewards, 0), axis=-1), 'float32')
+                batch_rewards = tf.stack(batch_rewards, 0)
                 ratio_reward = batch_rewards * batch_ratios
                 clipped_batch_ratios = tf.clip_by_value(batch_ratios, 1-self.clip_eps, 1+self.clip_eps)
                 clipped_batch_ratio_reward = batch_rewards * clipped_batch_ratios

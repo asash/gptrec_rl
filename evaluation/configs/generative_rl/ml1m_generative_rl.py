@@ -52,8 +52,7 @@ def generative_tuning_recommender():
         recommender = GenerativeTuningRecommender(recommender_config, pre_training_recommender,
                                                   validate_every_steps=20, max_tuning_steps=8000, 
                                                   tuning_batch_size=32, 
-                                                  reward_metric=NDCGNorm(10),
-                                                  clip_eps=0.05,
+                                                  clip_eps=0.1,
                                                   )
         return recommender
         
