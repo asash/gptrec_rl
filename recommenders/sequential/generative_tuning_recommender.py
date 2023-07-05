@@ -33,6 +33,8 @@ class GenerativeTuningRecommender(SequentialRecommender):
         self.tuning_batch_size = tuning_batch_size
         self.max_tuning_steps = max_tuning_steps
         self.validate_every_steps = validate_every_steps
+        self.best_val_revard = float('-inf')
+        self.best_weights = None
 
     
     def add_action(self, action):
@@ -67,6 +69,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
         return [self.items.reverse_id(item_id) for ts, item_id in seq]
     
     def tune(self):
+        self.save_best_weights()
         tensorboard_dir = self.get_tensorboard_dir() 
         mkdir_p(tensorboard_dir)
         tensorboard_writer = tf.summary.create_file_writer(tensorboard_dir)
@@ -92,7 +95,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
                 ppo_loss = -tf.reduce_mean(tf.minimum(ratio_reward, clipped_batch_ratio_reward))
                 grads = tape.gradient(ppo_loss, self.model.trainable_variables)
                 optimizer.apply_gradients(zip(grads, self.model.trainable_variables))
-                mean_reward = tf.reduce_mean(batch_rewards)
+                mean_reward = tf.reduce_mean(tf.reduce_sum(batch_rewards, -1))
                 print(f"Step {step}. Mean reward", mean_reward.numpy())
                 with tensorboard_writer.as_default(step=step):
                     tf.summary.scalar('tuning_train/ppo_loss', ppo_loss)
@@ -100,6 +103,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
                     if step % self.validate_every_steps == 0:
                         self.validate(step)
                         tensorboard_writer.flush()
+        self.model.set_weights(self.best_weights)
 
     def validate(self, step):
         print("Validating...")
@@ -108,10 +112,26 @@ class GenerativeTuningRecommender(SequentialRecommender):
             internal_user_id = self.users.get_id(user)
             reward, ratio = self.get_ratio_reward(internal_user_id, greedy=True)
             rewards.append(reward)
-        mean_reward = tf.reduce_mean(rewards)
+        mean_reward = tf.reduce_mean(tf.reduce_sum(rewards, -1))
         print(f"Validation at {step}. Mean reward", mean_reward.numpy())
         tf.summary.scalar('tuning_val/mean_reward', mean_reward)
+        self.try_update_best_model(mean_reward, step)
 
+    def get_model_weights_path(self):
+        return self.get_model_dir() + '/best_model_weights.h5'
+        
+    def save_best_weights(self):
+        self.best_weights = self.model.save_weights(self.get_model_weights_path())
+        
+    #if mean reward improves, we save the model weights    
+    def try_update_best_model(self, mean_reward, step):
+        if mean_reward > self.best_val_revard:
+            self.best_val_revard = mean_reward
+            self.save_best_weights()
+            print(f"New best model at step {step}. Mean reward", mean_reward.numpy())
+            tf.summary.scalar('tuning_val/best_mean_reward', mean_reward)
+    
+        
     
     def tune_seq_generator(self):
         while True:
@@ -206,10 +226,12 @@ class GenerativeTuningRecommender(SequentialRecommender):
         return sequence
 
     def get_tuning_sequence(self, internal_user_id):
-        actions = self.user_actions[internal_user_id]
-        ground_truth = actions[-1][1]
+        all_actions = self.user_actions[internal_user_id]
+        gt_action_index = np.random.randint(len(all_actions))
+        ground_truth = all_actions[gt_action_index][1]
+        actions = all_actions[:gt_action_index]
         sep_item_id = self.items.get_id('<SEP>')
-        sequence = [action[1] for action in actions[:-1]]
+        sequence = [action[1] for action in actions]
         sequence.append(sep_item_id)
         return sequence, ground_truth 
 
