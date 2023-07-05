@@ -116,12 +116,9 @@ class GenerativeTuningRecommender(SequentialRecommender):
         print(f"Validation at {step}. Mean reward", mean_reward.numpy())
         tf.summary.scalar('tuning_val/mean_reward', mean_reward)
         self.try_update_best_model(mean_reward, step)
-
-    def get_model_weights_path(self):
-        return self.get_model_dir() + '/best_model_weights.h5'
         
     def save_best_weights(self):
-        self.best_weights = self.model.save_weights(self.get_model_weights_path())
+        self.best_weights = self.model.get_weights()
         
     #if mean reward improves, we save the model weights    
     def try_update_best_model(self, mean_reward, step):
