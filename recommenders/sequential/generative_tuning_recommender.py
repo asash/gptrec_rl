@@ -121,7 +121,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
                     policy_optimizer.apply_gradients(zip(policy_grads, self.model.trainable_variables))
 
                     mean_reward = tf.reduce_mean(tf.reduce_sum(batch_rewards, -1))
-                    print(f"Step {step}. Mean reward", mean_reward.numpy())
+                    print(f"Step {step}. Mean reward", mean_reward.numpy(), "ppo loss", ppo_loss.numpy(), "value loss", value_loss.numpy())
                     with tensorboard_writer.as_default(step=step):
                         tf.summary.scalar('tuning_train/ppo_loss', ppo_loss)
                         tf.summary.scalar('tuning_train/mean_reward', mean_reward)
