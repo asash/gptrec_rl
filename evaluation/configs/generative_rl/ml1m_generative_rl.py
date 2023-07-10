@@ -83,7 +83,7 @@ def generative_tuning_recommender():
                                                sequence_splitter=IdSplitter, 
                                                max_batches_per_epoch=100,
                                                targets_builder=DummyTargetBuilder,
-                                               use_keras_training=True,
+                                               use_keras_training=False,
                                                sequence_length=SEQUENCE_LENGTH,
                                                validate_on_loss=True
                                                )
