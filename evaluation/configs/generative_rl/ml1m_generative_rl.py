@@ -60,7 +60,7 @@ def gsasrec(num_samples=256, t=0.75, max_epochs=10000):
     return sasrec_style_model(model_config, 
             ShiftedSequenceSplitter,
             target_builder=lambda: PositivesSequenceTargetBuilder(SEQUENCE_LENGTH),
-            batch_size=128, 
+            batch_size=64, 
             max_epochs=max_epochs)
 
 
