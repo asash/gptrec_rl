@@ -326,7 +326,7 @@ class ModelTrainer(object):
             val_metric, extra_val_metrics = self.get_val_metrics(self.val_recommendation_requets, self.val_seen, self.val_ground_truth, callbacks=True)
             train_metric, extra_train_metrics = self.get_val_metrics(self.train_sample_recommendation_requests, self.train_sample_seen, self.train_sample_ground_truth)
             validation_time = time.time() - validation_start
-            return ValidationResult(val_loss, validation_time, val_metric, validation_time, extra_val_metrics,
+            return ValidationResult(val_loss, validation_time, val_metric, extra_val_metrics,
                                     train_metric, extra_train_metrics)
         else:
             validation_time = time.time() - validation_start
