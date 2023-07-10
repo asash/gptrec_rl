@@ -29,6 +29,40 @@ METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), 
 
 SEQUENCE_LENGTH=200
 
+def sasrec_style_model(model_config, sequence_splitter, 
+                target_builder,
+                max_epochs=10000, 
+                batch_size=1024,
+                ):
+    from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender
+    from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
+
+    config = SequentialRecommenderConfig(model_config,                       
+                                train_epochs=max_epochs,
+                                early_stop_epochs=200,
+                                batch_size=batch_size,
+                                max_batches_per_epoch=256,
+                                sequence_splitter=sequence_splitter, 
+                                targets_builder=target_builder, 
+                                use_keras_training=True,
+                                extra_val_metrics=EXTRA_VAL_METRICS, 
+                                sequence_length=SEQUENCE_LENGTH
+                                )
+    
+    return SequentialRecommender(config)
+
+def gsasrec(num_samples=256, t=0.75, max_epochs=10000):
+    from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecConfig
+    from aprec.recommenders.sequential.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
+    from aprec.recommenders.sequential.target_builders.positives_sequence_target_builder import PositivesSequenceTargetBuilder
+    model_config = SASRecConfig(vanilla=True, embedding_size=256, loss='bce', vanilla_num_negatives=num_samples, 
+                                vanilla_bce_t=t)
+    return sasrec_style_model(model_config, 
+            ShiftedSequenceSplitter,
+            target_builder=lambda: PositivesSequenceTargetBuilder(SEQUENCE_LENGTH),
+            batch_size=128, 
+            max_epochs=max_epochs)
+
 
 def generative_tuning_recommender():       
         from aprec.recommenders.sequential.generative_tuning_recommender import GenerativeTuningRecommender
@@ -36,10 +70,14 @@ def generative_tuning_recommender():
         from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
         from aprec.recommenders.sequential.target_builders.dummy_builder import DummyTargetBuilder
         from aprec.recommenders.sequential.targetsplitters.id_splitter import IdSplitter
-        model_config = RLGPT2RecConfig(transformer_blocks=3, embedding_size=256, tokenizer='id', tokens_per_item=1, values_per_dim=3500, attention_heads=4)
-        pre_training_recommender = lambda: FilterSeenRecommender(LightFMRecommender(num_latent_components=256))
+        from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecConfig
+        sasrec_config = SASRecConfig(vanilla=True, embedding_size=256, loss='bce', vanilla_num_negatives=256, 
+                                vanilla_bce_t=0.75)
 
-        recommender_config = SequentialRecommenderConfig(model_config, train_epochs=200, early_stop_epochs=200,
+        model_config = RLGPT2RecConfig(transformer_blocks=3, embedding_size=256, tokenizer='id', tokens_per_item=1, values_per_dim=3500, attention_heads=4)
+        pre_training_recommender = lambda: FilterSeenRecommender(gsasrec(256, 0.75,1))
+
+        recommender_config = SequentialRecommenderConfig(model_config, train_epochs=1, early_stop_epochs=200,
                                                batch_size=128,
                                                training_time_limit=200000,  
                                                sequence_splitter=IdSplitter, 
