@@ -1,3 +1,4 @@
+import gc
 import random
 import numpy as np
 import tensorflow as tf
@@ -66,6 +67,11 @@ class GenerativeTuningRecommender(SequentialRecommender):
                 action = Action(user_id=user, item_id=item_id, timestamp=current_timestamp)
                 self.add_action(action)
                 current_timestamp += 1
+
+        del self.pre_train_recommender
+        gc.collect()
+        tf.keras.backend.clear_session()
+
         super().rebuild_model()
         self.cleanup_pretraining_actions()
         self.tune()
