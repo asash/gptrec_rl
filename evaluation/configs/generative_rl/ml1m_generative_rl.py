@@ -75,7 +75,8 @@ def generative_tuning_recommender():
                                 vanilla_bce_t=0.75)
 
         model_config = RLGPT2RecConfig(transformer_blocks=3, embedding_size=256, tokenizer='id', tokens_per_item=1, values_per_dim=3500, attention_heads=4)
-        pre_training_recommender = lambda: FilterSeenRecommender(gsasrec(256, 0.75,1))
+        #pre_training_recommender = lambda: FilterSeenRecommender(gsasrec(256, 0.75,1))
+        pre_training_recommender = lambda: FilterSeenRecommender(TopRecommender())
 
         recommender_config = SequentialRecommenderConfig(model_config, train_epochs=1, early_stop_epochs=200,
                                                batch_size=128,
