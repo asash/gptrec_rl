@@ -51,7 +51,8 @@ class GenerativeTuningRecommender(SequentialRecommender):
                 item_id = self.items.reverse_id(internal_item_id)
                 self.pre_train_recommender.add_action(Action(user_id=user, item_id=item_id, timestamp=ts))
         self.pre_train_recommender.rebuild_model()
-        for user in self.users.straight:
+        print("generating pretraining sequences...")
+        for user in tqdm.tqdm(self.users.straight,ascii=True, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0, leave=True, ncols=70):
             internal_user_id = self.users.get_id(user)
             last_action = self.user_actions[internal_user_id][-1]
             self.user_actions[internal_user_id] = self.user_actions[internal_user_id][:-1]
