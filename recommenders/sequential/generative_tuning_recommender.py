@@ -1,5 +1,8 @@
+from collections import defaultdict
 import gc
+import io
 import random
+from matplotlib import pyplot as plt
 import numpy as np
 import tensorflow as tf
 import tqdm
@@ -11,7 +14,39 @@ from aprec.recommenders.sequential.sequential_recommender import SequentialRecom
 from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
 from aprec.utils.os_utils import mkdir_p
 
+class TrialResult(object):
+    def __init__(self, reward, ratio, seq, recs, gt_action) -> None:
+        self.reward = reward
+        self.ratio = ratio
+        self.seq = seq
+        self.recs = recs
+        self.gt_action = gt_action
+       
 
+def plot_to_image(func):
+  def wrapper(*args, **kwargs):
+        figure = func(*args, **kwargs)
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png')
+        plt.close(figure)
+        buf.seek(0)
+        image = tf.image.decode_png(buf.getvalue(), channels=4)
+        image = tf.expand_dims(image, 0)
+        return image
+  return wrapper
+
+@plot_to_image
+def plot_rewards_per_pos(rewards):
+    rewards = np.array(rewards)
+    fig =plt.figure(figsize=(4, 2.5))
+    ax = fig.add_subplot()
+    ax.violinplot(rewards, showmeans=True)
+    ax.set_xlabel("Position")
+    ax.set_ylabel("Reward")
+    ax.set_yscale('log')
+    return fig
+    
+ 
 class GenerativeTuningRecommender(SequentialRecommender):
     def __init__(self, config: SequentialRecommenderConfig, pre_train_recommender_factory,
                  gen_limit=10, 
@@ -20,8 +55,9 @@ class GenerativeTuningRecommender(SequentialRecommender):
                  tuning_batch_size=8, 
                  max_tuning_steps = 1000,
                  validate_every_steps = 100,
-                 gae_lambda = 0.7,
-                 gae_gamma = 0.8,
+                 gae_lambda = 0.95,
+                 gae_gamma = 0.99,
+                 tradeoff_monitoring_rewards = [],
                  ):
         if (type(config.model_config) != RLGPT2RecConfig):
             raise ValueError("GenerativeTuningRecommender only works with RLGPT2Rec model")
@@ -40,6 +76,8 @@ class GenerativeTuningRecommender(SequentialRecommender):
         self.best_weights = None
         self.gae_gamma = gae_gamma
         self.gae_lambda = gae_lambda
+        self.tradeoff_monitoring_rewards = tradeoff_monitoring_rewards
+        self.tradeoff_trajectiories = defaultdict(list)
 
     
     def add_action(self, action):
@@ -87,7 +125,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
         policy_optimizer = tf.keras.optimizers.Adam(learning_rate=1e-4)
         value_optimizer = tf.keras.optimizers.Adam(learning_rate=1e-4)
 
-        tune_seq_generator = self.tune_seq_generator()
+        trial_generator = self.trial_generator()
         self.value_model = RLGPT2RecModel.from_config(self.model.get_config())
         self.value_model.gpt.set_weights(self.model.gpt.get_weights())
         self.value_model.value_head = tf.keras.layers.Dense(1, name='value_head')
@@ -105,10 +143,10 @@ class GenerativeTuningRecommender(SequentialRecommender):
                     batch_rewards = []
                     batch_seqs = []
                     for i in tqdm.tqdm(range(self.tuning_batch_size),  ascii=True, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0, leave=True, ncols=70):
-                        ratio, reward, seq = next(tune_seq_generator)
-                        batch_ratios.append(ratio)
-                        batch_rewards.append(reward)
-                        batch_seqs.append(seq)
+                        trial_result = next(trial_generator)
+                        batch_ratios.append(trial_result.ratio)
+                        batch_rewards.append(trial_result.reward)
+                        batch_seqs.append(trial_result.seq)
                     batch_ratios = tf.stack(batch_ratios, 0)
                     batch_rewards = tf.stack(batch_rewards, 0)
                     batch_seqs = tf.stack(batch_seqs, 0)
@@ -133,7 +171,6 @@ class GenerativeTuningRecommender(SequentialRecommender):
                         tf.summary.scalar('tuning_train/ppo_loss', ppo_loss)
                         tf.summary.scalar('tuning_train/mean_reward', mean_reward)
                         tf.summary.scalar('tuning_train/value_loss', value_loss)
-
                         if step % self.validate_every_steps == 0:
                             self.validate(step)
                             tensorboard_writer.flush()
@@ -173,14 +210,58 @@ class GenerativeTuningRecommender(SequentialRecommender):
     def validate(self, step):
         print("Validating...")
         rewards = []
+        recs_gts = []
         for user in tqdm.tqdm(self.val_users,  ascii=True, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0, leave=True, ncols=70):
             internal_user_id = self.users.get_id(user)
-            reward, ratio, seq = self.get_ratio_reward(internal_user_id, greedy=True)
-            rewards.append(reward)
+            trial_result = self.get_trial_result(internal_user_id, greedy=True, train=False, validation=True)
+            rewards.append(trial_result.reward)
+            recs_gts.append((trial_result.recs, trial_result.gt_action))
         mean_reward = tf.reduce_mean(tf.reduce_sum(rewards, -1))
         print(f"Validation at {step}. Mean reward", mean_reward.numpy())
         tf.summary.scalar('tuning_val/mean_reward', mean_reward)
+        reward_distr = plot_rewards_per_pos(rewards)
+        tf.summary.image("tuning_val/reward_distr", reward_distr, step=step)
+
+        for (metric1, metric2) in self.tradeoff_monitoring_rewards:
+            tradeoff_name = f"{metric1.name}:::{metric2.name}"
+            m1_sum = 0
+            m2_sum = 0
+            rewards1 = []
+            rewards2 = []
+            for recs in recs_gts:
+                rewards1.append(metric1(recs[0], [recs[1]]))
+                rewards2.append(metric2(recs[0], [recs[1]]))
+                m1_sum += np.sum(rewards1[-1]) 
+                m2_sum += np.sum(rewards2[-1]) 
+            m1_sum /= len(recs_gts)
+            m2_sum /= len(recs_gts)
+            self.tradeoff_trajectiories[tradeoff_name].append((m1_sum, m2_sum))
+            trajectory = self.plot_tradeoff_trajectory(tradeoff_name)
+            print(f"{metric1.name}::{metric2.name} tradeoff at {step}. {metric1.name}", m1_sum, f"{metric2.name}", m2_sum)
+            tf.summary.image(f"tuning_val/{tradeoff_name}_tradeoff", trajectory, step=step)
+            metric1_distr = plot_rewards_per_pos(rewards1)
+            metric2_distr = plot_rewards_per_pos(rewards2)
+            tf.summary.image(f"tuning_val/{metric1.name}_distr", metric1_distr, step=step)
+            tf.summary.image(f"tuning_val/{metric2.name}_distr", metric2_distr, step=step)
         self.try_update_best_model(mean_reward, step)
+
+    @plot_to_image
+    def plot_tradeoff_trajectory(self, tradeoff_name):
+        trajectory = self.tradeoff_trajectiories[tradeoff_name]
+        metric1_values = [x[0] for x in trajectory]
+        metric2_values = [x[1] for x in trajectory]
+        fig = plt.figure(figsize=(6, 6))
+        ax = fig.add_subplot()
+        ax.plot(metric1_values, metric2_values)
+        metric1_name = tradeoff_name.split(':::')[0]
+        metric2_name = tradeoff_name.split(':::')[1]
+        ax.set_xlabel(metric1_name)
+        ax.set_ylabel(metric2_name)
+        ax.scatter(metric1_values[-1], metric2_values[-1], color='red', marker='x')
+        ax.grid()
+        return fig
+        
+        
         
     def save_best_weights(self):
         self.best_weights = self.model.get_weights()
@@ -193,9 +274,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
             print(f"New best model at step {step}. Mean reward", mean_reward.numpy())
             tf.summary.scalar('tuning_val/best_mean_reward', mean_reward)
     
-        
-    
-    def tune_seq_generator(self):
+    def trial_generator(self):
         while True:
             all_user_ids = list(self.user_actions.keys())
             random.shuffle(all_user_ids)
@@ -206,15 +285,15 @@ class GenerativeTuningRecommender(SequentialRecommender):
                 if self.users.reverse_id(internal_user_id) in self.val_users:
                     continue
 
-                reward, ratio, seq = self.get_ratio_reward(internal_user_id)
-                yield ratio, reward, seq
+                trial_result = self.get_trial_result(internal_user_id, greedy=False, train=True, validation=False)
+                yield trial_result 
 
-    def get_ratio_reward(self, internal_user_id, greedy=False):
-        sequence, ground_truth = self.get_tuning_sequence(internal_user_id)
+    def get_trial_result(self, internal_user_id, greedy=False, train=True, validation=False):
+        sequence, ground_truth = self.get_tuning_sequence(internal_user_id, validation)
         gt_action = Action(user_id=self.users.reverse_id(internal_user_id), item_id=self.items.reverse_id(ground_truth), timestamp=0)
                 
         sep_item_id = self.items.get_id('<SEP>')
-        recommendations, seq_logprob, seq = self.generate(sequence, self.filter_seen, sep_item_id, greedy=greedy)
+        recommendations, seq_logprob, seq = self.generate(sequence, self.filter_seen, sep_item_id, greedy=greedy, train=train)
 
         recs = [] 
         for i in range(len(recommendations)):
@@ -223,7 +302,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
             recs.append((item_id, score))
         reward = self.reward_metric(recs, [gt_action])
         ratio = self.prob_ratio(seq_logprob)
-        return reward,ratio,seq
+        return TrialResult(reward=reward, ratio=ratio, seq=seq, recs=recs, gt_action=gt_action)
 
     #it always return one, but we are interested in gradiets, not in actual value
     def prob_ratio(self, logprob_tensor):
@@ -235,7 +314,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
         internal_user_id = self.users.get_id(user_id)
         seq = self.get_pred_sequence(internal_user_id)
         sep_item_id = self.items.get_id('<SEP>')
-        generated_seq, seq_logprob, seq = self.generate(seq, self.filter_seen, sep_item_id, greedy=True)
+        generated_seq, seq_logprob, seq = self.generate(seq, self.filter_seen, sep_item_id, greedy=True, train=False)
 
         recs = [] 
         for i in range(len(generated_seq)):
@@ -250,7 +329,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
             results.append(self.recommend(user_id, limit, features))
         return results
    
-    def generate(self, input_seq, filter_seen, sep_item_id, greedy=False):
+    def generate(self, input_seq, filter_seen, sep_item_id, greedy=False, train=True):
         model_actions = [(0, action) for action in input_seq]
         mask = np.zeros([self.model.tokenizer.vocab_size+1], dtype='float32')
         mask[sep_item_id] = 1.0
@@ -264,7 +343,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
             seq = self.config.pred_history_vectorizer(model_actions) 
             tokens = self.model.tokenizer(seq, 1, self.model.data_parameters.sequence_length)
             attention_mask = tf.cast((tokens != -100), 'float32')
-            next_token_logits = self.model.gpt(seq, attention_mask=attention_mask).logits[-1, :] 
+            next_token_logits = self.model.gpt(seq, attention_mask=attention_mask, training=train).logits[-1, :] 
             mask_score = min(tf.reduce_min(next_token_logits), 0) - 1e6 
             masked_logits = tf.where(mask, mask_score, next_token_logits) 
             sep_token_id = self.items.get_id('<SEP>')
@@ -288,9 +367,13 @@ class GenerativeTuningRecommender(SequentialRecommender):
         sequence.append(sep_item_id)
         return sequence
 
-    def get_tuning_sequence(self, internal_user_id):
+    def get_tuning_sequence(self, internal_user_id, validation):
         all_actions = self.user_actions[internal_user_id]
-        gt_action_index = np.random.randint(len(all_actions))
+        if validation:
+            gt_action_index = len(all_actions) - 1
+        else:
+            gt_action_index = np.random.randint(len(all_actions))
+
         ground_truth = all_actions[gt_action_index][1]
         actions = all_actions[:gt_action_index]
         sep_item_id = self.items.get_id('<SEP>')
@@ -303,11 +386,6 @@ class GenerativeTuningRecommender(SequentialRecommender):
             self.user_actions[internal_id] = self.user_actions[internal_id][:-self.gen_limit-1]
             self.user_actions[internal_id].append(self.last_action_hold_out[internal_id])
 
-            
-
-
-        
-        
     def set_val_users(self, val_users):
         self.pre_train_recommender.set_val_users(val_users)
         super().set_val_users(val_users)
