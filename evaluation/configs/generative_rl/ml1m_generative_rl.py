@@ -96,6 +96,7 @@ def generative_tuning_recommender():
                                                   tuning_batch_size=16, 
                                                   clip_eps=0.1,
                                                   reward_metric=WeightedSumReward([NDCGReward(10), ILDReward(get_genre_dict())], [1, 0.05]),
+                                                  tradeoff_monitoring_rewards=[NDCGReward(10), ILDReward(get_genre_dict())],
                                                   )
         return recommender
         
