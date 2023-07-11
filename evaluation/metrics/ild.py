@@ -11,6 +11,6 @@ class ILD(Metric):
 
     def __call__(self, recommendations, actual):
         ild_reward = self.ild_reward_metric(recommendations, actual)
-        return np.sum(ild_reward)
+        return float(np.sum(ild_reward))
 
         

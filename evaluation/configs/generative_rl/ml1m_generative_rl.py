@@ -12,6 +12,7 @@ from aprec.evaluation.metrics.hit import HIT
 from aprec.evaluation.metrics.non_zero_scores import NonZeroScores
 from aprec.evaluation.split_actions import LeaveOneOut
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
+from aprec.recommenders.lightfm import LightFMRecommender
 from aprec.recommenders.sequential.models.generative.reward_metrics.ild_reward import ILDReward
 from aprec.recommenders.sequential.models.generative.reward_metrics.ndcg_reward import NDCGReward
 from aprec.recommenders.sequential.models.generative.reward_metrics.weighted_sum_reward import WeightedSumReward
@@ -78,10 +79,9 @@ def generative_tuning_recommender():
                                 vanilla_bce_t=0.75)
 
         model_config = RLGPT2RecConfig(transformer_blocks=3, embedding_size=256, tokenizer='id', tokens_per_item=1, values_per_dim=3500, attention_heads=4)
-        #pre_training_recommender = lambda: FilterSeenRecommender(gsasrec(256, 0.75,1))
-        pre_training_recommender = lambda: FilterSeenRecommender(TopRecommender())
+        pre_training_recommender = lambda: FilterSeenRecommender(LightFMRecommender(256))
 
-        recommender_config = SequentialRecommenderConfig(model_config, train_epochs=1, early_stop_epochs=200,
+        recommender_config = SequentialRecommenderConfig(model_config, train_epochs=200, early_stop_epochs=200,
                                                batch_size=128,
                                                training_time_limit=200000,  
                                                sequence_splitter=IdSplitter, 
@@ -92,7 +92,7 @@ def generative_tuning_recommender():
                                                validate_on_loss=True
                                                )
         recommender = GenerativeTuningRecommender(recommender_config, pre_training_recommender,
-                                                  validate_every_steps=2, max_tuning_steps=4, 
+                                                  validate_every_steps=20, max_tuning_steps=32000, 
                                                   tuning_batch_size=16, 
                                                   clip_eps=0.1,
                                                   reward_metric=WeightedSumReward([NDCGReward(10), ILDReward(get_genre_dict())], [1, 0.05]),
