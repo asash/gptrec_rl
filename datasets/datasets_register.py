@@ -13,6 +13,7 @@ from aprec.datasets.netflix import get_netflix_dataset
 from aprec.datasets.yelp import get_yelp_dataset
 from aprec.datasets.amazon import get_amazon_actions
 from aprec.datasets.mts_kion import get_mts_kion_dataset
+from aprec.datasets.movielens1m import reproduce_ber4rec_preprocessing
 from aprec.datasets.dataset_utils import filter_cold_users, filter_popular_items, take_user_fraction 
 from aprec.utils.os_utils import mkdir_p_local
 
@@ -34,6 +35,8 @@ class DatasetsRegister(object):
         "yelp": get_yelp_dataset,
         "netflix": get_netflix_dataset,
         "Amazon.Books": lambda: get_amazon_actions("books"),
+
+        "ml1m_items_with5users": reproduce_ber4rec_preprocessing,
 
         "ml-20m_warm5": lambda: filter_cold_users(get_movielens20m_actions(min_rating=0.0), 5), 
         "booking_warm5": lambda: filter_cold_users(get_booking_dataset(unix_timestamps=True, mark_control=False)[0], 5), 
@@ -58,6 +61,8 @@ class DatasetsRegister(object):
 
         #small datasets for models testing
         "ml-20m_50items": lambda: filter_popular_items(DatasetsRegister.get_from_cache("ml-20m")(), 50), 
+        "ml-1m_50items_warm_users": lambda: filter_cold_users(filter_popular_items(DatasetsRegister.get_from_cache("ml1m_items_with5users")(), 50),5),
+        "ml-1m_50items_fraction_0.2": lambda: take_user_fraction(filter_cold_users(filter_popular_items(DatasetsRegister.get_from_cache("ml1m_items_with5users")(), 50),5),0.2),
         "ml-20m_50items_fraction_0.01": lambda: take_user_fraction(filter_cold_users(filter_popular_items(DatasetsRegister.get_from_cache("ml-20m")(), 50), 5), 0.01),
     }
     

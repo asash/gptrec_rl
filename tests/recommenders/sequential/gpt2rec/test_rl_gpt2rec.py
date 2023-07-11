@@ -1,7 +1,12 @@
 import os
 import unittest
+from aprec.datasets.movielens1m import get_genre_dict, get_movies_catalog
 from aprec.recommenders.sequential.generative_tuning_recommender import GenerativeTuningRecommender
 from aprec.datasets.datasets_register import DatasetsRegister
+from aprec.recommenders.sequential.models.generative.reward_metrics.ild_reward import ILDReward
+from aprec.recommenders.sequential.models.generative.reward_metrics.ndcg_reward import NDCGReward
+from aprec.recommenders.sequential.models.generative.reward_metrics.weighted_sum_reward import WeightedSumReward
+
 
 from aprec.recommenders.top_recommender import TopRecommender
 
@@ -14,16 +19,15 @@ class TestRLGptRec(unittest.TestCase):
 
     def test_RLGPTRec(self):
         from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender
-        from aprec.datasets.movielens20m import get_movielens20m_actions, get_movies_catalog
         from aprec.recommenders.sequential.targetsplitters.id_splitter import IdSplitter
         from aprec.recommenders.sequential.target_builders.dummy_builder import DummyTargetBuilder
         from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
         from aprec.recommenders.sequential.models.generative.gpt_rec_rl import RLGPT2RecConfig
         from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
-        from aprec.utils.generator_limit import generator_limit
 
-        USER_ID = '4493'
-        val_users = ['52345', '39828', '42989', '84704', '26479', '9911', '67788', '120329', '42797', '28082']
+        USER_ID = '22'
+        catalog = get_movies_catalog()
+        val_users = ['5112', '2970', '3159', '3345', '2557', '1777', '4111', '3205', '4380', '5508']
         model_config = RLGPT2RecConfig(transformer_blocks=3, embedding_size=64, tokenizer='id', tokens_per_item=1, values_per_dim=55, attention_heads=4)
         pre_training_recommender = lambda: TopRecommender()
 
@@ -39,18 +43,22 @@ class TestRLGptRec(unittest.TestCase):
                                                )
         
         
-        recommender = GenerativeTuningRecommender(recommender_config, pre_training_recommender, validate_every_steps=2, max_tuning_steps=10)
+        recommender = GenerativeTuningRecommender(recommender_config, pre_training_recommender,
+                                                  validate_every_steps=2,
+                                                  max_tuning_steps=10,
+                                                  reward_metric=WeightedSumReward([NDCGReward(10), ILDReward(get_genre_dict())], [1, 0.05]),
+                                                  tradeoff_monitoring_rewards = [(NDCGReward(10), ILDReward(get_genre_dict()))]
+                                                  )
 
         recommender.set_val_users(val_users)
         recommender = FilterSeenRecommender(recommender)
-        for action in DatasetsRegister()['ml-20m_50items_fraction_0.01']():
+        for action in DatasetsRegister()['ml-1m_50items_fraction_0.2']():
             recommender.add_action(action)
         recommender.rebuild_model()
         recs = recommender.recommend(USER_ID, 10)
-        catalog = get_movies_catalog()
         for rec in recs:
             print(catalog.get_item(rec[0]), "\t", rec[1])
-        batch = [('52345', None), ('39828', None)]
+        batch = [('6002', None), ('2591', None)]
         recommender.recommend_batch(batch, limit=10)
 
 if __name__ == "__main__":

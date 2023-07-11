@@ -1,4 +1,5 @@
 import random
+from aprec.datasets.movielens1m import get_genre_dict
 
 from aprec.evaluation.metrics.entropy import Entropy
 from aprec.evaluation.metrics.highest_score import HighestScore
@@ -7,11 +8,12 @@ from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.evaluation.metrics.mrr import MRR
 from aprec.evaluation.metrics.map import MAP
 from aprec.evaluation.metrics.hit import HIT
-from aprec.evaluation.metrics.ndcgnorm import NDCGNorm
 from aprec.evaluation.metrics.non_zero_scores import NonZeroScores
 from aprec.evaluation.split_actions import LeaveOneOut
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
-from aprec.recommenders.lightfm import LightFMRecommender
+from aprec.recommenders.sequential.models.generative.reward_metrics.ild_reward import ILDReward
+from aprec.recommenders.sequential.models.generative.reward_metrics.ndcg_reward import NDCGReward
+from aprec.recommenders.sequential.models.generative.reward_metrics.weighted_sum_reward import WeightedSumReward
 from aprec.recommenders.top_recommender import TopRecommender
 
 
@@ -89,9 +91,10 @@ def generative_tuning_recommender():
                                                validate_on_loss=True
                                                )
         recommender = GenerativeTuningRecommender(recommender_config, pre_training_recommender,
-                                                  validate_every_steps=20, max_tuning_steps=32000, 
+                                                  validate_every_steps=2, max_tuning_steps=32000, 
                                                   tuning_batch_size=16, 
                                                   clip_eps=0.1,
+                                                  reward_metric=WeightedSumReward([NDCGReward(10), ILDReward(get_genre_dict())], [1, 0.05]),
                                                   )
         return recommender
         
@@ -116,7 +119,7 @@ def get_recommenders(filter_seen: bool):
             result[recommender_name] = recommenders[recommender_name]
     return result
 
-DATASET = "BERT4rec.ml-1m"
+DATASET = "ml1m_items_with5users"
 N_VAL_USERS=128
 MAX_TEST_USERS=6040
 SPLIT_STRATEGY = LeaveOneOut(MAX_TEST_USERS)

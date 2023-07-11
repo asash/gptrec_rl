@@ -1,5 +1,7 @@
 import os
 import logging
+from aprec.api.catalog import Catalog
+from aprec.api.item import Item
 
 from aprec.utils.os_utils import get_dir, console_logging, shell
 from aprec.api.action import Action
@@ -14,6 +16,7 @@ MOVIELENS_FILE = "movielens.zip"
 MOVIELENS_FILE_ABSPATH = os.path.join(get_dir(), MOVIELENS_DIR, MOVIELENS_FILE)
 MOVIELENS_DIR_ABSPATH = os.path.join(get_dir(), MOVIELENS_DIR)
 RATINGS_FILE = os.path.join(MOVIELENS_DIR_ABSPATH, 'ratings.dat')
+MOVIES_FILE = os.path.join(MOVIELENS_DIR_ABSPATH, 'movies.dat')
 
 
 def extract_movielens_dataset():
@@ -34,6 +37,17 @@ def prepare_data():
         download_file(MOVIELENS_BACKUP_URL,  MOVIELENS_FILE, MOVIELENS_DIR)
         
     extract_movielens_dataset()
+
+
+def get_genre_dict():
+    prepare_data()
+    genre_dict = {}
+    raw_data = open(MOVIES_FILE, 'rb').read()
+    raw_data = raw_data.decode('latin-1')
+    for line in raw_data.rstrip("\n").split('\n'):
+        movie_id, title, genres = line.strip().split('::')
+        genre_dict[movie_id] = genres.split('|')
+    return genre_dict
 
 
 def get_movielens1m_actions(min_rating=0.0):
@@ -63,7 +77,17 @@ def reproduce_ber4rec_preprocessing():
     actions = list(filter(lambda action: action.item_id in items_filter, all_actions))
     return actions
         
-    
+def get_movies_catalog():
+    prepare_data()
+    catalog = Catalog()  
+    raw_data = open(MOVIES_FILE, 'rb').read()
+    raw_data = raw_data.decode('latin-1')
+    for line in raw_data.rstrip("\n").split('\n'):
+        movie_id, title, genres_raw = line.strip().split('::')
+        genres = genres_raw.split('|')
+        item = Item(movie_id).with_title(title).with_tags(genres)
+        catalog.add_item(item)
+    return catalog 
     
 if __name__ == "__main__":
     console_logging()
