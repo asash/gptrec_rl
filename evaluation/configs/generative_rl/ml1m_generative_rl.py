@@ -3,6 +3,7 @@ from aprec.datasets.movielens1m import get_genre_dict
 
 from aprec.evaluation.metrics.entropy import Entropy
 from aprec.evaluation.metrics.highest_score import HighestScore
+from aprec.evaluation.metrics.ild import ILD
 from aprec.evaluation.metrics.model_confidence import Confidence
 from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.evaluation.metrics.mrr import MRR
@@ -26,7 +27,7 @@ EXTRA_VAL_METRICS = [NDCG(10), HighestScore(), NDCG(40), HIT(1), MRR(),
                      NonZeroScores(),
                      HIT(10)]
 
-METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
+METRICS = [HIT(1), HIT(10), NDCG(10), ILD(get_genre_dict()) ]
 #TARGET_ITEMS_SAMPLER = PopTargetItemsWithReplacementSampler(101)
 
 SEQUENCE_LENGTH=200
@@ -91,7 +92,7 @@ def generative_tuning_recommender():
                                                validate_on_loss=True
                                                )
         recommender = GenerativeTuningRecommender(recommender_config, pre_training_recommender,
-                                                  validate_every_steps=2, max_tuning_steps=32000, 
+                                                  validate_every_steps=2, max_tuning_steps=4, 
                                                   tuning_batch_size=16, 
                                                   clip_eps=0.1,
                                                   reward_metric=WeightedSumReward([NDCGReward(10), ILDReward(get_genre_dict())], [1, 0.05]),
