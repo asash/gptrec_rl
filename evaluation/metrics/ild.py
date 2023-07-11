@@ -1,8 +1,9 @@
 import numpy as np
+from prometheus_client import Metric
 from aprec.recommenders.sequential.models.generative.reward_metrics.ild_reward import ILDReward
 
 
-def ILD(Metric):
+class ILD(Metric):
     def __init__(self, categories_dict):
         self.name = "ILD"
         self.less_is_better = False
