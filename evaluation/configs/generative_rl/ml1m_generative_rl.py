@@ -55,28 +55,14 @@ def sasrec_style_model(model_config, sequence_splitter,
     
     return SequentialRecommender(config)
 
-def gsasrec(num_samples=256, t=0.75, max_epochs=10000):
-    from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecConfig
-    from aprec.recommenders.sequential.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
-    from aprec.recommenders.sequential.target_builders.positives_sequence_target_builder import PositivesSequenceTargetBuilder
-    model_config = SASRecConfig(vanilla=True, embedding_size=256, loss='bce', vanilla_num_negatives=num_samples, 
-                                vanilla_bce_t=t)
-    return sasrec_style_model(model_config, 
-            ShiftedSequenceSplitter,
-            target_builder=lambda: PositivesSequenceTargetBuilder(SEQUENCE_LENGTH),
-            batch_size=64, 
-            max_epochs=max_epochs)
-
-
-def generative_tuning_recommender():       
+def generative_tuning_recommender(ild_lambda):       
         from aprec.recommenders.sequential.generative_tuning_recommender import GenerativeTuningRecommender
         from aprec.recommenders.sequential.models.generative.gpt_rec_rl import RLGPT2RecConfig
         from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
         from aprec.recommenders.sequential.target_builders.dummy_builder import DummyTargetBuilder
         from aprec.recommenders.sequential.targetsplitters.id_splitter import IdSplitter
         from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecConfig
-        sasrec_config = SASRecConfig(vanilla=True, embedding_size=256, loss='bce', vanilla_num_negatives=256, 
-                                vanilla_bce_t=0.75)
+
 
         model_config = RLGPT2RecConfig(transformer_blocks=3, embedding_size=256, tokenizer='id', tokens_per_item=1, values_per_dim=3500, attention_heads=4)
         pre_training_recommender = lambda: FilterSeenRecommender(LightFMRecommender(256))
@@ -95,14 +81,18 @@ def generative_tuning_recommender():
                                                   validate_every_steps=20, max_tuning_steps=32000, 
                                                   tuning_batch_size=16, 
                                                   clip_eps=0.1,
-                                                  reward_metric=WeightedSumReward([NDCGReward(10), ILDReward(get_genre_dict())], [1, 0.05]),
+                                                  reward_metric=WeightedSumReward([NDCGReward(10), ILDReward(get_genre_dict())], [1, ild_lambda]),
                                                   tradeoff_monitoring_rewards=[(NDCGReward(10), ILDReward(get_genre_dict()))],
                                                   )
         return recommender
         
 
 recommenders = {
-    "generative_tuning_recommender": generative_tuning_recommender
+    "generative_tuning_recommender_lambda:0": lambda: generative_tuning_recommender(ild_lambda=0),
+    "generative_tuning_recommender_lambda:0.01": lambda: generative_tuning_recommender(ild_lambda=0.01),
+    "generative_tuning_recommender_lambda:0.05": lambda: generative_tuning_recommender(ild_lambda=0.05),
+    "generative_tuning_recommender_lambda:0.2": lambda: generative_tuning_recommender(ild_lambda=0.2),
+    "generative_tuning_recommender_lambda:1": lambda: generative_tuning_recommender(ild_lambda=1)
 } 
 
 r_list = list(recommenders.items())

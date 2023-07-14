@@ -1,5 +1,5 @@
 import numpy as np
-from prometheus_client import Metric
+from aprec.evaluation.metrics.metric import Metric
 from aprec.recommenders.sequential.models.generative.reward_metrics.ild_reward import ILDReward
 
 

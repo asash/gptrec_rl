@@ -3,6 +3,7 @@ import gc
 import io
 import random
 from matplotlib import pyplot as plt
+
 import numpy as np
 import tensorflow as tf
 import tqdm
@@ -248,20 +249,44 @@ class GenerativeTuningRecommender(SequentialRecommender):
     @plot_to_image
     def plot_tradeoff_trajectory(self, tradeoff_name):
         trajectory = self.tradeoff_trajectiories[tradeoff_name]
+        n = len(trajectory)
+        indices = list(range(n))  # Original indices
+        
+        # Ensure the trajectory has at most 1000 points while preserving the first and last point
+        if n > 1000:
+            step = n // 1000
+            trajectory = [trajectory[i] for i in range(0, n, step)]
+            indices = [indices[i] for i in range(0, n, step)]
+            if trajectory[-1] != trajectory[n-1]:
+                trajectory.append(trajectory[n-1])
+                indices.append(n-1)
+        
         metric1_values = [x[0] for x in trajectory]
         metric2_values = [x[1] for x in trajectory]
-        fig = plt.figure(figsize=(6, 6))
-        ax = fig.add_subplot()
-        ax.plot(metric1_values, metric2_values)
+        
+        # Create a color map from dark green to red
+        cmap = plt.cm.RdYlGn_r
+
+        fig, ax = plt.subplots(figsize=(8, 6))
+
+        # Create a scatter plot instead of a line plot
+        scatter = ax.scatter(metric1_values, metric2_values, c=indices, cmap=cmap, s=10)
+
+        # Increase size of the last point and mark it in pure red
+        ax.scatter(metric1_values[-1], metric2_values[-1], color='red', marker='o', s=100)
+
         metric1_name = tradeoff_name.split(':::')[0]
         metric2_name = tradeoff_name.split(':::')[1]
         ax.set_xlabel(metric1_name)
         ax.set_ylabel(metric2_name)
-        ax.scatter(metric1_values[-1], metric2_values[-1], color='red', marker='x')
+        
+        # Add a colorbar
+        cbar = plt.colorbar(scatter, ax=ax)
+        cbar.set_label('Step in trajectory', rotation=270, labelpad=15)
+        
         ax.grid()
         return fig
-        
-        
+            
         
     def save_best_weights(self):
         self.best_weights = self.model.get_weights()

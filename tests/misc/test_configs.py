@@ -55,7 +55,7 @@ class TestConfigs(unittest.TestCase):
         self.assertTrue(isinstance(config.SPLIT_STRATEGY, ActionsSplitter), f"Split strategy has wrong type: f{type(config.SPLIT_STRATEGY)}")
         self.assertTrue(len(config.METRICS) > 0)
         for metric in config.METRICS:
-            self.assertTrue(isinstance(metric, Metric))
+            self.assertTrue(isinstance(metric, Metric), f"{metric} has wrong type: {type(metric)}. Should be Metric")
 
         for fraction in config.USERS_FRACTIONS:
             self.assertTrue(isinstance(fraction, (float, int)))
