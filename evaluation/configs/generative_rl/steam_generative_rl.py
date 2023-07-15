@@ -2,17 +2,19 @@ import random
 
 from aprec.evaluation.metrics.entropy import Entropy
 from aprec.evaluation.metrics.highest_score import HighestScore
+from aprec.evaluation.metrics.ild import ILD
 from aprec.evaluation.metrics.model_confidence import Confidence
 from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.evaluation.metrics.mrr import MRR
-from aprec.evaluation.metrics.map import MAP
 from aprec.evaluation.metrics.hit import HIT
-from aprec.evaluation.metrics.ndcgnorm import NDCGNorm
 from aprec.evaluation.metrics.non_zero_scores import NonZeroScores
 from aprec.evaluation.split_actions import LeaveOneOut
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.recommenders.lightfm import LightFMRecommender
-from aprec.recommenders.top_recommender import TopRecommender
+from aprec.recommenders.sequential.models.generative.reward_metrics.ild_reward import ILDReward
+from aprec.recommenders.sequential.models.generative.reward_metrics.ndcg_reward import NDCGReward
+from aprec.recommenders.sequential.models.generative.reward_metrics.weighted_sum_reward import WeightedSumReward
+from aprec.datasets.steam import get_genres_steam_deduped_1000items_warm_users
 
 
 USERS_FRACTIONS = [1.0]
@@ -24,20 +26,44 @@ EXTRA_VAL_METRICS = [NDCG(10), HighestScore(), NDCG(40), HIT(1), MRR(),
                      NonZeroScores(),
                      HIT(10)]
 
-METRICS = [HIT(1), HIT(5), HIT(10), NDCG(5), NDCG(10), MRR(), HIT(4), NDCG(40), MAP(10)]
+METRICS = [HIT(1), HIT(10), NDCG(10), ILD(get_genres_steam_deduped_1000items_warm_users()) ]
 #TARGET_ITEMS_SAMPLER = PopTargetItemsWithReplacementSampler(101)
 
-SEQUENCE_LENGTH=200
+SEQUENCE_LENGTH=50
 
+def sasrec_style_model(model_config, sequence_splitter, 
+                target_builder,
+                max_epochs=10000, 
+                batch_size=1024,
+                ):
+    from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender
+    from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
 
-def generative_tuning_recommender():       
+    config = SequentialRecommenderConfig(model_config,                       
+                                train_epochs=max_epochs,
+                                early_stop_epochs=200,
+                                batch_size=batch_size,
+                                max_batches_per_epoch=256,
+                                sequence_splitter=sequence_splitter, 
+                                targets_builder=target_builder, 
+                                use_keras_training=True,
+                                extra_val_metrics=EXTRA_VAL_METRICS, 
+                                sequence_length=SEQUENCE_LENGTH
+                                )
+    
+    return SequentialRecommender(config)
+
+def generative_tuning_recommender(ild_lambda):       
         from aprec.recommenders.sequential.generative_tuning_recommender import GenerativeTuningRecommender
         from aprec.recommenders.sequential.models.generative.gpt_rec_rl import RLGPT2RecConfig
         from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
         from aprec.recommenders.sequential.target_builders.dummy_builder import DummyTargetBuilder
         from aprec.recommenders.sequential.targetsplitters.id_splitter import IdSplitter
-        model_config = RLGPT2RecConfig(transformer_blocks=3, embedding_size=256, tokenizer='id', tokens_per_item=1, values_per_dim=3500, attention_heads=4)
-        pre_training_recommender = lambda: FilterSeenRecommender(LightFMRecommender(num_latent_components=256))
+        from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecConfig
+
+
+        model_config = RLGPT2RecConfig(transformer_blocks=3, embedding_size=256, tokenizer='id', tokens_per_item=1, values_per_dim=1050, attention_heads=4)
+        pre_training_recommender = lambda: FilterSeenRecommender(LightFMRecommender(256))
 
         recommender_config = SequentialRecommenderConfig(model_config, train_epochs=200, early_stop_epochs=200,
                                                batch_size=128,
@@ -45,20 +71,26 @@ def generative_tuning_recommender():
                                                sequence_splitter=IdSplitter, 
                                                max_batches_per_epoch=100,
                                                targets_builder=DummyTargetBuilder,
-                                               use_keras_training=True,
+                                               use_keras_training=False,
                                                sequence_length=SEQUENCE_LENGTH,
                                                validate_on_loss=True
                                                )
         recommender = GenerativeTuningRecommender(recommender_config, pre_training_recommender,
-                                                  validate_every_steps=20, max_tuning_steps=8000, 
-                                                  tuning_batch_size=32, 
+                                                  validate_every_steps=20, max_tuning_steps=32000, 
+                                                  tuning_batch_size=16, 
                                                   clip_eps=0.1,
+                                                  reward_metric=WeightedSumReward([NDCGReward(10), ILDReward(get_genres_steam_deduped_1000items_warm_users())], [1, ild_lambda]),
+                                                  tradeoff_monitoring_rewards=[(NDCGReward(10), ILDReward(get_genres_steam_deduped_1000items_warm_users()))],
                                                   )
         return recommender
         
 
 recommenders = {
-    "generative_tuning_recommender": generative_tuning_recommender
+    "generative_tuning_recommender_lambda:0": lambda: generative_tuning_recommender(ild_lambda=0),
+    "generative_tuning_recommender_lambda:0.01": lambda: generative_tuning_recommender(ild_lambda=0.01),
+    "generative_tuning_recommender_lambda:0.05": lambda: generative_tuning_recommender(ild_lambda=0.05),
+    "generative_tuning_recommender_lambda:0.2": lambda: generative_tuning_recommender(ild_lambda=0.2),
+    "generative_tuning_recommender_lambda:1": lambda: generative_tuning_recommender(ild_lambda=1)
 } 
 
 r_list = list(recommenders.items())
@@ -77,10 +109,9 @@ def get_recommenders(filter_seen: bool):
             result[recommender_name] = recommenders[recommender_name]
     return result
 
-DATASET = "BERT4rec.steam"
+DATASET = "steam_deduped_1000items_warm_users"
 N_VAL_USERS=128
 MAX_TEST_USERS=6040
-
 SPLIT_STRATEGY = LeaveOneOut(MAX_TEST_USERS)
 RECOMMENDERS = get_recommenders(filter_seen=True)
 

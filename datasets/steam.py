@@ -38,3 +38,16 @@ def get_game_genres():
             continue
         result[product_id] = genres
     return result
+
+def genres_for_dataset(dataset):
+    genres = get_game_genres()
+    all_genres = {} 
+    for action in dataset:
+        if action.item_id not in all_genres:
+            all_genres[action.item_id] = genres[action.item_id]
+    return all_genres
+
+def get_genres_steam_deduped_1000items_warm_users():
+    from aprec.datasets.datasets_register import DatasetsRegister
+    dataset = DatasetsRegister()["steam_deduped_1000items_warm_users"]()
+    return genres_for_dataset(dataset)

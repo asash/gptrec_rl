@@ -24,6 +24,15 @@ def filter_cold_users(actions_generator, min_actions_per_user = 0):
         user_counter[action.user_id] += 1
     return filter(lambda action: user_counter[action.user_id] >= min_actions_per_user, actions)
 
+#keep last timestamp for each (user, item) pair
+def deduplicate_actions(actions_generator):
+    user_action_timestamps = {}
+    for action in actions_generator:
+        user_action_pair = (action.user_id, action.item_id)
+        if user_action_pair not in user_action_timestamps or user_action_timestamps[user_action_pair][0] < action.timestamp:
+            user_action_timestamps[user_action_pair] = action.timestamp, action
+    return [action for (timestamp, action) in user_action_timestamps.values()]
+
 def take_user_fraction(actions_generator, fraction):
     return filter(lambda action: abs(mmh3.hash(action.user_id) / 2**31) < fraction, actions_generator)
 
