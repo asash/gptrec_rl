@@ -10,6 +10,7 @@ from aprec.datasets.movielens25m import get_movielens25m_actions
 from aprec.datasets.gowalla import get_gowalla_dataset
 from aprec.datasets.movies_dataset import get_movies_dataset, get_movies_dataset_with_bands
 from aprec.datasets.netflix import get_netflix_dataset
+from aprec.datasets.steam import get_steam_actions
 from aprec.datasets.yelp import get_yelp_dataset
 from aprec.datasets.amazon import get_amazon_actions
 from aprec.datasets.mts_kion import get_mts_kion_dataset
@@ -38,6 +39,8 @@ class DatasetsRegister(object):
 
         "ml1m_items_with5users": reproduce_ber4rec_preprocessing,
 
+        "steam": get_steam_actions,
+
         "ml-20m_warm5": lambda: filter_cold_users(get_movielens20m_actions(min_rating=0.0), 5), 
         "booking_warm5": lambda: filter_cold_users(get_booking_dataset(unix_timestamps=True, mark_control=False)[0], 5), 
         "gowalla_warm5": lambda: filter_cold_users(get_gowalla_dataset(), 5), 
@@ -64,6 +67,10 @@ class DatasetsRegister(object):
         "ml-1m_50items_warm_users": lambda: filter_cold_users(filter_popular_items(DatasetsRegister.get_from_cache("ml1m_items_with5users")(), 50),5),
         "ml-1m_50items_fraction_0.2": lambda: take_user_fraction(filter_cold_users(filter_popular_items(DatasetsRegister.get_from_cache("ml1m_items_with5users")(), 50),5),0.2),
         "ml-20m_50items_fraction_0.01": lambda: take_user_fraction(filter_cold_users(filter_popular_items(DatasetsRegister.get_from_cache("ml-20m")(), 50), 5), 0.01),
+
+        #steam 1000 items
+        "steam_1000items": lambda: filter_popular_items(DatasetsRegister.get_from_cache("steam")(), 1000),
+        "steam_1000items_warm_users": lambda: filter_cold_users(filter_popular_items(DatasetsRegister.get_from_cache("steam")(), 1000), 5), 
     }
     
     @staticmethod
