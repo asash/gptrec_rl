@@ -30,7 +30,7 @@ class LambdaGammaRankLoss(ListWiseLoss):
         self.setup()
 
     def get_pairwise_diffs_for_vector(self, x):
-        a, b = tf.meshgrid(x[:self.ndcg_at], tf.transpose(x))
+        a, b = tf.meshgrid(x[:self.ndcg_at], x)
         result = tf.subtract(b, a)
         return result
 
