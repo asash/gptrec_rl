@@ -67,7 +67,7 @@ def generative_tuning_recommender(ild_lambda, gae_gamma, gae_lambda):
 
         model_config = RLGPT2RecConfig(transformer_blocks=3, embedding_size=256,
                                        tokenizer='id', tokens_per_item=1, values_per_dim=3500, attention_heads=4)
-        pre_training_recommender = lambda: FilterSeenRecommender(LightFMRecommender())
+        pre_training_recommender = lambda: FilterSeenRecommender(LightFMRecommender(256))
 
         recommender_config = SequentialRecommenderConfig(model_config, train_epochs=10000, early_stop_epochs=200,
                                                batch_size=128,
