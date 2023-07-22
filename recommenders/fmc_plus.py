@@ -10,6 +10,7 @@ class FirstOrderPlusMarkovChainRecommender(Recommender):
         self.cache_items = cache_items
         self.src_counter = Counter()
         self.dst_counter = Counter()
+        self.transitions_counter = 0
 
     def add_action(self, action: Action):
        self.user_actions[action.user_id].append(action.item_id)
@@ -19,14 +20,21 @@ class FirstOrderPlusMarkovChainRecommender(Recommender):
         for user in self.user_actions:
             for i in range(1, len(self.user_actions[user])):
                 src = self.user_actions[user][i-1]
-                self.src_counter[src] += 1
-                self.dst_counter[dst] += 1
                 dst = self.user_actions[user][i]
                 self.item_pairs_counter[src][dst] += 1
+                self.src_counter[src] += 1
+                self.dst_counter[dst] += 1
+                self.transitions_counter += 1
 
         self.cache = defaultdict(list)
-        for item in self.item_pairs_counter:
-            self.cache[item] = self.item_pairs_counter[item].most_common(self.cache_items)
+        for src in self.item_pairs_counter:
+            for dst in self.item_pairs_counter[src]:
+                p_dst = self.dst_counter[dst] * 1.0/self.transitions_counter
+                p_dst_conditional = self.item_pairs_counter[src][dst] * 1.0/self.transitions_counter 
+                affinity_lb = (p_dst_conditional / p_dst - 1) * p_dst_conditional
+                self.cache[src].append((dst, affinity_lb))
+            self.cache[src].sort(key=lambda x:[-x[1]])
+            pass
 
     def recommend(self, user_id, limit: int, features=None):
         if user_id not in self.user_actions:

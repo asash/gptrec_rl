@@ -67,7 +67,7 @@ def generative_tuning_recommender(ild_lambda, gae_gamma, gae_lambda):
 
         model_config = RLGPT2RecConfig(transformer_blocks=3, embedding_size=256,
                                        tokenizer='id', tokens_per_item=1, values_per_dim=3500, attention_heads=4)
-        pre_training_recommender = lambda: FilterSeenRecommender(FirstOrderMarkovChainRecommender())
+        pre_training_recommender = lambda: FilterSeenRecommender(LightFMRecommender())
 
         recommender_config = SequentialRecommenderConfig(model_config, train_epochs=10000, early_stop_epochs=200,
                                                batch_size=128,
@@ -90,12 +90,15 @@ def generative_tuning_recommender(ild_lambda, gae_gamma, gae_lambda):
                                                   )
         return recommender
         
-recommenders = {"first_order_mc": FirstOrderPlusMarkovChainRecommender}
+        
+recommenders = {
+    # "first_order_mc": FirstOrderPlusMarkovChainRecommender
+}
 
-#for gae_gamma in [0.1,  0.5, 0.9]:
-#    for gae_lambda in [0.1, 0.5, 0.9]:
-#        recommenders[f'init_gptrec_ild_lambda:0.5_gae_gamma:{gae_gamma}_gae_lambda:{gae_lambda}'] = lambda gae_gamma=gae_gamma, gae_lambda=gae_lambda:\
-#                generative_tuning_recommender(ild_lambda=0.5, gae_gamma=gae_gamma, gae_lambda=gae_lambda)
+for gae_gamma in [0.1,  0.5, 0.9]:
+    for gae_lambda in [0.1, 0.5, 0.9]:
+        recommenders[f'init_gptrec_ild_lambda:0.5_gae_gamma:{gae_gamma}_gae_lambda:{gae_lambda}'] = lambda gae_gamma=gae_gamma, gae_lambda=gae_lambda:\
+                generative_tuning_recommender(ild_lambda=0.05, gae_gamma=gae_gamma, gae_lambda=gae_lambda)
 
 #r_list = list(recommenders.items())
 #random.seed(31337)
