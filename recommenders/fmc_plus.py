@@ -57,18 +57,3 @@ class SmartMC(Recommender):
         for internal_id in recs:
             final_result.append((self.item_id.reverse_id(internal_id), result[internal_id]))
         return final_result
-        
-    def get_item_rankings(self):
-        result = {}
-        for request in self.items_ranking_requests:
-            user_result = []
-            user_id = request.user_id
-            last_item = self.user_actions[user_id][-1]
-            scores = self.item_pairs_counter[last_item]
-
-            for item_id in request.item_ids:
-                    score = scores.get(item_id, 0) 
-                    user_result.append((item_id, score))
-            user_result.sort(key=lambda x: -x[1])
-            result[request.user_id] = user_result
-        return result
