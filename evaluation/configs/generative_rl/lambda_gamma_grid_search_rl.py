@@ -16,7 +16,7 @@ from aprec.recommenders.lightfm import LightFMRecommender
 from aprec.recommenders.sequential.models.generative.reward_metrics.ild_reward import ILDReward
 from aprec.recommenders.sequential.models.generative.reward_metrics.ndcg_reward import NDCGReward
 from aprec.recommenders.sequential.models.generative.reward_metrics.weighted_sum_reward import WeightedSumReward
-from aprec.recommenders.top_recommender import TopRecommender
+from aprec.recommenders.first_order_mc import FirstOrderMarkovChainRecommender
 from aprec.recommenders.transition_chain_recommender import TransitionsChainRecommender
 
 
@@ -67,7 +67,7 @@ def generative_tuning_recommender(ild_lambda, gae_gamma, gae_lambda):
 
         model_config = RLGPT2RecConfig(transformer_blocks=3, embedding_size=256,
                                        tokenizer='id', tokens_per_item=1, values_per_dim=3500, attention_heads=4)
-        pre_training_recommender = lambda: FilterSeenRecommender(TransitionsChainRecommender())
+        pre_training_recommender = lambda: FilterSeenRecommender(FirstOrderMarkovChainRecommender())
 
         recommender_config = SequentialRecommenderConfig(model_config, train_epochs=10000, early_stop_epochs=200,
                                                batch_size=128,
@@ -90,11 +90,11 @@ def generative_tuning_recommender(ild_lambda, gae_gamma, gae_lambda):
                                                   )
         return recommender
         
-recommenders = {"tc_recommender": TransitionsChainRecommender}
+recommenders = {"first_order_mc": FirstOrderMarkovChainRecommender}
 
 for gae_gamma in [0.1,  0.5, 0.9]:
     for gae_lambda in [0.1, 0.5, 0.9]:
-        recommenders[f'tc_init_gptrec_ild_lambda:0.5_gae_gamma:{gae_gamma}_gae_lambda:{gae_lambda}'] = lambda gae_gamma=gae_gamma, gae_lambda=gae_lambda:\
+        recommenders[f'init_gptrec_ild_lambda:0.5_gae_gamma:{gae_gamma}_gae_lambda:{gae_lambda}'] = lambda gae_gamma=gae_gamma, gae_lambda=gae_lambda:\
                 generative_tuning_recommender(ild_lambda=0.5, gae_gamma=gae_gamma, gae_lambda=gae_lambda)
 
 #r_list = list(recommenders.items())
