@@ -115,7 +115,7 @@ def get_recommenders(filter_seen: bool):
 
 DATASET = "ml1m_items_with5users"
 N_VAL_USERS=512
-MAX_TEST_USERS=6040
+MAX_TEST_USERS=512
 SPLIT_STRATEGY = LeaveOneOut(MAX_TEST_USERS)
 RECOMMENDERS = get_recommenders(filter_seen=True)
 
