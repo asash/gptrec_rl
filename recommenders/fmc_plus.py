@@ -1,46 +1,63 @@
 from argparse import Action
 from collections import Counter, defaultdict
+
+import tqdm
 from aprec.recommenders.recommender import Recommender
+from aprec.utils.item_id import ItemId
+import numpy as np
 
 
-class FirstOrderPlusMarkovChainRecommender(Recommender):
-    def __init__(self, cache_items=1000):
+class SmartMC(Recommender):
+    def __init__(self, cache_items=1000, order=200, discount = 0.8):
         super().__init__()
         self.user_actions = defaultdict(list)
         self.cache_items = cache_items
-        self.src_counter = Counter()
-        self.dst_counter = Counter()
         self.transitions_counter = 0
+        self.order = order
+        self.item_id = ItemId()
+        self.discount = discount
 
     def add_action(self, action: Action):
-       self.user_actions[action.user_id].append(action.item_id)
+        internal_item_id = self.item_id.get_id(action.item_id) 
+        self.user_actions[action.user_id].append(internal_item_id)
 
     def rebuild_model(self):
-        self.item_pairs_counter = defaultdict(Counter)
-        for user in self.user_actions:
-            for i in range(1, len(self.user_actions[user])):
-                src = self.user_actions[user][i-1]
-                dst = self.user_actions[user][i]
-                self.item_pairs_counter[src][dst] += 1
-                self.src_counter[src] += 1
-                self.dst_counter[dst] += 1
-                self.transitions_counter += 1
-
-        self.cache = defaultdict(list)
-        for src in self.item_pairs_counter:
-            for dst in self.item_pairs_counter[src]:
-                p_dst = self.dst_counter[dst] * 1.0/self.transitions_counter
-                p_dst_conditional = self.item_pairs_counter[src][dst] * 1.0/self.transitions_counter 
-                affinity_lb = (p_dst_conditional / p_dst - 1) * p_dst_conditional
-                self.cache[src].append((dst, affinity_lb))
-            self.cache[src].sort(key=lambda x:[-x[1]])
-            pass
+        self.src_count = np.zeros(self.item_id.size())
+        self.total_count = 0
+        self.src_dst_dist_count = np.zeros([self.item_id.size(), self.item_id.size(), self.order])
+        for userid, session in tqdm.tqdm(self.user_actions.items()):
+            for start_idx in range(len(session)):
+                end_idx = min(start_idx + self.order + 1, len(session))
+                src_action = session[start_idx]
+                self.src_count[src_action] += 1
+                self.total_count += 1
+                for dst_idx in range(start_idx +1, end_idx):
+                    dst_action = session[dst_idx]                    
+                    dist = dst_idx - start_idx -1 
+                    self.src_dst_dist_count[src_action][dst_action][dist] += 1
+        pass
+        
 
     def recommend(self, user_id, limit: int, features=None):
         if user_id not in self.user_actions:
             return []
-        return self.cache[self.user_actions[user_id][-1]][:limit]
-
+        session = self.user_actions[user_id]
+        result = np.zeros(self.item_id.size(), dtype=np.float32)
+        for dist in range(min(self.order, len(session))):
+            src = session[-dist-1]
+            src_counter = self.src_count[src]
+            counters = self.src_dst_dist_count[src, :, dist]
+            eps = 0.1
+            discount = self.discount ** dist
+            log_probs = np.log((counters + eps)/src_counter)
+            result += discount*log_probs
+            pass
+        recs = np.argsort(result)[::-1][:limit]
+        final_result = []
+        for internal_id in recs:
+            final_result.append((self.item_id.reverse_id(internal_id), result[internal_id]))
+        return final_result
+        
     def get_item_rankings(self):
         result = {}
         for request in self.items_ranking_requests:
