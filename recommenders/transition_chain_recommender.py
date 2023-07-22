@@ -21,6 +21,7 @@ class TransitionsChainRecommender(Recommender):
         self.index_to_item_id: dict = dict()
         self.items_count: int = 0
         self.transition_matrix = defaultdict(Counter)
+        self.flags = {}
 
         self.user_to_items: dict = dict()
 
