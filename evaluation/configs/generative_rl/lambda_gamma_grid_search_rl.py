@@ -16,7 +16,7 @@ from aprec.recommenders.lightfm import LightFMRecommender
 from aprec.recommenders.sequential.models.generative.reward_metrics.ild_reward import ILDReward
 from aprec.recommenders.sequential.models.generative.reward_metrics.ndcg_reward import NDCGReward
 from aprec.recommenders.sequential.models.generative.reward_metrics.weighted_sum_reward import WeightedSumReward
-from aprec.recommenders.first_order_mc import FirstOrderMarkovChainRecommender
+from aprec.recommenders.fmc_plus import FirstOrderPlusMarkovChainRecommender
 from aprec.recommenders.transition_chain_recommender import TransitionsChainRecommender
 
 
@@ -90,12 +90,12 @@ def generative_tuning_recommender(ild_lambda, gae_gamma, gae_lambda):
                                                   )
         return recommender
         
-recommenders = {"first_order_mc": FirstOrderMarkovChainRecommender}
+recommenders = {"first_order_mc": FirstOrderPlusMarkovChainRecommender}
 
-for gae_gamma in [0.1,  0.5, 0.9]:
-    for gae_lambda in [0.1, 0.5, 0.9]:
-        recommenders[f'init_gptrec_ild_lambda:0.5_gae_gamma:{gae_gamma}_gae_lambda:{gae_lambda}'] = lambda gae_gamma=gae_gamma, gae_lambda=gae_lambda:\
-                generative_tuning_recommender(ild_lambda=0.5, gae_gamma=gae_gamma, gae_lambda=gae_lambda)
+#for gae_gamma in [0.1,  0.5, 0.9]:
+#    for gae_lambda in [0.1, 0.5, 0.9]:
+#        recommenders[f'init_gptrec_ild_lambda:0.5_gae_gamma:{gae_gamma}_gae_lambda:{gae_lambda}'] = lambda gae_gamma=gae_gamma, gae_lambda=gae_lambda:\
+#                generative_tuning_recommender(ild_lambda=0.5, gae_gamma=gae_gamma, gae_lambda=gae_lambda)
 
 #r_list = list(recommenders.items())
 #random.seed(31337)
