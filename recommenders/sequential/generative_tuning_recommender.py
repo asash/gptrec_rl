@@ -54,11 +54,12 @@ class GenerativeTuningRecommender(SequentialRecommender):
                  filter_seen=True,
                  clip_eps=0.2, reward_metric = NDCGReward(10), 
                  tuning_batch_size=8, 
-                 max_tuning_steps = 1000,
+                 max_tuning_steps = 4000,
                  validate_every_steps = 100,
                  gae_lambda = 0.95,
                  gae_gamma = 0.99,
                  tradeoff_monitoring_rewards = [],
+                 value_warmup_steps = 1000,
                  ):
         if (type(config.model_config) != RLGPT2RecConfig):
             raise ValueError("GenerativeTuningRecommender only works with RLGPT2Rec model")
@@ -79,6 +80,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
         self.gae_lambda = gae_lambda
         self.tradeoff_monitoring_rewards = tradeoff_monitoring_rewards
         self.tradeoff_trajectiories = defaultdict(list)
+        self.value_warmup_steps = value_warmup_steps
 
     
     def add_action(self, action):
@@ -139,7 +141,8 @@ class GenerativeTuningRecommender(SequentialRecommender):
             with tf.GradientTape() as policy_tape:
                 with tf.GradientTape() as value_tape:
                     value_tape.watch(self.value_model.trainable_variables)
-                    policy_tape.watch(self.model.trainable_variables)
+                    if step > self.value_warmup_steps:
+                        policy_tape.watch(self.model.trainable_variables)
                     batch_ratios = []
                     batch_rewards = []
                     batch_seqs = []
@@ -156,25 +159,26 @@ class GenerativeTuningRecommender(SequentialRecommender):
                     value_loss = tf.reduce_mean(tf.square(discounted_rewards - values))
                     value_grads = value_tape.gradient(value_loss, self.value_model.trainable_variables)
                     value_optimizer.apply_gradients(zip(value_grads, self.value_model.trainable_variables))
+                    
+                    if step > self.value_warmup_steps:
+                        ratio_advantage = gae_advantages * batch_ratios
+                        clipped_batch_ratios = tf.clip_by_value(batch_ratios, 1-self.clip_eps, 1+self.clip_eps)
+                        clipped_batch_ratio_advantage = gae_advantages * clipped_batch_ratios
 
-                    ratio_advantage = gae_advantages * batch_ratios
-                    clipped_batch_ratios = tf.clip_by_value(batch_ratios, 1-self.clip_eps, 1+self.clip_eps)
-                    clipped_batch_ratio_advantage = gae_advantages * clipped_batch_ratios
+                        ppo_loss = -tf.reduce_mean(tf.minimum(ratio_advantage, clipped_batch_ratio_advantage))
 
-                    ppo_loss = -tf.reduce_mean(tf.minimum(ratio_advantage, clipped_batch_ratio_advantage))
+                        policy_grads = policy_tape.gradient(ppo_loss, self.model.trainable_variables)
+                        policy_optimizer.apply_gradients(zip(policy_grads, self.model.trainable_variables))
 
-                    policy_grads = policy_tape.gradient(ppo_loss, self.model.trainable_variables)
-                    policy_optimizer.apply_gradients(zip(policy_grads, self.model.trainable_variables))
-
-                    mean_reward = tf.reduce_mean(tf.reduce_sum(batch_rewards, -1))
-                    print(f"Step {step}. Mean reward", mean_reward.numpy(), "ppo loss", ppo_loss.numpy(), "value loss", value_loss.numpy())
-                    with tensorboard_writer.as_default(step=step):
-                        tf.summary.scalar('tuning_train/ppo_loss', ppo_loss)
-                        tf.summary.scalar('tuning_train/mean_reward', mean_reward)
-                        tf.summary.scalar('tuning_train/value_loss', value_loss)
-                        if step % self.validate_every_steps == 0:
-                            self.validate(step)
-                            tensorboard_writer.flush()
+                        mean_reward = tf.reduce_mean(tf.reduce_sum(batch_rewards, -1))
+                        print(f"Step {step}. Mean reward", mean_reward.numpy(), "ppo loss", ppo_loss.numpy(), "value loss", value_loss.numpy())
+                        with tensorboard_writer.as_default(step=step):
+                            tf.summary.scalar('tuning_train/ppo_loss', ppo_loss)
+                            tf.summary.scalar('tuning_train/mean_reward', mean_reward)
+                            tf.summary.scalar('tuning_train/value_loss', value_loss)
+                            if step % self.validate_every_steps == 0:
+                                self.validate(step)
+                                tensorboard_writer.flush()
         self.model.set_weights(self.best_weights)
         
     def get_gae_advantages(self, batch_seqs, batch_rewards):
