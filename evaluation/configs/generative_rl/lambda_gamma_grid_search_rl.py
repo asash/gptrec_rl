@@ -80,9 +80,8 @@ def generative_tuning_recommender(ild_lambda, gae_gamma, gae_lambda):
                                                validate_on_loss=True,
                                                )
         recommender = GenerativeTuningRecommender(recommender_config, pre_training_recommender,
-                                                  validate_every_steps=80, max_tuning_steps=4096 + 1000, #1000 for warming-up the value function 
+                                                  validate_every_steps=80, max_tuning_steps=16000,
                                                   tuning_batch_size=16, 
-                                                  value_warmup_steps=1000,
                                                   clip_eps=0.1,
                                                   reward_metric=WeightedSumReward([NDCGReward(10), ILDReward(get_genre_dict())], [1, ild_lambda]),
                                                   tradeoff_monitoring_rewards=[(NDCGReward(10), ILDReward(get_genre_dict()))],
