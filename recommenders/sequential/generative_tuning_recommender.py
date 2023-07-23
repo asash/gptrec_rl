@@ -54,13 +54,13 @@ class GenerativeTuningRecommender(SequentialRecommender):
                  filter_seen=True,
                  clip_eps=0.2, reward_metric = NDCGReward(10), 
                  tuning_batch_size=8, 
-                 max_tuning_steps = 4000,
+                 max_tuning_steps = 16000,
                  validate_every_steps = 100,
-                 gae_lambda = 0.95,
-                 gae_gamma = 0.99,
+                 gae_lambda = 0.1,
+                 gae_gamma = 0.1,
                  tradeoff_monitoring_rewards = [],
-                 value_warmup_steps = 1000,
-                 ppo_lr = 1e-5,
+                 value_warmup_steps = 0,
+                 ppo_lr = 1e-4
                  value_lr = 1e-4,
                  ):
         if (type(config.model_config) != RLGPT2RecConfig):
