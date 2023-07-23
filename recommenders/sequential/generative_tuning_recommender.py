@@ -60,7 +60,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
                  gae_gamma = 0.1,
                  tradeoff_monitoring_rewards = [],
                  value_warmup_steps = 0,
-                 ppo_lr = 1e-4
+                 ppo_lr = 1e-4,
                  value_lr = 1e-4,
                  ):
         if (type(config.model_config) != RLGPT2RecConfig):
