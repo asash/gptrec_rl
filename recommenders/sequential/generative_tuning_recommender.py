@@ -60,6 +60,8 @@ class GenerativeTuningRecommender(SequentialRecommender):
                  gae_gamma = 0.99,
                  tradeoff_monitoring_rewards = [],
                  value_warmup_steps = 1000,
+                 ppo_lr = 1e-5,
+                 value_lr = 1e-4,
                  ):
         if (type(config.model_config) != RLGPT2RecConfig):
             raise ValueError("GenerativeTuningRecommender only works with RLGPT2Rec model")
@@ -81,6 +83,8 @@ class GenerativeTuningRecommender(SequentialRecommender):
         self.tradeoff_monitoring_rewards = tradeoff_monitoring_rewards
         self.tradeoff_trajectiories = defaultdict(list)
         self.value_warmup_steps = value_warmup_steps
+        self.ppo_lr = ppo_lr
+        self.value_lr = value_lr
 
     
     def add_action(self, action):
@@ -125,8 +129,8 @@ class GenerativeTuningRecommender(SequentialRecommender):
         tensorboard_dir = self.get_tensorboard_dir() 
         mkdir_p(tensorboard_dir)
         tensorboard_writer = tf.summary.create_file_writer(tensorboard_dir)
-        policy_optimizer = tf.keras.optimizers.Adam(learning_rate=1e-4)
-        value_optimizer = tf.keras.optimizers.Adam(learning_rate=1e-4)
+        policy_optimizer = tf.keras.optimizers.Adam(learning_rate=self.ppo_lr)
+        value_optimizer = tf.keras.optimizers.Adam(learning_rate=self.value_lr)
 
         trial_generator = self.trial_generator()
         self.value_model = RLGPT2RecModel.from_config(self.model.get_config())
