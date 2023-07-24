@@ -5,6 +5,7 @@ from aprec.recommenders.recommender import Recommender
 class RandomRecommender(Recommender):
     def __init__(self):
         self.items_set = set()
+        self.flags = {}
 
     def add_action(self, action):
         self.items_set.add(action.item_id)
