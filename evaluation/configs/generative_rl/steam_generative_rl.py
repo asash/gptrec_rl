@@ -1,5 +1,5 @@
 import random
-from aprec.datasets.movielens1m import get_genre_dict
+from aprec.datasets.steam import get_genres_steam_deduped_1000items_warm_users
 
 from aprec.evaluation.metrics.ild import ILD
 from aprec.evaluation.metrics.ndcg import NDCG
@@ -14,17 +14,18 @@ from aprec.recommenders.sequential.models.generative.reward_metrics.ild_reward i
 from aprec.recommenders.sequential.models.generative.reward_metrics.ndcg_reward import NDCGReward
 from aprec.recommenders.sequential.models.generative.reward_metrics.weighted_sum_reward import WeightedSumReward
 from aprec.recommenders.top_recommender import TopRecommender
+DATASET = "steam_deduped_1000items_warm_users"
 
 
 USERS_FRACTIONS = [1.0]
 
 
-METRICS = [HIT(1), HIT(10), NDCG(10), ILD(get_genre_dict()) ]
+METRICS = [HIT(1), HIT(10), NDCG(10), ILD(get_genres_steam_deduped_1000items_warm_users()) ]
 #TARGET_ITEMS_SAMPLER = PopTargetItemsWithReplacementSampler(101)
 
 SEQUENCE_LENGTH=200
 
-def generative_tuning_recommender(ild_lambda, pretrain_recommender=SmartMC(order=50, discount=0.6), max_pretrain_epochs=10000):       
+def generative_tuning_recommender(ild_lambda, pretrain_recommender=SmartMC(order=50, discount=0.6), max_pretrain_epochs=100000):       
         from aprec.recommenders.sequential.generative_tuning_recommender import GenerativeTuningRecommender
         from aprec.recommenders.sequential.models.generative.gpt_rec_rl import RLGPT2RecConfig
         from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
@@ -46,11 +47,11 @@ def generative_tuning_recommender(ild_lambda, pretrain_recommender=SmartMC(order
                                                validate_on_loss=True
                                                )
         recommender = GenerativeTuningRecommender(recommender_config, pre_training_recommender,
-                                                  validate_every_steps=80, max_tuning_steps=16000, 
+                                                  validate_every_steps=80, max_tuning_steps=64000, 
                                                   tuning_batch_size=16, 
                                                   clip_eps=0.1,
-                                                  reward_metric=WeightedSumReward([NDCGReward(10), ILDReward(get_genre_dict())], [1, ild_lambda]),
-                                                  tradeoff_monitoring_rewards=[(NDCGReward(10), ILDReward(get_genre_dict()))],
+                                                  reward_metric=WeightedSumReward([NDCGReward(10), ILDReward(get_genres_steam_deduped_1000items_warm_users())], [1, ild_lambda]),
+                                                  tradeoff_monitoring_rewards=[(NDCGReward(10), ILDReward(get_genres_steam_deduped_1000items_warm_users()))],
                                                   gae_gamma=0.1, 
                                                   gae_lambda=0.1
                                                   )
@@ -85,7 +86,6 @@ def get_recommenders(filter_seen: bool):
     return result
 
 N_VAL_USERS=512
-DATASET = "steam_deduped_1000items_warm_users"
 MAX_TEST_USERS=6040
 SPLIT_STRATEGY = LeaveOneOut(MAX_TEST_USERS)
 RECOMMENDERS = get_recommenders(filter_seen=True)
