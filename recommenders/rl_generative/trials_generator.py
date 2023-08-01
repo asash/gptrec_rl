@@ -1,14 +1,12 @@
 
 from typing import Any, List
-import tensorflow as tf
 from aprec.api.action import Action
-from aprec.recommenders.rl_generative.generator import Generator
 from multiprocessing.context import SpawnProcess, SpawnContext
 import random
 
 import numpy as np
 
-from aprec.recommenders.rl_generative.utils import TrialResult, build_trial_result, get_seq_with_gt
+from aprec.recommenders.rl_generative.utils import build_trial_result, get_seq_with_gt
 
 
 
@@ -36,11 +34,12 @@ class TrialsGenerator(object):
 
     def ensure_generator(self):
         if self.generator is None:
+            from aprec.recommenders.rl_generative.generator import Generator
             self.generator = Generator(self.model_config, self.model_checkpoint_file, self.items, 
                                        self.pred_history_vectorizer, gen_limit=self.gen_limit)
         
         
-    def random_trial(self) -> TrialResult:
+    def random_trial(self):
         internal_user_id = self.get_random_user()
         trial_result = self.get_trial_result(internal_user_id)
         return trial_result 
@@ -57,15 +56,14 @@ class TrialsGenerator(object):
         return internal_user_id
 
     def get_trial_result(self, internal_user_id):
-        with tf.device('/cpu:0'):
-            sequence, ground_truth = self.get_tuning_sequence(internal_user_id)
-            gt_action = Action(user_id=self.users.reverse_id(internal_user_id), item_id=self.items.reverse_id(ground_truth), timestamp=0)
-            sep_item_id = self.items.get_id('<SEP>')
-            self.ensure_generator()
-            recommendations, seq = self.generator.generate(sequence, self.filter_seen, sep_item_id, greedy=False, train=False)
-            items = self.items 
-            reward_metric=self.reward_metric
-            return build_trial_result(gt_action, recommendations, seq, items, reward_metric)
+        sequence, ground_truth = self.get_tuning_sequence(internal_user_id)
+        gt_action = Action(user_id=self.users.reverse_id(internal_user_id), item_id=self.items.reverse_id(ground_truth), timestamp=0)
+        sep_item_id = self.items.get_id('<SEP>')
+        self.ensure_generator()
+        recommendations, seq = self.generator.generate(sequence, self.filter_seen, sep_item_id, greedy=False, train=False)
+        items = self.items 
+        reward_metric=self.reward_metric
+        return build_trial_result(gt_action, recommendations, seq, items, reward_metric)
 
 
 
@@ -78,6 +76,7 @@ class TrialsGenerator(object):
 
     
     def next_tuning_batch(self):
+        import tensorflow as tf
         batch_rewards = []
         batch_seqs = []
         batch_recs = []
@@ -98,7 +97,7 @@ class TrialsGenerratorProcess(object):
     
     def __call__(self):
         import os
-        os.environ["CUDA_VISIBLE_DEVICES"] = ""
+        os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
         while True:
             batch = self.generator.next_tuning_batch()
             self.queue.put(batch)
