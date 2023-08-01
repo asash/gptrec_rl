@@ -97,6 +97,8 @@ class TrialsGenerratorProcess(object):
         self.queue = queue
     
     def __call__(self):
+        import os
+        os.environ["CUDA_VISIBLE_DEVICES"] = ""
         while True:
             batch = self.generator.next_tuning_batch()
             self.queue.put(batch)
