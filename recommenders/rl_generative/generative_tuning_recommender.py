@@ -8,6 +8,7 @@ import numpy as np
 import tensorflow as tf
 import tqdm
 from aprec.api.action import Action
+from aprec.recommenders.rl_generative.pre_train_targets_builder import PreTrainTargetsBuilder
 from aprec.recommenders.sequential.models.generative.reward_metrics.ndcg_reward import NDCGReward
 from aprec.recommenders.recommender import Recommender
 from aprec.recommenders.sequential.models.generative.gpt_rec_rl import RLGPT2RecConfig, RLGPT2RecModel
@@ -23,7 +24,6 @@ class TrialResult(object):
         self.recs = recs
         self.gt_action = gt_action
        
-
 def plot_to_image(func):
   def wrapper(*args, **kwargs):
         figure = func(*args, **kwargs)
@@ -92,38 +92,22 @@ class GenerativeTuningRecommender(SequentialRecommender):
 
     def rebuild_model(self):
         self.sort_actions()
+        self.pre_train()
+        self.tune()
+
+    def pre_train(self):
         for user in self.users.straight:
             for ts, internal_item_id in self.user_actions[self.users.get_id(user)][:-1]:
                 item_id = self.items.reverse_id(internal_item_id)
                 self.pre_train_recommender.add_action(Action(user_id=user, item_id=item_id, timestamp=ts))
         self.pre_train_recommender.rebuild_model()
-        print("generating pretraining sequences...")
-        for user in tqdm.tqdm(self.users.straight,ascii=True, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0, leave=True, ncols=70):
-            internal_user_id = self.users.get_id(user)
-            last_action = self.user_actions[internal_user_id][-1]
-            self.user_actions[internal_user_id] = self.user_actions[internal_user_id][:-1]
-            self.last_action_hold_out[internal_user_id] = last_action
-            last_user_timestamp = last_action[0] 
-            sep_action = Action(user_id=user, item_id='<SEP>', timestamp=last_user_timestamp + 1)
-            super().add_action(sep_action)
-            user_recommendations = self.pre_train_recommender.recommend(user, self.gen_limit)
-            current_timestamp = last_user_timestamp + 2
-            for (item_id, score) in user_recommendations:
-                action = Action(user_id=user, item_id=item_id, timestamp=current_timestamp)
-                self.add_action(action)
-                current_timestamp += 1
-
-        del self.pre_train_recommender
-        gc.collect()
-        tf.keras.backend.clear_session()
-
+        self.config.targets_builder = lambda: PreTrainTargetsBuilder(self.pre_train_recommender,
+                                                                     sequence_vectorizer=self.config.pred_history_vectorizer,
+                                                                     item_ids=self.items,
+                                                                     generation_limit=self.gen_limit)
+        self.items.get_id('<SEP>') #ensure that we have special item id for <SEP>
         super().rebuild_model()
-        self.cleanup_pretraining_actions()
-        self.tune()
 
-    def get_seq_reverse_ids(self, seq):
-        return [self.items.reverse_id(item_id) for ts, item_id in seq]
-    
     def tune(self):
         self.save_best_weights()
         tensorboard_dir = self.get_tensorboard_dir() 
@@ -184,6 +168,18 @@ class GenerativeTuningRecommender(SequentialRecommender):
                                 self.validate(step)
                                 tensorboard_writer.flush()
         self.model.set_weights(self.best_weights)
+    
+    def shift_position_ids(self, position_ids, seq):
+        if position_ids is None:
+            position_ids =  np.arange(len(seq) -1, -1, -1)
+        else:
+            if position_ids[-1] == 0:
+                position_ids = np.concatenate([position_ids[1:], [self.model.data_parameters.sequence_length]])
+                pass
+            else:
+                position_ids = np.concatenate([position_ids[1:], [position_ids[-1]+1]]) 
+        return position_ids
+            
         
     def get_gae_advantages(self, batch_seqs, batch_rewards):
         tokens = self.model.tokenizer(batch_seqs, batch_seqs.shape[0], self.model.data_parameters.sequence_length)
@@ -372,11 +368,13 @@ class GenerativeTuningRecommender(SequentialRecommender):
         mask[self.items.size():] = 1.0
         generated_tokens = []
         resulting_logprobs = []
+        position_ids = None 
         for i in range(self.gen_limit):
             seq = self.config.pred_history_vectorizer(model_actions) 
+            position_ids = self.shift_position_ids(position_ids, seq)
             tokens = self.model.tokenizer(seq, 1, self.model.data_parameters.sequence_length)
             attention_mask = tf.cast((tokens != -100), 'float32')
-            next_token_logits = self.model.gpt(seq, attention_mask=attention_mask, training=train).logits[-1, :] 
+            next_token_logits = self.model.gpt(seq, attention_mask=attention_mask, training=train, position_ids=position_ids).logits[-1, :] 
             mask_score = min(tf.reduce_min(next_token_logits), 0) - 1e6 
             masked_logits = tf.where(mask, mask_score, next_token_logits) 
             sep_token_id = self.items.get_id('<SEP>')
@@ -392,6 +390,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
             resulting_logprobs.append(log_probs[next_token])
             mask[next_token] = 1.0
         return generated_tokens, tf.stack(resulting_logprobs, -1), seq 
+
 
     def get_pred_sequence(self, internal_user_id):
         actions = self.user_actions[internal_user_id]
@@ -413,11 +412,6 @@ class GenerativeTuningRecommender(SequentialRecommender):
         sequence = [action[1] for action in actions]
         sequence.append(sep_item_id)
         return sequence, ground_truth 
-
-    def cleanup_pretraining_actions(self):
-        for internal_id in self.user_actions:
-            self.user_actions[internal_id] = self.user_actions[internal_id][:-self.gen_limit-1]
-            self.user_actions[internal_id].append(self.last_action_hold_out[internal_id])
 
     def set_val_users(self, val_users):
         self.pre_train_recommender.set_val_users(val_users)

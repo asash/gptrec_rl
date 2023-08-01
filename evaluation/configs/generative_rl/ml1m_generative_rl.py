@@ -25,7 +25,7 @@ METRICS = [HIT(1), HIT(10), NDCG(10), ILD(get_genre_dict()) ]
 SEQUENCE_LENGTH=200
 
 def generative_tuning_recommender(ild_lambda, pretrain_recommender=SmartMC(order=50, discount=0.6), max_pretrain_epochs=10000):       
-        from aprec.recommenders.sequential.generative_tuning_recommender import GenerativeTuningRecommender
+        from aprec.recommenders.rl_generative.generative_tuning_recommender import GenerativeTuningRecommender
         from aprec.recommenders.sequential.models.generative.gpt_rec_rl import RLGPT2RecConfig
         from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
         from aprec.recommenders.sequential.target_builders.dummy_builder import DummyTargetBuilder

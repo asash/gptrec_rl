@@ -42,6 +42,9 @@ class SmartMC(Recommender):
         if user_id not in self.user_actions:
             return []
         session = self.user_actions[user_id]
+        return self.session_recommend(session, limit) 
+
+    def session_recommend(self, session, limit, filter_seen=True):
         result = np.zeros(self.item_id.size(), dtype=np.float32)
         for dist in range(min(self.order, len(session))):
             src = session[-dist-1]
@@ -50,10 +53,27 @@ class SmartMC(Recommender):
             eps = 0.1
             discount = self.discount ** dist
             log_probs = np.log((counters + eps)/src_counter)
-            result += discount*log_probs
+            try:
+                result += discount*log_probs
+            except ValueError as ve:
+                pass
             pass
+        if filter_seen:
+            for item in session:
+                result[item] = -np.inf
         recs = np.argsort(result)[::-1][:limit]
         final_result = []
         for internal_id in recs:
             final_result.append((self.item_id.reverse_id(internal_id), result[internal_id]))
         return final_result
+ 
+
+    #items list is the sequence of user-item interactions
+    def recommend_by_items(self, items_list, limit: int, filter_seen=True):
+        session = []
+        if type(items_list[-1]) != str:
+            pass
+        for item in items_list:
+            session.append(self.item_id.get_id(item))
+        return self.session_recommend(session, limit, filter_seen)
+            

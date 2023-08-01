@@ -57,7 +57,7 @@ def sasrec_style_model(model_config, sequence_splitter,
     return SequentialRecommender(config)
 
 def generative_tuning_recommender(ild_lambda, gae_gamma, gae_lambda):       
-        from aprec.recommenders.sequential.generative_tuning_recommender import GenerativeTuningRecommender
+        from aprec.recommenders.rl_generative.generative_tuning_recommender import GenerativeTuningRecommender
         from aprec.recommenders.sequential.models.generative.gpt_rec_rl import RLGPT2RecConfig
         from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
         from aprec.recommenders.sequential.target_builders.dummy_builder import DummyTargetBuilder
