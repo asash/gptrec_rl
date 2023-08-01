@@ -10,6 +10,7 @@ from aprec.recommenders.first_order_mc import FirstOrderMarkovChainRecommender
 from aprec.recommenders.fmc_plus import SmartMC
 from aprec.recommenders.lightfm import LightFMRecommender
 from aprec.recommenders.random_recommender import RandomRecommender
+from aprec.recommenders.rl_generative.pre_train_target_splitter import PreTrainTargetSplitter
 from aprec.recommenders.sequential.models.generative.reward_metrics.ild_reward import ILDReward
 from aprec.recommenders.sequential.models.generative.reward_metrics.ndcg_reward import NDCGReward
 from aprec.recommenders.sequential.models.generative.reward_metrics.weighted_sum_reward import WeightedSumReward
@@ -38,7 +39,7 @@ def generative_tuning_recommender(ild_lambda, pretrain_recommender=SmartMC(order
         recommender_config = SequentialRecommenderConfig(model_config, train_epochs=max_pretrain_epochs, early_stop_epochs=200,
                                                batch_size=128,
                                                training_time_limit=200000,  
-                                               sequence_splitter=IdSplitter, 
+                                               sequence_splitter=PreTrainTargetSplitter, 
                                                max_batches_per_epoch=100,
                                                targets_builder=DummyTargetBuilder,
                                                use_keras_training=True,
@@ -59,16 +60,7 @@ def generative_tuning_recommender(ild_lambda, pretrain_recommender=SmartMC(order
 
 recommenders = {
     "generative_tuning_recommender_lambda:0": lambda: generative_tuning_recommender(ild_lambda=0),
-    "generative_tuning_recommender_lambda:0.01": lambda: generative_tuning_recommender(ild_lambda=0.01),
-    "generative_tuning_recommender_lambda:0.05": lambda: generative_tuning_recommender(ild_lambda=0.05),
-    "generative_tuning_recommender_lambda:0.2": lambda: generative_tuning_recommender(ild_lambda=0.2),
-    "generative_tuning_recommender_lambda:1": lambda: generative_tuning_recommender(ild_lambda=1), 
-    "generative_tuning_recommender_lambda:0_init:mf": lambda: generative_tuning_recommender(ild_lambda=0, pretrain_recommender=LightFMRecommender(256)), 
-    "generative_tuning_recommender_lambda:0_init:top": lambda: generative_tuning_recommender(ild_lambda=0, pretrain_recommender=TopRecommender()), 
-    "generative_tuning_recommender_lambda:0_init:first_order_mc": lambda: generative_tuning_recommender(ild_lambda=0, pretrain_recommender=FirstOrderMarkovChainRecommender()), 
-    "generative_tuning_recommender_lambda:0_init:random_recommender": lambda: generative_tuning_recommender(ild_lambda=0, pretrain_recommender=RandomRecommender()), 
-    "generative_tuning_recommender_lambda:0_init:no_pretrain": lambda: generative_tuning_recommender(ild_lambda=0, pretrain_recommender=RandomRecommender(), max_pretrain_epochs=0), 
-} 
+   } 
 
 def get_recommenders(filter_seen: bool):
     result = {}

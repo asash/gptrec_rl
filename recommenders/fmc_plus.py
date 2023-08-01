@@ -71,8 +71,6 @@ class SmartMC(Recommender):
     #items list is the sequence of user-item interactions
     def recommend_by_items(self, items_list, limit: int, filter_seen=True):
         session = []
-        if type(items_list[-1]) != str:
-            pass
         for item in items_list:
             session.append(self.item_id.get_id(item))
         return self.session_recommend(session, limit, filter_seen)

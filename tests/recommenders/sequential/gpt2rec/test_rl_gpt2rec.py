@@ -4,6 +4,7 @@ from aprec.datasets.movielens1m import get_genre_dict, get_movies_catalog
 from aprec.recommenders.fmc_plus import SmartMC
 from aprec.recommenders.rl_generative.generative_tuning_recommender import GenerativeTuningRecommender
 from aprec.datasets.datasets_register import DatasetsRegister
+from aprec.recommenders.rl_generative.pre_train_target_splitter import PreTrainTargetSplitter
 from aprec.recommenders.sequential.models.generative.reward_metrics.ild_reward import ILDReward
 from aprec.recommenders.sequential.models.generative.reward_metrics.ndcg_reward import NDCGReward
 from aprec.recommenders.sequential.models.generative.reward_metrics.weighted_sum_reward import WeightedSumReward
@@ -36,10 +37,9 @@ class TestRLGptRec(unittest.TestCase):
         recommender_config = SequentialRecommenderConfig(model_config, train_epochs=10000, early_stop_epochs=200,
                                                batch_size=10,
                                                training_time_limit=20,  
-                                               sequence_splitter=RandomFractionSplitter, 
+                                               sequence_splitter=PreTrainTargetSplitter, 
                                                max_batches_per_epoch=100,
-                                               targets_builder=DummyTargetBuilder,
-                                               use_keras_training=False,
+                                               use_keras_training=True,
                                                sequence_length=32,
                                                validate_on_loss=True
                                                )
