@@ -1,4 +1,5 @@
 import os
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 import unittest
 from aprec.datasets.movielens1m import get_genre_dict, get_movies_catalog
 from aprec.recommenders.fmc_plus import SmartMC
@@ -16,7 +17,6 @@ from aprec.recommenders.top_recommender import TopRecommender
 class TestRLGptRec(unittest.TestCase):
     def setUp(self):
         pass
-#        os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 
 
     def test_RLGPTRec(self):
@@ -49,7 +49,8 @@ class TestRLGptRec(unittest.TestCase):
                                                   validate_every_steps=2,
                                                   max_tuning_steps=10,
                                                   reward_metric=WeightedSumReward([NDCGReward(10), ILDReward(get_genre_dict())], [1, 0.05]),
-                                                  tradeoff_monitoring_rewards = [(NDCGReward(10), ILDReward(get_genre_dict()))]
+                                                  tradeoff_monitoring_rewards = [(NDCGReward(10), ILDReward(get_genre_dict()))],
+                                                  checkpoint_every_steps=3
                                                   )
 
         recommender.set_val_users(val_users)

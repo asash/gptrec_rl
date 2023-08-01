@@ -12,7 +12,10 @@ class NDCGReward(RewardMetric):
         if(len(recommendations) == 0):
             return np.zeros(len(recommendations), dtype=np.float32)
         actual_set = set([action.item_id for action in actual_actions])
-        recommended = [recommendation[0] for recommendation in recommendations[:self.k]]
+        try:
+            recommended = [recommendation[0] for recommendation in recommendations[:self.k]]
+        except IndexError:
+            pass
         cool = set(recommended).intersection(actual_set)
         if len(cool) == 0:
             return np.zeros(len(recommendations), dtype=np.float32)
