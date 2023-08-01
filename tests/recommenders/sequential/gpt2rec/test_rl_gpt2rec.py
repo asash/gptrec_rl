@@ -41,7 +41,7 @@ class TestRLGptRec(unittest.TestCase):
                                                max_batches_per_epoch=100,
                                                use_keras_training=True,
                                                sequence_length=32,
-                                               validate_on_loss=True
+                                               validate_on_loss=True,
                                                )
         
         
@@ -50,7 +50,8 @@ class TestRLGptRec(unittest.TestCase):
                                                   max_tuning_steps=10,
                                                   reward_metric=WeightedSumReward([NDCGReward(10), ILDReward(get_genre_dict())], [1, 0.05]),
                                                   tradeoff_monitoring_rewards = [(NDCGReward(10), ILDReward(get_genre_dict()))],
-                                                  checkpoint_every_steps=3
+                                                  checkpoint_every_steps=3,
+                                                  sampling_processessess=8, 
                                                   )
 
         recommender.set_val_users(val_users)

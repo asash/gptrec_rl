@@ -6,10 +6,10 @@ from aprec.recommenders.sequential.models.generative.gpt_rec_rl import RLGPT2Rec
 
 
 class Generator(object):
-    def __init__(self, model_config, model_checkpoint_path, items, config, gen_limit=10):
+    def __init__(self, model_config, model_checkpoint_path, items, pred_history_vectorizer, gen_limit=10):
         self.model = RLGPT2RecModel.from_config(model_config)
         self.items = items
-        self.config = config 
+        self.pred_history_vectorizer = pred_history_vectorizer 
         self.gen_limit = gen_limit
         self.last_update_timestamp = None
         self.model_checkpoint_path = model_checkpoint_path
@@ -19,12 +19,13 @@ class Generator(object):
         if self.last_update_timestamp is None or file_timestamp > self.last_update_timestamp:
             self.last_update_timestamp = file_timestamp
             self.model.load_weights(self.model_checkpoint_path)
+            print("Model weights updated")
         
     def generate(self, input_seq, filter_seen, sep_item_id, greedy=False, train=False):
         self.try_update_weights()
         items = self.items
         gen_limit = self.gen_limit
-        pred_history_vectorizer = self.config.pred_history_vectorizer
+        pred_history_vectorizer = self.pred_history_vectorizer
         model = self.model
         return static_generate(input_seq, filter_seen, sep_item_id, greedy, train, items, gen_limit, pred_history_vectorizer, model) 
 

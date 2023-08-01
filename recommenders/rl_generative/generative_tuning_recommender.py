@@ -12,7 +12,7 @@ import tqdm
 from aprec.api.action import Action
 from aprec.recommenders.rl_generative.generator import static_generate
 from aprec.recommenders.rl_generative.pre_train_targets_builder import PreTrainTargetsBuilder
-from aprec.recommenders.rl_generative.trials_generator import TrialsGenerator
+from aprec.recommenders.rl_generative.trials_generator import TrialsGeneratorMultiprocess 
 from aprec.recommenders.rl_generative.utils import build_trial_result, get_seq_with_gt
 from aprec.recommenders.sequential.models.generative.reward_metrics.ndcg_reward import NDCGReward
 from aprec.recommenders.recommender import Recommender
@@ -60,6 +60,8 @@ class GenerativeTuningRecommender(SequentialRecommender):
                  ppo_lr = 1e-4,
                  value_lr = 1e-4,
                  checkpoint_every_steps = 20, 
+                 sampling_processessess = 8, 
+                 sampling_que_size = 16
                  ):
         if (type(config.model_config) != RLGPT2RecConfig):
             raise ValueError("GenerativeTuningRecommender only works with RLGPT2Rec model")
@@ -83,6 +85,8 @@ class GenerativeTuningRecommender(SequentialRecommender):
         self.ppo_lr = ppo_lr
         self.value_lr = value_lr
         self.checkpoint_every_steps = checkpoint_every_steps
+        self.sampling_processessess = sampling_processessess
+        self.sampling_queue_size = sampling_que_size
 
     
     def add_action(self, action):
@@ -115,62 +119,62 @@ class GenerativeTuningRecommender(SequentialRecommender):
         value_optimizer = tf.keras.optimizers.Adam(learning_rate=self.value_lr)
         checkpoints_dir = tempfile.mkdtemp()
         self.model.save_weights(checkpoints_dir + "/latest.h5")
-
         self.value_model = RLGPT2RecModel.from_config(self.model.get_config())
         self.value_model.gpt.set_weights(self.model.gpt.get_weights())
         self.value_model.value_head = tf.keras.layers.Dense(1, name='value_head')
-        trials_generator = TrialsGenerator(user_actions=self.user_actions, items=self.items, users=self.users,
-                                           model_config=self.model.get_config(), recommender_config=self.config,
+        with TrialsGeneratorMultiprocess(sampling_processess=self.sampling_processessess, sampling_queue_size=self.sampling_queue_size, 
+                                           user_actions=self.user_actions, items=self.items, users=self.users,
+                                           model_config=self.model.get_config(), pred_history_vectorizer=self.config.pred_history_vectorizer,
                                            model_checkpoint_file=checkpoints_dir + "/latest.h5",
                                            reward_metric=self.reward_metric,
                                            tuning_batch_size=self.tuning_batch_size,
                                            filter_seen=self.filter_seen,
                                            val_users=self.val_users,
-                                           gen_limit=self.gen_limit)
+                                           gen_limit=self.gen_limit) as trials_generator:
 
-        for step in tqdm.tqdm(range(1, self.max_tuning_steps + 1)): 
-            print("Tuning step", step)
-            print("generating...")
-            
-            batch_rewards, batch_seqs, batch_recs = trials_generator.next_tuning_batch()
-            position_ids =  tf.concat([tf.range(self.model.data_parameters.sequence_length, -1, -1), tf.range(self.model.data_parameters.sequence_length + 1, self.model.data_parameters.sequence_length + self.gen_limit)], 0)
-            position_ids = tf.tile(tf.expand_dims(position_ids, 0), [self.tuning_batch_size, 1])
-                    
-            with tf.GradientTape() as value_tape:
-                value_tape.watch(self.value_model.trainable_variables)
-                gae_advantages, values = self.get_gae_advantages(batch_seqs, batch_rewards)
-                discounted_rewards = self.discount_rewards(batch_rewards)
-                value_loss = tf.reduce_mean(tf.square(discounted_rewards - values))
-                value_grads = value_tape.gradient(value_loss, self.value_model.trainable_variables)
-                value_optimizer.apply_gradients(zip(value_grads, self.value_model.trainable_variables))
-
-            with tf.GradientTape() as policy_tape:
-                tokens = self.model.tokenizer(batch_seqs, self.tuning_batch_size, self.model.data_parameters.sequence_length + self.gen_limit)
-                attention_mask = tf.cast((tokens != -100), 'float32')
-                logits = self.model.gpt(input_ids=tf.nn.relu(tokens), position_ids=position_ids, attention_mask=attention_mask, training=True).logits[:,-self.gen_limit:,:]
-                probs = tf.nn.softmax(logits, -1)
-                rec_probs = tf.gather(probs, batch_recs, batch_dims=2) 
-                batch_ratios = rec_probs / tf.stop_gradient(rec_probs)
-                ratio_advantage = gae_advantages * batch_ratios
-                clipped_batch_ratios = tf.clip_by_value(batch_ratios, 1-self.clip_eps, 1+self.clip_eps)
-                clipped_batch_ratio_advantage = gae_advantages * clipped_batch_ratios
-                ppo_loss = -tf.reduce_mean(tf.minimum(ratio_advantage, clipped_batch_ratio_advantage))
-                policy_grads = policy_tape.gradient(ppo_loss, self.model.trainable_variables)
-                policy_optimizer.apply_gradients(zip(policy_grads, self.model.trainable_variables))
-                mean_reward = tf.reduce_mean(tf.reduce_sum(batch_rewards, -1))
-                print(f"Step {step}. Mean reward", mean_reward.numpy(), "ppo loss", ppo_loss.numpy(), "value loss", value_loss.numpy())
-                with tensorboard_writer.as_default(step=step):
-                    tf.summary.scalar('tuning_train/ppo_loss', ppo_loss)
-                    tf.summary.scalar('tuning_train/mean_reward', mean_reward)
-                    tf.summary.scalar('tuning_train/value_loss', value_loss)
-                    if step % self.validate_every_steps == 0:
-                        self.validate(step)
-                        tensorboard_writer.flush()
-
-            if step + 1 % self.checkpoint_every_steps == 0:
-                self.model.save_weights(checkpoints_dir + "/current.h5")    
-                os.rename(checkpoints_dir + "/current.h5", checkpoints_dir + "/latest.h5")
+            for step in tqdm.tqdm(range(1, self.max_tuning_steps + 1)): 
+                print("Tuning step", step)
+                print("generating...")
                 
+                batch_rewards, batch_seqs, batch_recs = trials_generator.next_tuning_batch()
+                position_ids =  tf.concat([tf.range(self.model.data_parameters.sequence_length, -1, -1), tf.range(self.model.data_parameters.sequence_length + 1, self.model.data_parameters.sequence_length + self.gen_limit)], 0)
+                position_ids = tf.tile(tf.expand_dims(position_ids, 0), [self.tuning_batch_size, 1])
+                        
+                with tf.GradientTape() as value_tape:
+                    value_tape.watch(self.value_model.trainable_variables)
+                    gae_advantages, values = self.get_gae_advantages(batch_seqs, batch_rewards)
+                    discounted_rewards = self.discount_rewards(batch_rewards)
+                    value_loss = tf.reduce_mean(tf.square(discounted_rewards - values))
+                    value_grads = value_tape.gradient(value_loss, self.value_model.trainable_variables)
+                    value_optimizer.apply_gradients(zip(value_grads, self.value_model.trainable_variables))
+
+                with tf.GradientTape() as policy_tape:
+                    tokens = self.model.tokenizer(batch_seqs, self.tuning_batch_size, self.model.data_parameters.sequence_length + self.gen_limit)
+                    attention_mask = tf.cast((tokens != -100), 'float32')
+                    logits = self.model.gpt(input_ids=tf.nn.relu(tokens), position_ids=position_ids, attention_mask=attention_mask, training=True).logits[:,-self.gen_limit:,:]
+                    probs = tf.nn.softmax(logits, -1)
+                    rec_probs = tf.gather(probs, batch_recs, batch_dims=2) 
+                    batch_ratios = rec_probs / tf.stop_gradient(rec_probs)
+                    ratio_advantage = gae_advantages * batch_ratios
+                    clipped_batch_ratios = tf.clip_by_value(batch_ratios, 1-self.clip_eps, 1+self.clip_eps)
+                    clipped_batch_ratio_advantage = gae_advantages * clipped_batch_ratios
+                    ppo_loss = -tf.reduce_mean(tf.minimum(ratio_advantage, clipped_batch_ratio_advantage))
+                    policy_grads = policy_tape.gradient(ppo_loss, self.model.trainable_variables)
+                    policy_optimizer.apply_gradients(zip(policy_grads, self.model.trainable_variables))
+                    mean_reward = tf.reduce_mean(tf.reduce_sum(batch_rewards, -1))
+                    print(f"Step {step}. Mean reward", mean_reward.numpy(), "ppo loss", ppo_loss.numpy(), "value loss", value_loss.numpy())
+                    with tensorboard_writer.as_default(step=step):
+                        tf.summary.scalar('tuning_train/ppo_loss', ppo_loss)
+                        tf.summary.scalar('tuning_train/mean_reward', mean_reward)
+                        tf.summary.scalar('tuning_train/value_loss', value_loss)
+                        if step % self.validate_every_steps == 0:
+                            self.validate(step)
+                            tensorboard_writer.flush()
+
+                if (step + 1) % self.checkpoint_every_steps == 0:
+                    self.model.save_weights(checkpoints_dir + "/current.h5")    
+                    os.rename(checkpoints_dir + "/current.h5", checkpoints_dir + "/latest.h5")
+                    
         self.model.set_weights(self.best_weights)
 
     def get_gae_advantages(self, batch_seqs, batch_rewards):
@@ -221,8 +225,10 @@ class GenerativeTuningRecommender(SequentialRecommender):
             gt_action_index = len(all_actions) - 1
             seq, gt = get_seq_with_gt(all_actions, sep_item_id, gt_action_index)
             gt_action = Action(user, item_id=self.items.reverse_id(gt), timestamp=0) 
-            val_recommendations, val_seq = static_generate(seq, self.filter_seen, sep_item_id, greedy=True, train=False, items=self.items, gen_limit=self.gen_limit,
-                                                  pred_history_vectorizer=self.config.pred_history_vectorizer, model=self.model)
+            val_recommendations, val_seq = static_generate(seq, self.filter_seen, sep_item_id, greedy=True, 
+                                                           train=False, items=self.items, gen_limit=self.gen_limit,
+                                                            pred_history_vectorizer=self.config.pred_history_vectorizer,
+                                                            model=self.model)
             trial_result = build_trial_result(gt_action, val_recommendations, val_seq, self.items, self.reward_metric)                                 
             rewards.append(trial_result.reward)
             recs_gts.append((trial_result.recs_with_scores, trial_result.gt_action))
