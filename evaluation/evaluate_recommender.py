@@ -2,6 +2,7 @@ import copy
 import gzip
 from pathlib import Path
 import tempfile
+import numpy as np
 import tensorflow as tf
 import ujson
 import os
@@ -166,7 +167,7 @@ class RecommendersEvaluator(object):
         all_train_user_ids = list(set([action.user_id for action in self.train]))
         self.recommendations_limit = recommendations_limit
         random.shuffle(all_train_user_ids)
-        self.val_user_ids = all_train_user_ids[:self.n_val_users]
+        self.val_user_ids = self.get_val_user_ids(all_train_user_ids, n_val_users)
         self.sampled_requests = None
         if target_items_sampler is not None:
             print("generating sampled items requests...")
@@ -176,6 +177,13 @@ class RecommendersEvaluator(object):
             sampled_requests_generation_end = time.time()
             print(f"sampled requests generated in {sampled_requests_generation_start - sampled_requests_generation_end} seconds")
         self.experiment_config = experiment_config
+
+    #determenistically selects users for validation
+    def get_val_user_ids(self, all_user_ids, n_val_users):
+        sorted_user_ids = sorted(all_user_ids)
+        random = np.random.RandomState(42)
+        val_user_ids = random.choice(sorted_user_ids, n_val_users, replace=False)
+        return list(val_user_ids)
 
     def set_features_from_test(self, features_from_test):
         self.features_from_test = features_from_test
