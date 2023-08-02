@@ -18,9 +18,10 @@ from aprec.recommenders.top_recommender import TopRecommender
 
 
 USERS_FRACTIONS = [1.0]
+genre_func = get_genre_dict
 
 
-METRICS = [HIT(1), HIT(10), NDCG(10), ILD(get_genre_dict()) ]
+METRICS = [HIT(1), HIT(10), NDCG(10), ILD(genre_func()) ]
 #TARGET_ITEMS_SAMPLER = PopTargetItemsWithReplacementSampler(101)
 
 SEQUENCE_LENGTH=200
@@ -47,11 +48,11 @@ def generative_tuning_recommender(ild_lambda, pretrain_recommender=SmartMC(order
                                                validate_on_loss=True
                                                )
         recommender = GenerativeTuningRecommender(recommender_config, pre_training_recommender,
-                                                  validate_every_steps=1000, max_tuning_steps=64000, 
+                                                  validate_every_steps=500, max_tuning_steps=16000, 
                                                   tuning_batch_size=16, 
                                                   clip_eps=0.1,
-                                                  reward_metric=WeightedSumReward([NDCGReward(10), ILDReward(get_genre_dict())], [1, ild_lambda]),
-                                                  tradeoff_monitoring_rewards=[(NDCGReward(10), ILDReward(get_genre_dict()))],
+                                                  reward_metric=WeightedSumReward([NDCGReward(10), ILDReward(genre_func())], [1, ild_lambda]),
+                                                  tradeoff_monitoring_rewards=[(NDCGReward(10), ILDReward(genre_func()))],
                                                   gae_gamma=0.1, 
                                                   gae_lambda=0.1
                                                   )
@@ -59,8 +60,13 @@ def generative_tuning_recommender(ild_lambda, pretrain_recommender=SmartMC(order
         
 
 recommenders = {
-    "generative_tuning_recommender_lambda:0": lambda: generative_tuning_recommender(ild_lambda=0, max_pretrain_epochs=1),
-   } 
+} 
+
+ild_lambdas = [0.5, 0.25, 0.125, 0.0625, 0.03125, 0.015625, 0.0078125, 1.0, 0.0]
+
+for ild_lambda in ild_lambdas:
+    recommenders[f"generative_tuning_recommender_ild_lambda:{ild_lambda}"] = lambda ild_lambda=ild_lambda: generative_tuning_recommender(ild_lambda=ild_lambda)
+    
 
 def get_recommenders(filter_seen: bool):
     result = {}

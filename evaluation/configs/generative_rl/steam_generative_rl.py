@@ -1,31 +1,27 @@
 import random
 from aprec.datasets.steam import get_genres_steam_deduped_1000items_warm_users
-
 from aprec.evaluation.metrics.ild import ILD
 from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.evaluation.metrics.hit import HIT
 from aprec.evaluation.split_actions import LeaveOneOut
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
-from aprec.recommenders.first_order_mc import FirstOrderMarkovChainRecommender
 from aprec.recommenders.fmc_plus import SmartMC
-from aprec.recommenders.lightfm import LightFMRecommender
-from aprec.recommenders.random_recommender import RandomRecommender
+from aprec.recommenders.rl_generative.pre_train_target_splitter import PreTrainTargetSplitter
 from aprec.recommenders.sequential.models.generative.reward_metrics.ild_reward import ILDReward
 from aprec.recommenders.sequential.models.generative.reward_metrics.ndcg_reward import NDCGReward
 from aprec.recommenders.sequential.models.generative.reward_metrics.weighted_sum_reward import WeightedSumReward
-from aprec.recommenders.top_recommender import TopRecommender
 DATASET = "steam_deduped_1000items_warm_users"
 
 
 USERS_FRACTIONS = [1.0]
 
-
-METRICS = [HIT(1), HIT(10), NDCG(10), ILD(get_genres_steam_deduped_1000items_warm_users()) ]
+genre_func = get_genres_steam_deduped_1000items_warm_users
+METRICS = [HIT(1), HIT(10), NDCG(10), ILD(genre_func()) ]
 #TARGET_ITEMS_SAMPLER = PopTargetItemsWithReplacementSampler(101)
 
 SEQUENCE_LENGTH=200
 
-def generative_tuning_recommender(ild_lambda, pretrain_recommender=SmartMC(order=50, discount=0.6), max_pretrain_epochs=100000):       
+def generative_tuning_recommender(ild_lambda, pretrain_recommender=SmartMC(order=50, discount=0.6), max_pretrain_epochs=10000):       
         from aprec.recommenders.rl_generative.generative_tuning_recommender import GenerativeTuningRecommender
         from aprec.recommenders.sequential.models.generative.gpt_rec_rl import RLGPT2RecConfig
         from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
@@ -39,7 +35,7 @@ def generative_tuning_recommender(ild_lambda, pretrain_recommender=SmartMC(order
         recommender_config = SequentialRecommenderConfig(model_config, train_epochs=max_pretrain_epochs, early_stop_epochs=200,
                                                batch_size=128,
                                                training_time_limit=200000,  
-                                               sequence_splitter=IdSplitter, 
+                                               sequence_splitter=PreTrainTargetSplitter, 
                                                max_batches_per_epoch=100,
                                                targets_builder=DummyTargetBuilder,
                                                use_keras_training=True,
@@ -47,11 +43,11 @@ def generative_tuning_recommender(ild_lambda, pretrain_recommender=SmartMC(order
                                                validate_on_loss=True
                                                )
         recommender = GenerativeTuningRecommender(recommender_config, pre_training_recommender,
-                                                  validate_every_steps=80, max_tuning_steps=64000, 
+                                                  validate_every_steps=500, max_tuning_steps=16000, 
                                                   tuning_batch_size=16, 
                                                   clip_eps=0.1,
-                                                  reward_metric=WeightedSumReward([NDCGReward(10), ILDReward(get_genres_steam_deduped_1000items_warm_users())], [1, ild_lambda]),
-                                                  tradeoff_monitoring_rewards=[(NDCGReward(10), ILDReward(get_genres_steam_deduped_1000items_warm_users()))],
+                                                  reward_metric=WeightedSumReward([NDCGReward(10), ILDReward(genre_func())], [1, ild_lambda]),
+                                                  tradeoff_monitoring_rewards=[(NDCGReward(10), ILDReward(genre_func()))],
                                                   gae_gamma=0.1, 
                                                   gae_lambda=0.1
                                                   )
@@ -59,17 +55,13 @@ def generative_tuning_recommender(ild_lambda, pretrain_recommender=SmartMC(order
         
 
 recommenders = {
-    "generative_tuning_recommender_lambda:0": lambda: generative_tuning_recommender(ild_lambda=0),
-    "generative_tuning_recommender_lambda:0.01": lambda: generative_tuning_recommender(ild_lambda=0.01),
-    "generative_tuning_recommender_lambda:0.05": lambda: generative_tuning_recommender(ild_lambda=0.05),
-    "generative_tuning_recommender_lambda:0.2": lambda: generative_tuning_recommender(ild_lambda=0.2),
-    "generative_tuning_recommender_lambda:1": lambda: generative_tuning_recommender(ild_lambda=1), 
-    "generative_tuning_recommender_lambda:0_init:mf": lambda: generative_tuning_recommender(ild_lambda=0, pretrain_recommender=LightFMRecommender(256)), 
-    "generative_tuning_recommender_lambda:0_init:top": lambda: generative_tuning_recommender(ild_lambda=0, pretrain_recommender=TopRecommender()), 
-    "generative_tuning_recommender_lambda:0_init:first_order_mc": lambda: generative_tuning_recommender(ild_lambda=0, pretrain_recommender=FirstOrderMarkovChainRecommender()), 
-    "generative_tuning_recommender_lambda:0_init:random_recommender": lambda: generative_tuning_recommender(ild_lambda=0, pretrain_recommender=RandomRecommender()), 
-    "generative_tuning_recommender_lambda:0_init:no_pretrain": lambda: generative_tuning_recommender(ild_lambda=0, pretrain_recommender=RandomRecommender(), max_pretrain_epochs=0), 
 } 
+
+ild_lambdas = [0.5, 0.25, 0.125, 0.0625, 0.03125, 0.015625, 0.0078125, 1.0, 0.0]
+
+for ild_lambda in ild_lambdas:
+    recommenders[f"generative_tuning_recommender_ild_lambda:{ild_lambda}"] = lambda ild_lambda=ild_lambda: generative_tuning_recommender(ild_lambda=ild_lambda)
+    
 
 
 

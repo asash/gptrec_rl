@@ -131,8 +131,13 @@ class GenerativeTuningRecommender(SequentialRecommender):
                                            filter_seen=self.filter_seen,
                                            val_users=self.val_users,
                                            gen_limit=self.gen_limit) as trials_generator:
+            step = 1 
+            while step < self.max_tuning_steps + 1: 
+                with tensorboard_writer.as_default(step=step):
+                    if (step - 1) % self.validate_every_steps == 0:
+                        self.validate(step)
+                        tensorboard_writer.flush()
 
-            for step in tqdm.tqdm(range(1, self.max_tuning_steps + 1)): 
                 print("Tuning step", step)
                 print("generating...")
                 
@@ -167,14 +172,17 @@ class GenerativeTuningRecommender(SequentialRecommender):
                         tf.summary.scalar('tuning_train/ppo_loss', ppo_loss)
                         tf.summary.scalar('tuning_train/mean_reward', mean_reward)
                         tf.summary.scalar('tuning_train/value_loss', value_loss)
-                        if step % self.validate_every_steps == 0:
-                            self.validate(step)
-                            tensorboard_writer.flush()
+
 
                 if (step + 1) % self.checkpoint_every_steps == 0:
                     self.model.save_weights(checkpoints_dir + "/current.h5")    
                     os.rename(checkpoints_dir + "/current.h5", checkpoints_dir + "/latest.h5")
-                    
+                step += 1
+
+            #final validation
+            self.validate(step)
+            tensorboard_writer.flush()       
+
         self.model.set_weights(self.best_weights)
 
     def get_gae_advantages(self, batch_seqs, batch_rewards):
