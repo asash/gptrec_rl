@@ -62,7 +62,7 @@ def generative_tuning_recommender(ild_lambda, pretrain_recommender=SmartMC(order
 recommenders = {
 } 
 
-recommenders[f"generative_tuning_recommender_pretrain_smart_mc_0.6"] = generative_tuning_recommender(0.0)
+recommenders[f"generative_tuning_recommender_pretrain_smart_mc_0.6"] = lambda: generative_tuning_recommender(0.0)
     
 
 def get_recommenders(filter_seen: bool):
