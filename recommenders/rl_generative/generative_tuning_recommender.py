@@ -1,19 +1,19 @@
 from collections import defaultdict
-import gc
-import io
+import json
 import os
-import random
 import tempfile
-from matplotlib import pyplot as plt
+from typing import List
 
 import numpy as np
 import tensorflow as tf
 import tqdm
 from aprec.api.action import Action
 from aprec.recommenders.rl_generative.generator import static_generate
+from aprec.recommenders.rl_generative.plot_utils import plot_rewards_per_pos, plot_tradeoff_trajectory
 from aprec.recommenders.rl_generative.pre_train_targets_builder import PreTrainTargetsBuilder
 from aprec.recommenders.rl_generative.trials_generator import TrialsGeneratorMultiprocess 
 from aprec.recommenders.rl_generative.utils import build_trial_result, get_seq_with_gt
+from aprec.recommenders.rl_generative.value_model import ValueModel
 from aprec.recommenders.sequential.models.generative.reward_metrics.ndcg_reward import NDCGReward
 from aprec.recommenders.recommender import Recommender
 from aprec.recommenders.sequential.models.generative.gpt_rec_rl import RLGPT2RecConfig, RLGPT2RecModel
@@ -22,32 +22,11 @@ from aprec.recommenders.sequential.sequential_recommender_config import Sequenti
 from aprec.utils.os_utils import mkdir_p
 
 
-def plot_to_image(func):
-  def wrapper(*args, **kwargs):
-        figure = func(*args, **kwargs)
-        buf = io.BytesIO()
-        plt.savefig(buf, format='png')
-        plt.close(figure)
-        buf.seek(0)
-        image = tf.image.decode_png(buf.getvalue(), channels=4)
-        image = tf.expand_dims(image, 0)
-        return image
-  return wrapper
 
-@plot_to_image
-def plot_rewards_per_pos(rewards):
-    rewards = np.array(rewards)
-    fig =plt.figure(figsize=(4, 2.5))
-    ax = fig.add_subplot()
-    ax.violinplot(rewards, showmeans=True)
-    ax.set_xlabel("Position")
-    ax.set_ylabel("Reward")
-    ax.set_yscale('log')
-    return fig
-    
- 
 class GenerativeTuningRecommender(SequentialRecommender):
-    def __init__(self, config: SequentialRecommenderConfig, pre_train_recommender_factory,
+    def __init__(self, config: SequentialRecommenderConfig, 
+                 pre_train_recommender_factory=None,
+                 pre_trained_checkpoint_dir=None,
                  gen_limit=10, 
                  filter_seen=True,
                  clip_eps=0.2, reward_metric = NDCGReward(10), 
@@ -66,7 +45,14 @@ class GenerativeTuningRecommender(SequentialRecommender):
         if (type(config.model_config) != RLGPT2RecConfig):
             raise ValueError("GenerativeTuningRecommender only works with RLGPT2Rec model")
         super().__init__(config)
-        self.pre_train_recommender:Recommender = pre_train_recommender_factory()
+
+        #only one pre_train_recommender_factory or pre_trained_checkpoint_dir should be provided
+        if pre_train_recommender_factory is not None and pre_trained_checkpoint_dir is not None:
+           raise ValueError("Only one pre_train_recommender_factory or pre_trained_checkpoint_dir should be provided")
+        if pre_train_recommender_factory is not None:
+            self.pre_train_recommender:Recommender = pre_train_recommender_factory()
+        self.do_pre_train = pre_train_recommender_factory is not None
+        self.pre_trained_checkpoint_dir = pre_trained_checkpoint_dir
         self.gen_limit = gen_limit
         self.filter_seen = filter_seen
         self.model: RLGPT2RecModel
@@ -77,7 +63,6 @@ class GenerativeTuningRecommender(SequentialRecommender):
         self.max_tuning_steps = max_tuning_steps
         self.validate_every_steps = validate_every_steps
         self.best_val_revard = float('-inf')
-        self.best_weights = None
         self.gae_gamma = gae_gamma
         self.gae_lambda = gae_lambda
         self.tradeoff_monitoring_rewards = tradeoff_monitoring_rewards
@@ -87,16 +72,50 @@ class GenerativeTuningRecommender(SequentialRecommender):
         self.checkpoint_every_steps = checkpoint_every_steps
         self.sampling_processessess = sampling_processessess
         self.sampling_queue_size = sampling_que_size
+        self.tuning_step = None
+        self.value_model = None
+        self.data_stats = None
+        self.best_checkpoint_name = None
+        self.actions:List[Action] = []
+        
 
+
+    def compute_data_stats(self):
+        #we use this data for sanity check when we load model from checkpoint
+        self.data_stats = {}
+        self.data_stats["users"] = self.users.straight
+        self.data_stats["SEP_ITEM_ID"] = self.items.get_id('<SEP>')
+        self.data_stats["items"] = self.items.straight 
+        self.data_stats["val_users"] = self.val_users
+        self.data_stats["model_config"] = self.config.model_config.as_dict()        
+        seq_lens = {}
+        for user in self.users.straight:
+            seq_lens[user] = len(self.user_actions[self.users.get_id(user)])
+        self.data_stats["seq_lens"] = seq_lens
+         
     
     def add_action(self, action):
-        super().add_action(action)
+        self.actions.append(action)
+
+    #sort by user_id first, then by timestamp, then by item_id
+    def sort_actions(self):
+        self.actions.sort(key=lambda action: (action.user_id, action.timestamp, action.item_id))
+        self.user_actions = defaultdict(list)
+        for action in self.actions:
+            self.user_actions[self.users.get_id(action.user_id)].append((action.timestamp, self.items.get_id(action.item_id)))
+        
 
     def rebuild_model(self):
         self.sort_actions()
-        self.pre_train()
+        self.compute_data_stats()
+        if self.do_pre_train:
+            self.pre_train()
+        elif self.pre_trained_checkpoint_dir is not None:
+            self.load_pre_trained_checkpoint(self.pre_trained_checkpoint_dir)
+            self.pass_parameters()
+        self.ensure_value_model() 
         self.tune()
-
+    
     def pre_train(self):
         for user in self.users.straight:
             for ts, internal_item_id in self.user_actions[self.users.get_id(user)][:-1]:
@@ -110,6 +129,38 @@ class GenerativeTuningRecommender(SequentialRecommender):
         self.items.get_id('<SEP>') #ensure that we have special item id for <SEP>
         super().rebuild_model()
 
+    def save_pre_trained_checkpoint(self, checkpoint_name):
+        checkpoint_dir = self.get_out_dir() + "/checkpoints/" + checkpoint_name
+        mkdir_p(checkpoint_dir)
+        with open(checkpoint_dir + "/data_stats.json", 'w') as f:
+            json.dump(self.data_stats, f)
+        self.model.save_weights(checkpoint_dir + "/model.h5")
+        if self.value_model is not None:
+            self.value_model.save_weights(checkpoint_dir + "/value_model.h5")
+
+    def ensure_value_model(self):
+        if self.value_model is None:
+            self.value_model = ValueModel.from_config(self.model.get_config())
+            self.value_model.gpt.set_weights(self.model.gpt.get_weights())
+        
+    def load_pre_trained_checkpoint(self, checkpoint_dir):
+        print("Loading pre-trained checkpoint from", checkpoint_dir)
+        with open(checkpoint_dir + "/data_stats.json", 'r') as f:
+            other_data_stats = json.load(f)
+            if other_data_stats != self.data_stats:
+                raise ValueError("Data stats from checkpoint and from current data don't match")
+
+        if self.model is not None:
+            del self.model
+            self.model = None
+            
+        self.model = self.get_model()
+        self.model.load_weights(checkpoint_dir + "/model.h5")
+        if os.path.isfile(checkpoint_dir + "/value_model.h5"):
+            self.ensure_value_model()
+            self.value_model.load_weights(checkpoint_dir + "/value_model.h5")
+
+
     def tune(self):
         self.save_best_weights()
         tensorboard_dir = self.get_tensorboard_dir() 
@@ -119,9 +170,6 @@ class GenerativeTuningRecommender(SequentialRecommender):
         value_optimizer = tf.keras.optimizers.Adam(learning_rate=self.value_lr)
         checkpoints_dir = tempfile.mkdtemp()
         self.model.save_weights(checkpoints_dir + "/latest.h5")
-        self.value_model = RLGPT2RecModel.from_config(self.model.get_config())
-        self.value_model.gpt.set_weights(self.model.gpt.get_weights())
-        self.value_model.value_head = tf.keras.layers.Dense(1, name='value_head')
         with TrialsGeneratorMultiprocess(sampling_processess=self.sampling_processessess, sampling_queue_size=self.sampling_queue_size, 
                                            user_actions=self.user_actions, items=self.items, users=self.users,
                                            model_config=self.model.get_config(), pred_history_vectorizer=self.config.pred_history_vectorizer,
@@ -131,14 +179,14 @@ class GenerativeTuningRecommender(SequentialRecommender):
                                            filter_seen=self.filter_seen,
                                            val_users=self.val_users,
                                            gen_limit=self.gen_limit) as trials_generator:
-            step = 1 
-            while step < self.max_tuning_steps + 1: 
-                with tensorboard_writer.as_default(step=step):
-                    if (step - 1) % self.validate_every_steps == 0:
-                        self.validate(step)
+            self.tuning_step = 1 
+            while self.tuning_step < self.max_tuning_steps + 1: 
+                with tensorboard_writer.as_default(step=self.tuning_step):
+                    if (self.tuning_step - 1) % self.validate_every_steps == 0:
+                        self.validate()
                         tensorboard_writer.flush()
 
-                print("Tuning step", step)
+                print("Tuning step", self.tuning_step)
                 print("generating...")
                 
                 batch_rewards, batch_seqs, batch_recs = trials_generator.next_tuning_batch()
@@ -167,23 +215,22 @@ class GenerativeTuningRecommender(SequentialRecommender):
                     policy_grads = policy_tape.gradient(ppo_loss, self.model.trainable_variables)
                     policy_optimizer.apply_gradients(zip(policy_grads, self.model.trainable_variables))
                     mean_reward = tf.reduce_mean(tf.reduce_sum(batch_rewards, -1))
-                    print(f"Step {step}. Mean reward", mean_reward.numpy(), "ppo loss", ppo_loss.numpy(), "value loss", value_loss.numpy())
-                    with tensorboard_writer.as_default(step=step):
+                    print(f"Step {self.tuning_step}. Mean reward", mean_reward.numpy(), "ppo loss", ppo_loss.numpy(), "value loss", value_loss.numpy())
+                    with tensorboard_writer.as_default(self.tuning_step):
                         tf.summary.scalar('tuning_train/ppo_loss', ppo_loss)
                         tf.summary.scalar('tuning_train/mean_reward', mean_reward)
                         tf.summary.scalar('tuning_train/value_loss', value_loss)
 
 
-                if (step + 1) % self.checkpoint_every_steps == 0:
+                if (self.tuning_step + 1) % self.checkpoint_every_steps == 0:
                     self.model.save_weights(checkpoints_dir + "/current.h5")    
                     os.rename(checkpoints_dir + "/current.h5", checkpoints_dir + "/latest.h5")
-                step += 1
+                self.tuning_step += 1
 
             #final validation
-            self.validate(step)
+            self.validate()
             tensorboard_writer.flush()       
-
-        self.model.set_weights(self.best_weights)
+        self.load_pre_trained_checkpoint(self.get_out_dir() + "/checkpoints/" + self.best_checkpoint_name)
 
     def get_gae_advantages(self, batch_seqs, batch_rewards):
         tokens = self.model.tokenizer(batch_seqs, batch_seqs.shape[0], self.model.data_parameters.sequence_length + self.gen_limit)
@@ -222,7 +269,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
         discounted_rewards = tf.stack(discounted_rewards[::-1], -1)
         return discounted_rewards
 
-    def validate(self, step):
+    def validate(self):
         print("Validating...")
         rewards = []
         recs_gts = []
@@ -241,11 +288,15 @@ class GenerativeTuningRecommender(SequentialRecommender):
             rewards.append(trial_result.reward)
             recs_gts.append((trial_result.recs_with_scores, trial_result.gt_action))
         mean_reward = tf.reduce_mean(tf.reduce_sum(rewards, -1))
-        print(f"Validation at {step}. Mean reward", mean_reward.numpy())
+        print(f"Validation at {self.tuning_step}. Mean reward", mean_reward.numpy())
         tf.summary.scalar('tuning_val/mean_reward', mean_reward)
         reward_distr = plot_rewards_per_pos(rewards)
-        tf.summary.image("tuning_val/reward_distr", reward_distr, step=step)
+        tf.summary.image("tuning_val/reward_distr", reward_distr, step=self.tuning_step)
 
+        self.plot_tradeoffs(recs_gts)
+        self.try_update_best_model(mean_reward, self.tuning_step)
+
+    def plot_tradeoffs(self, recs_gts):
         for (metric1, metric2) in self.tradeoff_monitoring_rewards:
             tradeoff_name = f"{metric1.name}:::{metric2.name}"
             m1_sum = 0
@@ -260,59 +311,21 @@ class GenerativeTuningRecommender(SequentialRecommender):
             m1_sum /= len(recs_gts)
             m2_sum /= len(recs_gts)
             self.tradeoff_trajectiories[tradeoff_name].append((m1_sum, m2_sum))
-            trajectory = self.plot_tradeoff_trajectory(tradeoff_name)
-            print(f"{metric1.name}::{metric2.name} tradeoff at {step}. {metric1.name}", m1_sum, f"{metric2.name}", m2_sum)
-            tf.summary.image(f"tuning_val/{tradeoff_name}_tradeoff", trajectory, step=step)
+            trajectory = plot_tradeoff_trajectory(self.tradeoff_trajectiories[tradeoff_name], tradeoff_name)
+            print(f"{metric1.name}::{metric2.name} tradeoff at {self.tuning_step}. {metric1.name}", m1_sum, f"{metric2.name}", m2_sum)
+            tf.summary.image(f"tuning_val/{tradeoff_name}_tradeoff", trajectory, step=self.tuning_step)
             metric1_distr = plot_rewards_per_pos(rewards1)
             metric2_distr = plot_rewards_per_pos(rewards2)
-            tf.summary.image(f"tuning_val/{metric1.name}_distr", metric1_distr, step=step)
-            tf.summary.image(f"tuning_val/{metric2.name}_distr", metric2_distr, step=step)
-        self.try_update_best_model(mean_reward, step)
+            tf.summary.image(f"tuning_val/{metric1.name}_distr", metric1_distr, step=self.tuning_step)
+            tf.summary.image(f"tuning_val/{metric2.name}_distr", metric2_distr, step=self.tuning_step)
 
-    @plot_to_image
-    def plot_tradeoff_trajectory(self, tradeoff_name):
-        trajectory = self.tradeoff_trajectiories[tradeoff_name]
-        n = len(trajectory)
-        indices = list(range(n))  # Original indices
-        
-        # Ensure the trajectory has at most 1000 points while preserving the first and last point
-        if n > 1000:
-            step = n // 1000
-            trajectory = [trajectory[i] for i in range(0, n, step)]
-            indices = [indices[i] for i in range(0, n, step)]
-            if trajectory[-1] != trajectory[n-1]:
-                trajectory.append(trajectory[n-1])
-                indices.append(n-1)
-        
-        metric1_values = [x[0] for x in trajectory]
-        metric2_values = [x[1] for x in trajectory]
-        
-        # Create a color map from dark green to red
-        cmap = plt.cm.RdYlGn_r
 
-        fig, ax = plt.subplots(figsize=(8, 6))
-
-        # Create a scatter plot instead of a line plot
-        scatter = ax.scatter(metric1_values, metric2_values, c=indices, cmap=cmap, s=10)
-
-        # Increase size of the last point and mark it in pure red
-        ax.scatter(metric1_values[-1], metric2_values[-1], color='red', marker='o', s=100)
-
-        metric1_name = tradeoff_name.split(':::')[0]
-        metric2_name = tradeoff_name.split(':::')[1]
-        ax.set_xlabel(metric1_name)
-        ax.set_ylabel(metric2_name)
-        
-        # Add a colorbar
-        cbar = plt.colorbar(scatter, ax=ax)
-        cbar.set_label('Step in trajectory', rotation=270, labelpad=15)
-        
-        ax.grid()
-        return fig
-            
         
     def save_best_weights(self):
-        self.best_weights = self.model.get_weights()
+        best_checkpoint_name = f"checkpoint_step_{self.tuning_step}_mean_reward_{self.best_val_revard}"
+        print("saving new best weights to", best_checkpoint_name)
+        self.save_pre_trained_checkpoint(best_checkpoint_name)
+        self.best_checkpoint_name = best_checkpoint_name
         
     #if mean reward improves, we save the model weights    
     def try_update_best_model(self, mean_reward, step):
@@ -359,5 +372,6 @@ class GenerativeTuningRecommender(SequentialRecommender):
         return sequence
 
     def set_val_users(self, val_users):
-        self.pre_train_recommender.set_val_users(val_users)
+        if self.do_pre_train:
+            self.pre_train_recommender.set_val_users(val_users)
         super().set_val_users(val_users)

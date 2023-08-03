@@ -40,6 +40,7 @@ class TestRLGptRec(unittest.TestCase):
         
         
         recommender = GenerativeTuningRecommender(recommender_config, pre_training_recommender,
+                                                  pre_trained_checkpoint_dir=checkpoint,
                                                   validate_every_steps=2,
                                                   max_tuning_steps=10,
                                                   reward_metric=WeightedSumReward([NDCGReward(10), ILDReward(get_genre_dict())], [1, 0.05]),
@@ -52,20 +53,27 @@ class TestRLGptRec(unittest.TestCase):
         recommender = FilterSeenRecommender(recommender)
         return recommender
 
+    def get_checkpoints_dir(self):
+        return os.path.join(os.path.abspath(os.path.dirname(__file__)), 'test_checkpoints')
 
-    def test_RLGPTRec(self):
+    def test_from_pretrained_checkpoint(self):
         USER_ID = '22'
         catalog = get_movies_catalog()
-        pre_training_recommender = lambda: SmartMC(order=50, discount=0.6)
-        recommender = self.get_recommender(pre_training_recommender)
+        checkpoint_dir = self.get_checkpoints_dir()
+        pretrained_checkpoint = os.path.join(checkpoint_dir, 'full_checkpoint')
+        recommender = self.get_recommender(checkpoint=pretrained_checkpoint)
+        actions = []
         for action in DatasetsRegister()['ml-1m_50items_fraction_0.2']():
+            actions.append(action)
+        random.shuffle(actions)
+        for action in actions:
             recommender.add_action(action)
         recommender.rebuild_model()
         recs = recommender.recommend(USER_ID, 10)
         for rec in recs:
             print(catalog.get_item(rec[0]), "\t", rec[1])
         batch = [('6002', None), ('2591', None)]
-        recommender.recommend_batch(batch, limit=10)
+        recommender.recommend_batch(batch, limit=10)       
 
 if __name__ == "__main__":
     unittest.main()

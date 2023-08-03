@@ -1,3 +1,4 @@
+import tempfile
 from tqdm import tqdm
 from aprec.api.item import Item
 
@@ -13,6 +14,7 @@ class Recommender():
         self.val_users = set() 
         self.tensorboard_dir = None
         self.flags = {}
+        self.out_dir = None
 
     def name(self):
         raise NotImplementedError
@@ -65,10 +67,18 @@ class Recommender():
         return recommender
 
 
-
     #the directory where the recommender can save stuff, like logs
     def set_out_dir(self, out_dir):
+        if self.out_dir is not None:
+            raise Exception("out_dir already set")
         self.out_dir = out_dir
+
+    def get_out_dir(self):
+        if self.out_dir is None:
+            self.out_dir = tempfile.mkdtemp()
+        return self.out_dir
+
+    
     
     #recommenders may save tensorboard logs there
     def set_tensorboard_dir(self, tensorboard_dir):
