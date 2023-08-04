@@ -235,7 +235,8 @@ class ModelTrainer(object):
         print(f"\tbest_val_loss: {self.best_val_loss}")
         print(f"\tsteps_metric_not_improved: {self.steps_metric_not_improved}")
         print(f"\tsteps_loss_not_improved: {self.steps_loss_not_improved}")
-        print(f"\tsteps_to_stop: {self.steps_to_early_stop}")
+        if self.recommender.config.early_stopping:
+            print(f"\tsteps_to_stop: {self.steps_to_early_stop}")
         print(f"\ttotal_training_time: {self.training_time()}")
         
     def leave_one_out(self, users):
