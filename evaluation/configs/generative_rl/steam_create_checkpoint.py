@@ -65,7 +65,7 @@ recommenders = {
 } 
 
 for discount in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
-    recommenders[f"SmartMC_{discount}"] = lambda discount=discount: SmartMC(order=50, discount=discount)
+    recommenders[f"SmartMC_{discount}"] = lambda discount=discount: SmartMC(order=15, discount=discount)
 
 #recommenders[f"generative_tuning_recommender_pretrain_smart_mc_0.6"] = lambda: generative_tuning_recommender(0.0)
     
