@@ -31,7 +31,6 @@ def generative_tuning_recommender(ild_lambda, pretrain_recommender=SmartMC(order
         from aprec.recommenders.sequential.models.generative.gpt_rec_rl import RLGPT2RecConfig
         from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
         from aprec.recommenders.sequential.target_builders.dummy_builder import DummyTargetBuilder
-        from aprec.recommenders.sequential.targetsplitters.id_splitter import IdSplitter
 
 
         model_config = RLGPT2RecConfig(transformer_blocks=3, embedding_size=256, tokenizer='id', tokens_per_item=1, values_per_dim=3500, attention_heads=4)
@@ -64,10 +63,7 @@ recommenders = {
     
 } 
 
-for discount in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
-    recommenders[f"SmartMC_{discount}"] = lambda discount=discount: SmartMC(order=15, discount=discount)
-
-#recommenders[f"generative_tuning_recommender_pretrain_smart_mc_0.6"] = lambda: generative_tuning_recommender(0.0)
+recommenders[f"generative_tuning_recommender_pretrain_smart_mc_0.6"] = lambda: generative_tuning_recommender(0.0)
     
 
 def get_recommenders(filter_seen: bool):
