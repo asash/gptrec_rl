@@ -1,6 +1,5 @@
 from typing import List
 import tensorflow as tf
-from torch import Tensor
 from aprec.recommenders.sequential.models.generative.gpt_rec_rl import RLGPT2RecConfig, RLGPT2RecModel
 from aprec.recommenders.sequential.models.sequential_recsys_model import SequentialDataParameters
 
