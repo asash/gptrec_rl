@@ -25,7 +25,7 @@ class SmartMC(Recommender):
         self.src_count = np.zeros(self.item_id.size())
         self.total_count = 0
         self.src_dst_dist_count = np.zeros([self.item_id.size(), self.item_id.size(), self.order])
-        for userid, session in tqdm.tqdm(self.user_actions.items()):
+        for userid, session in tqdm.tqdm(self.user_actions.items(), ascii=True, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0, leave=True, ncols=70):
             for start_idx in range(len(session)):
                 end_idx = min(start_idx + self.order + 1, len(session))
                 src_action = session[start_idx]
