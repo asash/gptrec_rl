@@ -21,6 +21,11 @@ METRICS = [HIT(1), HIT(10), NDCG(10), ILD(genre_func()) ]
 
 SEQUENCE_LENGTH=200
 
+#checkpoints will be created in any case
+SAVE_MODELS=False
+
+
+
 def generative_tuning_recommender(ild_lambda, pretrain_recommender=SmartMC(order=50, discount=0.6), max_pretrain_epochs=500):       
         from aprec.recommenders.rl_generative.generative_tuning_recommender import GenerativeTuningRecommender
         from aprec.recommenders.sequential.models.generative.gpt_rec_rl import RLGPT2RecConfig
