@@ -140,7 +140,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
         self.items.get_id('<SEP>') #ensure that we have special item id for <SEP>
 
         super().rebuild_model()
-        
+
         #restore last action for val users
         for user in self.val_users:
             self.user_actions[self.users.get_id(user)].append(self.last_action_hold_out[user])
@@ -246,7 +246,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
                 self.tuning_step += 1
 
             #no need in final validation if we didn't do any tuning
-            if self.max_tuning_steps > 0:
+            if (self.max_tuning_steps > 0) or self.validate_before_tuning:
                 #final validation
                 self.validate()
                 tensorboard_writer.flush()       

@@ -92,6 +92,11 @@ class ModelTrainer(object):
                 train_generator.cleanup()
                 if self.early_stop_flag:
                     break
+
+            #use last weights if early stopping is not enabled
+            if not self.recommender.config.early_stopping:
+                self.best_weights = self.recommender.model.get_weights()
+
             #cleanup loss and optimizer associated with the model
             del(self.recommender.model) 
             self.recommender.model = self.recommender.get_model()
@@ -139,6 +144,9 @@ class ModelTrainer(object):
         return time.time() - self.start_time
 
     def try_early_stop(self):
+        if not self.recommender.config.early_stopping:
+            return
+
         if not self.recommender.config.validate_on_loss:
             steps_to_early_stop_metric = self.recommender.config.early_stop_epochs - self.steps_metric_not_improved
         else:

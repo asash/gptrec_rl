@@ -26,7 +26,7 @@ METRICS = [HIT(1), HIT(10), NDCG(10), ILD(genre_func()) ]
 
 SEQUENCE_LENGTH=200
 
-def generative_tuning_recommender(ild_lambda, pretrain_recommender=SmartMC(order=50, discount=0.6), max_pretrain_epochs=10000):       
+def generative_tuning_recommender(ild_lambda, pretrain_recommender=SmartMC(order=50, discount=0.6), max_pretrain_epochs=500):       
         from aprec.recommenders.rl_generative.generative_tuning_recommender import GenerativeTuningRecommender
         from aprec.recommenders.sequential.models.generative.gpt_rec_rl import RLGPT2RecConfig
         from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
@@ -37,7 +37,8 @@ def generative_tuning_recommender(ild_lambda, pretrain_recommender=SmartMC(order
         model_config = RLGPT2RecConfig(transformer_blocks=3, embedding_size=256, tokenizer='id', tokens_per_item=1, values_per_dim=3500, attention_heads=4)
         pre_training_recommender = lambda: FilterSeenRecommender(pretrain_recommender)
 
-        recommender_config = SequentialRecommenderConfig(model_config, train_epochs=max_pretrain_epochs, early_stop_epochs=200,
+        recommender_config = SequentialRecommenderConfig(model_config, train_epochs=max_pretrain_epochs,
+                                               early_stopping=False,
                                                batch_size=128,
                                                training_time_limit=200000,  
                                                sequence_splitter=PreTrainTargetSplitter, 

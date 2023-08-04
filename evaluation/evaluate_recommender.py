@@ -70,8 +70,14 @@ def evaluate_recommender(recommender, test_actions,
  
     print("generating predictions...")
     # random_requets = []
-    # for i in range(100):
-    #     random_requets.append(random.choice(requests))
+    # selected_users = set()
+    # for i in range(512):
+    #     while True:
+    #         random_request = random.choice(requests)
+    #         if random_request[0] not in selected_users:
+    #             selected_users.add(random_request[0])
+    #             random_requets.append(random_request)
+    #             break
     # requests = random_requets
     all_predictions = recommender.recommend_batch(requests, recommendations_limit)
 
@@ -121,7 +127,14 @@ def evaluate_recommender(recommender, test_actions,
     if evaluate_on_samples:
         result["sampled_metrics"] = sampled_result
 
+    # for r in requests:
+    #     internal_recommender_user_id = recommender.recommender.users.get_id(r[0])
+    #     gt_item_id = test_actions_by_user[r[0]][0].item_id
+    #     recommender.recommender.user_actions[internal_recommender_user_id].append((1, recommender.recommender.items.get_id(gt_item_id)))
+    #     pass
 
+    # recommender.recommender.val_users = list(selected_users)
+    # recommender.recommender.validate()
     return result
 
 class RecommendersEvaluator(object):
