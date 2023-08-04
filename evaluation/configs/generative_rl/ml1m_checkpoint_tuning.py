@@ -29,8 +29,9 @@ METRICS = [HIT(1), HIT(10), NDCG(10), ILD(genre_func()) ]
 #TARGET_ITEMS_SAMPLER = PopTargetItemsWithReplacementSampler(101)
 
 SEQUENCE_LENGTH=200
+CHECKPOINT="/home/aprec/Projects/aprec/evaluation/results/checkpoints_for_rl/ml1m_supervised_pre_trained_checkpoint"
 
-def generative_tuning_recommender(ild_lambda, checkpoint_dir):       
+def generative_tuning_recommender(ild_lambda=0.5, checkpoint_dir=CHECKPOINT, gae_gamma=0.1, gae_lambda=0.1):       
         from aprec.recommenders.rl_generative.generative_tuning_recommender import GenerativeTuningRecommender
         from aprec.recommenders.sequential.models.generative.gpt_rec_rl import RLGPT2RecConfig
         from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
@@ -40,15 +41,15 @@ def generative_tuning_recommender(ild_lambda, checkpoint_dir):
         recommender_config = SequentialRecommenderConfig(model_config) 
         recommender = GenerativeTuningRecommender(recommender_config,
                                                   pre_trained_checkpoint_dir=checkpoint_dir,
-                                                  validate_every_steps=500, max_tuning_steps=0, 
+                                                  validate_every_steps=500, max_tuning_steps=32000, 
                                                   tuning_batch_size=16, 
                                                   clip_eps=0.1,
                                                   reward_metric=WeightedSumReward([NDCGReward(10), ILDReward(genre_func())], [1, ild_lambda]),
                                                   tradeoff_monitoring_rewards=[(NDCGReward(10), ILDReward(genre_func()))],
-                                                  gae_gamma=0.1, 
-                                                  gae_lambda=0.1,
+                                                  gae_gamma=gae_gamma, 
+                                                  gae_lambda=gae_lambda,
                                                   validate_before_tuning=True,
-                                                  sampling_processessess=1
+                                                  sampling_processessess=8
                                                   )
         return recommender
         
@@ -56,7 +57,22 @@ def generative_tuning_recommender(ild_lambda, checkpoint_dir):
 recommenders = {
 } 
 
-recommenders[f"generative_tuning_recommender_pretrain_smart_mc_0.6"] = lambda: generative_tuning_recommender(0.0, "./results/ml1m_items_with5users/ml1m_generative_rl_create_checkpoint_2023_08_04T18_32_22/checkpoints/checkpoint_step_None_mean_reward_-inf/")
+recommenders[f"generative_tuning_recommender_ild_0.5"] = lambda: generative_tuning_recommender(0.5)
+recommenders[f"generative_tuning_recommender_ild_0.2"] = lambda: generative_tuning_recommender(0.2)
+recommenders[f"generative_tuning_recommender_ild_0.1"] = lambda: generative_tuning_recommender(0.1)
+recommenders[f"generative_tuning_recommender_ild_0.0"] = lambda: generative_tuning_recommender(0.0)
+recommenders[f"generative_tuning_recommender_ild_1.0"] = lambda: generative_tuning_recommender(1.0)
+
+recommenders[f"generative_tuning_recommender_ild_0.5_gamma_0.1_lambda_0.1"] = lambda: generative_tuning_recommender(0.5, gae_gamma=0.1, gae_lambda=0.1)
+recommenders[f"generative_tuning_recommender_ild_0.5_gamma_0.1_lambda_0.5"] = lambda: generative_tuning_recommender(0.5, gae_gamma=0.1, gae_lambda=0.5)
+recommenders[f"generative_tuning_recommender_ild_0.5_gamma_0.1_lambda_0.9"] = lambda: generative_tuning_recommender(0.5, gae_gamma=0.1, gae_lambda=0.9)
+recommenders[f"generative_tuning_recommender_ild_0.5_gamma_0.5_lambda_0.1"] = lambda: generative_tuning_recommender(0.5, gae_gamma=0.5, gae_lambda=0.1)
+recommenders[f"generative_tuning_recommender_ild_0.5_gamma_0.5_lambda_0.5"] = lambda: generative_tuning_recommender(0.5, gae_gamma=0.5, gae_lambda=0.5)
+recommenders[f"generative_tuning_recommender_ild_0.5_gamma_0.5_lambda_0.9"] = lambda: generative_tuning_recommender(0.5, gae_gamma=0.5, gae_lambda=0.9)
+recommenders[f"generative_tuning_recommender_ild_0.5_gamma_0.9_lambda_0.1"] = lambda: generative_tuning_recommender(0.9, gae_gamma=0.5, gae_lambda=0.1)
+recommenders[f"generative_tuning_recommender_ild_0.5_gamma_0.9_lambda_0.5"] = lambda: generative_tuning_recommender(0.9, gae_gamma=0.5, gae_lambda=0.5)
+recommenders[f"generative_tuning_recommender_ild_0.5_gamma_0.9_lambda_0.9"] = lambda: generative_tuning_recommender(0.9, gae_gamma=0.5, gae_lambda=0.9)
+
     
 
 def get_recommenders(filter_seen: bool):
