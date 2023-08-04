@@ -212,7 +212,8 @@ class ModelTrainer(object):
         tf.summary.scalar(f"loss/val", validation_result.val_loss)
         tf.summary.scalar(f"loss/train_val_diff", (train_result.training_loss - validation_result.val_loss))
         tf.summary.scalar(f"loss/evaluations_without_improvement", self.steps_loss_not_improved)
-        tf.summary.scalar(f"steps_to_early_stop", self.steps_to_early_stop)
+        if self.recommender.config.early_stopping:
+            tf.summary.scalar(f"steps_to_early_stop", self.steps_to_early_stop)
         tf.summary.scalar(f"time/epoch_trainig_time", train_result.training_time)
         tf.summary.scalar(f"time/trainig_time_per_batch", train_result.training_time/train_result.trained_batches)
         tf.summary.scalar(f"time/trainig_time_per_sample", train_result.training_time/train_result.trained_samples)
