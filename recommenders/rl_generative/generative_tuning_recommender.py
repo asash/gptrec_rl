@@ -129,9 +129,13 @@ class GenerativeTuningRecommender(SequentialRecommender):
             self.user_actions[self.users.get_id(user)] = self.user_actions[self.users.get_id(user)][:-1]
 
         for user in self.users.straight:
+            #we don't pre-train on val users
+            if user in self.val_users:
+                continue
             for ts, internal_item_id in self.user_actions[self.users.get_id(user)][:-1]:
                 item_id = self.items.reverse_id(internal_item_id)
                 self.pre_train_recommender.add_action(Action(user_id=user, item_id=item_id, timestamp=ts))
+
         self.pre_train_recommender.rebuild_model()
         self.config.targets_builder = lambda: PreTrainTargetsBuilder(self.pre_train_recommender,
                                                                      sequence_vectorizer=self.config.pred_history_vectorizer,
