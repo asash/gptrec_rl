@@ -121,6 +121,13 @@ class GenerativeTuningRecommender(SequentialRecommender):
         self.tune()
     
     def pre_train(self):
+        #hold_out last action for val users, so that pre-training doesn't use it (and doesn't overfit on it via early stopping mechanism)
+        #we will restore it after pre-training and user them for tuning. 
+        
+        for user in self.val_users:
+            self.last_action_hold_out[user] = self.user_actions[self.users.get_id(user)][-1]
+            self.user_actions[self.users.get_id(user)] = self.user_actions[self.users.get_id(user)][:-1]
+
         for user in self.users.straight:
             for ts, internal_item_id in self.user_actions[self.users.get_id(user)][:-1]:
                 item_id = self.items.reverse_id(internal_item_id)
@@ -131,7 +138,14 @@ class GenerativeTuningRecommender(SequentialRecommender):
                                                                      item_ids=self.items,
                                                                      generation_limit=self.gen_limit)
         self.items.get_id('<SEP>') #ensure that we have special item id for <SEP>
+
         super().rebuild_model()
+        
+        #restore last action for val users
+        for user in self.val_users:
+            self.user_actions[self.users.get_id(user)].append(self.last_action_hold_out[user])
+
+
 
     def save_pre_trained_checkpoint(self, checkpoint_name):
         checkpoint_dir = self.get_out_dir() + "/checkpoints/" + checkpoint_name
