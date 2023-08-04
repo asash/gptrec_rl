@@ -56,7 +56,7 @@ def generative_tuning_recommender(ild_lambda, checkpoint_dir):
 recommenders = {
 } 
 
-recommenders[f"generative_tuning_recommender_pretrain_smart_mc_0.6"] = lambda: generative_tuning_recommender(0.0, "./results/ml1m_items_with5users/ml1m_generative_rl_create_checkpoint_2023_08_04T16_12_25/checkpoints/checkpoint_step_None_mean_reward_-inf/")
+recommenders[f"generative_tuning_recommender_pretrain_smart_mc_0.6"] = lambda: generative_tuning_recommender(0.0, "./results/ml1m_items_with5users/ml1m_generative_rl_create_checkpoint_2023_08_04T18_32_22/checkpoints/checkpoint_step_None_mean_reward_-inf/")
     
 
 def get_recommenders(filter_seen: bool):
