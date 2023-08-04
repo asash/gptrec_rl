@@ -46,7 +46,8 @@ def generative_tuning_recommender(ild_lambda, pretrain_recommender=SmartMC(order
                                                targets_builder=DummyTargetBuilder,
                                                use_keras_training=True,
                                                sequence_length=SEQUENCE_LENGTH,
-                                               validate_on_loss=True
+                                               validate_on_loss=True, 
+                                               train_on_val_users=False 
                                                )
         recommender = GenerativeTuningRecommender(recommender_config, pre_training_recommender,
                                                   validate_every_steps=500, max_tuning_steps=0, 
