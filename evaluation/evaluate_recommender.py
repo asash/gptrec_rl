@@ -201,7 +201,7 @@ class RecommendersEvaluator(object):
     #determenistically selects users for validation
     def get_val_user_ids(self, all_user_ids, n_val_users):
         sorted_user_ids = sorted(all_user_ids)
-        random = np.random.RandomState(42)
+        random = np.random.RandomState(31337)
         val_user_ids = random.choice(sorted_user_ids, n_val_users, replace=False)
         return list(val_user_ids)
 

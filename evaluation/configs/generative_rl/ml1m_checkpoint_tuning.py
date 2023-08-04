@@ -47,7 +47,7 @@ def generative_tuning_recommender(ild_lambda, checkpoint_dir):
                                                   tradeoff_monitoring_rewards=[(NDCGReward(10), ILDReward(genre_func()))],
                                                   gae_gamma=0.1, 
                                                   gae_lambda=0.1,
-                                                  validate_before_tuning=False,
+                                                  validate_before_tuning=True,
                                                   sampling_processessess=1
                                                   )
         return recommender
@@ -56,7 +56,7 @@ def generative_tuning_recommender(ild_lambda, checkpoint_dir):
 recommenders = {
 } 
 
-recommenders[f"generative_tuning_recommender_pretrain_smart_mc_0.6"] = lambda: generative_tuning_recommender(0.0, "./results/ml1m_items_with5users/ml1m_generative_rl_create_checkpoint_2023_08_04T11_59_36/checkpoints/checkpoint_step_None_mean_reward_-inf")
+recommenders[f"generative_tuning_recommender_pretrain_smart_mc_0.6"] = lambda: generative_tuning_recommender(0.0, "./results/ml1m_items_with5users/ml1m_generative_rl_create_checkpoint_2023_08_04T16_12_25/checkpoints/checkpoint_step_None_mean_reward_-inf/")
     
 
 def get_recommenders(filter_seen: bool):
