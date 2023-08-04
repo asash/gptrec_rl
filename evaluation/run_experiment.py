@@ -78,7 +78,10 @@ def run_experiment(config):
         else:
             items=None
 
-
+        if hasattr(config, 'SAVE_MODELS'):
+            save_models = config.SAVE_MODELS
+        else:
+            save_models = True
 
         if hasattr(config, 'RECOMMENDATIONS_LIMIT'):
             recommendations_limit = config.RECOMMENDATIONS_LIMIT
@@ -115,7 +118,8 @@ def run_experiment(config):
                                                       target_items_sampler=target_items_sampler, 
                                                       remove_cold_start=filter_cold_start, 
                                                       save_split=config.SAVE_SPLIT, 
-                                                      global_tensorboard_dir=config.global_tensorboard_dir
+                                                      global_tensorboard_dir=config.global_tensorboard_dir,
+                                                      save_models=save_models
                                                       )
 
         if  hasattr(config, 'FEATURES_FROM_TEST'):

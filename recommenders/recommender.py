@@ -31,7 +31,7 @@ class Recommender():
     # recommendation request = tuple(user_id, features)
     def recommend_batch(self, recommendation_requests, limit):
         results = []
-        for user_id, features in tqdm(recommendation_requests, ascii=True):
+        for user_id, features in tqdm(recommendation_requests, ascii=True, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0, leave=True, ncols=70):
             results.append(self.recommend(user_id, limit, features))
         return results
 

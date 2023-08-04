@@ -18,6 +18,10 @@ from aprec.recommenders.top_recommender import TopRecommender
 
 
 USERS_FRACTIONS = [1.0]
+
+#checkpoints will be created in any case
+SAVE_MODELS=False
+
 genre_func = get_genre_dict
 
 
@@ -42,7 +46,9 @@ def generative_tuning_recommender(ild_lambda, checkpoint_dir):
                                                   reward_metric=WeightedSumReward([NDCGReward(10), ILDReward(genre_func())], [1, ild_lambda]),
                                                   tradeoff_monitoring_rewards=[(NDCGReward(10), ILDReward(genre_func()))],
                                                   gae_gamma=0.1, 
-                                                  gae_lambda=0.1
+                                                  gae_lambda=0.1,
+                                                  validate_before_tuning=False,
+                                                  sampling_processessess=1
                                                   )
         return recommender
         

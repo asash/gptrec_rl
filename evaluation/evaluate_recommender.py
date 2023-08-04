@@ -38,22 +38,23 @@ def evaluate_recommender(recommender, test_actions,
                          features_from_test=None,
                          recommendations_limit=900,
                          evaluate_on_samples = False,
+                         save_model=True
                          ):
+    if save_model:
+        print('saving model...')
+        try:
+            mkdir_p(f"{out_dir}/checkpoints/")
+            model_filename = f"{out_dir}/checkpoints/{recommender_name}.dill"
+            recommender.save(model_filename)
+            compress_async(model_filename)
 
-    print('saving model...')
-    try:
-        mkdir_p(f"{out_dir}/checkpoints/")
-        model_filename = f"{out_dir}/checkpoints/{recommender_name}.dill"
-        recommender.save(model_filename)
-        compress_async(model_filename)
-
-    except Exception:
-        print("Failed saving model...")
-        print(traceback.format_exc())
-        
-    tensorboard_dir = f"{out_dir}/tensorboard/{recommender_name}"
-    mkdir_p(tensorboard_dir)
-    recommender.set_tensorboard_dir(tensorboard_dir)
+        except Exception:
+            print("Failed saving model...")
+            print(traceback.format_exc())
+            
+        tensorboard_dir = f"{out_dir}/tensorboard/{recommender_name}"
+        mkdir_p(tensorboard_dir)
+        recommender.set_tensorboard_dir(tensorboard_dir)
 
     test_actions_by_user = group_by_user(test_actions)
     metric_sum = defaultdict(lambda: 0.0)
@@ -68,6 +69,10 @@ def evaluate_recommender(recommender, test_actions,
 
  
     print("generating predictions...")
+    random_requets = []
+    for i in range(100):
+        random_requets.append(random.choice(requests))
+    requests = random_requets
     all_predictions = recommender.recommend_batch(requests, recommendations_limit)
 
     if evaluate_on_samples:
@@ -75,8 +80,8 @@ def evaluate_recommender(recommender, test_actions,
 
     print('calculating metrics...')
     user_docs = []
-    for i in tqdm(range(len(all_user_ids)), ascii=True):
-        user_id = all_user_ids[i]
+    for i in tqdm(range(len(requests)),   ascii=True, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0, leave=True, ncols=70):
+        user_id = requests[i][0] 
         predictions = all_predictions[i]
         user_test_actions = test_actions_by_user[user_id]
         user_doc = {"user_id": user_id,
@@ -110,9 +115,9 @@ def evaluate_recommender(recommender, test_actions,
     result = {}
     sampled_result = {}
     for metric in metric_sum:
-        result[metric] = metric_sum[metric]/len(test_actions_by_user)
+        result[metric] = metric_sum[metric]/len(requests)
         if evaluate_on_samples:
-            sampled_result[metric] = sampled_metric_sum[metric]/len(test_actions_by_user)
+            sampled_result[metric] = sampled_metric_sum[metric]/len(requests)
     if evaluate_on_samples:
         result["sampled_metrics"] = sampled_result
 
@@ -128,7 +133,8 @@ class RecommendersEvaluator(object):
                  target_items_sampler: TargetItemSampler = None,
                  remove_cold_start=True, 
                  save_split = False,
-                 global_tensorboard_dir = None 
+                 global_tensorboard_dir = None , 
+                 save_models=True
                  ):
         self.actions = actions
         self.metrics = metrics
@@ -136,6 +142,7 @@ class RecommendersEvaluator(object):
         self.data_splitter = data_splitter
         self.callbacks = callbacks
         self.out_dir = out_dir
+        self.save_models = save_models
         tensorboard_dir = f"{out_dir}/tensorboard/"
         if global_tensorboard_dir is None:
             global_tensorboard_dir = Path(tempfile.mkdtemp())
@@ -262,7 +269,9 @@ class RecommendersEvaluator(object):
                                                      self.metrics, self.out_dir,
                                                      recommender_name, self.features_from_test,
                                                      recommendations_limit=self.recommendations_limit,
-                                                     evaluate_on_samples=self.sampled_requests is not None)
+                                                     evaluate_on_samples=self.sampled_requests is not None, 
+                                                     save_model=self.save_models
+                                                     )
             evaluate_time_end = time.time()
             print("calculating metrics...")
             build_time = build_time_end - build_time_start

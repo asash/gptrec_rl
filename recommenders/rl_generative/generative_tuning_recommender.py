@@ -40,7 +40,8 @@ class GenerativeTuningRecommender(SequentialRecommender):
                  value_lr = 1e-4,
                  checkpoint_every_steps = 20, 
                  sampling_processessess = 8, 
-                 sampling_que_size = 16
+                 sampling_que_size = 16,
+                 validate_before_tuning = True
                  ):
         if (type(config.model_config) != RLGPT2RecConfig):
             raise ValueError("GenerativeTuningRecommender only works with RLGPT2Rec model")
@@ -74,9 +75,12 @@ class GenerativeTuningRecommender(SequentialRecommender):
         self.sampling_queue_size = sampling_que_size
         self.tuning_step = None
         self.value_model = None
+        self.last_validation_step = None
         self.data_stats = None
         self.best_checkpoint_name = None
         self.actions:List[Action] = []
+        self.validate_before_tuning = validate_before_tuning
+        
         
 
 
@@ -182,9 +186,9 @@ class GenerativeTuningRecommender(SequentialRecommender):
             self.tuning_step = 1 
             while self.tuning_step < self.max_tuning_steps + 1: 
                 with tensorboard_writer.as_default(step=self.tuning_step):
-                    if (self.tuning_step - 1) % self.validate_every_steps == 0:
-                        self.validate()
-                        tensorboard_writer.flush()
+                    if ((self.tuning_step - 1) % self.validate_every_steps == 0) and  ((self.tuning_step > 1) or self.validate_before_tuning):
+                            self.validate()
+                            tensorboard_writer.flush()
 
                 print("Tuning step", self.tuning_step)
                 print("generating...")
@@ -227,9 +231,11 @@ class GenerativeTuningRecommender(SequentialRecommender):
                     os.rename(checkpoints_dir + "/current.h5", checkpoints_dir + "/latest.h5")
                 self.tuning_step += 1
 
-            #final validation
-            self.validate()
-            tensorboard_writer.flush()       
+            #no need in final validation if we didn't do any tuning
+            if self.max_tuning_steps > 0:
+                #final validation
+                self.validate()
+                tensorboard_writer.flush()       
         self.load_pre_trained_checkpoint(self.get_out_dir() + "/checkpoints/" + self.best_checkpoint_name)
 
     def get_gae_advantages(self, batch_seqs, batch_rewards):
@@ -360,7 +366,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
 
     def recommend_batch(self, recommendation_requests, limit):
         results = []
-        for user_id, features in tqdm.tqdm(recommendation_requests, ascii=True):
+        for user_id, features in tqdm.tqdm(recommendation_requests,  ascii=True, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0, leave=True, ncols=70):
             results.append(self.recommend(user_id, limit, features))
         return results
 
