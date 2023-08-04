@@ -36,7 +36,8 @@ class SequentialRecommenderConfig(object):
                  use_ann_for_inference = False, 
                  sequence_length=200, 
                  train_on_val_users=True, #if True, we will train on val users as well (excluding the last action) 
-                 use_keras_training=False
+                 use_keras_training=False,
+                 early_stopping=True
                  ):
 
         self.model_config = model_config
@@ -66,3 +67,4 @@ class SequentialRecommenderConfig(object):
         self.min_train_epochs = min_train_epochs
         self.validate_on_loss = validate_on_loss
         self.train_on_val_users = train_on_val_users
+        self.early_stopping = early_stopping
