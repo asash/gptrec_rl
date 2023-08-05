@@ -49,7 +49,7 @@ def generative_tuning_recommender(ild_lambda, pretrain_recommender=SmartMC(order
                                                )
         recommender = GenerativeTuningRecommender(recommender_config, pre_training_recommender,
                                                   validate_every_steps=500, max_tuning_steps=16000, 
-                                                  tuning_batch_size=16, 
+                                                  tuning_batch_size=128, 
                                                   clip_eps=0.1,
                                                   reward_metric=WeightedSumReward([NDCGReward(10), ILDReward(genre_func())], [1, ild_lambda]),
                                                   tradeoff_monitoring_rewards=[(NDCGReward(10), ILDReward(genre_func()))],
