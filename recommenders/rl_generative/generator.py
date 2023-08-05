@@ -37,33 +37,39 @@ def static_generate(input_seq, filter_seen, sep_item_id, greedy, train, items, g
         for i in range (len(model_actions)):
             mask[model_actions[i][1]] = 1.0
     mask[items.size():] = 1.0
+    masks = []
     generated_tokens = []
     position_ids = None 
-    past_key_values = None
+    #past_key_values = None
+    next_token_probs = []
     for i in range(gen_limit):
         seq = pred_history_vectorizer(model_actions, extension = i+1) 
         position_ids = shift_position_ids(position_ids, seq, model.data_parameters.sequence_length)
         tokens = model.tokenizer(seq, 1, model.data_parameters.sequence_length + i+1)
         attention_mask = tf.cast((tokens != -100), 'float32')
-        if past_key_values is not None:
-            tokens = tokens[:,-1:]
-            attention_mask = attention_mask[:,-1:]
-            position_ids = position_ids[-1:]
-        result = model.gpt(tf.nn.relu(tokens[0]), attention_mask=attention_mask, training=train, position_ids=position_ids, past_key_values= past_key_values)
+        # if past_key_values is not None:
+        #     tokens = tokens[:,-1:]
+        #     attention_mask = attention_mask[:,-1:]
+        #     position_ids = position_ids[-1:]
+        result = model.gpt(tf.nn.relu(tokens[0]), attention_mask=attention_mask, training=train, position_ids=position_ids)
         next_token_logits = result.logits[-1, :] 
         past_key_values = result.past_key_values
-        mask_score = min(tf.reduce_min(next_token_logits), 0) - 1e6 
+        mask_score =  -1e6 
         masked_logits = tf.where(mask, mask_score, next_token_logits) 
+        masks.append(mask.copy())
         if not greedy:
             next_token = sep_item_id 
             while next_token >= sep_item_id: #we don't want to generate SEP token or any other special tokens. Usually, this loop should only run once
                 next_token = tf.random.categorical(tf.expand_dims(masked_logits, 0), num_samples=1)[-1,0].numpy()
+                next_token_prob = tf.nn.softmax(tf.expand_dims(masked_logits, 0))[0, next_token].numpy()
+                next_token_probs.append(next_token_prob)
         else:
             next_token = tf.argmax(masked_logits[:sep_item_id]).numpy()
         model_actions.append((i+1, next_token))
         generated_tokens.append(next_token)
-        mask[next_token] = 1.0
-    return generated_tokens, seq
+        if filter_seen:
+            mask[next_token] = 1.0
+    return generated_tokens, seq, next_token_probs, masks
 
 def shift_position_ids(position_ids, seq, sequence_length):
     if position_ids is None:

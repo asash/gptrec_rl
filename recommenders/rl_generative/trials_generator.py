@@ -1,4 +1,5 @@
 
+from collections import deque
 from typing import Any, List
 from aprec.api.action import Action
 from multiprocessing.context import SpawnProcess, SpawnContext
@@ -60,10 +61,10 @@ class TrialsGenerator(object):
         gt_action = Action(user_id=self.users.reverse_id(internal_user_id), item_id=self.items.reverse_id(ground_truth), timestamp=0)
         sep_item_id = self.items.get_id('<SEP>')
         self.ensure_generator()
-        recommendations, seq = self.generator.generate(sequence, self.filter_seen, sep_item_id, greedy=False, train=False)
+        recommendations, seq, logged_probs, mask_original = self.generator.generate(sequence, self.filter_seen, sep_item_id, greedy=False, train=False)
         items = self.items 
         reward_metric=self.reward_metric
-        return build_trial_result(gt_action, recommendations, seq, items, reward_metric)
+        return build_trial_result(gt_action, recommendations, seq, items, reward_metric, logged_probs, mask_original)
 
 
 
@@ -80,15 +81,23 @@ class TrialsGenerator(object):
         batch_rewards = []
         batch_seqs = []
         batch_recs = []
+        batch_logged_probs = []
+        batch_mask_original = []
+        
         for i in range(self.batch_size):
             trial_result = self.random_trial() 
             batch_rewards.append(trial_result.reward)
             batch_seqs.append(trial_result.seq)
             batch_recs.append(trial_result.recs)
+            batch_logged_probs.append(trial_result.logged_probs)
+            batch_mask_original.append(trial_result.mask_original)
+            
         batch_rewards = tf.stack(batch_rewards, 0)
         batch_seqs = tf.stack(batch_seqs, 0)
         batch_recs = tf.stack(batch_recs, 0)
-        return [batch_rewards, batch_seqs, batch_recs]
+        batch_logged_probs = tf.stack(batch_logged_probs, 0)
+        batch_mask_original = tf.stack(batch_mask_original, 0)
+        return [batch_rewards, batch_seqs, batch_recs, batch_logged_probs, batch_mask_original]
 
 class TrialsGenerratorProcess(object):
     def __init__(self, queue, *args, **kwargs):
@@ -104,11 +113,13 @@ class TrialsGenerratorProcess(object):
          
 
 class TrialsGeneratorMultiprocess(object):
-    def __init__(self, sampling_processess, sampling_queue_size, *args, **kwargs) -> None:
+    def __init__(self, sampling_processess,sampling_queue_size, batch_cache_size=100, *args, **kwargs) -> None:
         ctx = SpawnContext()
         self.result_queue = ctx.Queue(sampling_queue_size)
         self.trials_generator = TrialsGenerratorProcess(self.result_queue, *args, **kwargs)
         self.sampling_processess = sampling_processess
+        self.batches_cache = deque(maxlen=batch_cache_size)
+        
 
     def __enter__(self):
         self.processors:List[SpawnProcess] = []
@@ -116,10 +127,18 @@ class TrialsGeneratorMultiprocess(object):
             self.processors.append(SpawnProcess(target=self.trials_generator))
             self.processors[-1].daemon = True 
             self.processors[-1].start()
+
+        #add first batch to cache
+        self.batches_cache.append(self.result_queue.get())
         return self
 
     def next_tuning_batch(self):
-        return self.result_queue.get()
+        while not self.result_queue.empty():
+            self.batches_cache.append(self.result_queue.get())
+        print(f"batch_cache_size: {len(self.batches_cache)}")
+        result =  random.choice(self.batches_cache)
+        return result
+            
 
     def __exit__(self, exc_type, exc_value, exc_traceback):
         for p in self.processors:

@@ -211,7 +211,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
                 print("Tuning step", self.tuning_step)
                 print("generating...")
                 
-                batch_rewards, batch_seqs, batch_recs = trials_generator.next_tuning_batch()
+                batch_rewards, batch_seqs, batch_recs, batch_logged_probs, batch_mask_original = trials_generator.next_tuning_batch()
                 position_ids =  tf.concat([tf.range(self.model.data_parameters.sequence_length, -1, -1), tf.range(self.model.data_parameters.sequence_length + 1, self.model.data_parameters.sequence_length + self.gen_limit)], 0)
                 position_ids = tf.tile(tf.expand_dims(position_ids, 0), [self.tuning_batch_size, 1])
                         
@@ -227,9 +227,11 @@ class GenerativeTuningRecommender(SequentialRecommender):
                     tokens = self.model.tokenizer(batch_seqs, self.tuning_batch_size, self.model.data_parameters.sequence_length + self.gen_limit)
                     attention_mask = tf.cast((tokens != -100), 'float32')
                     logits = self.model.gpt(input_ids=tf.nn.relu(tokens), position_ids=position_ids, attention_mask=attention_mask, training=True).logits[:,-self.gen_limit:,:]
-                    probs = tf.nn.softmax(logits, -1)
+                    mask_score =  -1e6 
+                    masked_logits = tf.where(batch_mask_original > 0, mask_score, logits) 
+                    probs = tf.nn.softmax(masked_logits, -1)
                     rec_probs = tf.gather(probs, batch_recs, batch_dims=2) 
-                    batch_ratios = rec_probs / tf.stop_gradient(rec_probs)
+                    batch_ratios = tf.math.divide_no_nan(rec_probs, batch_logged_probs)
                     ratio_advantage = gae_advantages * batch_ratios
                     clipped_batch_ratios = tf.clip_by_value(batch_ratios, 1-self.clip_eps, 1+self.clip_eps)
                     clipped_batch_ratio_advantage = gae_advantages * clipped_batch_ratios
@@ -304,11 +306,11 @@ class GenerativeTuningRecommender(SequentialRecommender):
             gt_action_index = len(all_actions) - 1
             seq, gt = get_seq_with_gt(all_actions, sep_item_id, gt_action_index)
             gt_action = Action(user, item_id=self.items.reverse_id(gt), timestamp=0) 
-            val_recommendations, val_seq = static_generate(seq, self.filter_seen, sep_item_id, greedy=True, 
+            val_recommendations, val_seq, val_logged_probs, val_mask = static_generate(seq, self.filter_seen, sep_item_id, greedy=True, 
                                                            train=False, items=self.items, gen_limit=self.gen_limit,
                                                             pred_history_vectorizer=self.config.pred_history_vectorizer,
                                                             model=self.model)
-            trial_result = build_trial_result(gt_action, val_recommendations, val_seq, self.items, self.reward_metric)                                 
+            trial_result = build_trial_result(gt_action, val_recommendations, val_seq, self.items, self.reward_metric, val_logged_probs, val_mask)                                 
             rewards.append(trial_result.reward)
             recs_gts.append((trial_result.recs_with_scores, trial_result.gt_action))
         mean_reward = tf.reduce_mean(tf.reduce_sum(rewards, -1))
@@ -371,10 +373,10 @@ class GenerativeTuningRecommender(SequentialRecommender):
         internal_user_id = self.users.get_id(user_id)
         seq = self.get_pred_sequence(internal_user_id)
         sep_item_id = self.items.get_id('<SEP>')
-        user_recs, user_seq = static_generate(seq, self.filter_seen, sep_item_id, greedy=True,
+        user_recs = static_generate(seq, self.filter_seen, sep_item_id, greedy=True,
                                               train=False, items=self.items, gen_limit=self.gen_limit,
                                               pred_history_vectorizer=self.config.pred_history_vectorizer,
-                                              model=self.model)
+                                              model=self.model)[0]
         recs = [] 
         for i in range(len(user_recs)):
             score = 1/np.log2(i+2)

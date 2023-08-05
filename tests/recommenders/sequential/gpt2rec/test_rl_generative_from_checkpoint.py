@@ -47,6 +47,7 @@ class TestRLGptRec(unittest.TestCase):
                                                   tradeoff_monitoring_rewards = [(NDCGReward(10), ILDReward(get_genre_dict()))],
                                                   checkpoint_every_steps=3,
                                                   sampling_processessess=1, 
+                                                  validate_before_tuning=False
                                                   )
 
         recommender.set_val_users(val_users)
