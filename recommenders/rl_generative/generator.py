@@ -1,24 +1,26 @@
 import os
 import numpy as np
 import tensorflow as tf
+from aprec.recommenders.rl_generative.utils import get_latest_checkpoint
 
 from aprec.recommenders.sequential.models.generative.gpt_rec_rl import RLGPT2RecModel
 
 
 class Generator(object):
-    def __init__(self, model_config, model_checkpoint_path, items, pred_history_vectorizer, gen_limit=10):
+    def __init__(self, model_config, model_checkpoint_dir, items, pred_history_vectorizer, gen_limit=10):
         self.model = RLGPT2RecModel.from_config(model_config)
         self.items = items
         self.pred_history_vectorizer = pred_history_vectorizer 
         self.gen_limit = gen_limit
         self.last_update_timestamp = None
-        self.model_checkpoint_path = model_checkpoint_path
+        self.model_checkpoint_path = model_checkpoint_dir
 
     def try_update_weights(self):
-        file_timestamp = os.path.getmtime(self.model_checkpoint_path)
+        latest_checkpoint = get_latest_checkpoint(self.model_checkpoint_path)
+        file_timestamp = os.path.getmtime(latest_checkpoint + "/__success__")
         if self.last_update_timestamp is None or file_timestamp > self.last_update_timestamp:
             self.last_update_timestamp = file_timestamp
-            self.model.load_weights(self.model_checkpoint_path)
+            self.model.load_weights(latest_checkpoint + "/model.h5")
             print("Model weights updated")
         
     def generate(self, input_seq, filter_seen, sep_item_id, greedy=False, train=False):

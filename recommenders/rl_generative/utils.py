@@ -27,3 +27,18 @@ def build_trial_result(gt_action, recommendations, seq, items, reward_metric, lo
         reward = reward_metric(recs_with_scores, [gt_action])
         return TrialResult(reward=reward, seq=seq, recs=recommendations, recs_with_scores=recs_with_scores, 
                            gt_action=gt_action, logged_probs=logged_probs, mask_original=mask_original)
+
+def get_latest_checkpoint(checkpoint_dir):
+    import os
+    import glob
+    checkpoints = glob.glob(os.path.join(checkpoint_dir, 'checkpoint_*'))
+    latest_checkpoint = None
+    latest_timestamp = None
+    for checkpoint in checkpoints:
+        if os.path.isfile(checkpoint + "/__success__"):
+            timestamp = os.path.getmtime(checkpoint + "/__success__")
+            if latest_timestamp is None or timestamp > latest_timestamp:
+                latest_timestamp = timestamp
+                latest_checkpoint = checkpoint
+    return latest_checkpoint
+

@@ -13,7 +13,7 @@ from aprec.recommenders.rl_generative.utils import build_trial_result, get_seq_w
 
 class TrialsGenerator(object):
     def __init__(self, user_actions, items, users, model_config, pred_history_vectorizer,
-                 model_checkpoint_file, 
+                 model_checkpoint_dir, 
                 val_users, reward_metric,
                 tuning_batch_size,
                 filter_seen=True, 
@@ -28,7 +28,7 @@ class TrialsGenerator(object):
         self.generator = None 
         self.model_config = model_config
         self.pred_history_vectorizer = pred_history_vectorizer
-        self.model_checkpoint_file = model_checkpoint_file
+        self.model_checkpoint_dir = model_checkpoint_dir
         self.gen_limit = gen_limit
         self.batch_size = tuning_batch_size
         self.all_user_ids = list(self.user_actions.keys())
@@ -36,7 +36,7 @@ class TrialsGenerator(object):
     def ensure_generator(self):
         if self.generator is None:
             from aprec.recommenders.rl_generative.generator import Generator
-            self.generator = Generator(self.model_config, self.model_checkpoint_file, self.items, 
+            self.generator = Generator(self.model_config, self.model_checkpoint_dir, self.items, 
                                        self.pred_history_vectorizer, gen_limit=self.gen_limit)
         
         
