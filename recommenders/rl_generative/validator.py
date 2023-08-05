@@ -110,6 +110,7 @@ class Validator(object):
             reward_distr = plot_rewards_per_pos(rewards)
             tf.summary.image("tuning_val/reward_distr", reward_distr, step=self.validation_step)
             self.plot_tradeoffs(recs_gts)
+            tf.summary.flush()
         validation_file = self.model_checkpoint_path + "/validations.csv"
         with open(validation_file, "a") as f:
             f.write(f"{self.last_checkpoint},{self.validation_step},{mean_reward.numpy()}\n")
