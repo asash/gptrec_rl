@@ -42,17 +42,12 @@ def static_generate(input_seq, filter_seen, sep_item_id, greedy, train, items, g
     masks = []
     generated_tokens = []
     position_ids = None 
-    #past_key_values = None
     next_token_probs = []
     for i in range(gen_limit):
         seq = pred_history_vectorizer(model_actions, extension = i+1) 
         position_ids = shift_position_ids(position_ids, seq, model.data_parameters.sequence_length)
         tokens = model.tokenizer(seq, 1, model.data_parameters.sequence_length + i+1)
         attention_mask = tf.cast((tokens != -100), 'float32')
-        # if past_key_values is not None:
-        #     tokens = tokens[:,-1:]
-        #     attention_mask = attention_mask[:,-1:]
-        #     position_ids = position_ids[-1:]
         result = model.gpt(tf.nn.relu(tokens[0]), attention_mask=attention_mask, training=train, position_ids=position_ids)
         next_token_logits = result.logits[-1, :] 
         past_key_values = result.past_key_values

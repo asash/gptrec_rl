@@ -43,7 +43,6 @@ class Validator(object):
         self.tensroboard_writer = None
         self.last_checkpoint = None
         self.tradeoff_trajectiories = defaultdict(list)
-        self.try_update_weights()
 
 
     def try_update_weights(self):
@@ -63,21 +62,22 @@ class Validator(object):
         if self.tensroboard_writer is None:
             self.tensroboard_writer = tf.summary.create_file_writer(self.tensorboard_dir)
 
-    def call(self):
+    def __call__(self):
+        import os
+        os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
         while True:
             if self.try_update_weights():
-                print("Model weights updated")
+                print("Validator: Model weights updated")
+                self.validate()
             else:
-                print("Model weights not updated")
                 time.sleep(1)
 
     def validate(self):
         import tensorflow as tf
         self.ensure_tensorboard_writer()
-        print("Validating...")
         rewards = []
         recs_gts = []
-        for user in tqdm.tqdm(self.val_users,  ascii=True, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0, leave=True, ncols=70):
+        for user in self.val_users:
             internal_user_id = self.users.get_id(user)
             all_actions = self.user_actions[internal_user_id]
             sep_item_id = self.items.get_id('<SEP>')
