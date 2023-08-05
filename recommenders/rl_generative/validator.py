@@ -5,12 +5,7 @@ import time
 from typing import List
 import numpy as np
 
-import tqdm
-from aprec.api.action import Action
-from aprec.recommenders.rl_generative.generator import static_generate
-from aprec.recommenders.rl_generative.plot_utils import plot_rewards_per_pos, plot_tradeoff_trajectory
-from aprec.recommenders.rl_generative.utils import build_trial_result, get_latest_checkpoint, get_seq_with_gt
-from aprec.recommenders.sequential.models.generative.gpt_rec_rl import RLGPT2RecModel
+
 
 
 class Validator(object):
@@ -25,7 +20,7 @@ class Validator(object):
                  reward_metric,
                  gen_limit=10,
                  tradeoff_monitoring_rewards = []): 
-        self.model = RLGPT2RecModel.from_config(model_config)
+        self.model = None
         self.items = items
         self.pred_history_vectorizer = pred_history_vectorizer 
         self.gen_limit = gen_limit
@@ -42,10 +37,17 @@ class Validator(object):
         self.reward_metric = reward_metric
         self.tensroboard_writer = None
         self.last_checkpoint = None
+        self.model_config = model_config
         self.tradeoff_trajectiories = defaultdict(list)
 
+    def ensure_model(self):
+        from aprec.recommenders.sequential.models.generative.gpt_rec_rl import RLGPT2RecModel
+        if self.model is None: 
+            self.model = RLGPT2RecModel.from_config(self.model_config)
 
     def try_update_weights(self):
+        from aprec.recommenders.rl_generative.utils import get_latest_checkpoint
+        self.ensure_model()
         latest_checkpoint = get_latest_checkpoint(self.model_checkpoint_path)
         file_timestamp = os.path.getmtime(latest_checkpoint + "/__success__")
         if self.last_update_timestamp is None or file_timestamp > self.last_update_timestamp:
@@ -73,7 +75,12 @@ class Validator(object):
                 time.sleep(1)
 
     def validate(self):
+        from aprec.recommenders.rl_generative.generator import static_generate
+        from aprec.recommenders.rl_generative.plot_utils import plot_rewards_per_pos
+        from aprec.recommenders.rl_generative.utils import build_trial_result, get_seq_with_gt
+        from aprec.api.action import Action
         import tensorflow as tf
+
         self.ensure_tensorboard_writer()
         rewards = []
         recs_gts = []
@@ -102,6 +109,8 @@ class Validator(object):
             f.write(f"{self.last_checkpoint},{self.validation_step},{mean_reward.numpy()}")
 
     def plot_tradeoffs(self, recs_gts):
+        from aprec.recommenders.rl_generative.plot_utils import plot_tradeoff_trajectory
+        from aprec.recommenders.rl_generative.plot_utils import plot_rewards_per_pos
         import tensorflow as tf
         for (metric1, metric2) in self.tradeoff_monitoring_rewards:
             tradeoff_name = f"{metric1.name}:::{metric2.name}"
