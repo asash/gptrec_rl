@@ -41,8 +41,8 @@ def generative_tuning_recommender(ild_lambda=0.5, checkpoint_dir=CHECKPOINT, gae
         recommender_config = SequentialRecommenderConfig(model_config) 
         recommender = GenerativeTuningRecommender(recommender_config,
                                                   pre_trained_checkpoint_dir=checkpoint_dir,
-                                                  validate_every_steps=500, max_tuning_steps=32000, 
-                                                  tuning_batch_size=32, 
+                                                  max_tuning_steps=32000, 
+                                                  tuning_batch_size=128, 
                                                   clip_eps=0.1,
                                                   reward_metric=WeightedSumReward([NDCGReward(10), ILDReward(genre_func())], [1, ild_lambda]),
                                                   tradeoff_monitoring_rewards=[(NDCGReward(10), ILDReward(genre_func()))],

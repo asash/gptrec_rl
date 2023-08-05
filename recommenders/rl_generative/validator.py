@@ -84,6 +84,7 @@ class Validator(object):
         self.ensure_tensorboard_writer()
         rewards = []
         recs_gts = []
+        cnt = 0
         for user in self.val_users:
             internal_user_id = self.users.get_id(user)
             all_actions = self.user_actions[internal_user_id]
@@ -98,15 +99,22 @@ class Validator(object):
             trial_result = build_trial_result(gt_action, val_recommendations, val_seq, self.items, self.reward_metric, val_logged_probs, val_mask)                                 
             rewards.append(trial_result.reward)
             recs_gts.append((trial_result.recs_with_scores, trial_result.gt_action))
+            cnt += 1
+            if cnt % 10 == 0:
+                print(f"Validator: validation at {self.validation_step}. Processed {cnt} users")
+                
         mean_reward = tf.reduce_mean(tf.reduce_sum(rewards, -1))
-        print(f"Validation at {self.validation_step}. Mean reward", mean_reward.numpy())
+        print(f"Validator: validation at {self.validation_step}. Mean reward", mean_reward.numpy())
         with self.tensroboard_writer.as_default(step=self.validation_step):
             tf.summary.scalar('tuning_val/mean_reward', mean_reward)
             reward_distr = plot_rewards_per_pos(rewards)
             tf.summary.image("tuning_val/reward_distr", reward_distr, step=self.validation_step)
             self.plot_tradeoffs(recs_gts)
-        with open(self.model_checkpoint_path + "/validations.csv", "a") as f:
-            f.write(f"{self.last_checkpoint},{self.validation_step},{mean_reward.numpy()}")
+        validation_file = self.model_checkpoint_path + "/validations.csv"
+        with open(validation_file, "a") as f:
+            f.write(f"{self.last_checkpoint},{self.validation_step},{mean_reward.numpy()}\n")
+            f.flush()
+            print(f"Validator: Validation file {validation_file} updated")
 
     def plot_tradeoffs(self, recs_gts):
         from aprec.recommenders.rl_generative.plot_utils import plot_tradeoff_trajectory
