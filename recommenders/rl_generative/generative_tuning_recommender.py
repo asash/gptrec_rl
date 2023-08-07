@@ -40,7 +40,8 @@ class GenerativeTuningRecommender(SequentialRecommender):
                  checkpoint_every_steps = 20, 
                  sampling_processessess = 8, 
                  sampling_que_size = 16,
-                 validate_before_tuning = True
+                 validate_before_tuning = True, 
+                 entropy_bonus = 0.0,
                  ):
         if (type(config.model_config) != RLGPT2RecConfig):
             raise ValueError("GenerativeTuningRecommender only works with RLGPT2Rec model")
@@ -76,6 +77,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
         self.data_stats = None
         self.actions:List[Action] = []
         self.validate_before_tuning = validate_before_tuning
+        self.entropy_bonus = entropy_bonus
         
         
 
@@ -233,12 +235,13 @@ class GenerativeTuningRecommender(SequentialRecommender):
                         mask_score =  -1e6 
                         masked_logits = tf.where(batch_mask_original > 0, mask_score, logits) 
                         probs = tf.nn.softmax(masked_logits, -1)
+                        entropy = -tf.reduce_mean(tf.reduce_sum(probs * tf.math.log(probs + 1e-6), -1))
                         rec_probs = tf.gather(probs, batch_recs, batch_dims=2) 
                         batch_ratios = tf.math.divide_no_nan(rec_probs, batch_logged_probs)
                         ratio_advantage = gae_advantages * batch_ratios
                         clipped_batch_ratios = tf.clip_by_value(batch_ratios, 1-self.clip_eps, 1+self.clip_eps)
                         clipped_batch_ratio_advantage = gae_advantages * clipped_batch_ratios
-                        ppo_loss = -tf.reduce_mean(tf.minimum(ratio_advantage, clipped_batch_ratio_advantage))
+                        ppo_loss = -tf.reduce_mean(tf.minimum(ratio_advantage, clipped_batch_ratio_advantage)) - self.entropy_bonus * entropy
                         policy_grads = policy_tape.gradient(ppo_loss, self.model.trainable_variables)
                         policy_optimizer.apply_gradients(zip(policy_grads, self.model.trainable_variables))
 
@@ -248,6 +251,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
                         tf.summary.scalar('tuning_train/ppo_loss', ppo_loss)
                         tf.summary.scalar('tuning_train/mean_reward', mean_reward)
                         tf.summary.scalar('tuning_train/value_loss', value_loss)
+                        tf.summary.scalar('tuning_train/entropy', entropy)
         self.load_best_ckeckpoint()            
         
     def load_best_ckeckpoint(self): 
