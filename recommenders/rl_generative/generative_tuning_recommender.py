@@ -231,7 +231,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
                     with tf.GradientTape() as policy_tape:
                         tokens = self.model.tokenizer(batch_seqs, self.tuning_batch_size, self.model.data_parameters.sequence_length + self.gen_limit)
                         attention_mask = tf.cast((tokens != -100), 'float32')
-                        logits = self.model.gpt(input_ids=tf.nn.relu(tokens), position_ids=position_ids, attention_mask=attention_mask, training=True).logits[:,-self.gen_limit:,:]
+                        logits = self.model.gpt(input_ids=tf.nn.relu(tokens), position_ids=position_ids, attention_mask=attention_mask, training=False).logits[:,-self.gen_limit:,:]
                         mask_score =  -1e6 
                         masked_logits = tf.where(batch_mask_original > 0, mask_score, logits) 
                         probs = tf.nn.softmax(masked_logits, -1)

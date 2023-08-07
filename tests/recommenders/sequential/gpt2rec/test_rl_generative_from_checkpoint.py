@@ -1,8 +1,8 @@
 import os
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 import random
 
 from aprec.recommenders.sequential.models.generative.reward_metrics.acc_reward import ACCReward
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 import unittest
 from aprec.datasets.movielens1m import get_genre_dict, get_movies_catalog
 from aprec.recommenders.fmc_plus import SmartMC
