@@ -41,8 +41,8 @@ def generative_tuning_recommender(ild_lambda=0.5, checkpoint_dir=CHECKPOINT, gae
         model_config = RLGPT2RecConfig(transformer_blocks=3, embedding_size=256, tokenizer='id', tokens_per_item=1, values_per_dim=3500, attention_heads=4)
         recommender_config = SequentialRecommenderConfig(model_config, train_epochs=0) 
         recommender = GenerativeTuningRecommender(recommender_config,
-                                                  #pre_trained_checkpoint_dir=checkpoint_dir,
-                                                  pre_train_recommender_factory=lambda: RandomRecommender(),
+                                                  pre_trained_checkpoint_dir=checkpoint_dir,
+                                                  #pre_train_recommender_factory=lambda: RandomRecommender(),
                                                   max_tuning_steps=max_tuning_steps, 
                                                   tuning_batch_size=128, 
                                                   clip_eps=0.1,
