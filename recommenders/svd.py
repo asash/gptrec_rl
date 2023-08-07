@@ -5,7 +5,7 @@ from sklearn.decomposition import TruncatedSVD
 import numpy as np
 
 class SvdRecommender(Recommender):
-    def __init__(self, num_latent_components, random_seed=None):
+    def __init__(self, num_latent_components, random_seed=None, ignore_bias=False):
         super().__init__()
         self.latent_components = num_latent_components
         self.users = ItemId()
@@ -18,6 +18,7 @@ class SvdRecommender(Recommender):
         self.mean_user = None
         self.random_seed = random_seed
         self.biases = None
+        self.ignore_bias = ignore_bias
         
     def name(self):
         return "Svd@{}".format(self.latent_components)
@@ -65,8 +66,29 @@ class SvdRecommender(Recommender):
         user_vec = self.mean_user
         if self.users.has_item(user_id):
             user_vec = self.user_vectors[self.users.get_id(user_id)]
-        scores = self.model.inverse_transform([user_vec])[0] + self.biases
+        scores = self.model.inverse_transform([user_vec])[0]
+        if not self.ignore_bias:
+            scores += self.biases 
         return scores
+
+    def recommend_by_items(self, items_list, limit: int):
+        multi_hot_vector = np.zeros(self.items.size())
+        for item_id in items_list:
+            if self.items.has_item(item_id):
+                multi_hot_vector[self.items.get_id(item_id)] = 1.0
+        latent_vector = self.model.transform(np.expand_dims(multi_hot_vector, 0))
+        recovered = self.model.inverse_transform(latent_vector)[0]
+        if not self.ignore_bias:
+            recovered += self.biases
+        if "filter_seen" in self.flags:
+            for item_id in items_list:
+                if self.items.has_item(item_id):
+                    recovered[self.items.get_id(item_id)] = float("-inf")
+        result_ids = np.argsort(recovered)[::-1][:limit]
+        result = []
+        for id in result_ids:
+            result.append((self.items.reverse_id(id), recovered[id]))
+        return result
 
 
     def get_similar_items(self, item_id, limit):

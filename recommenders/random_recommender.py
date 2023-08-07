@@ -21,3 +21,6 @@ class RandomRecommender(Recommender):
             result.append((item, current_score))
             current_score *= 0.9
         return result
+
+    def recommend_by_items(self, items_list, limit: int):
+        return self.recommend(None, limit, None)
