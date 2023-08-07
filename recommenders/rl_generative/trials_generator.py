@@ -113,13 +113,13 @@ class TrialsGenerratorProcess(object):
          
 
 class TrialsGeneratorMultiprocess(object):
-    def __init__(self, sampling_processess,sampling_queue_size, batch_cache_size=100, *args, **kwargs) -> None:
+    def __init__(self, sampling_processess,sampling_queue_size, *args, **kwargs) -> None:
         ctx = SpawnContext()
         self.result_queue = ctx.Queue(sampling_queue_size)
         self.trials_generator = TrialsGenerratorProcess(self.result_queue, *args, **kwargs)
         self.sampling_processess = sampling_processess
-        self.batches_cache = deque(maxlen=batch_cache_size)
-        
+        self.batches_cache = deque(maxlen=sampling_processess) #approximately, we keep one batch per process in cache
+       
 
     def __enter__(self):
         self.processors:List[SpawnProcess] = []
