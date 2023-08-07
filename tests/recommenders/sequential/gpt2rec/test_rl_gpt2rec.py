@@ -1,5 +1,7 @@
 import os
 import random
+
+from aprec.recommenders.rl_generative.top_distr_recommender import StochasticTopRecommender
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 import unittest
 from aprec.datasets.movielens1m import get_genre_dict, get_movies_catalog
@@ -56,7 +58,7 @@ class TestRLGptRec(unittest.TestCase):
     def test_RLGPTRec(self):
         USER_ID = '22'
         catalog = get_movies_catalog()
-        pre_training_recommender = lambda: SmartMC(order=50, discount=0.6)
+        pre_training_recommender = StochasticTopRecommender 
         recommender = self.get_recommender(pre_training_recommender)
         for action in DatasetsRegister()['ml-1m_50items_fraction_0.2']():
             recommender.add_action(action)
