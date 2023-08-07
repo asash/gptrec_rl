@@ -45,15 +45,15 @@ def generative_tuning_recommender(ild_lambda=0.5, checkpoint_dir=CHECKPOINT, gae
                                                   #pre_train_recommender_factory=lambda: RandomRecommender(),
                                                   max_tuning_steps=max_tuning_steps, 
                                                   tuning_batch_size=128, 
-                                                  clip_eps=0.1,
-                                                  reward_metric=WeightedSumReward([ACCReward(10), ILDReward(genre_func())], [1, ild_lambda]),
+                                                  clip_eps=0.2,
+                                                  reward_metric=WeightedSumReward([NDCGReward(10), ILDReward(genre_func())], [1, ild_lambda]),
                                                   tradeoff_monitoring_rewards=[(NDCGReward(10), ILDReward(genre_func()))],
                                                   gae_gamma=gae_gamma, 
                                                   gae_lambda=gae_lambda,
                                                   validate_before_tuning=True,
                                                   sampling_processessess=8,
                                                   entropy_bonus=0.0,
-                                                  ppo_lr=1e-5,
+                                                  ppo_lr=1e-4,
                                                   )
         return recommender
         
