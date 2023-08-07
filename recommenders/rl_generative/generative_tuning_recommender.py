@@ -238,11 +238,13 @@ class GenerativeTuningRecommender(SequentialRecommender):
                         entropy = -tf.reduce_mean(tf.reduce_sum(probs * tf.math.log(probs + 1e-6), -1))
                         rec_probs = tf.gather(probs, batch_recs, batch_dims=2) 
                         batch_ratios = tf.math.divide_no_nan(rec_probs, batch_logged_probs)
+                        avg_pct_change = tf.reduce_mean(tf.abs(batch_ratios - 1))
                         ratio_advantage = gae_advantages * batch_ratios
                         clipped_batch_ratios = tf.clip_by_value(batch_ratios, 1-self.clip_eps, 1+self.clip_eps)
                         clipped_batch_ratio_advantage = gae_advantages * clipped_batch_ratios
                         ppo_loss = -tf.reduce_mean(tf.minimum(ratio_advantage, clipped_batch_ratio_advantage)) - self.entropy_bonus * entropy
                         policy_grads = policy_tape.gradient(ppo_loss, self.model.trainable_variables)
+                        policy_grad_norm = tf.linalg.global_norm(policy_grads)
                         policy_optimizer.apply_gradients(zip(policy_grads, self.model.trainable_variables))
 
                     mean_reward = tf.reduce_mean(tf.reduce_sum(batch_rewards, -1))
@@ -252,6 +254,9 @@ class GenerativeTuningRecommender(SequentialRecommender):
                         tf.summary.scalar('tuning_train/mean_reward', mean_reward)
                         tf.summary.scalar('tuning_train/value_loss', value_loss)
                         tf.summary.scalar('tuning_train/entropy', entropy)
+                        tf.summary.scalar('tuning_train/avg_pct_change', avg_pct_change)
+                        tf.summary.scalar('tuning_train/policy_grad_norm', policy_grad_norm)
+                        
         self.load_best_ckeckpoint()            
         
     def load_best_ckeckpoint(self): 
