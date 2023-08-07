@@ -21,10 +21,10 @@ class ACCReward(RewardMetric):
         for i in range(len(recommended)):
             if recommended[i] in actual_set:
                 target_found = True
-                result.append(5.0)
+                result.append(1.0)
             else:
                 if not target_found:
-                    result.append(-1.0)
+                    result.append(-0.1)
                 else:
                     result.append(0.0)
         return np.array(result, dtype=np.float32)
