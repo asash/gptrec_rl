@@ -11,6 +11,7 @@ from aprec.recommenders.fmc_plus import SmartMC
 from aprec.recommenders.lightfm import LightFMRecommender
 from aprec.recommenders.random_recommender import RandomRecommender
 from aprec.recommenders.rl_generative.pre_train_target_splitter import PreTrainTargetSplitter
+from aprec.recommenders.sequential.models.generative.reward_metrics.acc_reward import ACCReward
 from aprec.recommenders.sequential.models.generative.reward_metrics.ild_reward import ILDReward
 from aprec.recommenders.sequential.models.generative.reward_metrics.ndcg_reward import NDCGReward
 from aprec.recommenders.sequential.models.generative.reward_metrics.weighted_sum_reward import WeightedSumReward
@@ -44,7 +45,7 @@ def generative_tuning_recommender(ild_lambda=0.5, checkpoint_dir=CHECKPOINT, gae
                                                   max_tuning_steps=max_tuning_steps, 
                                                   tuning_batch_size=128, 
                                                   clip_eps=0.1,
-                                                  reward_metric=WeightedSumReward([NDCGReward(10), ILDReward(genre_func())], [1, ild_lambda]),
+                                                  reward_metric=WeightedSumReward([ACCReward(10), ILDReward(genre_func())], [1, ild_lambda]),
                                                   tradeoff_monitoring_rewards=[(NDCGReward(10), ILDReward(genre_func()))],
                                                   gae_gamma=gae_gamma, 
                                                   gae_lambda=gae_lambda,
