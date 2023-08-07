@@ -1,5 +1,7 @@
 import os
 import random
+
+from aprec.recommenders.sequential.models.generative.reward_metrics.acc_reward import ACCReward
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 import unittest
 from aprec.datasets.movielens1m import get_genre_dict, get_movies_catalog
@@ -43,7 +45,7 @@ class TestRLGptRec(unittest.TestCase):
                                                   pre_trained_checkpoint_dir=checkpoint,
                                                   validate_every_steps=2,
                                                   max_tuning_steps=10,
-                                                  reward_metric=WeightedSumReward([NDCGReward(10), ILDReward(get_genre_dict())], [1, 0.05]),
+                                                  reward_metric=WeightedSumReward([ACCReward(10), ILDReward(get_genre_dict())], [1, 0.05]),
                                                   tradeoff_monitoring_rewards = [(NDCGReward(10), ILDReward(get_genre_dict()))],
                                                   checkpoint_every_steps=3,
                                                   sampling_processessess=1, 
