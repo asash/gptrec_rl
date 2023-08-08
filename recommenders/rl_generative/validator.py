@@ -96,7 +96,7 @@ class Validator(object):
                                                            train=False, items=self.items, gen_limit=self.gen_limit,
                                                             pred_history_vectorizer=self.pred_history_vectorizer,
                                                             model=self.model)
-            trial_result = build_trial_result(gt_action, val_recommendations, val_seq, self.items, self.reward_metric, val_logged_probs, val_mask)                                 
+            trial_result = build_trial_result(gt_action, val_recommendations, val_seq, self.items, self.reward_metric, val_logged_probs, val_mask, full_probs=full_probs)                                 
             rewards.append(trial_result.reward)
             recs_gts.append((trial_result.recs_with_scores, trial_result.gt_action))
             cnt += 1
