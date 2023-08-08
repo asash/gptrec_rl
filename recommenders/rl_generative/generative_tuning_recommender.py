@@ -274,7 +274,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
                         tf.summary.histogram('tuning_train/batch_ratios', batch_ratios)
                         tf.summary.scalar('tuning_train/batch_kl', batch_kl)
                         tf.summary.histogram('tuning_train/clipped_batch_ratios', clipped_batch_ratios)
-                        tf.summary.scalar("klpen_beta", self.kpen_beta)
+                        tf.summary.scalar("tuning_train/klpen_beta", self.kpen_beta)
                     
                     #update klpen beta
                     if self.use_klpen:
