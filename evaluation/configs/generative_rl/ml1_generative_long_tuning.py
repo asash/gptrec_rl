@@ -76,7 +76,7 @@ def get_recommenders(filter_seen: bool):
     return result
 
 #DATASET = "ml1m_items_with5users"
-DATASET = "ml-1m_50items_fraction_0.2" #small dataset for sanity check
+DATASET = "ml-1m_50items_warm_users" #small dataset for sanity check
 N_VAL_USERS=512
 MAX_TEST_USERS=6040
 SPLIT_STRATEGY = LeaveOneOut(MAX_TEST_USERS)
