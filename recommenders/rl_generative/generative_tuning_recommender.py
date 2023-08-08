@@ -283,6 +283,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
                             
                         elif batch_kl < self.klpen_d_target / 1.5:
                             self.kpen_beta /= 2
+                        self.kpen_beta = np.clip(self.kpen_beta, 0.01, 100)
                         print("klpen beta", self.kpen_beta) 
                         
         self.load_best_ckeckpoint()            
