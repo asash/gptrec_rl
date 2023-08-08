@@ -42,6 +42,10 @@ class GenerativeTuningRecommender(SequentialRecommender):
                  sampling_que_size = 16,
                  validate_before_tuning = True, 
                  entropy_bonus = 0.0,
+                 klpen_d_target = 0.01,
+                 klpen_beta_start = 3,
+                 use_klpen = False,
+
                  ):
         if (type(config.model_config) != RLGPT2RecConfig):
             raise ValueError("GenerativeTuningRecommender only works with RLGPT2Rec model")
@@ -78,6 +82,10 @@ class GenerativeTuningRecommender(SequentialRecommender):
         self.actions:List[Action] = []
         self.validate_before_tuning = validate_before_tuning
         self.entropy_bonus = entropy_bonus
+        self.klpen_d_target = klpen_d_target
+        self.use_klpen = use_klpen
+        self.kpen_beta = klpen_beta_start
+        
         
         
 
@@ -216,7 +224,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
                     print("Tuning step", self.tuning_step)
                     print("generating...")
                     
-                    batch_rewards, batch_seqs, batch_recs, batch_logged_probs, batch_mask_original = trials_generator.next_tuning_batch()
+                    batch_rewards, batch_seqs, batch_recs, batch_logged_probs, batch_mask_original, batch_full_probs = trials_generator.next_tuning_batch()
                     position_ids =  tf.concat([tf.range(self.model.data_parameters.sequence_length, -1, -1), tf.range(self.model.data_parameters.sequence_length + 1, self.model.data_parameters.sequence_length + self.gen_limit)], 0)
                     position_ids = tf.tile(tf.expand_dims(position_ids, 0), [self.tuning_batch_size, 1])
                             
@@ -235,6 +243,9 @@ class GenerativeTuningRecommender(SequentialRecommender):
                         mask_score =  -1e6 
                         masked_logits = tf.where(batch_mask_original > 0, mask_score, logits) 
                         probs = tf.nn.softmax(masked_logits, -1)
+                        batch_kl = tf.reduce_mean(tf.reduce_sum(batch_full_probs * tf.math.log(tf.math.divide_no_nan(batch_full_probs, probs + 1e-6)), -1))
+                        
+
                         entropy = -tf.reduce_mean(tf.reduce_sum(probs * tf.math.log(probs + 1e-6), -1))
                         rec_probs = tf.gather(probs, batch_recs, batch_dims=2) 
                         batch_ratios = tf.math.divide_no_nan(rec_probs, batch_logged_probs)
@@ -242,7 +253,11 @@ class GenerativeTuningRecommender(SequentialRecommender):
                         ratio_advantage = gae_advantages * batch_ratios
                         clipped_batch_ratios = tf.clip_by_value(batch_ratios, 1-self.clip_eps, 1+self.clip_eps)
                         clipped_batch_ratio_advantage = gae_advantages * clipped_batch_ratios
-                        ppo_loss = -tf.reduce_mean(tf.minimum(ratio_advantage, clipped_batch_ratio_advantage)) - self.entropy_bonus * entropy
+                        if not self.use_klpen:
+                            ppo_loss = -tf.reduce_mean(tf.minimum(ratio_advantage, clipped_batch_ratio_advantage))
+                        else:
+                            ppo_loss = -tf.reduce_mean(ratio_advantage - self.kpen_beta * batch_kl)
+                        ppo_loss = ppo_loss - self.entropy_bonus * entropy
                         policy_grads = policy_tape.gradient(ppo_loss, self.model.trainable_variables)
                         policy_grad_norm = tf.linalg.global_norm(policy_grads)
                         policy_optimizer.apply_gradients(zip(policy_grads, self.model.trainable_variables))
@@ -258,7 +273,18 @@ class GenerativeTuningRecommender(SequentialRecommender):
                         tf.summary.scalar('tuning_train/policy_grad_norm', policy_grad_norm)
                         tf.summary.histogram('tuning_train/batch_rewards', batch_rewards)
                         tf.summary.histogram('tuning_train/batch_ratios', batch_ratios)
+                        tf.summary.scalar('tuning_train/batch_kl', batch_kl)
                         tf.summary.histogram('tuning_train/clipped_batch_ratios', clipped_batch_ratios)
+                        tf.summary.scalar("klpen_beta", self.kpen_beta)
+                    
+                    #update klpen beta
+                    if self.use_klpen:
+                        if batch_kl > 1.5 * self.klpen_d_target:
+                            self.kpen_beta *= 2
+                            
+                        elif batch_kl < self.klpen_d_target / 1.5:
+                            self.kpen_beta /= 2
+                        print("klpen beta", self.kpen_beta) 
                         
         self.load_best_ckeckpoint()            
         

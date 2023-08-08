@@ -61,10 +61,10 @@ class TrialsGenerator(object):
         gt_action = Action(user_id=self.users.reverse_id(internal_user_id), item_id=self.items.reverse_id(ground_truth), timestamp=0)
         sep_item_id = self.items.get_id('<SEP>')
         self.ensure_generator()
-        recommendations, seq, logged_probs, mask_original = self.generator.generate(sequence, self.filter_seen, sep_item_id, greedy=False, train=False)
+        recommendations, seq, logged_probs, mask_original, full_probs = self.generator.generate(sequence, self.filter_seen, sep_item_id, greedy=False, train=False)
         items = self.items 
         reward_metric=self.reward_metric
-        return build_trial_result(gt_action, recommendations, seq, items, reward_metric, logged_probs, mask_original)
+        return build_trial_result(gt_action, recommendations, seq, items, reward_metric, logged_probs, mask_original, full_probs)
 
 
 
@@ -83,6 +83,7 @@ class TrialsGenerator(object):
         batch_recs = []
         batch_logged_probs = []
         batch_mask_original = []
+        batch_full_probs = []
         
         for i in range(self.batch_size):
             trial_result = self.random_trial() 
@@ -91,13 +92,15 @@ class TrialsGenerator(object):
             batch_recs.append(trial_result.recs)
             batch_logged_probs.append(trial_result.logged_probs)
             batch_mask_original.append(trial_result.mask_original)
+            batch_full_probs.append(trial_result.full_probs)
             
         batch_rewards = tf.stack(batch_rewards, 0)
         batch_seqs = tf.stack(batch_seqs, 0)
         batch_recs = tf.stack(batch_recs, 0)
         batch_logged_probs = tf.stack(batch_logged_probs, 0)
         batch_mask_original = tf.stack(batch_mask_original, 0)
-        return [batch_rewards, batch_seqs, batch_recs, batch_logged_probs, batch_mask_original]
+        batch_full_probs = tf.stack(batch_full_probs, 0)
+        return [batch_rewards, batch_seqs, batch_recs, batch_logged_probs, batch_mask_original, batch_full_probs]
 
 class TrialsGenerratorProcess(object):
     def __init__(self, queue, *args, **kwargs):

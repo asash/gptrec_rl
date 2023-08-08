@@ -54,6 +54,7 @@ def generative_tuning_recommender(ild_lambda=0.5, checkpoint_dir=CHECKPOINT, gae
                                                   sampling_processessess=8,
                                                   entropy_bonus=0.0,
                                                   ppo_lr=1e-4,
+                                                  use_klpen=True
                                                   )
         return recommender
         

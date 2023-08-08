@@ -43,6 +43,7 @@ def static_generate(input_seq, filter_seen, sep_item_id, greedy, train, items, g
     generated_tokens = []
     position_ids = None 
     next_token_probs = []
+    all_full_probs = []
     for i in range(gen_limit):
         seq = pred_history_vectorizer(model_actions, extension = i+1) 
         position_ids = shift_position_ids(position_ids, seq, model.data_parameters.sequence_length)
@@ -58,7 +59,9 @@ def static_generate(input_seq, filter_seen, sep_item_id, greedy, train, items, g
             next_token = sep_item_id 
             while next_token >= sep_item_id: #we don't want to generate SEP token or any other special tokens. Usually, this loop should only run once
                 next_token = tf.random.categorical(tf.expand_dims(masked_logits, 0), num_samples=1)[-1,0].numpy()
-                next_token_prob = tf.nn.softmax(tf.expand_dims(masked_logits, 0))[0, next_token].numpy()
+                full_probs = tf.nn.softmax(tf.expand_dims(masked_logits, 0))[0].numpy()
+                next_token_prob = full_probs[next_token] 
+                all_full_probs.append(full_probs)
                 next_token_probs.append(next_token_prob)
         else:
             next_token = tf.argmax(masked_logits[:sep_item_id]).numpy()
@@ -66,7 +69,7 @@ def static_generate(input_seq, filter_seen, sep_item_id, greedy, train, items, g
         generated_tokens.append(next_token)
         if filter_seen:
             mask[next_token] = 1.0
-    return generated_tokens, seq, next_token_probs, masks
+    return generated_tokens, seq, next_token_probs, masks, all_full_probs
 
 def shift_position_ids(position_ids, seq, sequence_length):
     if position_ids is None:

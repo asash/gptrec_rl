@@ -92,7 +92,7 @@ class Validator(object):
             gt_action_index = len(all_actions) - 1
             seq, gt = get_seq_with_gt(all_actions, sep_item_id, gt_action_index)
             gt_action = Action(user, item_id=self.items.reverse_id(gt), timestamp=0) 
-            val_recommendations, val_seq, val_logged_probs, val_mask = static_generate(seq, self.filter_seen, sep_item_id, greedy=True, 
+            val_recommendations, val_seq, val_logged_probs, val_mask, full_probs = static_generate(seq, self.filter_seen, sep_item_id, greedy=True, 
                                                            train=False, items=self.items, gen_limit=self.gen_limit,
                                                             pred_history_vectorizer=self.pred_history_vectorizer,
                                                             model=self.model)
