@@ -252,9 +252,10 @@ class GenerativeTuningRecommender(SequentialRecommender):
                         ratio_advantage = gae_advantages * batch_ratios
                         clipped_batch_ratios = tf.clip_by_value(batch_ratios, 1-self.clip_eps, 1+self.clip_eps)
                         clipped_batch_ratio_advantage = gae_advantages * clipped_batch_ratios
-                        ppo_loss = -tf.reduce_mean(tf.minimum(ratio_advantage, clipped_batch_ratio_advantage))
                         if self.use_klpen:
-                            ppo_loss += self.kpen_beta * batch_kl 
+                            ppo_loss = self.kpen_beta * batch_kl - tf.reduce_mean(tf.minimum(ratio_advantage, clipped_batch_ratio_advantage)) 
+                        else:
+                            ppo_loss = -tf.reduce_mean(tf.minimum(ratio_advantage, clipped_batch_ratio_advantage))
                         ppo_loss = ppo_loss - self.entropy_bonus * entropy
                         policy_grads = policy_tape.gradient(ppo_loss, self.model.trainable_variables)
                         policy_grad_norm = tf.linalg.global_norm(policy_grads)
