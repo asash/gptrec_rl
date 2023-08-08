@@ -243,7 +243,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
                         mask_score =  -1e6 
                         masked_logits = tf.where(batch_mask_original > 0, mask_score, logits) 
                         probs = tf.nn.softmax(masked_logits, -1)
-                        batch_kl = tf.reduce_mean(tf.reduce_sum(batch_full_probs * tf.math.log(tf.math.divide_no_nan(batch_full_probs, probs + 1e-6)), -1))
+                        batch_kl = tf.reduce_mean(tf.reduce_sum(batch_full_probs * tf.math.log(tf.math.divide_no_nan(batch_full_probs, probs + 1e-6) + 1e-6), -1))
                         
 
                         entropy = -tf.reduce_mean(tf.reduce_sum(probs * tf.math.log(probs + 1e-6), -1))
