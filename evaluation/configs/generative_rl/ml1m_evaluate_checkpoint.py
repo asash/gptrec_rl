@@ -24,6 +24,8 @@ SEQUENCE_LENGTH=200
 CHECKPOINT="/home/alekspet/Projects/aprec/aprec/evaluation/results/ml1m_items_with5users/ml1_generative_long_tuning_2023_08_08T16_05_30/checkpoints/checkpoint_step_30080"
 #1.0  for gae_gamma and gae_lambda allows the model to see and plan for the whole sequence
 def generative_tuning_recommender(ild_lambda=0.5, checkpoint_dir=CHECKPOINT, gae_gamma=1.0, gae_lambda=1.0, max_tuning_steps=32000):       
+        import os
+        os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
         from aprec.recommenders.rl_generative.generative_tuning_recommender import GenerativeTuningRecommender
         from aprec.recommenders.sequential.models.generative.gpt_rec_rl import RLGPT2RecConfig
         from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
