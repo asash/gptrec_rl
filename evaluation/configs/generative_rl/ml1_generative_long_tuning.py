@@ -32,7 +32,8 @@ METRICS = [HIT(1), HIT(10), NDCG(10), ILD(genre_func()) ]
 SEQUENCE_LENGTH=200
 CHECKPOINT="/home/aprec/Projects/aprec/evaluation/results/checkpoints_for_rl/ml1m_supervised_pre_trained_checkpoint"
 
-def generative_tuning_recommender(ild_lambda=0.5, checkpoint_dir=CHECKPOINT, gae_gamma=0.1, gae_lambda=0.1, max_tuning_steps=32000):       
+#1.0  for gae_gamma and gae_lambda allows the model to see and plan for the whole sequence
+def generative_tuning_recommender(ild_lambda=0.5, checkpoint_dir=CHECKPOINT, gae_gamma=1.0, gae_lambda=1.0, max_tuning_steps=32000):       
         from aprec.recommenders.rl_generative.generative_tuning_recommender import GenerativeTuningRecommender
         from aprec.recommenders.sequential.models.generative.gpt_rec_rl import RLGPT2RecConfig
         from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
@@ -45,7 +46,7 @@ def generative_tuning_recommender(ild_lambda=0.5, checkpoint_dir=CHECKPOINT, gae
                                                   #pre_train_recommender_factory=lambda: RandomRecommender(),
                                                   max_tuning_steps=max_tuning_steps, 
                                                   tuning_batch_size=128, 
-                                                  clip_eps=0.2,
+                                                  clip_eps=1.0, #allow large changes here, most divergence is controlled by klpen
                                                   reward_metric=WeightedSumReward([NDCGReward(10), ILDReward(genre_func())], [1, ild_lambda]),
                                                   tradeoff_monitoring_rewards=[(NDCGReward(10), ILDReward(genre_func()))],
                                                   gae_gamma=gae_gamma, 
