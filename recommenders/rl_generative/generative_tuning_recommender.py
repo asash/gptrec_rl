@@ -243,9 +243,8 @@ class GenerativeTuningRecommender(SequentialRecommender):
                         mask_score =  -1e6 
                         masked_logits = tf.where(batch_mask_original > 0, mask_score, logits) 
                         probs = tf.nn.softmax(masked_logits, -1)
-                        batch_kl = tf.reduce_mean(tf.reduce_sum(batch_full_probs * tf.math.log(tf.math.divide_no_nan(batch_full_probs, probs + 1e-6) + 1e-6), -1))
-                        
-
+                        batch_kl_not_reduced = tf.reduce_sum(batch_full_probs * tf.math.log(tf.math.divide_no_nan(batch_full_probs, probs + 1e-6) + 1e-6), -1)
+                        batch_kl = tf.reduce_mean(batch_kl_not_reduced)  
                         entropy = -tf.reduce_mean(tf.reduce_sum(probs * tf.math.log(probs + 1e-6), -1))
                         rec_probs = tf.gather(probs, batch_recs, batch_dims=2) 
                         batch_ratios = tf.math.divide_no_nan(rec_probs, batch_logged_probs)
@@ -284,6 +283,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
                             
                         elif batch_kl < self.klpen_d_target / 1.5:
                             self.kpen_beta /= 2
+                        self.klpen_beta = np.clip(self.kpen_beta, 0.1, 100)
                         print("klpen beta", self.kpen_beta) 
                         
         self.load_best_ckeckpoint()            
