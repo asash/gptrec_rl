@@ -256,6 +256,9 @@ class GenerativeTuningRecommender(SequentialRecommender):
                         tf.summary.scalar('tuning_train/entropy', entropy)
                         tf.summary.scalar('tuning_train/avg_pct_change', avg_pct_change)
                         tf.summary.scalar('tuning_train/policy_grad_norm', policy_grad_norm)
+                        tf.summary.histogram('tuning_train/batch_rewards', batch_rewards)
+                        tf.summary.histogram('tuning_train/batch_ratios', batch_ratios)
+                        tf.summary.histogram('tuning_train/clipped_batch_ratios', clipped_batch_ratios)
                         
         self.load_best_ckeckpoint()            
         
