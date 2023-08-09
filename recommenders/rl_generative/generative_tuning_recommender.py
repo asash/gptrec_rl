@@ -44,7 +44,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
                  entropy_bonus = 0.0,
                  klpen_d_target = 0.01,
                  klpen_beta_start = 3,
-                 supervised_guidance = 1.0,
+                 supervised_guidance = 0.2,
                  use_klpen = False,
 
                  ):

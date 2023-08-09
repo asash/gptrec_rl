@@ -8,13 +8,20 @@ print(f"monitoring checkpoints in {checkpoints_dir}")
 
 while True:
     val_checkpoint_steps = []
-    with open(checkpoints_dir/"validations.csv") as f:
+    val_fname = checkpoints_dir/"validations.csv"
+    if not os.path.isfile(val_fname):
+        print("no validation file found")
+        time.sleep(1)
+        continue
+
+    with open() as f:
         val_checkpoint_steps = list([int(line.split(',')[0].split('/')[-1].split("_")[-1]) for line in f.readlines()])
 
     val_checkpoint_steps.sort()   
     if len(val_checkpoint_steps) == 0:
         print("no val checkpoints found")
-        exit(0)
+        time.sleep(1)
+        continue
 
     print(val_checkpoint_steps)
 
