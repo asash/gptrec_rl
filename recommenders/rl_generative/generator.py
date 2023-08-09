@@ -23,7 +23,7 @@ class Generator(object):
             self.model.load_weights(latest_checkpoint + "/model.h5")
             print("Model weights updated")
         
-    def generate(self, input_seq, filter_seen, sep_item_id, greedy=False, train=False):
+    def generate(self, input_seq, filter_seen, sep_item_id, greedy=False, train=True):
         self.try_update_weights()
         items = self.items
         gen_limit = self.gen_limit
