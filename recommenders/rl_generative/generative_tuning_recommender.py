@@ -8,6 +8,7 @@ import numpy as np
 import tensorflow as tf
 import tqdm
 from aprec.api.action import Action
+from aprec.recommenders.rl_generative.checkpoints_cleaner import CheckpointsCleanerProcess
 from aprec.recommenders.rl_generative.generator import static_generate
 from aprec.recommenders.rl_generative.pre_train_targets_builder import PreTrainTargetsBuilder
 from aprec.recommenders.rl_generative.trials_generator import TrialsGeneratorMultiprocess 
@@ -205,7 +206,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
                               pred_history_vectorizer=self.config.pred_history_vectorizer, gen_limit=self.gen_limit,
                               filter_seen=self.filter_seen,
                               reward_metric=self.reward_metric,
-                              tradeoff_monitoring_rewards=self.tradeoff_monitoring_rewards, tensorboard_dir=tensorboard_dir):
+                              tradeoff_monitoring_rewards=self.tradeoff_monitoring_rewards, tensorboard_dir=tensorboard_dir), CheckpointsCleanerProcess(checkpoints_dir=self.get_out_dir() + "/checkpoints"):
             tensorboard_writer = tf.summary.create_file_writer(tensorboard_dir)
             policy_optimizer = tf.keras.optimizers.Adam(learning_rate=self.ppo_lr)
             value_optimizer = tf.keras.optimizers.Adam(learning_rate=self.value_lr)

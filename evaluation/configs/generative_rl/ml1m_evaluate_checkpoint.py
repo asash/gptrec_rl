@@ -21,7 +21,8 @@ METRICS = [HIT(1), HIT(10), NDCG(10), ILD(genre_func()) ]
 
 SEQUENCE_LENGTH=200
 
-CHECKPOINT="/home/alekspet/Projects/aprec/aprec/evaluation/results/ml1m_items_with5users/ml1_generative_long_tuning_2023_08_08T16_05_30/checkpoints/checkpoint_step_30080"
+#CHECKPOINT="/home/alekspet/Projects/aprec/aprec/evaluation/results/ml1m_items_with5users/ml1_generative_long_tuning_2023_08_08T16_05_30/checkpoints/checkpoint_step_30080"
+CHECKPOINT="/home/alekspet/Projects/aprec/aprec/evaluation/results/ml1m_items_with5users/ml1_generative_long_tuning_2023_08_09T08_25_52/checkpoints/checkpoint_step_46360"
 #1.0  for gae_gamma and gae_lambda allows the model to see and plan for the whole sequence
 def generative_tuning_recommender(ild_lambda=0.5, checkpoint_dir=CHECKPOINT, gae_gamma=1.0, gae_lambda=1.0, max_tuning_steps=32000):       
         import os

@@ -14,7 +14,7 @@ while True:
         time.sleep(1)
         continue
 
-    with open() as f:
+    with open(val_fname) as f:
         val_checkpoint_steps = list([int(line.split(',')[0].split('/')[-1].split("_")[-1]) for line in f.readlines()])
 
     val_checkpoint_steps.sort()   
