@@ -44,6 +44,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
                  entropy_bonus = 0.0,
                  klpen_d_target = 0.01,
                  klpen_beta_start = 3,
+                 supervised_guidance = 1.0,
                  use_klpen = False,
 
                  ):
@@ -85,6 +86,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
         self.klpen_d_target = klpen_d_target
         self.use_klpen = use_klpen
         self.kpen_beta = klpen_beta_start
+        self.supervised_guidance = supervised_guidance
         
         
         
@@ -224,7 +226,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
                     print("Tuning step", self.tuning_step)
                     print("generating...")
                     
-                    batch_rewards, batch_seqs, batch_recs, batch_logged_probs, batch_mask_original, batch_full_probs = trials_generator.next_tuning_batch()
+                    batch_rewards, batch_seqs, batch_recs, batch_logged_probs, batch_mask_original, batch_full_probs, batch_gt_actions = trials_generator.next_tuning_batch()
                     position_ids =  tf.concat([tf.range(self.model.data_parameters.sequence_length, -1, -1), tf.range(self.model.data_parameters.sequence_length + 1, self.model.data_parameters.sequence_length + self.gen_limit)], 0)
                     position_ids = tf.tile(tf.expand_dims(position_ids, 0), [self.tuning_batch_size, 1])
                             
@@ -242,7 +244,20 @@ class GenerativeTuningRecommender(SequentialRecommender):
                         logits = self.model.gpt(input_ids=tf.nn.relu(tokens), position_ids=position_ids, attention_mask=attention_mask, training=False).logits[:,-self.gen_limit:,:]
                         mask_score =  -1e6 
                         masked_logits = tf.where(batch_mask_original > 0, mask_score, logits) 
+                        gt_logits = tf.gather(tf.transpose(masked_logits, [0, 2, 1]), batch_gt_actions, batch_dims=1)
+                        
+                        #compute mean of unmasked gt_logits:
                         probs = tf.nn.softmax(masked_logits, -1)
+                        
+                        gt_probs = (tf.gather(tf.transpose(probs, [0, 2, 1]), batch_gt_actions, batch_dims=1))
+                        gt_log_probs = tf.math.log(gt_probs + 1e-6)
+                        gt_masked_logits = tf.gather(tf.transpose(masked_logits, [0, 2, 1]), batch_gt_actions, batch_dims=1)
+                        gt_logprob_sum = tf.reduce_sum(tf.where(gt_masked_logits > mask_score, gt_log_probs, 0.0))
+                        gt_logprob_count = tf.reduce_sum(tf.where(gt_masked_logits > mask_score, 1.0, 0.0))
+                        gt_logprob_mean = tf.math.divide_no_nan(gt_logprob_sum, gt_logprob_count) 
+                        pass
+
+
                         batch_kl_not_reduced = tf.reduce_sum(batch_full_probs * tf.math.log(tf.math.divide_no_nan(batch_full_probs, probs + 1e-6) + 1e-6), -1)
                         batch_kl = tf.reduce_mean(batch_kl_not_reduced)  
                         entropy = -tf.reduce_mean(tf.reduce_sum(probs * tf.math.log(probs + 1e-6), -1))
@@ -256,7 +271,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
                             ppo_loss = self.kpen_beta * batch_kl - tf.reduce_mean(tf.minimum(ratio_advantage, clipped_batch_ratio_advantage)) 
                         else:
                             ppo_loss = -tf.reduce_mean(tf.minimum(ratio_advantage, clipped_batch_ratio_advantage))
-                        ppo_loss = ppo_loss - self.entropy_bonus * entropy
+                        ppo_loss = ppo_loss - self.entropy_bonus * entropy - self.supervised_guidance * gt_logprob_mean
                         policy_grads = policy_tape.gradient(ppo_loss, self.model.trainable_variables)
                         policy_grad_norm = tf.linalg.global_norm(policy_grads)
                         policy_optimizer.apply_gradients(zip(policy_grads, self.model.trainable_variables))
@@ -275,6 +290,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
                         tf.summary.scalar('tuning_train/batch_kl', batch_kl)
                         tf.summary.histogram('tuning_train/clipped_batch_ratios', clipped_batch_ratios)
                         tf.summary.scalar("tuning_train/klpen_beta", self.kpen_beta)
+                        tf.summary.scalar("tuning_train/gt_logprob_mean", gt_logprob_mean)
                     
                     #update klpen beta
                     if self.use_klpen:

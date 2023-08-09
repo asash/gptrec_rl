@@ -84,6 +84,7 @@ class TrialsGenerator(object):
         batch_logged_probs = []
         batch_mask_original = []
         batch_full_probs = []
+        batch_gt_actions = []
         
         for i in range(self.batch_size):
             trial_result = self.random_trial() 
@@ -93,6 +94,8 @@ class TrialsGenerator(object):
             batch_logged_probs.append(trial_result.logged_probs)
             batch_mask_original.append(trial_result.mask_original)
             batch_full_probs.append(trial_result.full_probs)
+            batch_gt_actions.append(self.items.get_id(trial_result.gt_action.item_id))
+            pass
             
         batch_rewards = tf.stack(batch_rewards, 0)
         batch_seqs = tf.stack(batch_seqs, 0)
@@ -100,7 +103,8 @@ class TrialsGenerator(object):
         batch_logged_probs = tf.stack(batch_logged_probs, 0)
         batch_mask_original = tf.stack(batch_mask_original, 0)
         batch_full_probs = tf.stack(batch_full_probs, 0)
-        return [batch_rewards, batch_seqs, batch_recs, batch_logged_probs, batch_mask_original, batch_full_probs]
+        batch_gt_actions = tf.stack(batch_gt_actions, 0)
+        return [batch_rewards, batch_seqs, batch_recs, batch_logged_probs, batch_mask_original, batch_full_probs, batch_gt_actions]
 
 class TrialsGenerratorProcess(object):
     def __init__(self, queue, *args, **kwargs):
