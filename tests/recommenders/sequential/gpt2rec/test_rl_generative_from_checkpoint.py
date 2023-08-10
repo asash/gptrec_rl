@@ -79,7 +79,9 @@ class TestRLGptRec(unittest.TestCase):
             print(catalog.get_item(rec[0]), "\t", rec[1])
         batch = [('6002', None), ('2591', None)]
         recs = recommender.recommend_batch(batch, limit=10)       
-        print(recs)
+        for i in range(len(batch)):
+            print(batch[i][0], ":", [catalog.get_item(rec[0]) for rec in recs[i]])
+            
 
 if __name__ == "__main__":
     unittest.main()

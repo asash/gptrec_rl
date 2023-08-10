@@ -36,6 +36,7 @@ class RecommenderProcess(object):
         from aprec.recommenders.sequential.models.generative.gpt_rec_rl import RLGPT2RecModel
         if self.model is None: 
             self.model = RLGPT2RecModel.from_config(self.model_config)
+            self.model.load_weights(self.model_checkpoint + "/model.h5")
 
     def recommend(self, user_id) -> Any:
         self.ensure_model()
