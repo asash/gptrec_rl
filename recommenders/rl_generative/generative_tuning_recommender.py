@@ -413,7 +413,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
         res = []
         for user_id, recs in results.items():
             res.append(results[user_id])
-        return results
+        return res
             
     def get_pred_sequence(self, internal_user_id):
         actions = self.user_actions[internal_user_id]
