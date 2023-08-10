@@ -1,19 +1,19 @@
 from collections import defaultdict
 import json
 import os
-import tempfile
 from typing import List
+import tqdm
 
 import numpy as np
 import tensorflow as tf
-import tqdm
 from aprec.api.action import Action
 from aprec.recommenders.rl_generative.checkpoints_cleaner import CheckpointsCleanerProcess
 from aprec.recommenders.rl_generative.generator import static_generate
 from aprec.recommenders.rl_generative.pre_train_targets_builder import PreTrainTargetsBuilder
 from aprec.recommenders.rl_generative.trials_generator import TrialsGeneratorMultiprocess 
-from aprec.recommenders.rl_generative.validator import Validator, ValidatorProcess
+from aprec.recommenders.rl_generative.validator import ValidatorProcess
 from aprec.recommenders.rl_generative.value_model import ValueModel
+from aprec.recommenders.rl_generative.batch_recommender import MultiprocessRecommendationProcessor
 from aprec.recommenders.sequential.models.generative.reward_metrics.ndcg_reward import NDCGReward
 from aprec.recommenders.recommender import Recommender
 from aprec.recommenders.sequential.models.generative.gpt_rec_rl import RLGPT2RecConfig, RLGPT2RecModel
@@ -47,6 +47,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
                  klpen_beta_start = 3,
                  supervised_guidance = 0.2,
                  use_klpen = False,
+                 batch_recommendation_processess = 8,
 
                  ):
         if (type(config.model_config) != RLGPT2RecConfig):
@@ -88,6 +89,8 @@ class GenerativeTuningRecommender(SequentialRecommender):
         self.use_klpen = use_klpen
         self.kpen_beta = klpen_beta_start
         self.supervised_guidance = supervised_guidance
+        self.batch_recommendation_processess = batch_recommendation_processess 
+        self.best_checkpoint_dir = None
         
         
         
@@ -185,6 +188,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
             other_data_stats = json.load(f)
             if other_data_stats != self.data_stats:
                 raise ValueError("Data stats from checkpoint and from current data don't match")
+        self.best_checkpoint_dir = checkpoint_dir
 
         if self.model is not None:
             del self.model
@@ -390,11 +394,27 @@ class GenerativeTuningRecommender(SequentialRecommender):
         return recs[:limit]
 
     def recommend_batch(self, recommendation_requests, limit):
-        results = []
-        for user_id, features in tqdm.tqdm(recommendation_requests,  ascii=True, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0, leave=True, ncols=70):
-            results.append(self.recommend(user_id, limit, features))
+        results = {}
+        with MultiprocessRecommendationProcessor(recommendation_requests,
+                                                 self.batch_recommendation_processess,
+                                                 self.users, 
+                                                 self.items,
+                                                 self.user_actions,
+                                                 self.best_checkpoint_dir,
+                                                 self.model.get_config(),
+                                                self.filter_seen, 
+                                                self.gen_limit,
+                                                self.config.pred_history_vectorizer) as processor:
+            pbar = tqdm.tqdm(total=len(recommendation_requests), ascii=True, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0, leave=True, ncols=70)
+            while len(results) < len(recommendation_requests):
+                user_id, recs = processor.next_recommendation()
+                results[user_id] = recs
+                pbar.update(1)
+        res = []
+        for user_id, recs in results.items():
+            res.append(results[user_id])
         return results
-
+            
     def get_pred_sequence(self, internal_user_id):
         actions = self.user_actions[internal_user_id]
         sep_item_id = self.items.get_id('<SEP>')

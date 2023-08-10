@@ -49,8 +49,10 @@ class TestRLGptRec(unittest.TestCase):
                                                   tradeoff_monitoring_rewards = [(NDCGReward(10), ILDReward(get_genre_dict()))],
                                                   checkpoint_every_steps=3,
                                                   sampling_processessess=1, 
-                                                  validate_before_tuning=False
+                                                  validate_before_tuning=False,
+                                                  batch_recommendation_processess=1
                                                   )
+
 
         recommender.set_val_users(val_users)
         recommender = FilterSeenRecommender(recommender)
@@ -77,6 +79,7 @@ class TestRLGptRec(unittest.TestCase):
             print(catalog.get_item(rec[0]), "\t", rec[1])
         batch = [('6002', None), ('2591', None)]
         recommender.recommend_batch(batch, limit=10)       
+        pass
 
 if __name__ == "__main__":
     unittest.main()
