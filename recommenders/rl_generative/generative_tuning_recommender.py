@@ -20,6 +20,7 @@ from aprec.recommenders.sequential.models.generative.gpt_rec_rl import RLGPT2Rec
 from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender
 from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
 from aprec.utils.os_utils import mkdir_p
+import mmh3
 
 
 
@@ -112,10 +113,11 @@ class GenerativeTuningRecommender(SequentialRecommender):
     
     def add_action(self, action):
         self.actions.append(action)
+    
 
     #sort by user_id first, then by timestamp, then by item_id
     def sort_actions(self):
-        self.actions.sort(key=lambda action: (action.user_id, action.timestamp))
+        self.actions.sort(key=lambda action: (action.user_id, action.timestamp, mmh3.hash(str(action.item_id) + str(action.timestamp) + str(action.user_id))))
         self.user_actions = defaultdict(list)
         for action in self.actions:
             self.user_actions[self.users.get_id(action.user_id)].append((action.timestamp, self.items.get_id(action.item_id)))
