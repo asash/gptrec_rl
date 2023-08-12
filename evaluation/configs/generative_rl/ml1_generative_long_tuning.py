@@ -1,21 +1,14 @@
-import random
-from aprec.datasets.movielens1m import get_genre_dict
 
 from aprec.evaluation.metrics.ild import ILD
 from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.evaluation.metrics.hit import HIT
 from aprec.evaluation.split_actions import LeaveOneOut
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
-from aprec.recommenders.first_order_mc import FirstOrderMarkovChainRecommender
-from aprec.recommenders.fmc_plus import SmartMC
-from aprec.recommenders.lightfm import LightFMRecommender
-from aprec.recommenders.random_recommender import RandomRecommender
-from aprec.recommenders.rl_generative.pre_train_target_splitter import PreTrainTargetSplitter
 from aprec.recommenders.sequential.models.generative.reward_metrics.acc_reward import ACCReward
 from aprec.recommenders.sequential.models.generative.reward_metrics.ild_reward import ILDReward
 from aprec.recommenders.sequential.models.generative.reward_metrics.ndcg_reward import NDCGReward
 from aprec.recommenders.sequential.models.generative.reward_metrics.weighted_sum_reward import WeightedSumReward
-from aprec.recommenders.top_recommender import TopRecommender
+from aprec.datasets.bert4rec_datasets import get_movielens1m_genres
 
 
 USERS_FRACTIONS = [1.0]
@@ -23,7 +16,7 @@ USERS_FRACTIONS = [1.0]
 #checkpoints will be created in any case
 SAVE_MODELS=False
 
-genre_func = get_genre_dict
+genre_func = get_movielens1m_genres
 
 
 METRICS = [HIT(1), HIT(10), NDCG(10), ILD(genre_func()) ]
@@ -78,7 +71,7 @@ def get_recommenders(filter_seen: bool):
             result[recommender_name] = recommenders[recommender_name]
     return result
 
-DATASET = "ml1m_items_with5users"
+DATASET = "BERT4rec.ml-1m"
 N_VAL_USERS=512
 MAX_TEST_USERS=6040
 SPLIT_STRATEGY = LeaveOneOut(MAX_TEST_USERS)
