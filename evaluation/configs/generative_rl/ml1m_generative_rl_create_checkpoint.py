@@ -33,7 +33,8 @@ def generative_tuning_recommender(ild_lambda, pretrain_recommender=SmartMC(order
         pre_training_recommender = lambda: FilterSeenRecommender(pretrain_recommender)
 
         recommender_config = SequentialRecommenderConfig(model_config, train_epochs=max_pretrain_epochs,
-                                               early_stopping=False,
+                                               early_stopping=True,
+                                               early_stop_epochs=200,
                                                batch_size=128,
                                                training_time_limit=200000,  
                                                sequence_splitter=PreTrainTargetSplitter, 
