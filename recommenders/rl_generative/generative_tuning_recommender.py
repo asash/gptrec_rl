@@ -122,6 +122,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
         
 
     def rebuild_model(self):
+        self.sort_actions()
         self.compute_data_stats()
         if self.do_pre_train:
             self.pre_train()
