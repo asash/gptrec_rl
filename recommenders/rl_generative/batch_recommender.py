@@ -3,7 +3,6 @@ from multiprocessing.context import SpawnContext, SpawnProcess
 from typing import Any
 
 import numpy as np
-from aprec.recommenders.rl_generative.generator import static_generate
 
 from aprec.utils.item_id import ItemId
 
@@ -39,6 +38,7 @@ class RecommenderProcess(object):
             self.model.load_weights(self.model_checkpoint + "/model.h5")
 
     def recommend(self, user_id) -> Any:
+        from aprec.recommenders.rl_generative.generator import static_generate
         self.ensure_model()
         internal_user_id = self.users.get_id(user_id)
         seq = self.get_pred_sequence(internal_user_id)

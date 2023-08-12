@@ -1,5 +1,4 @@
 import json
-from aprec.datasets.movielens1m import get_genre_dict
 
 from aprec.evaluation.metrics.ild import ILD
 from aprec.evaluation.metrics.ndcg import NDCG
@@ -7,13 +6,15 @@ from aprec.evaluation.metrics.hit import HIT
 from aprec.evaluation.split_actions import LeaveOneOut
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 
+from aprec.datasets.bert4rec_datasets import get_movielens1m_genres
+
 
 USERS_FRACTIONS = [1.0]
 
 #checkpoints will be created in any case
 SAVE_MODELS=False
 
-genre_func = get_genre_dict
+genre_func = get_movielens1m_genres
 
 
 METRICS = [HIT(1), HIT(10), NDCG(10), ILD(genre_func()) ]
@@ -23,7 +24,8 @@ SEQUENCE_LENGTH=200
 
 #CHECKPOINT="/home/alekspet/Projects/aprec/aprec/evaluation/results/ml1m_items_with5users/ml1_generative_long_tuning_2023_08_08T16_05_30/checkpoints/checkpoint_step_30080"
 #CHECKPOINT="/home/alekspet/Projects/aprec/aprec/evaluation/results/ml1m_items_with5users/ml1_generative_long_tuning_2023_08_09T08_25_52/checkpoints/checkpoint_step_46360"
-CHECKPOINT="/home/alekspet/Projects/aprec/aprec/evaluation/results/ml1m_items_with5users/ml1_generative_long_tuning_2023_08_09T19_37_36/checkpoints/checkpoint_step_43920"
+#CHECKPOINT="/home/alekspet/Projects/aprec/aprec/evaluation/results/ml1m_items_with5users/ml1_generative_long_tuning_2023_08_09T19_37_36/checkpoints/checkpoint_step_43920"
+CHECKPOINT="/home/aprec/Projects/aprec/evaluation/results/checkpoints_for_rl/ml1m_supervised_pre_trained_checkpoint"
 #1.0  for gae_gamma and gae_lambda allows the model to see and plan for the whole sequence
 def generative_tuning_recommender(ild_lambda=0.5, checkpoint_dir=CHECKPOINT, gae_gamma=1.0, gae_lambda=1.0, max_tuning_steps=32000):       
         import os
@@ -49,7 +51,7 @@ def generative_tuning_recommender(ild_lambda=0.5, checkpoint_dir=CHECKPOINT, gae
                                                   gae_lambda=gae_lambda,
                                                   validate_before_tuning=True,
                                                   sampling_processessess=8,
-                                                  batch_recommendation_processess=1,
+                                                  batch_recommendation_processess=8,
                                                   entropy_bonus=0.0,
                                                   ppo_lr=1e-4,
                                                   use_klpen=True
@@ -77,7 +79,7 @@ def get_recommenders(filter_seen: bool):
             result[recommender_name] = recommenders[recommender_name]
     return result
 
-DATASET = "ml1m_items_with5users"
+DATASET = "BERT4rec.ml-1m"
 N_VAL_USERS=512
 MAX_TEST_USERS=6040
 SPLIT_STRATEGY = LeaveOneOut(MAX_TEST_USERS)
