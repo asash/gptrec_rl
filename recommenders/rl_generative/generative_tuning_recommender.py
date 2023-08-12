@@ -115,14 +115,13 @@ class GenerativeTuningRecommender(SequentialRecommender):
 
     #sort by user_id first, then by timestamp, then by item_id
     def sort_actions(self):
-        self.actions.sort(key=lambda action: (action.user_id, action.timestamp, action.item_id))
+        self.actions.sort(key=lambda action: (action.user_id, action.timestamp))
         self.user_actions = defaultdict(list)
         for action in self.actions:
             self.user_actions[self.users.get_id(action.user_id)].append((action.timestamp, self.items.get_id(action.item_id)))
         
 
     def rebuild_model(self):
-        self.sort_actions()
         self.compute_data_stats()
         if self.do_pre_train:
             self.pre_train()

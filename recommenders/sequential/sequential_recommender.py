@@ -33,7 +33,7 @@ class SequentialRecommender(Recommender):
 
     def sort_actions(self):
         for user_id in self.user_actions:
-            self.user_actions[user_id].sort()
+            self.user_actions[user_id].sort(key=lambda x: x[0])
             
 
 
