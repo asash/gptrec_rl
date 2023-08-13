@@ -48,7 +48,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
                  klpen_beta_start = 3,
                  supervised_guidance = 0.2,
                  use_klpen = False,
-                 batch_recommendation_processess = 8,
+                 batch_recommendation_processess = 1,
 
                  ):
         if (type(config.model_config) != RLGPT2RecConfig):
