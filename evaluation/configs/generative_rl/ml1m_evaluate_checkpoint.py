@@ -26,7 +26,8 @@ SEQUENCE_LENGTH=200
 #CHECKPOINT="/home/alekspet/Projects/aprec/aprec/evaluation/results/ml1m_items_with5users/ml1_generative_long_tuning_2023_08_09T08_25_52/checkpoints/checkpoint_step_46360"
 #CHECKPOINT="/home/alekspet/Projects/aprec/aprec/evaluation/results/ml1m_items_with5users/ml1_generative_long_tuning_2023_08_09T19_37_36/checkpoints/checkpoint_step_43920"
 #CHECKPOINT="/home/aprec/Projects/aprec/evaluation/results/checkpoints_for_rl/ml1m_supervised_pre_trained_checkpoint"
-CHECKPOINT="/home/alekspet/Projects/aprec/aprec/evaluation/results/BERT4rec.ml-1m/ml1_generative_long_tuning_2023_08_12T15_25_02/checkpoints/checkpoint_step_33700"
+#CHECKPOINT="/home/alekspet/Projects/aprec/aprec/evaluation/results/BERT4rec.ml-1m/ml1_generative_long_tuning_2023_08_12T15_25_02/checkpoints/checkpoint_step_33700" -- a good checkpoint on desktop, achieves 0.14 NDCG
+CHECKPOINT="./results/BERT4rec.ml-1m/ml1_generative_long_tuning_2023_08_13T07_36_23/checkpoints/checkpoint_step_18820"
 #1.0  for gae_gamma and gae_lambda allows the model to see and plan for the whole sequence
 def generative_tuning_recommender(ild_lambda=0.5, checkpoint_dir=CHECKPOINT, gae_gamma=1.0, gae_lambda=1.0, max_tuning_steps=32000):       
         import os
