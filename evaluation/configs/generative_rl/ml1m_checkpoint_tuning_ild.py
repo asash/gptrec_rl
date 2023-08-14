@@ -87,7 +87,7 @@ def get_recommenders(filter_seen: bool):
             result[recommender_name] = recommenders[recommender_name]
     return result
 
-DATASET = "ml1m_items_with5users"
+DATASET = "BERT4rec.ml-1m"
 N_VAL_USERS=512
 MAX_TEST_USERS=6040
 SPLIT_STRATEGY = LeaveOneOut(MAX_TEST_USERS)
