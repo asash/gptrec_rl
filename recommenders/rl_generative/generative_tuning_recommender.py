@@ -32,7 +32,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
                  filter_seen=True,
                  clip_eps=0.2, reward_metric = NDCGReward(10), 
                  tuning_batch_size=8, 
-                 max_tuning_steps = 16000,
+                 max_tuning_steps = 64000,
                  validate_every_steps = 100,
                  gae_lambda = 0.1,
                  gae_gamma = 0.1,
@@ -49,7 +49,8 @@ class GenerativeTuningRecommender(SequentialRecommender):
                  supervised_guidance = 0.2,
                  use_klpen = False,
                  batch_recommendation_processess = 1,
-
+                 weight_decay_policy = 0.01,
+                 weight_decay_value = 0.01,
                  ):
         if (type(config.model_config) != RLGPT2RecConfig):
             raise ValueError("GenerativeTuningRecommender only works with RLGPT2Rec model")
@@ -92,6 +93,8 @@ class GenerativeTuningRecommender(SequentialRecommender):
         self.supervised_guidance = supervised_guidance
         self.batch_recommendation_processess = batch_recommendation_processess 
         self.best_checkpoint_dir = None
+        self.weight_decay_policy = weight_decay_policy
+        self.weight_decay_value = weight_decay_value
         
         
         
@@ -214,8 +217,8 @@ class GenerativeTuningRecommender(SequentialRecommender):
                               reward_metric=self.reward_metric,
                               tradeoff_monitoring_rewards=self.tradeoff_monitoring_rewards, tensorboard_dir=tensorboard_dir), CheckpointsCleanerProcess(checkpoints_dir=self.get_out_dir() + "/checkpoints"):
             tensorboard_writer = tf.summary.create_file_writer(tensorboard_dir)
-            policy_optimizer = tf.keras.optimizers.Adam(learning_rate=self.ppo_lr)
-            value_optimizer = tf.keras.optimizers.Adam(learning_rate=self.value_lr)
+            policy_optimizer = tf.keras.optimizers.Adam(learning_rate=self.ppo_lr, weight_decay=self.weight_decay_policy)
+            value_optimizer = tf.keras.optimizers.Adam(learning_rate=self.value_lr, weight_decay=self.weight_decay_value)
             with TrialsGeneratorMultiprocess(sampling_processess=self.sampling_processessess, sampling_queue_size=self.sampling_queue_size, 
                                             user_actions=self.user_actions, items=self.items, users=self.users,
                                             model_config=self.model.get_config(), pred_history_vectorizer=self.config.pred_history_vectorizer,
@@ -248,7 +251,11 @@ class GenerativeTuningRecommender(SequentialRecommender):
                     with tf.GradientTape() as policy_tape:
                         tokens = self.model.tokenizer(batch_seqs, self.tuning_batch_size, self.model.data_parameters.sequence_length + self.gen_limit)
                         attention_mask = tf.cast((tokens != -100), 'float32')
-                        logits = self.model.gpt(input_ids=tf.nn.relu(tokens), position_ids=position_ids, attention_mask=attention_mask, training=True).logits[:,-self.gen_limit:,:]
+
+                        #we use training=False to match the logged policy probabilities
+                        #use weight decay for regularization
+                        logits = self.model.gpt(input_ids=tf.nn.relu(tokens), 
+                                                position_ids=position_ids, attention_mask=attention_mask, training=False).logits[:,-self.gen_limit:,:]
                         mask_score =  -1e6 
                         masked_logits = tf.where(batch_mask_original > 0, mask_score, logits) 
                         gt_logits = tf.gather(tf.transpose(masked_logits, [0, 2, 1]), batch_gt_actions, batch_dims=1)

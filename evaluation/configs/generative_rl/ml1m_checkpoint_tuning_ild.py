@@ -23,14 +23,13 @@ METRICS = [HIT(1), HIT(10), NDCG(10), ILD(genre_func()) ]
 #TARGET_ITEMS_SAMPLER = PopTargetItemsWithReplacementSampler(101)
 
 SEQUENCE_LENGTH=200
-CHECKPOINT="./results/BERT4rec.ml-1m/ml1_generative_long_tuning_2023_08_13T07_36_23/checkpoints/checkpoint_step_18820"
+#CHECKPOINT="./results/BERT4rec.ml-1m/ml1_generative_long_tuning_2023_08_13T07_36_23/checkpoints/checkpoint_step_18820"
+CHECKPOINT="/home/aprec/Projects/aprec/evaluation/results/checkpoints_for_rl/ml1m_supervised_pre_trained_checkpoint" #this checkpoint achieves 0.16 NDCG@10
 
-def generative_tuning_recommender(ild_lambda=0.5, checkpoint_dir=CHECKPOINT, gae_gamma=1.0, gae_lambda=1.0, max_tuning_steps=16000):       
+def generative_tuning_recommender(ild_lambda=0.5, checkpoint_dir=CHECKPOINT, gae_gamma=0.99, gae_lambda=0.9, max_tuning_steps=64000):       
         from aprec.recommenders.rl_generative.generative_tuning_recommender import GenerativeTuningRecommender
         from aprec.recommenders.sequential.models.generative.gpt_rec_rl import RLGPT2RecConfig
         from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
-
-
         model_config = RLGPT2RecConfig(transformer_blocks=3, embedding_size=256, tokenizer='id', tokens_per_item=1, values_per_dim=3500, attention_heads=4)
         recommender_config = SequentialRecommenderConfig(model_config, train_epochs=0) 
         recommender = GenerativeTuningRecommender(recommender_config,
@@ -38,7 +37,7 @@ def generative_tuning_recommender(ild_lambda=0.5, checkpoint_dir=CHECKPOINT, gae
                                                   #pre_train_recommender_factory=lambda: RandomRecommender(),
                                                   max_tuning_steps=max_tuning_steps, 
                                                   tuning_batch_size=128, 
-                                                  clip_eps=1.0, #allow large changes here, most divergence is controlled by klpen
+                                                  clip_eps=0.2, 
                                                   reward_metric=WeightedSumReward([NDCGReward(10), ILDReward(genre_func())], [1, ild_lambda]),
                                                   tradeoff_monitoring_rewards=[(NDCGReward(10), ILDReward(genre_func()))],
                                                   gae_gamma=gae_gamma, 
@@ -47,11 +46,10 @@ def generative_tuning_recommender(ild_lambda=0.5, checkpoint_dir=CHECKPOINT, gae
                                                   sampling_processessess=8,
                                                   batch_recommendation_processess=1,
                                                   entropy_bonus=0.0,
-                                                  klpen_d_target=0.08,
-                                                  ppo_lr=1e-4,
-                                                  use_klpen=True,
-                                                  supervised_guidance=False
-                                                  )
+                                                  ppo_lr=1e-5,
+                                                  use_klpen=False,
+                                                  #klpen_d_target=0.01,
+                                                  supervised_guidance=False)
         return recommender
         
 

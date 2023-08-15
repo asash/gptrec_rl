@@ -1,31 +1,26 @@
-import os
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
 import random
-
-from aprec.recommenders.sequential.models.generative.reward_metrics.acc_reward import ACCReward
+import os
 import unittest
-from aprec.datasets.movielens1m import get_genre_dict, get_movies_catalog
-from aprec.recommenders.fmc_plus import SmartMC
-from aprec.recommenders.rl_generative.generative_tuning_recommender import GenerativeTuningRecommender
-from aprec.datasets.datasets_register import DatasetsRegister
-from aprec.recommenders.rl_generative.pre_train_target_splitter import PreTrainTargetSplitter
-from aprec.recommenders.sequential.models.generative.reward_metrics.ild_reward import ILDReward
-from aprec.recommenders.sequential.models.generative.reward_metrics.ndcg_reward import NDCGReward
-from aprec.recommenders.sequential.models.generative.reward_metrics.weighted_sum_reward import WeightedSumReward
 
-
-from aprec.recommenders.top_recommender import TopRecommender
 
 
 class TestRLGptRec(unittest.TestCase):
+
     def setUp(self):
-        pass
+        os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+    
 
     def get_recommender(self, pre_training_recommender=None, checkpoint=None):
         from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
         from aprec.recommenders.sequential.models.generative.gpt_rec_rl import RLGPT2RecConfig
         from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
-
+        from aprec.datasets.movielens1m import get_genre_dict
+        from aprec.recommenders.rl_generative.generative_tuning_recommender import GenerativeTuningRecommender
+        from aprec.recommenders.rl_generative.pre_train_target_splitter import PreTrainTargetSplitter
+        from aprec.recommenders.sequential.models.generative.reward_metrics.ild_reward import ILDReward
+        from aprec.recommenders.sequential.models.generative.reward_metrics.ndcg_reward import NDCGReward
+        from aprec.recommenders.sequential.models.generative.reward_metrics.acc_reward import ACCReward
+        from aprec.recommenders.sequential.models.generative.reward_metrics.weighted_sum_reward import WeightedSumReward
         val_users = ['5112', '2970', '3159', '3345', '2557', '1777', '4111', '3205', '4380', '5508']
         model_config = RLGPT2RecConfig(transformer_blocks=3, embedding_size=64, tokenizer='id', tokens_per_item=1, values_per_dim=55, attention_heads=4)
  
@@ -62,6 +57,10 @@ class TestRLGptRec(unittest.TestCase):
         return os.path.join(os.path.abspath(os.path.dirname(__file__)), 'test_checkpoints')
 
     def test_from_pretrained_checkpoint(self):
+        from aprec.datasets.movielens1m import get_movies_catalog
+        from aprec.datasets.datasets_register import DatasetsRegister
+        from aprec.recommenders.sequential.models.generative.reward_metrics.acc_reward import ACCReward
+
         USER_ID = '22'
         catalog = get_movies_catalog()
         checkpoint_dir = self.get_checkpoints_dir()
