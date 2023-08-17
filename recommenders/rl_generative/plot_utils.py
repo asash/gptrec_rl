@@ -19,12 +19,13 @@ def plot_to_image(func):
 @plot_to_image
 def plot_rewards_per_pos(rewards):
     rewards = np.array(rewards)
+    mean_rewards = np.mean(rewards,axis=0)
     fig =plt.figure(figsize=(4, 2.5))
     ax = fig.add_subplot()
-    ax.violinplot(rewards, showmeans=True)
+    ax.bar(np.arange(len(mean_rewards))+1, mean_rewards, color='blue')
     ax.set_xlabel("Position")
     ax.set_ylabel(f"Reward per position")
-    ax.set_title(f"Reward sum: {np.sum(rewards)}")
+    ax.set_title(f"Reward sum: {np.sum(mean_rewards):.2f}")
     return fig
     
  
