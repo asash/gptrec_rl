@@ -33,6 +33,22 @@ def deduplicate_actions(actions_generator):
             user_action_timestamps[user_action_pair] = action.timestamp, action
     return [action for (timestamp, action) in user_action_timestamps.values()]
 
+
+def sequence_break_ties(actions):
+    actions = list(actions)
+    actions = sorted(actions, key = lambda action: (action.user_id, action.timestamp, mmh3.hash(f"{action.user_id}_{action.item_id}_{action.timestamp}")))
+    result_actions = [actions[0]]
+    original_timestamps = [actions[0].timestamp]
+    for action in actions[1:]:
+        original_timestamp = action.timestamp
+        if (action.timestamp == original_timestamps[-1]) or (action.timestamp <= result_actions[-1].timestamp):
+            action.timestamp = result_actions[-1].timestamp + 1
+        original_timestamps.append(original_timestamp)
+        result_actions.append(action)
+    return result_actions
+            
+
+
 def take_user_fraction(actions_generator, fraction):
     return filter(lambda action: abs(mmh3.hash(action.user_id) / 2**31) < fraction, actions_generator)
 
@@ -59,4 +75,4 @@ def gunzip(gzip_file):
         with open(unzipped_file_name, 'wb') as output:
             output.write(data)
     return unzipped_file_name 
-    
+

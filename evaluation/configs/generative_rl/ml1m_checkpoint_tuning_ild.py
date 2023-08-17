@@ -62,17 +62,7 @@ recommenders[f"generative_tuning_recommender_ild_0.1"] = lambda: generative_tuni
 recommenders[f"generative_tuning_recommender_ild_0.0"] = lambda: generative_tuning_recommender(0.0)
 recommenders[f"generative_tuning_recommender_ild_1.0"] = lambda: generative_tuning_recommender(1.0)
 
-recommenders[f"generative_tuning_recommender_ild_0.5_gamma_0.1_lambda_0.1"] = lambda: generative_tuning_recommender(0.5, gae_gamma=0.1, gae_lambda=0.1)
-recommenders[f"generative_tuning_recommender_ild_0.5_gamma_0.1_lambda_0.5"] = lambda: generative_tuning_recommender(0.5, gae_gamma=0.1, gae_lambda=0.5)
-recommenders[f"generative_tuning_recommender_ild_0.5_gamma_0.1_lambda_0.9"] = lambda: generative_tuning_recommender(0.5, gae_gamma=0.1, gae_lambda=0.9)
-recommenders[f"generative_tuning_recommender_ild_0.5_gamma_0.5_lambda_0.1"] = lambda: generative_tuning_recommender(0.5, gae_gamma=0.5, gae_lambda=0.1)
-recommenders[f"generative_tuning_recommender_ild_0.5_gamma_0.5_lambda_0.5"] = lambda: generative_tuning_recommender(0.5, gae_gamma=0.5, gae_lambda=0.5)
-recommenders[f"generative_tuning_recommender_ild_0.5_gamma_0.5_lambda_0.9"] = lambda: generative_tuning_recommender(0.5, gae_gamma=0.5, gae_lambda=0.9)
-recommenders[f"generative_tuning_recommender_ild_0.5_gamma_0.9_lambda_0.1"] = lambda: generative_tuning_recommender(0.9, gae_gamma=0.5, gae_lambda=0.1)
-recommenders[f"generative_tuning_recommender_ild_0.5_gamma_0.9_lambda_0.5"] = lambda: generative_tuning_recommender(0.9, gae_gamma=0.5, gae_lambda=0.5)
-recommenders[f"generative_tuning_recommender_ild_0.5_gamma_0.9_lambda_0.9"] = lambda: generative_tuning_recommender(0.9, gae_gamma=0.5, gae_lambda=0.9)
 
-    
 
 def get_recommenders(filter_seen: bool):
     result = {}

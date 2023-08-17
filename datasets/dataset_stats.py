@@ -57,6 +57,14 @@ def uniq_interactions(users, items, session_lens):
         total += uniq
     return total 
 
+def uniq_user_timestamps(users, items, session_lens):
+    total = 0
+    for user in users:
+        uniq = len(set(action.timestamp for action in users[user]))
+        total += uniq
+    return total 
+
+
 def long_tail_less_5(users, items, session_lens):
     from collections import Counter
     item_cnt = Counter()
@@ -94,6 +102,7 @@ all_metrics = {
     "at_least_20_actions": at_least_20_actions,
     "at_least_10_actions": at_least_10_actions,
     "uniq_interactions": uniq_interactions,
+    "uniq_user_timestamps": uniq_user_timestamps, 
     "sparsity": sparsity 
 }
 

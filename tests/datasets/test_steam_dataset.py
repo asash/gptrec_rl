@@ -2,6 +2,7 @@ from collections import Counter
 import unittest
 
 from aprec.evaluation.evaluation_utils import group_by_user
+from aprec.datasets.dataset_utils import sequence_break_ties
 
 
 class TestSteamDataset(unittest.TestCase):
@@ -34,6 +35,9 @@ class TestSteamDataset(unittest.TestCase):
             seen_items = set()
             for action in by_user_actions[user]:
                 self.assertTrue(action.item_id not in seen_items)
+        
+        broken_ties = sequence_break_ties(steam_dataset_1000_warm)
+        pass
 
     
 if __name__ == "__main__":

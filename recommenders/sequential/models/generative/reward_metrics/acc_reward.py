@@ -5,7 +5,7 @@ from .reward_metric import RewardMetric
 
 class ACCReward(RewardMetric):
     def __init__(self, k):
-        self.name = "ndcg_reward@{}".format(k)
+        self.name = "acc_reward_reward@{}".format(k)
         self.k = k
         
     def __call__(self, recommendations, actual_actions):
