@@ -7,9 +7,11 @@ from aprec.evaluation.metrics.pcount import PCOUNT
 from aprec.evaluation.split_actions import LeaveOneOut
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 
+
 from aprec.datasets.bert4rec_datasets import get_movielens1m_genres
 from aprec.datasets.datasets_register import DatasetsRegister
 from aprec.recommenders.top_recommender import TopRecommender
+from aprec.recommenders.lightfm import LightFMRecommender
 
 
 USERS_FRACTIONS = [1.0]
@@ -72,10 +74,87 @@ def generative_tuning_recommender(ild_lambda=0.5, checkpoint_dir=CHECKPOINT, gae
 recommenders = {
 } 
 
+def vanilla_sasrec(loss='bce', num_samples=1, batch_size=128):
+    from aprec.recommenders.sequential.target_builders.positives_sequence_target_builder import PositivesSequenceTargetBuilder
+    from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecConfig
+    from aprec.recommenders.sequential.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
+    model_config = SASRecConfig(vanilla=True, embedding_size=256, loss=loss, vanilla_num_negatives=num_samples)
+    return sasrec_style_model(model_config, 
+            ShiftedSequenceSplitter,
+            target_builder=lambda: PositivesSequenceTargetBuilder(SEQUENCE_LENGTH),
+            batch_size=batch_size)
 
-recommenders[f"generative_tuning"] = lambda: generative_tuning_recommender(checkpoint_dir = CHECKPOINT)
-recommenders["top"] = TopRecommender
+def sasrec_style_model(model_config, sequence_splitter, 
+                target_builder,
+                max_epochs=10000, 
+                batch_size=128,
+                ):
+    from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender
+    from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
+
+    config = SequentialRecommenderConfig(model_config,                       
+                                train_epochs=max_epochs,
+                                early_stop_epochs=200,
+                                batch_size=batch_size,
+                                eval_batch_size=256, #no need for gradients, should work ok
+                                validation_batch_size=256,
+                                max_batches_per_epoch=256,
+                                sequence_splitter=sequence_splitter, 
+                                targets_builder=target_builder, 
+                                use_keras_training=True,
+                                sequence_length=SEQUENCE_LENGTH
+                                )
     
+    return SequentialRecommender(config)
+
+def get_bert_style_model(model_config, tuning_samples_portion, batch_size=128):
+        from aprec.recommenders.sequential.history_vectorizers.add_mask_history_vectorizer import AddMaskHistoryVectorizer
+        from aprec.recommenders.sequential.sequential_recommender import SequentialRecommender
+        from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
+        from aprec.recommenders.sequential.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
+        from aprec.recommenders.sequential.targetsplitters.items_masking import ItemsMasking
+        recommender_config = SequentialRecommenderConfig(model_config, 
+                                               train_epochs=10000, early_stop_epochs=200,
+                                               batch_size=batch_size,
+                                               eval_batch_size=256, #no need for gradients, should work ok
+                                               validation_batch_size=256,
+                                               sequence_splitter=lambda: ItemsMasking(tuning_samples_prob=tuning_samples_portion), 
+                                               max_batches_per_epoch=batch_size,
+                                               targets_builder=ItemsMaskingTargetsBuilder,
+                                               pred_history_vectorizer=AddMaskHistoryVectorizer(),
+                                               use_keras_training=True,
+                                               sequence_length=SEQUENCE_LENGTH)
+        
+        return SequentialRecommender(recommender_config)
+
+def full_bert(loss='softmax_ce', tuning_samples_portion=0.0):
+        from aprec.recommenders.sequential.models.bert4rec.full_bert import FullBERTConfig
+        model_config =  FullBERTConfig(embedding_size=256, loss=loss)
+        return get_bert_style_model(model_config, tuning_samples_portion=tuning_samples_portion, batch_size=64)
+
+def mf_bpr():
+        return LightFMRecommender(num_latent_components=256, num_threads=32)
+
+
+def gsasrec(num_samples=256, t=0.75):
+    from aprec.recommenders.sequential.models.sasrec.sasrec import SASRecConfig
+    from aprec.recommenders.sequential.target_builders.positives_sequence_target_builder import PositivesSequenceTargetBuilder
+    from aprec.recommenders.sequential.targetsplitters.shifted_sequence_splitter import ShiftedSequenceSplitter
+    model_config = SASRecConfig(vanilla=True, embedding_size=256, loss='bce', vanilla_num_negatives=num_samples, 
+                                vanilla_bce_t=t)
+    return sasrec_style_model(model_config, 
+            ShiftedSequenceSplitter,
+            target_builder=lambda: PositivesSequenceTargetBuilder(SEQUENCE_LENGTH),
+            batch_size=128)
+
+
+
+recommenders["top"] = TopRecommender
+recommenders["vanilla_sasrec"] = vanilla_sasrec
+recommenders["bert4rec"] = full_bert 
+recommenders["mf_bpr"] = mf_bpr
+recommenders["gsasrec"] = gsasrec
+recommenders[f"gptrec_supervised_checkpoint"] = lambda: generative_tuning_recommender(checkpoint_dir = CHECKPOINT)
 
 def get_recommenders(filter_seen: bool):
     result = {}
