@@ -6,6 +6,7 @@ from aprec.evaluation.metrics.pcount import PCOUNT
 from aprec.evaluation.split_actions import LeaveOneOut
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.recommenders.sequential.models.generative.reward_metrics.ndcg_reward import NDCGReward
+from aprec.recommenders.sequential.models.generative.reward_metrics.pcount_reward import PCountReward
 from aprec.recommenders.sequential.models.generative.reward_metrics.weighted_sum_reward import WeightedSumReward
 from aprec.datasets.datasets_register import DatasetsRegister
 
@@ -27,7 +28,7 @@ METRICS = [HIT(1), HIT(10), NDCG(10), ILD(genre_func()), PCOUNT(10, DatasetsRegi
 SEQUENCE_LENGTH=200
 #CHECKPOINT="./results/BERT4rec.ml-1m/ml1_generative_long_tuning_2023_08_13T07_36_23/checkpoints/checkpoint_step_18820"
 CHECKPOINT="/home/aprec/Projects/aprec/evaluation/results/checkpoints_for_rl/ml1m_supervised_pre_trained_checkpoint" #this checkpoint achieves 0.16 NDCG@10
-PCOUNT_REWARD = PCOUNT(10, DatasetsRegister()[DATASET]())
+PCOUNT_REWARD = PCountReward(10, DatasetsRegister()[DATASET]())
 
 def generative_tuning_recommender(pcount_lambda=0.5, checkpoint_dir=CHECKPOINT, gae_gamma=0.99, gae_lambda=0.9, max_tuning_steps=64000):       
         from aprec.recommenders.rl_generative.generative_tuning_recommender import GenerativeTuningRecommender
@@ -39,7 +40,7 @@ def generative_tuning_recommender(pcount_lambda=0.5, checkpoint_dir=CHECKPOINT, 
                                                   pre_trained_checkpoint_dir=checkpoint_dir,
                                                   #pre_train_recommender_factory=lambda: RandomRecommender(),
                                                   max_tuning_steps=max_tuning_steps, 
-                                                  tuning_batch_size=128, 
+                                                  tuning_batch_size=4, 
                                                   clip_eps=0.2, 
                                                   reward_metric=WeightedSumReward([NDCGReward(10), PCOUNT_REWARD], [1, pcount_lambda]),
                                                   tradeoff_monitoring_rewards=[(NDCGReward(10), PCOUNT_REWARD)],
@@ -60,11 +61,11 @@ recommenders = {
 } 
 
 #initial pcount is approximately 15 times smaller than ndcg
-recommenders[f"generative_tuning_recommender_pcount_1.0"] = lambda: generative_tuning_recommender(1.0)
-recommenders[f"generative_tuning_recommender_pcount_0.4"] = lambda: generative_tuning_recommender(0.4)
-recommenders[f"generative_tuning_recommender_pcount_0.2"] = lambda: generative_tuning_recommender(0.2)
-recommenders[f"generative_tuning_recommender_pcount_0.0"] = lambda: generative_tuning_recommender(0.0)
-recommenders[f"generative_tuning_recommender_pcount_2.0"] = lambda: generative_tuning_recommender(2.0)
+recommenders[f"generative_tuning_recommender_pcount_15"] = lambda: generative_tuning_recommender(15.0)
+recommenders[f"generative_tuning_recommender_pcount_6"] = lambda: generative_tuning_recommender(6.0)
+recommenders[f"generative_tuning_recommender_pcount_3"] = lambda: generative_tuning_recommender(3.0)
+recommenders[f"generative_tuning_recommender_pcount_0"] = lambda: generative_tuning_recommender(0.0)
+recommenders[f"generative_tuning_recommender_pcount_30"] = lambda: generative_tuning_recommender(30.0)
 
 
 

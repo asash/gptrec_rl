@@ -15,6 +15,7 @@ class PCountReward(RewardMetric):
 
         for item_id in actions_counter:
             self.probs[item_id] = actions_counter[item_id]/len(actions)
+        pass
         
     def __call__(self, recommendations, actual_actions):
         result = []
