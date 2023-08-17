@@ -7,7 +7,7 @@ from aprec.evaluation.split_actions import LeaveOneOut
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.recommenders.sequential.models.generative.reward_metrics.ndcg_reward import NDCGReward
 from aprec.recommenders.sequential.models.generative.reward_metrics.weighted_sum_reward import WeightedSumReward
-from datasets_register import DatasetsRegister
+from aprec.datasets.datasets_register import DatasetsRegister
 
 
 
