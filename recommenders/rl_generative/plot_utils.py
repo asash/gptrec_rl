@@ -23,8 +23,8 @@ def plot_rewards_per_pos(rewards):
     ax = fig.add_subplot()
     ax.violinplot(rewards, showmeans=True)
     ax.set_xlabel("Position")
-    ax.set_ylabel("Reward")
-    ax.set_yscale('log')
+    ax.set_ylabel(f"Reward per position")
+    ax.set_title(f"Reward sum: {np.sum(rewards)}")
     return fig
     
  
