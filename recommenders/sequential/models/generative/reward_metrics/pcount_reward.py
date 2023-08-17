@@ -21,6 +21,6 @@ class PCountReward(RewardMetric):
         result = []
         for item, score in recommendations[:self.k]:
             result.append(-self.probs[item])
-        return result + [0.0] * (len(recommendations) - self.k)
+        return np.array(result + [0.0] * (len(recommendations) - self.k))
     
          
