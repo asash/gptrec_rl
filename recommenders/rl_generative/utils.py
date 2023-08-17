@@ -37,9 +37,12 @@ def get_latest_checkpoint(checkpoint_dir):
     latest_timestamp = None
     for checkpoint in checkpoints:
         if os.path.isfile(checkpoint + "/__success__"):
-            timestamp = os.path.getmtime(checkpoint + "/__success__")
-            if latest_timestamp is None or timestamp > latest_timestamp:
-                latest_timestamp = timestamp
-                latest_checkpoint = checkpoint
+            try:
+                timestamp = os.path.getmtime(checkpoint + "/__success__")
+                if latest_timestamp is None or timestamp > latest_timestamp:
+                    latest_timestamp = timestamp
+                    latest_checkpoint = checkpoint
+            except FileNotFoundError: #file could be deleted by another process 
+                continue
     return latest_checkpoint
 
