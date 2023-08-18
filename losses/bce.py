@@ -13,8 +13,8 @@ class BCELoss(ListWiseLoss):
         y_true = tf.cast(y_true_raw, y_pred.dtype)
         is_target = tf.cast((y_true >= -eps), y_pred.dtype)
         trues = y_true*is_target
-        pos = -trues*tf.math.log((tf.sigmoid(y_pred) + eps)) * is_target
-        neg = -(1.0 - trues)*tf.math.log((1.0 - tf.sigmoid(y_pred)) + eps) * is_target
+        pos = trues*tf.math.softplus(-y_pred) * is_target
+        neg = (1.0 - trues)*tf.math.softplus(y_pred) * is_target
         num_targets = tf.reduce_sum(is_target, axis=1)
         ce_sum = tf.reduce_sum(pos + neg, axis=1)
         res_sum = tf.math.divide_no_nan(ce_sum, num_targets)
@@ -25,8 +25,8 @@ class BCELoss(ListWiseLoss):
         eps = tf.constant(1e-8, y_pred.dtype)
         is_target = tf.cast((y_true >= -eps), y_pred.dtype)
         trues = y_true*is_target
-        pos = -trues*tf.math.log((tf.sigmoid(y_pred) + eps)) * is_target
-        neg = -(1.0 - trues)*tf.math.log((1.0 - tf.sigmoid(y_pred)) + eps) * is_target
+        pos = trues*tf.math.softplus(-y_pred) * is_target
+        neg = (1.0 - trues)*tf.math.softplus(y_pred) * is_target
         num_targets = tf.reduce_sum(is_target)
         ce_sum = tf.reduce_sum(pos + neg)
         res_sum = tf.math.divide_no_nan(ce_sum, num_targets)
