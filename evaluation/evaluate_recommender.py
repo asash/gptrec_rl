@@ -84,7 +84,7 @@ def evaluate_recommender(recommender, test_actions,
     #             random_requets.append(random_request)
     #             break
     # requests = random_requets
-    all_predictions = recommender.recommender.recommend_batch(requests, recommendations_limit)
+    all_predictions = recommender.recommend_batch(requests, recommendations_limit)
 
     if evaluate_on_samples:
         sampled_rankings = recommender.get_item_rankings()
