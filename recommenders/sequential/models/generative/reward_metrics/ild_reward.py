@@ -25,6 +25,8 @@ class ILDReward(RewardMetric):
     #for each item in recommendations, compute average cosine similarity between the item and other items in the recommendation list
     def __call__(self, recommendations, actual) -> np.ndarray:
         rewards = []
+        if(len(recommendations) == 0):
+            return np.array(rewards, dtype=np.float32)
         for i in range(len(recommendations)):
             reward = 0
             item1 = recommendations[i][0]
