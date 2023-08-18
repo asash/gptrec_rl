@@ -34,9 +34,10 @@ class TestBCELoss(unittest.TestCase):
         keras_loss = float(BinaryCrossentropy(from_logits=True)(y_true, y_pred))
         self.assertAlmostEqual(loss, 25.0)
 
-        y_true = tf.constant([1.])
-        y_pred = tf.constant(tf.float32.max)
+        y_true = tf.constant([[1., 0, 1, 0]])
+        y_pred = tf.constant([[tf.float32.min/2, tf.float32.min/2, tf.float32.max/2, tf.float32.max/2]])
         loss = float(BCELoss()(y_true, y_pred))
+        tf.debugging.check_numerics(loss, "loss is nan/inf")
         pass
 
 
