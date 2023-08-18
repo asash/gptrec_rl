@@ -122,7 +122,7 @@ def get_bert_style_model(model_config, tuning_samples_portion, batch_size=128):
                                                max_batches_per_epoch=batch_size,
                                                targets_builder=ItemsMaskingTargetsBuilder,
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
-                                               use_keras_training=True,
+                                               use_keras_training=False,
                                                sequence_length=SEQUENCE_LENGTH)
         
         return SequentialRecommender(recommender_config)
