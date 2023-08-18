@@ -32,7 +32,7 @@ class ListWiseLoss(Loss):
             listwise_ytrue = use_mask * tf.cast(y_true, y_pred.dtype) + noise
             listwise_loss = self.calc_per_list(listwise_ytrue, y_pred)
             use_loss_mask = tf.squeeze(use_mask[:,:1], axis=1)
-            average_loss =  tf.reduce_sum(listwise_loss * use_loss_mask) / tf.reduce_sum(use_loss_mask)
+            average_loss =  tf.math.divide_no_nan(tf.reduce_sum(listwise_loss * use_loss_mask), tf.reduce_sum(use_loss_mask))
             loss_grads = g.gradient(average_loss, y_pred)
             
         if sample_weights:    
