@@ -101,7 +101,7 @@ def sasrec_style_model(model_config, sequence_splitter,
                                 max_batches_per_epoch=256,
                                 sequence_splitter=sequence_splitter, 
                                 targets_builder=target_builder, 
-                                use_keras_training=False,
+                                use_keras_training=True,
                                 sequence_length=SEQUENCE_LENGTH
                                 )
     
