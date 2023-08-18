@@ -85,7 +85,6 @@ def get_bert_style_model(model_config, tuning_samples_portion, batch_size=128):
         from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
         from aprec.recommenders.sequential.target_builders.items_masking_target_builder import ItemsMaskingTargetsBuilder
         from aprec.recommenders.sequential.targetsplitters.items_masking import ItemsMasking
-        optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001),
         recommender_config = SequentialRecommenderConfig(model_config, 
                                                train_epochs=10000, early_stop_epochs=200,
                                                batch_size=batch_size,
@@ -96,7 +95,6 @@ def get_bert_style_model(model_config, tuning_samples_portion, batch_size=128):
                                                targets_builder=ItemsMaskingTargetsBuilder,
                                                pred_history_vectorizer=AddMaskHistoryVectorizer(),
                                                use_keras_training=True,
-                                               optimizer=optimizer,
                                                sequence_length=SEQUENCE_LENGTH,
                                                extra_val_metrics = EXTRA_VAL_METRICS)
         
