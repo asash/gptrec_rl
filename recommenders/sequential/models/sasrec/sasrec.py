@@ -178,11 +178,9 @@ class SASRecModel(SequentialRecsysModel):
             ground_truth = tf.scatter_nd(idx , vals, (self.data_parameters.batch_size, self.data_parameters.num_items+1))[:,:-1]
             
         logits = self.output_activation(logits)
-        tf.debugging.check_numerics(logits, "NaN/Inf detected in logits")
         ground_truth = tf.cast(ground_truth, logits.dtype)
-        tf.debugging.check_numerics(ground_truth, "NaN/Inf detected in ground_truth")
         result =  self.loss_.loss_per_list(ground_truth, logits)
-        tf.debugging.check_numerics(result, "NaN/Inf detected in loss")
+        tf.debugging.check_numerics(result, "loss is nan")
         return result
 
     def score_all_items(self, inputs):
