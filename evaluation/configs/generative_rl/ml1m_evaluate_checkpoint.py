@@ -130,7 +130,7 @@ def get_bert_style_model(model_config, tuning_samples_portion, batch_size=128):
 def full_bert(loss='softmax_ce', tuning_samples_portion=0.0):
         from aprec.recommenders.sequential.models.bert4rec.full_bert import FullBERTConfig
         model_config =  FullBERTConfig(embedding_size=256, loss=loss)
-        return get_bert_style_model(model_config, tuning_samples_portion=tuning_samples_portion, batch_size=64)
+        return get_bert_style_model(model_config, tuning_samples_portion=tuning_samples_portion, batch_size=128)
 
 def mf_bpr():
         return LightFMRecommender(num_latent_components=256, num_threads=32)
@@ -149,11 +149,10 @@ def gsasrec(num_samples=256, t=0.75):
 
 
 
-recommenders["top"] = TopRecommender
-recommenders["vanilla_sasrec"] = vanilla_sasrec
 recommenders["bert4rec"] = full_bert 
+recommenders["vanilla_sasrec"] = vanilla_sasrec
 recommenders["mf_bpr"] = mf_bpr
-recommenders["gsasrec"] = gsasrec
+recommenders["top"] = TopRecommender
 recommenders[f"gptrec_supervised_checkpoint"] = lambda: generative_tuning_recommender(checkpoint_dir = CHECKPOINT)
 
 def get_recommenders(filter_seen: bool):
