@@ -16,7 +16,7 @@ from aprec.recommenders.lightfm import LightFMRecommender
 
 USERS_FRACTIONS = [1.0]
 DATASET = "BERT4rec.ml-1m"
-RECOMMENDATIONS_LIMIT=100
+RECOMMENDATIONS_LIMIT=900
 
 #checkpoints will be created in any case
 SAVE_MODELS=False
@@ -149,12 +149,12 @@ def gsasrec(num_samples=256, t=0.75):
 
 
 
-recommenders["top"] = TopRecommender
-recommenders["vanilla_sasrec"] = vanilla_sasrec
-recommenders["bert4rec"] = full_bert 
+#recommenders["top"] = TopRecommender
+#recommenders["vanilla_sasrec"] = vanilla_sasrec
+#recommenders["bert4rec"] = full_bert 
 recommenders["mf_bpr"] = mf_bpr
-recommenders["gsasrec"] = gsasrec
-recommenders[f"gptrec_supervised_checkpoint"] = lambda: generative_tuning_recommender(checkpoint_dir = CHECKPOINT)
+#recommenders["gsasrec"] = gsasrec
+#recommenders[f"gptrec_supervised_checkpoint"] = lambda: generative_tuning_recommender(checkpoint_dir = CHECKPOINT)
 
 def get_recommenders(filter_seen: bool):
     result = {}
