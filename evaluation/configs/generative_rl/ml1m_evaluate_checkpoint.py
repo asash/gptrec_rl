@@ -133,7 +133,7 @@ def full_bert(loss='softmax_ce', tuning_samples_portion=0.0):
         return get_bert_style_model(model_config, tuning_samples_portion=tuning_samples_portion, batch_size=64)
 
 def mf_bpr():
-        return LightFMRecommender(num_latent_components=256, num_threads=32)
+        return LightFMRecommender(num_latent_components=64, num_threads=32)
 
 
 def gsasrec(num_samples=256, t=0.75):
