@@ -101,7 +101,7 @@ def sasrec_style_model(model_config, sequence_splitter,
                                 max_batches_per_epoch=256,
                                 sequence_splitter=sequence_splitter, 
                                 targets_builder=target_builder, 
-                                use_keras_training=True,
+                                use_keras_training=False,
                                 sequence_length=SEQUENCE_LENGTH
                                 )
     
@@ -150,9 +150,9 @@ def gsasrec(num_samples=256, t=0.75):
 
 
 #recommenders["top"] = TopRecommender
-#recommenders["vanilla_sasrec"] = vanilla_sasrec
+recommenders["vanilla_sasrec"] = vanilla_sasrec
 #recommenders["bert4rec"] = full_bert 
-recommenders["mf_bpr"] = mf_bpr
+#recommenders["mf_bpr"] = mf_bpr
 #recommenders["gsasrec"] = gsasrec
 #recommenders[f"gptrec_supervised_checkpoint"] = lambda: generative_tuning_recommender(checkpoint_dir = CHECKPOINT)
 
