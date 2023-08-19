@@ -33,8 +33,8 @@ class MMRRecommender(Recommender):
 
     def max_similarity(self, item, items):
         max_sim = -1
-        for item in items:
-            max_sim = max(max_sim, self.similarity(item, item))
+        for item2 in items:
+            max_sim = max(max_sim, self.similarity(item, item2))
         return max_sim
         
     
