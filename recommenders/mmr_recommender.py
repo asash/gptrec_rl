@@ -53,7 +53,7 @@ class MMRRecommender(Recommender):
         already_recommended = set([recommendations[0][0]])
 
         for i in range(1, limit):
-            max_mmr = -1
+            max_mmr = float("-inf")
             max_item = None
             for j in range(1, len(recommendations)):
                 item, score = recommendations[j]
