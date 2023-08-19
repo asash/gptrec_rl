@@ -18,8 +18,6 @@ USERS_FRACTIONS = [1.0]
 DATASET = "BERT4rec.ml-1m"
 RECOMMENDATIONS_LIMIT=900
 
-#checkpoints will be created in any case
-SAVE_MODELS=False
 
 genre_func = get_movielens1m_genres
 
@@ -149,9 +147,9 @@ def gsasrec(num_samples=256, t=0.75):
 
 
 
+recommenders["mf_bpr"] = mf_bpr
 recommenders["bert4rec"] = full_bert 
 recommenders["vanilla_sasrec"] = vanilla_sasrec
-recommenders["mf_bpr"] = mf_bpr
 recommenders["top"] = TopRecommender
 recommenders[f"gptrec_supervised_checkpoint"] = lambda: generative_tuning_recommender(checkpoint_dir = CHECKPOINT)
 
