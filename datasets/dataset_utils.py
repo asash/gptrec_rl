@@ -39,10 +39,14 @@ def sequence_break_ties(actions):
     actions = sorted(actions, key = lambda action: (action.user_id, action.timestamp, mmh3.hash(f"{action.user_id}_{action.item_id}_{action.timestamp}")))
     result_actions = [actions[0]]
     original_timestamps = [actions[0].timestamp]
+    last_user_id = actions[0].user_id
     for action in actions[1:]:
         original_timestamp = action.timestamp
-        if (action.timestamp == original_timestamps[-1]) or (action.timestamp <= result_actions[-1].timestamp):
+        if (last_user_id == action.user_id) and ((action.timestamp == original_timestamps[-1]) or (action.timestamp <= result_actions[-1].timestamp)):
             action.timestamp = result_actions[-1].timestamp + 1
+            if action.timestamp - original_timestamp > 1000:
+                pass
+        last_user_id = action.user_id
         original_timestamps.append(original_timestamp)
         result_actions.append(action)
     return result_actions

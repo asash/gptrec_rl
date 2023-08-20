@@ -1,5 +1,8 @@
 from collections import Counter
+from datetime import datetime
 import unittest
+
+import pytz
 
 from aprec.evaluation.evaluation_utils import group_by_user
 from aprec.datasets.dataset_utils import sequence_break_ties
@@ -30,14 +33,38 @@ class TestSteamDataset(unittest.TestCase):
 
         by_user_actions = group_by_user(steam_dataset_1000_warm)
 
+
         for user in by_user_actions:
             self.assertTrue(len(by_user_actions[user]) >= 5)
             seen_items = set()
             for action in by_user_actions[user]:
                 self.assertTrue(action.item_id not in seen_items)
         
+        #make sure that we don't change the dates of the actions
+        original_interaction_dates = {}
+        for action in steam_dataset_1000_warm:
+            utc_timezone = pytz.UTC
+            date = datetime.fromtimestamp(action.timestamp, utc_timezone).date()
+            date = date.strftime("%Y-%m-%d")
+            if (action.user_id, action.item_id) in original_interaction_dates:
+                raise Exception(f"Duplicate action: {action}")
+            original_interaction_dates[(action.user_id, action.item_id)] = (date, action.timestamp)
+
         broken_ties = sequence_break_ties(steam_dataset_1000_warm)
-        pass
+        broken_ties_dates = {} 
+        for action in broken_ties:
+            utc_timezone = pytz.UTC
+            date = datetime.fromtimestamp(action.timestamp, utc_timezone).date()
+            date = date.strftime("%Y-%m-%d")
+            broken_ties_dates[(action.user_id, action.item_id)] = (date, action.timestamp)
+
+        for action in broken_ties:
+            original_date = original_interaction_dates[(action.user_id, action.item_id)]
+            broken_ties_date = broken_ties_dates[(action.user_id, action.item_id)]
+            if original_date[0] != broken_ties_date[0]:
+                print(f"original date: {original_date}, broken ties date: {broken_ties_date}")
+                raise Exception(f"original date: {original_date}, broken ties date: {broken_ties_date}")
+        
 
     
 if __name__ == "__main__":

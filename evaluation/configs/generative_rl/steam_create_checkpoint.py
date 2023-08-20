@@ -1,6 +1,8 @@
+from aprec.datasets.datasets_register import DatasetsRegister
 from aprec.evaluation.metrics.ild import ILD
 from aprec.evaluation.metrics.ndcg import NDCG
 from aprec.evaluation.metrics.hit import HIT
+from aprec.evaluation.metrics.pcount import PCOUNT
 from aprec.evaluation.split_actions import LeaveOneOut
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.recommenders.fmc_plus import SmartMC
@@ -14,30 +16,30 @@ from aprec.datasets.steam import get_genres_steam_deduped_1000items_warm_users
 
 USERS_FRACTIONS = [1.0]
 genre_func = get_genres_steam_deduped_1000items_warm_users
+DATASET = "steam_deduped_1000items_warm_users_noties"
 
-
-METRICS = [HIT(1), HIT(10), NDCG(10), ILD(genre_func()) ]
+METRICS = [HIT(1), HIT(10), NDCG(10), ILD(genre_func()), PCOUNT(10, DatasetsRegister()[DATASET]()) ]
 #TARGET_ITEMS_SAMPLER = PopTargetItemsWithReplacementSampler(101)
 
 SEQUENCE_LENGTH=200
-
 #checkpoints will be created in any case
 SAVE_MODELS=False
 RECOMMENDATIONS_LIMIT=100
 
 
-def generative_tuning_recommender(ild_lambda, pretrain_recommender=SmartMC(order=50, discount=0.6), max_pretrain_epochs=500):       
+def generative_tuning_recommender(ild_lambda, pretrain_recommender=SmartMC(order=50, discount=0.6), max_pretrain_epochs=10000):       
         from aprec.recommenders.rl_generative.generative_tuning_recommender import GenerativeTuningRecommender
         from aprec.recommenders.sequential.models.generative.gpt_rec_rl import RLGPT2RecConfig
         from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
         from aprec.recommenders.sequential.target_builders.dummy_builder import DummyTargetBuilder
 
 
-        model_config = RLGPT2RecConfig(transformer_blocks=3, embedding_size=256, tokenizer='id', tokens_per_item=1, values_per_dim=3500, attention_heads=4)
+        model_config = RLGPT2RecConfig(transformer_blocks=3, embedding_size=256, tokenizer='id', tokens_per_item=1, values_per_dim=1500, attention_heads=4)
         pre_training_recommender = lambda: FilterSeenRecommender(pretrain_recommender)
 
         recommender_config = SequentialRecommenderConfig(model_config, train_epochs=max_pretrain_epochs,
-                                               early_stopping=False,
+                                               early_stopping=True,
+                                               early_stop_epochs=200,
                                                batch_size=128,
                                                training_time_limit=200000,  
                                                sequence_splitter=PreTrainTargetSplitter, 
@@ -59,6 +61,7 @@ def generative_tuning_recommender(ild_lambda, pretrain_recommender=SmartMC(order
                                                   )
         return recommender
         
+        
 recommenders = {
     
 } 
@@ -78,7 +81,6 @@ def get_recommenders(filter_seen: bool):
     return result
 
 
-DATASET = "steam_deduped_1000items_warm_users"
 N_VAL_USERS=512
 MAX_TEST_USERS=6040
 SPLIT_STRATEGY = LeaveOneOut(MAX_TEST_USERS)

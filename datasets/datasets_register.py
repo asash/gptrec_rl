@@ -15,7 +15,7 @@ from aprec.datasets.yelp import get_yelp_dataset
 from aprec.datasets.amazon import get_amazon_actions
 from aprec.datasets.mts_kion import get_mts_kion_dataset
 from aprec.datasets.movielens1m import reproduce_ber4rec_preprocessing
-from aprec.datasets.dataset_utils import deduplicate_actions, filter_cold_users, filter_popular_items, take_user_fraction 
+from aprec.datasets.dataset_utils import deduplicate_actions, filter_cold_users, filter_popular_items, sequence_break_ties, take_user_fraction 
 from aprec.utils.os_utils import mkdir_p_local
 
 class DatasetsRegister(object):
@@ -76,6 +76,7 @@ class DatasetsRegister(object):
         "steam_deduped": lambda: deduplicate_actions(DatasetsRegister.get_from_cache("steam")()),
         "steam_deduped_1000items": lambda: filter_popular_items(deduplicate_actions(DatasetsRegister.get_from_cache("steam")()), 1000),
         "steam_deduped_1000items_warm_users": lambda: filter_cold_users(filter_popular_items(deduplicate_actions(DatasetsRegister.get_from_cache("steam")()), 1000), 5),
+        "steam_deduped_1000items_warm_users_noties": lambda: sequence_break_ties(filter_cold_users(filter_popular_items(deduplicate_actions(DatasetsRegister.get_from_cache("steam")()), 1000), 5)),
     }
     
 
