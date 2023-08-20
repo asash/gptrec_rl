@@ -20,6 +20,8 @@ class PCountRecommender(Recommender):
         for action in actions:
             actions_counter[action.item_id] += 1
         self.probs = {}
+        for item_id in actions_counter:
+            self.probs[item_id] = actions_counter[item_id]/len(actions)
         self.out_dir = None
        
     
