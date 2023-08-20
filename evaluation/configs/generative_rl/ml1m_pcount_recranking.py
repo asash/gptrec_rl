@@ -22,16 +22,17 @@ BERT4REC_CHECKPOINT = "/home/aprec/Projects/aprec/evaluation/results/checkpoints
 
 RECOMMENDERS={
     "BERT4Rec-PCOUNT-0.0": lambda: PCountRecommender(BERT4REC_CHECKPOINT, actions,  PCOUNT_CUTOFF, 0.0),
-    "BERT4Rec-PCOUNT-0.1": lambda: PCountRecommender(BERT4REC_CHECKPOINT, actions,  PCOUNT_CUTOFF, 0.1),
-    "BERT4Rec-PCOUNT-0.2": lambda: PCountRecommender(BERT4REC_CHECKPOINT, actions,  PCOUNT_CUTOFF, 0.2),
-    "BERT4Rec-PCOUNT-0.3": lambda: PCountRecommender(BERT4REC_CHECKPOINT, actions,  PCOUNT_CUTOFF, 0.3),
-    "BERT4Rec-PCOUNT-0.4": lambda: PCountRecommender(BERT4REC_CHECKPOINT, actions,  PCOUNT_CUTOFF, 0.4),
-    "BERT4Rec-PCOUNT-0.5": lambda: PCountRecommender(BERT4REC_CHECKPOINT, actions,  PCOUNT_CUTOFF, 0.5),
-    "BERT4Rec-PCOUNT-0.6": lambda: PCountRecommender(BERT4REC_CHECKPOINT, actions,  PCOUNT_CUTOFF, 0.6),
-    "BERT4Rec-PCOUNT-0.7": lambda: PCountRecommender(BERT4REC_CHECKPOINT, actions,  PCOUNT_CUTOFF, 0.7),
-    "BERT4Rec-PCOUNT-0.8": lambda: PCountRecommender(BERT4REC_CHECKPOINT, actions,  PCOUNT_CUTOFF, 0.8),
-    "BERT4Rec-PCOUNT-0.9": lambda: PCountRecommender(BERT4REC_CHECKPOINT, actions,  PCOUNT_CUTOFF, 0.9),
-    "BERT4Rec-PCOUNT-1.0": lambda: PCountRecommender(BERT4REC_CHECKPOINT, actions,  PCOUNT_CUTOFF, 1.0),
+    "BERT4Rec-PCOUNT-0.0001": lambda: PCountRecommender(BERT4REC_CHECKPOINT, actions,  PCOUNT_CUTOFF, 0.0001),
+    "BERT4Rec-PCOUNT-0.0002": lambda: PCountRecommender(BERT4REC_CHECKPOINT, actions,  PCOUNT_CUTOFF, 0.0002),
+    "BERT4Rec-PCOUNT-0.0004": lambda: PCountRecommender(BERT4REC_CHECKPOINT, actions,  PCOUNT_CUTOFF, 0.0004),
+    "BERT4Rec-PCOUNT-0.0008": lambda: PCountRecommender(BERT4REC_CHECKPOINT, actions,  PCOUNT_CUTOFF, 0.0008),
+    "BERT4Rec-PCOUNT-0.0016": lambda: PCountRecommender(BERT4REC_CHECKPOINT, actions,  PCOUNT_CUTOFF, 0.0016),
+    "BERT4Rec-PCOUNT-0.0032": lambda: PCountRecommender(BERT4REC_CHECKPOINT, actions,  PCOUNT_CUTOFF, 0.0032),
+    "BERT4Rec-PCOUNT-0.0064": lambda: PCountRecommender(BERT4REC_CHECKPOINT, actions,  PCOUNT_CUTOFF, 0.0064),
+    "BERT4Rec-PCOUNT-0.0128": lambda: PCountRecommender(BERT4REC_CHECKPOINT, actions,  PCOUNT_CUTOFF, 0.0128),
+    "BERT4Rec-PCOUNT-0.0256": lambda: PCountRecommender(BERT4REC_CHECKPOINT, actions,  PCOUNT_CUTOFF, 0.0256),
+    "BERT4Rec-PCOUNT-0.0512": lambda: PCountRecommender(BERT4REC_CHECKPOINT, actions,  PCOUNT_CUTOFF, 0.0512),
+    "BERT4Rec-PCOUNT-0.1024": lambda: PCountRecommender(BERT4REC_CHECKPOINT, actions,  PCOUNT_CUTOFF, 0.1024),
 }
 
 N_VAL_USERS=512
