@@ -66,7 +66,6 @@ recommenders[f"generative_tuning_recommender_pcount_4.0"] = lambda: generative_t
 recommenders[f"generative_tuning_recommender_pcount_4.5"] = lambda: generative_tuning_recommender(4.5)
 recommenders[f"generative_tuning_recommender_pcount_5.0"] = lambda: generative_tuning_recommender(5.0)
 recommenders[f"generative_tuning_recommender_pcount_5.5"] = lambda: generative_tuning_recommender(5.5)
-recommenders[f"generative_tuning_recommender_pcount_6.0"] = lambda: generative_tuning_recommender(6.0)
 
 #recommenders[f"generative_tuning_recommender_pcount_15"] = lambda: generative_tuning_recommender(15.0)
 #recommenders[f"generative_tuning_recommender_pcount_6"] = lambda: generative_tuning_recommender(6.0)
