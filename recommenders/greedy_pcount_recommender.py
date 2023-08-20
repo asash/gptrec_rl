@@ -35,10 +35,12 @@ class PCountRecommender(Recommender):
         recommendations = self.recommender.recommend(user_id, self.pcount_cutoff)
         if len(recommendations) < limit:
             raise Exception("Not enough recommendations for user " + str(user_id))
-        
-        for i in range(len(recommendations)):
-            recommendations[i][1] = self.pcount_lambda * recommendations[i][1] - (1-self.pcount_lambda)*self.probs[recommendations[i][0]]
 
-        recommendations.sort(key=lambda x: -x[1])
-        return recommendations
+        result = []
+        for i in range(len(recommendations)):
+            score = self.pcount_lambda * recommendations[i][1] - (1-self.pcount_lambda)*self.probs[recommendations[i][0]]
+            result.append((recommendations[i][0], score))
+
+        result.sort(key=lambda x: -x[1])
+        return result[:limit]
    
