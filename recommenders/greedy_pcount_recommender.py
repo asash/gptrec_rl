@@ -20,6 +20,7 @@ class PCountRecommender(Recommender):
         for action in actions:
             actions_counter[action.item_id] += 1
         self.probs = {}
+        self.out_dir = None
        
     
     def add_action(self, action: Action):
