@@ -15,7 +15,7 @@ from aprec.recommenders.lightfm import LightFMRecommender
 
 
 USERS_FRACTIONS = [1.0]
-RECOMMENDATIONS_LIMIT=900
+RECOMMENDATIONS_LIMIT=500
 
 genre_func = get_genres_steam_deduped_1000items_warm_users
 DATASET = "steam_deduped_1000items_warm_users_noties"
