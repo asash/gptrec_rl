@@ -40,7 +40,7 @@ def generative_tuning_recommender(ild_lambda=0.5, checkpoint_dir=CHECKPOINT, gae
         from aprec.recommenders.sequential.models.generative.reward_metrics.ndcg_reward import NDCGReward
         from aprec.recommenders.sequential.models.generative.reward_metrics.weighted_sum_reward import WeightedSumReward
 
-        model_config = RLGPT2RecConfig(transformer_blocks=3, embedding_size=256, tokenizer='id', tokens_per_item=1, values_per_dim=3500, attention_heads=4)
+        model_config = RLGPT2RecConfig(transformer_blocks=3, embedding_size=256, tokenizer='id', tokens_per_item=1, values_per_dim=1500, attention_heads=4)
         recommender_config = SequentialRecommenderConfig(model_config, train_epochs=0) 
         recommender = GenerativeTuningRecommender(recommender_config,
                                                   pre_trained_checkpoint_dir=checkpoint_dir,
