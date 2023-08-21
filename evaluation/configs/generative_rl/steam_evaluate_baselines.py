@@ -145,9 +145,9 @@ def gsasrec(num_samples=256, t=0.75):
 
 recommenders["top"] = TopRecommender
 recommenders["mf_bpr"] = mf_bpr
-#recommenders[f"gptrec_supervised_checkpoint"] = lambda: generative_tuning_recommender(checkpoint_dir = CHECKPOINT)
-#recommenders["bert4rec"] = full_bert 
-#recommenders["vanilla_sasrec"] = vanilla_sasrec
+recommenders[f"gptrec_supervised_checkpoint"] = lambda: generative_tuning_recommender(checkpoint_dir = CHECKPOINT)
+recommenders["bert4rec"] = full_bert 
+recommenders["vanilla_sasrec"] = vanilla_sasrec
 
 def get_recommenders(filter_seen: bool):
     result = {}
