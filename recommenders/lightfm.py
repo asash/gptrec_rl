@@ -40,7 +40,7 @@ class LightFMRecommender(Recommender):
         user_id = self.users.get_id(user_id_external)
         items_ids = [i for i in range(self.items.size())]
         scores = self.model.predict(user_id, items_ids)
-        best_ids = np.argpartition(scores, -limit)[-limit:]
+        best_ids = np.argsort(-scores)[:limit] 
         result = [(self.items.reverse_id(id), scores[id]) for id in best_ids]
         result.sort(key=lambda x: -x[1])
         return result
