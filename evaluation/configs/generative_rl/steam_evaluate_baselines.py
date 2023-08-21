@@ -23,6 +23,7 @@ DATASET = "steam_deduped_1000items_warm_users_noties"
 
 METRICS = [HIT(1), HIT(10), NDCG(10), ILD(genre_func()), PCOUNT(10, DatasetsRegister()[DATASET]()) ]
 #TARGET_ITEMS_SAMPLER = PopTargetItemsWithReplacementSampler(101)
+SAVE_MODELS = False
 
 SEQUENCE_LENGTH=200
 
@@ -142,11 +143,11 @@ def gsasrec(num_samples=256, t=0.75):
 
 
 
-recommenders["mf_bpr"] = mf_bpr
-recommenders[f"gptrec_supervised_checkpoint"] = lambda: generative_tuning_recommender(checkpoint_dir = CHECKPOINT)
-recommenders["bert4rec"] = full_bert 
-recommenders["vanilla_sasrec"] = vanilla_sasrec
 recommenders["top"] = TopRecommender
+recommenders["mf_bpr"] = mf_bpr
+#recommenders[f"gptrec_supervised_checkpoint"] = lambda: generative_tuning_recommender(checkpoint_dir = CHECKPOINT)
+#recommenders["bert4rec"] = full_bert 
+#recommenders["vanilla_sasrec"] = vanilla_sasrec
 
 def get_recommenders(filter_seen: bool):
     result = {}
