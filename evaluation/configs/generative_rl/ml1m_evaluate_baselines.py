@@ -32,8 +32,7 @@ SEQUENCE_LENGTH=200
 #CHECKPOINT="/home/alekspet/Projects/aprec/aprec/evaluation/results/ml1m_items_with5users/ml1_generative_long_tuning_2023_08_09T19_37_36/checkpoints/checkpoint_step_43920"
 #CHECKPOINT="/home/alekspet/Projects/aprec/aprec/evaluation/results/BERT4rec.ml-1m/ml1_generative_long_tuning_2023_08_12T15_25_02/checkpoints/checkpoint_step_33700" -- a good checkpoint on desktop, achieves 0.14 NDCG
 #CHECKPOINT="./results/BERT4rec.ml-1m/ml1_generative_long_tuning_2023_08_13T07_36_23/checkpoints/checkpoint_step_18820"
-#CHECKPOINT="/home/aprec/Projects/aprec/evaluation/results/checkpoints_for_rl/ml1m_supervised_pre_trained_checkpoint"
-CHECKPOINT="/home/aprec/Projects/aprec/evaluation/results/checkpoints_for_rl/ml_popularity_tuned/pcount_lambda_3.5"
+CHECKPOINT="/home/aprec/Projects/aprec/evaluation/results/checkpoints_for_rl/ml1m_supervised_pre_trained_checkpoint"
 
 #1.0  for gae_gamma and gae_lambda allows the model to see and plan for the whole sequence
 def generative_tuning_recommender(ild_lambda=0.5, checkpoint_dir=CHECKPOINT, gae_gamma=1.0, gae_lambda=1.0, max_tuning_steps=32000):       
@@ -148,12 +147,11 @@ def gsasrec(num_samples=256, t=0.75):
 
 
 
-#recommenders["mf_bpr"] = mf_bpr
-#recommenders["bert4rec"] = full_bert 
-#recommenders["vanilla_sasrec"] = vanilla_sasrec
-#recommenders["top"] = TopRecommender
-#recommenders[f"gptrec_supervised_checkpoint"] = lambda: generative_tuning_recommender(checkpoint_dir = CHECKPOINT)
-recommenders[f"gptrec_checkpoint"] = lambda: generative_tuning_recommender(checkpoint_dir = CHECKPOINT)
+recommenders["mf_bpr"] = mf_bpr
+recommenders["bert4rec"] = full_bert 
+recommenders["vanilla_sasrec"] = vanilla_sasrec
+recommenders["top"] = TopRecommender
+recommenders[f"gptrec_supervised_checkpoint"] = lambda: generative_tuning_recommender(checkpoint_dir = CHECKPOINT)
 
 def get_recommenders(filter_seen: bool):
     result = {}
