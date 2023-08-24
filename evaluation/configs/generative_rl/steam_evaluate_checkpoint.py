@@ -28,7 +28,7 @@ SAVE_MODELS = False
 SEQUENCE_LENGTH=200
 
 
-CHECKPOINT="/home/aprec/Projects/aprec/evaluation/results/checkpoints_for_rl/steam_pretrained_from_bert4rec_10ksteps"
+CHECKPOINT="/home/aprec/Projects/aprec/evaluation/results/checkpoints_for_rl/steam_pretrained_from_bert4rec_100ksteps"
 
 #1.0  for gae_gamma and gae_lambda allows the model to see and plan for the whole sequence
 def generative_tuning_recommender(ild_lambda=0.5, checkpoint_dir=CHECKPOINT, gae_gamma=1.0, gae_lambda=1.0, max_tuning_steps=32000):       
