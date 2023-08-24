@@ -176,6 +176,8 @@ class MemmapDataGenerator(Sequence):
  
 class DataGeneratorFactory(object):
     def __init__(self, queue, tempdir, config, *args, **kwargs):
+        import os
+        os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
         self.tempdir = tempdir
         self.factory_func = lambda: MemmapDataGenerator(DataGenerator(config, *args, **kwargs), tempdir)
         self.queue = queue
