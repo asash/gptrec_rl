@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import defaultdict, deque
 import json
 import os
 import time
@@ -175,9 +175,14 @@ class GenerativeTuningRecommender(SequentialRecommender):
             self.user_actions[self.users.get_id(user)].append(self.last_action_hold_out[user])
     
     def pre_train_internal(self):
+        tensorboard_dir = self.get_tensorboard_dir() 
+        mkdir_p(tensorboard_dir)
+        tensorboard_writer = tf.summary.create_file_writer(tensorboard_dir)
+
         optimiser = self.config.optimizer
         self.model = self.get_model()
         pbar = tqdm.tqdm(total=self.internal_pre_train_max_batches, ascii=True, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0, leave=True, ncols=140)
+        loss_hist = deque(maxlen=10)
         for i in range(self.internal_pre_train_max_batches):
             batch_seqs, batch_attn_masks, batch_positions, batch_gt_actions = self.get_pretrain_batch()
             with tf.GradientTape() as tape:
@@ -186,7 +191,11 @@ class GenerativeTuningRecommender(SequentialRecommender):
                 gradients = tape.gradient(loss, self.model.trainable_variables)
                 optimiser.apply_gradients(zip(gradients, self.model.trainable_variables))
                 pbar.update(1)
-                pbar.set_description("Pre-training loss: %.4f" % loss.numpy())
+                loss_hist.append(loss.numpy())
+                mean_loss = np.mean(loss_hist)
+                pbar.set_description("Pre-training loss: %.4f" % mean_loss)
+                with tensorboard_writer.as_default(i):
+                    tf.summary.scalar('pretrain/loss', loss, step=i)
 
     def get_pretrain_batch(self):
         batch_size = self.config.batch_size
