@@ -36,6 +36,7 @@ class RecommenderProcess(object):
         if self.model is None: 
             self.model = RLGPT2RecModel.from_config(self.model_config)
             self.model.load_weights(self.model_checkpoint + "/model.h5")
+            self.model.fit_biases(None)
 
     def recommend(self, user_id) -> Any:
         from aprec.recommenders.rl_generative.generator import static_generate

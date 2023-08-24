@@ -22,6 +22,7 @@ class Generator(object):
             self.last_update_timestamp = file_timestamp
             self.model.load_weights(latest_checkpoint + "/model.h5")
             print("Model weights updated")
+        self.model.fit_biases(None) #fix this later
         
     def generate(self, input_seq, filter_seen, sep_item_id, greedy=False, train=False):
         self.try_update_weights()

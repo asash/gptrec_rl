@@ -181,6 +181,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
 
         optimiser = self.config.optimizer
         self.model = self.get_model()
+        self.model.fit_biases(None) #this will initialise tokeniser 
         pbar = tqdm.tqdm(total=self.internal_pre_train_max_batches, ascii=True, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0, leave=True, ncols=140)
         loss_hist = deque(maxlen=10)
         for i in range(self.internal_pre_train_max_batches):
@@ -271,6 +272,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
         if os.path.isfile(checkpoint_dir + "/value_model.h5"):
             self.ensure_value_model()
             self.value_model.load_weights(checkpoint_dir + "/value_model.h5")
+        self.model.fit_biases(None) #TODO remove this
 
 
     def tune(self):

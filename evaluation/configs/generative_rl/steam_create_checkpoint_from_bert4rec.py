@@ -51,7 +51,7 @@ def generative_tuning_recommender_from_bert(ild_lambda, checkpoint, max_pretrain
                                                train_on_val_users=False 
                                                )
         recommender = GenerativeTuningRecommender(recommender_config, pre_training_recommender,
-                                                  validate_every_steps=500, max_tuning_steps=0, 
+                                                  validate_every_steps=500, max_tuning_steps=1, 
                                                   tuning_batch_size=16, 
                                                   clip_eps=0.1,
                                                   reward_metric=WeightedSumReward([NDCGReward(10), ILDReward(genre_func())], [1, ild_lambda]),
@@ -59,7 +59,7 @@ def generative_tuning_recommender_from_bert(ild_lambda, checkpoint, max_pretrain
                                                   gae_gamma=0.1, 
                                                   gae_lambda=0.1, 
                                                   internal_pretrain=True, #note that training parameters from recommender config won't be used
-                                                  internal_pretrain_max_batches=1000 * 100, #100 batches per epoch, 1000 epochs
+                                                  internal_pretrain_max_batches=1, #100 batches per epoch, 1000 epochs
                                                   )
         return recommender
         
