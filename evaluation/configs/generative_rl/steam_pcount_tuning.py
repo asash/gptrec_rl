@@ -29,7 +29,7 @@ METRICS = [HIT(1), HIT(10), NDCG(10), ILD(genre_func()), PCOUNT(10, DatasetsRegi
 
 SEQUENCE_LENGTH=200
 #CHECKPOINT="./results/BERT4rec.ml-1m/ml1_generative_long_tuning_2023_08_13T07_36_23/checkpoints/checkpoint_step_18820"
-CHECKPOINT="/home/aprec/Projects/aprec/evaluation/results/checkpoints_for_rl/steam_pre_trained_checkpoint"
+CHECKPOINT="/home/aprec/Projects/aprec/evaluation/results/checkpoints_for_rl/steam_pretrained_from_bert4rec_100ksteps"
 PCOUNT_REWARD = PCountReward(10, DatasetsRegister()[DATASET]())
 
 def generative_tuning_recommender(pcount_lambda=0.5, checkpoint_dir=CHECKPOINT, gae_gamma=0.99, gae_lambda=0.9, max_tuning_steps=64000):       
@@ -65,12 +65,12 @@ recommenders = {
 #initial pcount is approximately 15 times smaller than ndcg
 
 recommenders[f"generative_tuning_recommender_pcoun_0.0"] = lambda: generative_tuning_recommender(0.0)
-recommenders[f"generative_tuning_recommender_pcount_3.5"] = lambda: generative_tuning_recommender(3.5)
-recommenders[f"generative_tuning_recommender_pcount_4.0"] = lambda: generative_tuning_recommender(4.0)
-recommenders[f"generative_tuning_recommender_pcount_4.5"] = lambda: generative_tuning_recommender(4.5)
-recommenders[f"generative_tuning_recommender_pcount_5.0"] = lambda: generative_tuning_recommender(5.0)
-recommenders[f"generative_tuning_recommender_pcount_5.5"] = lambda: generative_tuning_recommender(5.5)
-recommenders[f"generative_tuning_recommender_pcoun_6.0"] = lambda: generative_tuning_recommender(6.0)
+recommenders[f"generative_tuning_recommender_pcount_3.5"] = lambda: generative_tuning_recommender(0.5)
+recommenders[f"generative_tuning_recommender_pcount_4.0"] = lambda: generative_tuning_recommender(1.0)
+recommenders[f"generative_tuning_recommender_pcount_4.5"] = lambda: generative_tuning_recommender(1.5)
+recommenders[f"generative_tuning_recommender_pcount_5.0"] = lambda: generative_tuning_recommender(2.0)
+recommenders[f"generative_tuning_recommender_pcount_5.5"] = lambda: generative_tuning_recommender(2.5)
+recommenders[f"generative_tuning_recommender_pcoun_6.0"] = lambda: generative_tuning_recommender(3.0)
 
 
 def get_recommenders(filter_seen: bool):
