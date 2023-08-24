@@ -12,16 +12,22 @@ from aprec.recommenders.sequential.sequential_recommender import SequentialRecom
 
 #use PreTrained SequentialRecommender as a teacher for gptrec
 class TeacherRecommender(Recommender):
-    def __init__(self, checkoint):
+    def __init__(self, checkpoint):
+        self.checkpoint = checkpoint
+        self.sequential_recommender:SequentialRecommender = None
+        self.flags = {}
+        self.out_dir = None
+
+    def ensure_model(self):
         try:
-            self.bert4rec:SequentialRecommender = dill.load(gzip.open(checkoint, 'rb')).recommender
+            self.sequential_recommender:SequentialRecommender = dill.load(gzip.open(self.checkpoint, 'rb')).recommender
         except UnpicklingError as e: #TODO this is a hack. The models store link to the experiment file, so we need to create file.
             msg = str(e)
             if "No such file or directory" in msg:
                 filename = Path(msg.split(':')[1].strip().strip("'"))
                 filename.parent.mkdir(parents=True, exist_ok=True)
                 filename.touch()
-                self.bert4rec = dill.load(gzip.open(checkoint, 'rb')).recommender
+                self.sequential_recommender = dill.load(gzip.open(self.checkpoint, 'rb')).recommender
             else:
                 raise e
         pass
@@ -33,17 +39,17 @@ class TeacherRecommender(Recommender):
         pass
 
     def recommend_by_items(self, actions, limit, filter_seen=True):
-        pred_history_vectorizer = self.bert4rec.config.pred_history_vectorizer
-        actions_internal = [(0, self.bert4rec.items.get_id(action)) for action in actions]
+        pred_history_vectorizer = self.sequential_recommender.config.pred_history_vectorizer
+        actions_internal = [(0, self.sequential_recommender.items.get_id(action)) for action in actions]
         hist = pred_history_vectorizer(actions_internal)
-        hist = hist.reshape(1, self.bert4rec.config.sequence_length)
+        hist = hist.reshape(1, self.sequential_recommender.config.sequence_length)
         model_inputs = [hist]
-        scoring_func = self.bert4rec.get_scoring_func()
+        scoring_func = self.sequential_recommender.get_scoring_func()
         scores = scoring_func(model_inputs).numpy()[0]
         if filter_seen:
             for action in actions:
-                scores[self.bert4rec.items.get_id(action)] = -np.inf
+                scores[self.sequential_recommender.items.get_id(action)] = -np.inf
         best_ids = tf.nn.top_k(scores, limit).indices.numpy()
-        result = [(self.bert4rec.items.reverse_id(id), scores[id]) for id in best_ids]
+        result = [(self.sequential_recommender.items.reverse_id(id), scores[id]) for id in best_ids]
         return result
         

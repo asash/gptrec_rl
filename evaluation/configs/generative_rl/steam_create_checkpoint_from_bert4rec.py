@@ -6,8 +6,6 @@ from aprec.evaluation.metrics.pcount import PCOUNT
 from aprec.evaluation.split_actions import LeaveOneOut
 from aprec.recommenders.filter_seen_recommender import FilterSeenRecommender
 from aprec.recommenders.fmc_plus import SmartMC
-from aprec.recommenders.rl_generative.pre_train_target_splitter import PreTrainTargetSplitter
-from aprec.recommenders.rl_generative.teacher import TeacherRecommender
 from aprec.recommenders.sequential.models.generative.reward_metrics.ild_reward import ILDReward
 from aprec.recommenders.sequential.models.generative.reward_metrics.ndcg_reward import NDCGReward
 from aprec.recommenders.sequential.models.generative.reward_metrics.weighted_sum_reward import WeightedSumReward
@@ -28,13 +26,14 @@ SAVE_MODELS=False
 RECOMMENDATIONS_LIMIT=100
 
 
-def generative_tuning_recommender(ild_lambda, pretrain_recommender=SmartMC(order=50, discount=0.6), max_pretrain_epochs=10000):       
+def generative_tuning_recommender_from_bert(ild_lambda, checkpoint, max_pretrain_epochs=10000):       
         from aprec.recommenders.rl_generative.generative_tuning_recommender import GenerativeTuningRecommender
         from aprec.recommenders.sequential.models.generative.gpt_rec_rl import RLGPT2RecConfig
         from aprec.recommenders.sequential.sequential_recommender_config import SequentialRecommenderConfig
         from aprec.recommenders.sequential.target_builders.dummy_builder import DummyTargetBuilder
-
-
+        from aprec.recommenders.rl_generative.pre_train_target_splitter import PreTrainTargetSplitter
+        from aprec.recommenders.rl_generative.teacher import TeacherRecommender
+        pretrain_recommender=TeacherRecommender(checkpoint)
         model_config = RLGPT2RecConfig(transformer_blocks=3, embedding_size=256, tokenizer='id', tokens_per_item=1, values_per_dim=1500, attention_heads=4)
         pre_training_recommender = lambda: FilterSeenRecommender(pretrain_recommender)
 
@@ -67,7 +66,7 @@ recommenders = {
     
 } 
 
-recommenders[f"generative_tuning_recommender_pretrain_bert4rec"] = lambda: generative_tuning_recommender(0.0, pretrain_recommender = TeacherRecommender("/home/aprec/Projects/aprec/evaluation/results/checkpoints_for_rl/steam_baselines/bert4rec.dill.gz"))
+recommenders[f"generative_tuning_recommender_pretrain_bert4rec"] = lambda: generative_tuning_recommender_from_bert(0.0, checkpoint="/home/aprec/Projects/aprec/evaluation/results/checkpoints_for_rl/steam_baselines/bert4rec.dill.gz")
     
 
 def get_recommenders(filter_seen: bool):
