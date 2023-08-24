@@ -51,6 +51,8 @@ class GenerativeTuningRecommender(SequentialRecommender):
                  batch_recommendation_processess = 1,
                  weight_decay_policy = 0.01,
                  weight_decay_value = 0.01,
+                 internal_pretrain=False, 
+                 internal_pretrain_max_batches = 100*2000,
                  ):
         if (type(config.model_config) != RLGPT2RecConfig):
             raise ValueError("GenerativeTuningRecommender only works with RLGPT2Rec model")
@@ -95,6 +97,8 @@ class GenerativeTuningRecommender(SequentialRecommender):
         self.best_checkpoint_dir = None
         self.weight_decay_policy = weight_decay_policy
         self.weight_decay_value = weight_decay_value
+        self.internal_pre_train = internal_pretrain
+        self.internal_pre_train_max_batches = internal_pretrain_max_batches
         
         
         
@@ -159,13 +163,61 @@ class GenerativeTuningRecommender(SequentialRecommender):
                                                                      item_ids=self.items,
                                                                      generation_limit=self.gen_limit)
         self.items.get_id('<SEP>') #ensure that we have special item id for <SEP>
-
-        super().rebuild_model()
+        self.pass_parameters()
+        if self.internal_pre_train:
+            self.pre_train_internal()
+        else:
+            super().rebuild_model()
 
         #restore last action for val users
         for user in self.val_users:
             self.user_actions[self.users.get_id(user)].append(self.last_action_hold_out[user])
+    
+    def pre_train_internal(self):
+        optimiser = self.config.optimizer
+        self.model = self.get_model()
+        pbar = tqdm.tqdm(total=self.internal_pre_train_max_batches, ascii=True, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0, leave=True, ncols=70)
+        for i in range(self.internal_pre_train_max_batches):
+            batch_seqs, batch_attn_masks, batch_positions, batch_gt_actions = self.get_pretrain_batch()
+            with tf.GradientTape() as tape:
+                logits = self.model.gpt(input_ids=batch_seqs, attention_mask=batch_attn_masks, position_ids = batch_positions).logits[:,-self.gen_limit:]
+                loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=batch_gt_actions, logits=logits))
+                gradients = tape.gradient(loss, self.model.trainable_variables)
+                optimiser.apply_gradients(zip(gradients, self.model.trainable_variables))
+                pbar.update(1)
+                pbar.set_description("Pre-training loss: %.4f" % loss.numpy())
 
+    def get_pretrain_batch(self):
+        batch_size = self.config.batch_size
+        user_ids = np.random.choice(len(self.user_actions), batch_size)
+        
+        batch_seqs = []
+        batch_positions = []
+        batch_attn_masks = []
+        batch_gt_actions = []
+        
+        for user in user_ids:
+            session = self.user_actions[user]
+            start_idx = np.random.randint(0, len(session)-1) 
+            end_idx = np.random.randint(start_idx + 1, min(start_idx + self.config.sequence_length + 1, len(session)))
+            item_ids = [self.items.reverse_id(item_id) for _, item_id in session[start_idx:end_idx]]
+            recommendations_from_teacher = [self.items.get_id(rec[0]) for rec in self.pre_train_recommender.recommend_by_items(item_ids, self.gen_limit, filter_seen=self.filter_seen)]
+            inp_part = self.config.pred_history_vectorizer(session[start_idx:end_idx])
+            sep_item_id = self.items.get_id('<SEP>')
+            gptrec_seq = tf.concat((inp_part, [sep_item_id], recommendations_from_teacher[:-1]), 0)
+            position_ids = tf.concat([np.arange(len(inp_part), -1, -1), np.arange(len(inp_part)+1, len(inp_part) + len(recommendations_from_teacher))], 0)
+            attention_masks = tf.cast(gptrec_seq != self.items.size(), 'int64')
+            gptrec_seq *= attention_masks 
+            batch_seqs.append(gptrec_seq)
+            batch_positions.append(position_ids)
+            batch_attn_masks.append(attention_masks)
+            batch_gt_actions.append(recommendations_from_teacher)
+        batch_seqs = tf.stack(batch_seqs)
+        batch_attn_masks = tf.stack(batch_attn_masks)
+        batch_positions = tf.stack(batch_positions)
+        batch_gt_actions = tf.stack(batch_gt_actions)
+        return batch_seqs, batch_attn_masks, batch_positions, batch_gt_actions
+            
 
 
     def save_pre_trained_checkpoint(self, checkpoint_name):

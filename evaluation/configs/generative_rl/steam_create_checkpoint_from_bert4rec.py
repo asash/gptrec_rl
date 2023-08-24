@@ -57,7 +57,9 @@ def generative_tuning_recommender_from_bert(ild_lambda, checkpoint, max_pretrain
                                                   reward_metric=WeightedSumReward([NDCGReward(10), ILDReward(genre_func())], [1, ild_lambda]),
                                                   tradeoff_monitoring_rewards=[(NDCGReward(10), ILDReward(genre_func()))],
                                                   gae_gamma=0.1, 
-                                                  gae_lambda=0.1
+                                                  gae_lambda=0.1, 
+                                                  internal_pretrain=True, #note that training parameters from recommender config won't be used
+                                                  internal_pretrain_max_batches=1000 * 100,
                                                   )
         return recommender
         

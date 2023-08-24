@@ -47,7 +47,7 @@ class StochasticTopRecommender(Recommender):
     def get_similar_items(self, item_id, limit):
         return self.most_common[:limit]
     
-    def recommend_by_items(self, items_list, limit: int):
+    def recommend_by_items(self, items_list, limit: int, filter_seen=True):
         return self.recommend(None, limit)
 
     def name(self):

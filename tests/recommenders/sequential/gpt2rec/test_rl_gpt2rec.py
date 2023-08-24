@@ -35,7 +35,7 @@ class TestRLGptRec(unittest.TestCase):
                                                training_time_limit=20,  
                                                sequence_splitter=PreTrainTargetSplitter, 
                                                max_batches_per_epoch=100,
-                                               use_keras_training=True,
+                                               use_keras_training=False,
                                                sequence_length=32,
                                                validate_on_loss=True,
                                                )
@@ -48,6 +48,8 @@ class TestRLGptRec(unittest.TestCase):
                                                   tradeoff_monitoring_rewards = [(NDCGReward(10), ILDReward(get_genre_dict()))],
                                                   checkpoint_every_steps=3,
                                                   sampling_processessess=1, 
+                                                  internal_pretrain=True,
+                                                  internal_pretrain_max_batches=10,
                                                   )
 
         recommender.set_val_users(val_users)
