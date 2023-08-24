@@ -64,13 +64,9 @@ recommenders = {
 
 #initial pcount is approximately 15 times smaller than ndcg
 
-recommenders[f"generative_tuning_recommender_pcoun_0.0"] = lambda: generative_tuning_recommender(0.0)
-recommenders[f"generative_tuning_recommender_pcount_3.5"] = lambda: generative_tuning_recommender(0.5)
-recommenders[f"generative_tuning_recommender_pcount_4.0"] = lambda: generative_tuning_recommender(1.0)
-recommenders[f"generative_tuning_recommender_pcount_4.5"] = lambda: generative_tuning_recommender(1.5)
-recommenders[f"generative_tuning_recommender_pcount_5.0"] = lambda: generative_tuning_recommender(2.0)
-recommenders[f"generative_tuning_recommender_pcount_5.5"] = lambda: generative_tuning_recommender(2.5)
-recommenders[f"generative_tuning_recommender_pcoun_6.0"] = lambda: generative_tuning_recommender(3.0)
+lambdas = [0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0]
+for l in lambdas:
+    recommenders[f"generative_tuning_recommender_pcount_{l}"] = lambda l=l: generative_tuning_recommender(l)
 
 
 def get_recommenders(filter_seen: bool):
