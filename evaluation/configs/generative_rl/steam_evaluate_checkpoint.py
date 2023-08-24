@@ -23,7 +23,7 @@ DATASET = "steam_deduped_1000items_warm_users_noties"
 
 METRICS = [HIT(1), HIT(10), NDCG(10), ILD(genre_func()), PCOUNT(10, DatasetsRegister()[DATASET]()) ]
 #TARGET_ITEMS_SAMPLER = PopTargetItemsWithReplacementSampler(101)
-#SAVE_MODELS = False
+SAVE_MODELS = False
 
 SEQUENCE_LENGTH=200
 
