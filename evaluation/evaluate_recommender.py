@@ -69,21 +69,21 @@ def evaluate_recommender(recommender, test_actions,
 
  
     print("generating predictions...")
-    random_requets = []
-    selected_users = set()
-    for i in range(512):
-        while True:
-            random_request = random.choice(requests)
-            if random_request[0] not in selected_users and random_request[0] in recommender.recommender.val_users:
-                #internal_user_id = recommender.recommender.users.get_id(random_request[0])
-                #gt_user_action = recommender.recommender.user_actions[internal_user_id][-1]
-                #item_id = recommender.recommender.items.reverse_id(gt_user_action[1])
-                #recommender.recommender.user_actions[internal_user_id] = recommender.recommender.user_actions[internal_user_id][:-1]
-                #test_actions_by_user[random_request[0]][0].item_id = item_id
-                selected_users.add(random_request[0])
-                random_requets.append(random_request)
-                break
-    requests = random_requets
+    # random_requets = []
+    # selected_users = set()
+    # for i in range(512):
+    #     while True:
+    #         random_request = random.choice(requests)
+    #         if random_request[0] not in selected_users and random_request[0] in recommender.recommender.val_users:
+    #             #internal_user_id = recommender.recommender.users.get_id(random_request[0])
+    #             #gt_user_action = recommender.recommender.user_actions[internal_user_id][-1]
+    #             #item_id = recommender.recommender.items.reverse_id(gt_user_action[1])
+    #             #recommender.recommender.user_actions[internal_user_id] = recommender.recommender.user_actions[internal_user_id][:-1]
+    #             #test_actions_by_user[random_request[0]][0].item_id = item_id
+    #             selected_users.add(random_request[0])
+    #             random_requets.append(random_request)
+    #             break
+    # requests = random_requets
     all_predictions = recommender.recommend_batch(requests, recommendations_limit)
 
     if evaluate_on_samples:
