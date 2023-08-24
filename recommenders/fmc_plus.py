@@ -68,6 +68,8 @@ class SmartMC(Recommender):
         return final_result
  
 
+
+
     #items list is the sequence of user-item interactions
     def recommend_by_items(self, items_list, limit: int, filter_seen=True):
         session = []

@@ -43,9 +43,14 @@ class Recommender():
     def add_item(self, item: Item):
         pass
 
-
-    def recommend_by_items(self, items_list, limit: int):
+    def recommend_by_items(self, items_list, limit: int, filter_seen=True):
         raise (NotImplementedError)
+
+    def recommend_by_items_multiple(self, user_actions, limit):
+        result = []
+        for actions in user_actions:
+            result.append(self.recommend_by_items(actions, limit, False))
+        return result
 
     def get_similar_items(self, item_id, limit: int):
         raise (NotImplementedError)

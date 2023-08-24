@@ -1,6 +1,7 @@
 from collections import defaultdict
 import json
 import os
+import time
 from typing import List
 import tqdm
 
@@ -176,7 +177,7 @@ class GenerativeTuningRecommender(SequentialRecommender):
     def pre_train_internal(self):
         optimiser = self.config.optimizer
         self.model = self.get_model()
-        pbar = tqdm.tqdm(total=self.internal_pre_train_max_batches, ascii=True, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0, leave=True, ncols=70)
+        pbar = tqdm.tqdm(total=self.internal_pre_train_max_batches, ascii=True, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}', position=0, leave=True, ncols=140)
         for i in range(self.internal_pre_train_max_batches):
             batch_seqs, batch_attn_masks, batch_positions, batch_gt_actions = self.get_pretrain_batch()
             with tf.GradientTape() as tape:
@@ -190,19 +191,24 @@ class GenerativeTuningRecommender(SequentialRecommender):
     def get_pretrain_batch(self):
         batch_size = self.config.batch_size
         user_ids = np.random.choice(len(self.user_actions), batch_size)
-        
-        batch_seqs = []
-        batch_positions = []
-        batch_attn_masks = []
-        batch_gt_actions = []
-        
+        training_ids = []
+        training_sessions = []
         for user in user_ids:
             session = self.user_actions[user]
             start_idx = np.random.randint(0, len(session)-1) 
             end_idx = np.random.randint(start_idx + 1, min(start_idx + self.config.sequence_length + 1, len(session)))
             item_ids = [self.items.reverse_id(item_id) for _, item_id in session[start_idx:end_idx]]
-            recommendations_from_teacher = [self.items.get_id(rec[0]) for rec in self.pre_train_recommender.recommend_by_items(item_ids, self.gen_limit, filter_seen=self.filter_seen)]
-            inp_part = self.config.pred_history_vectorizer(session[start_idx:end_idx])
+            training_ids.append(item_ids)
+            training_sessions.append(session[start_idx:end_idx])
+        recomemndations_from_teacher_all = self.pre_train_recommender.recommend_by_items_multiple(training_ids, self.gen_limit)      
+
+        batch_seqs = []
+        batch_positions = []
+        batch_attn_masks = []
+        batch_gt_actions = []
+        for i in range(batch_size):
+            recommendations_from_teacher = [self.items.get_id(rec[0]) for rec in recomemndations_from_teacher_all[i]]
+            inp_part = self.config.pred_history_vectorizer(training_sessions[i])
             sep_item_id = self.items.get_id('<SEP>')
             gptrec_seq = tf.concat((inp_part, [sep_item_id], recommendations_from_teacher[:-1]), 0)
             position_ids = tf.concat([np.arange(len(inp_part), -1, -1), np.arange(len(inp_part)+1, len(inp_part) + len(recommendations_from_teacher))], 0)
