@@ -35,7 +35,7 @@ def generative_tuning_recommender_from_bert(ild_lambda, checkpoint, max_pretrain
         from aprec.recommenders.rl_generative.teacher import TeacherRecommender
         pretrain_recommender=TeacherRecommender(checkpoint)
         model_config = RLGPT2RecConfig(transformer_blocks=3, embedding_size=256, tokenizer='id', tokens_per_item=1, values_per_dim=1500, attention_heads=4)
-        pre_training_recommender = lambda: FilterSeenRecommender(pretrain_recommender)
+        pre_training_recommender = lambda: pretrain_recommender
 
         recommender_config = SequentialRecommenderConfig(model_config, train_epochs=max_pretrain_epochs,
                                                early_stopping=True,
