@@ -71,7 +71,7 @@ def evaluate_recommender(recommender, test_actions,
     print("generating predictions...")
     random_requets = []
     selected_users = set()
-    for i in range(32):
+    for i in range(512):
         while True:
             random_request = random.choice(requests)
             if random_request[0] not in selected_users and random_request[0] in recommender.recommender.val_users:
