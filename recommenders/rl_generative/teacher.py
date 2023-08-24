@@ -19,6 +19,8 @@ class TeacherRecommender(Recommender):
         self.out_dir = None
 
     def ensure_model(self):
+        if self.sequential_recommender is not None:
+            return
         try:
             self.sequential_recommender:SequentialRecommender = dill.load(gzip.open(self.checkpoint, 'rb')).recommender
         except UnpicklingError as e: #TODO this is a hack. The models store link to the experiment file, so we need to create file.
@@ -31,6 +33,7 @@ class TeacherRecommender(Recommender):
             else:
                 raise e
         pass
+    
 
     def add_action(self, action: Action):
         pass
@@ -39,6 +42,7 @@ class TeacherRecommender(Recommender):
         pass
 
     def recommend_by_items(self, actions, limit, filter_seen=True):
+        self.ensure_model()
         pred_history_vectorizer = self.sequential_recommender.config.pred_history_vectorizer
         actions_internal = [(0, self.sequential_recommender.items.get_id(action)) for action in actions]
         hist = pred_history_vectorizer(actions_internal)
