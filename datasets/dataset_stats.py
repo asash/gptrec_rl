@@ -106,6 +106,21 @@ all_metrics = {
     "sparsity": sparsity 
 }
 
+int_metrics = {
+    "num_users",
+    "num_items",
+    "num_interactions",
+    "median_session_len", 
+    "min_session_len",
+    "max_session_len",
+    "p80_session_len",
+    "at_least_50_actions",
+    "at_least_20_actions",
+    "at_least_10_actions",
+    "uniq_interactions",
+    "uniq_user_timestamps",
+}
+
 
 def dataset_stats(dataset, metrics, dataset_name=None):
     users = defaultdict(list)
@@ -146,7 +161,11 @@ if __name__ == "__main__":
         docs.append(stats)
         del(dataset)
     df = pd.DataFrame(docs).set_index("name")
+    for column in int_metrics:
+        if column in df:
+            df[column] = df[column].apply(lambda x: str(x))
+            print(df[column])
     if not args.latex_table:
-        print(df)
+        print(df.to_markdown())
     else:
         print(df.to_latex())
