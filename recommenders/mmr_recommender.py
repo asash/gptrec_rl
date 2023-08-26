@@ -15,6 +15,7 @@ class MMRRecommender(Recommender):
         self.out_dir = None
         categoriy_ids = defaultdict(lambda: len(categoriy_ids))
         self.categories = {}
+        self.user_seen = defaultdict(set)
         
         for item in categories_dict:
             for category in categories_dict[item]:
@@ -41,12 +42,14 @@ class MMRRecommender(Recommender):
     
     def add_action(self, action: Action):
         self.items_set.add(action.item_id)
+        self.user_seen[action.user_id].add(action.item_id)
     
     def rebuild_model(self):
         pass #we load pre-trained recommender
     
     def recommend(self, user_id, limit: int, features=None):
-        recommendations = self.recommender.recommend(user_id, min(self.mmr_cutoff, len(self.items_set)))
+        max_items_to_recommend = min(self.mmr_cutoff, len(self.items_set)-len(self.user_seen[user_id]))
+        recommendations = self.recommender.recommend(user_id, max_items_to_recommend)
         if len(recommendations) < limit:
             raise Exception("Not enough recommendations for user " + str(user_id))
 
