@@ -25,6 +25,7 @@ class MMRRecommender(Recommender):
             for category in categories_dict[item]:
                 item_categories[categoriy_ids[category]] = 1
             self.categories[item] = item_categories
+        self.items_set = set()
 
     
     @lru_cache(maxsize=20000000)
@@ -39,13 +40,13 @@ class MMRRecommender(Recommender):
         
     
     def add_action(self, action: Action):
-        pass #we load pre-trained recommender
+        self.items_set.add(action.item_id)
     
     def rebuild_model(self):
         pass #we load pre-trained recommender
     
     def recommend(self, user_id, limit: int, features=None):
-        recommendations = self.recommender.recommend(user_id, self.mmr_cutoff)
+        recommendations = self.recommender.recommend(user_id, min(self.mmr_cutoff, len(self.items_set)))
         if len(recommendations) < limit:
             raise Exception("Not enough recommendations for user " + str(user_id))
 
