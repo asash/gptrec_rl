@@ -48,7 +48,10 @@ class MMRRecommender(Recommender):
         pass #we load pre-trained recommender
     
     def recommend(self, user_id, limit: int, features=None):
-        max_items_to_recommend = min(self.mmr_cutoff, len(self.items_set)-len(self.user_seen[user_id]))
+        max_items_to_recommend = self.mmr_cutoff
+        if 'FilterSeenRecommender' in str(type(self.recommender)): 
+            max_items_to_recommend = min(self.mmr_cutoff, len(self.items_set)-len(self.user_seen[user_id]))
+
         recommendations = self.recommender.recommend(user_id, max_items_to_recommend)
         if len(recommendations) < limit:
             raise Exception("Not enough recommendations for user " + str(user_id))
