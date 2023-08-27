@@ -23,16 +23,21 @@ class PCountRecommender(Recommender):
         for item_id in actions_counter:
             self.probs[item_id] = actions_counter[item_id]/len(actions)
         self.out_dir = None
-       
-    
+        self.user_seen = defaultdict(set)
+        self.items_set = set()
+
     def add_action(self, action: Action):
-        pass #we load pre-trained recommender
+        self.items_set.add(action.item_id)
+        self.user_seen[action.user_id].add(action.item_id)
     
     def rebuild_model(self):
         pass #we load pre-trained recommender
     
     def recommend(self, user_id, limit: int, features=None):
-        recommendations = self.recommender.recommend(user_id, self.pcount_cutoff)
+        max_items_to_recommend = self.pcount_cutoff
+        if 'FilterSeenRecommender' in str(type(self.recommender)): 
+            max_items_to_recommend = min(self.pcount_cutoff, len(self.items_set)-len(self.user_seen[user_id]))
+        recommendations = self.recommender.recommend(user_id, max_items_to_recommend)
         if len(recommendations) < limit:
             raise Exception("Not enough recommendations for user " + str(user_id))
 
