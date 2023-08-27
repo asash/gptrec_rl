@@ -66,7 +66,7 @@ recommenders = {
 #initial pcount is approximately 15 times smaller than ndcg
 
 #lambdas = [1.0, 0.5, 2.0]
-lambdas = [2.0, 2.5, 3.0]
+lambdas = [2.5, 3.0, 3.5, 4.0, 4.5]
 
 for l in lambdas:
     recommenders[f"generative_tuning_recommender_ild_{l}"] = lambda l=l: generative_tuning_recommender(l)
