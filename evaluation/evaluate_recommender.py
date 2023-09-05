@@ -259,7 +259,8 @@ class RecommendersEvaluator(object):
             mkdir_p(tensorboard_dir)
             tensorboard_run_id = recommender_name + "_" + Path(self.out_dir).name
             os.symlink(os.path.abspath(tensorboard_dir), os.path.abspath((self.global_tensorboard_dir/tensorboard_run_id)))
-            recommender.set_out_dir(self.out_dir)
+            mkdir_p(f"{self.out_dir}/output/{recommender_name}")
+            recommender.set_out_dir(f"{self.out_dir}/output/{recommender_name}/")
             recommender.set_tensorboard_dir(tensorboard_dir)
             print("adding train actions...")
             for action in tqdm(self.train, ascii=True, bar_format='{l_bar}{bar:10}{r_bar}{bar:-10b}',  position=0, leave=True, ncols=70):
