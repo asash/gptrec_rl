@@ -83,7 +83,7 @@ recommenders = {
 #recommenders["vanilla_sasrec"] = vanilla_sasrec
 #recommenders["top"] = TopRecommender
 #recommenders[f"gptrec_supervised_checkpoint"] = lambda: generative_tuning_recommender(checkpoint_dir = CHECKPOINT)
-recommenders[f"gptrec_checkpoint"] = lambda: generative_tuning_recommender(checkpoint_dir = CHECKPOINT)
+recommenders[f"generative_tuning_recommender_pcount_3.5"] = lambda: generative_tuning_recommender(checkpoint_dir = CHECKPOINT)
 
 def get_recommenders(filter_seen: bool):
     result = {}
