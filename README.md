@@ -1,6 +1,6 @@
 # gptrec-rl
 
-This is an official repository for the paper "RecJPQ: Training Large-Catalogue Sequential Recommenders", co-authored by [Aleksandr Petrov](https://asash.github.io) and [Craig Macdonald](https://www.dcs.gla.ac.uk/~craigm/)
+This is an official repository for the paper "Aligning GPTRec with Beyond-Accuracy Goals with Reinforcement Learning", co-authored by [Aleksandr Petrov](https://asash.github.io) and [Craig Macdonald](https://www.dcs.gla.ac.uk/~craigm/)
 The paper is accepted for publication at the 2nd Workshop on Recommendation with Generative Models, co-located with the WWW '24 conference. 
 
 If you use this code, please cite:
