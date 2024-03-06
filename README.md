@@ -6,7 +6,7 @@ The paper is accepted for publication at the 2nd Workshop on Recommendation with
 If you use this code, please cite:
 
 ```
-@inproceedings{petrov2024recjpq,
+@inproceedings{petrov2024aligning,
   author = {Petrov, Aleksandr V. and Macdonald, Craig},
   title = {Aligning GPTRec with Beyond-Accuracy Goals with Reinforcement Learning},
   year = {2024},
